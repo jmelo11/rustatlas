@@ -1,0 +1,1 @@
+impl FixedRateAccrual for Coupon {}
