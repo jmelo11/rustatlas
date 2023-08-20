@@ -1,8 +1,28 @@
-use super::traits::DoesDayCount;
+use super::traits::DayCountProvider;
 use crate::time::date::Date;
+
+/// # Thirty360
+/// 30/360 day count convention.
+/// Calculates the day count fraction according to the formula:
+/// $$
+/// \frac{360(Y2 - Y1) + 30(M2 - M1) + (D2 - D1)}{360}
+/// $$
+/// where Y1, M1, D1 are the year, month and day of the start date, and Y2, M2, D2 are the year, month and day of the end date.
+/// # Example
+/// ```
+/// use crate::time::daycounters::thirty360::Thirty360;
+/// use crate::time::traits::DayCountProvider;
+/// use crate::time::date::Date;
+///
+/// let start = Date::from_ymd(2020, 1, 1);
+/// let end = Date::from_ymd(2020, 2, 1);
+/// let day_count = Thirty360 {};
+/// assert_eq!(day_count.day_count(start, end), 30);
+/// assert_eq!(day_count.year_fraction(start, end), 30.0 / 360.0);
+/// ```
 pub struct Thirty360;
 
-impl DoesDayCount for Thirty360 {
+impl DayCountProvider for Thirty360 {
     fn day_count(&self, start: Date, end: Date) -> i64 {
         let mut d1 = start.day() as i32;
         let mut d2 = end.day() as i32;

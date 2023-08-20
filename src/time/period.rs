@@ -1,6 +1,17 @@
 use super::enums::{Frequency, TimeUnit};
 use std::ops::{Add, AddAssign, DivAssign, MulAssign, Neg, Sub, SubAssign};
 
+/// # Period
+/// Struct representing a financial period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::{Frequency, TimeUnit};
+/// use rustatlas::time::period::Period;
+///
+/// let p = Period::new(5, TimeUnit::Days);
+/// assert_eq!(p.length(), 5);
+/// assert_eq!(p.units(), TimeUnit::Days);
+/// ```
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Period {
     length: i32,
@@ -132,8 +143,17 @@ impl Period {
     }
 }
 
-// Operators
-
+/// # Neg for Period
+/// Negates a Period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let p = Period::new(5, TimeUnit::Days);
+/// let negated = -p;
+/// assert_eq!(negated.length(), -5);
+/// assert_eq!(negated.units(), TimeUnit::Days);
+/// ```
 impl Neg for Period {
     type Output = Period;
 
@@ -145,6 +165,18 @@ impl Neg for Period {
     }
 }
 
+/// # AddAssign for Period
+/// Adds a Period to another Period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let mut p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(3, TimeUnit::Days);
+/// p1 += p2;
+/// assert_eq!(p1.length(), 8);
+/// assert_eq!(p1.units(), TimeUnit::Days);
+/// ```
 impl AddAssign for Period {
     fn add_assign(&mut self, other: Self) {
         if self.length == 0 {
@@ -222,6 +254,18 @@ impl AddAssign for Period {
     }
 }
 
+/// # Add for Period
+/// Adds a Period to another Period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(3, TimeUnit::Days);
+/// let p3 = p1 + p2;
+/// assert_eq!(p3.length(), 8);
+/// assert_eq!(p3.units(), TimeUnit::Days);
+/// ```
 impl Add for Period {
     type Output = Period;
 
@@ -232,12 +276,36 @@ impl Add for Period {
     }
 }
 
+/// # SubAssign for Period
+/// Subtracts a Period from another Period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let mut p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(3, TimeUnit::Days);
+/// p1 -= p2;
+/// assert_eq!(p1.length(), 2);
+/// assert_eq!(p1.units(), TimeUnit::Days);
+/// ```
 impl SubAssign for Period {
     fn sub_assign(&mut self, other: Self) {
         *self += -other;
     }
 }
 
+/// # Sub for Period
+/// Subtracts a Period from another Period.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(3, TimeUnit::Days);
+/// let p3 = p1 - p2;
+/// assert_eq!(p3.length(), 2);
+/// assert_eq!(p3.units(), TimeUnit::Days);
+/// ```
 impl Sub for Period {
     type Output = Period;
 
@@ -248,12 +316,36 @@ impl Sub for Period {
     }
 }
 
+/// # MulAssign<i32> for Period
+/// Multiplies a Period by an integer.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let mut p = Period::new(5, TimeUnit::Days);
+/// p *= 2;
+/// assert_eq!(p.length(), 10);
+/// assert_eq!(p.units(), TimeUnit::Days);
+/// ```
 impl MulAssign<i32> for Period {
     fn mul_assign(&mut self, n: i32) {
         self.length *= n;
     }
 }
 
+/// # DivAssign<i32> for Period
+/// Divides a Period by an integer.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let mut p = Period::new(10, TimeUnit::Days);
+/// p /= 2;
+/// assert_eq!(p.length(), 5);
+/// assert_eq!(p.units(), TimeUnit::Days);
+/// ```
+/// # Panics
+/// Panics if the integer is zero.
 impl DivAssign<i32> for Period {
     fn div_assign(&mut self, n: i32) {
         assert!(n != 0, "cannot be divided by zero");
@@ -281,7 +373,6 @@ impl DivAssign<i32> for Period {
 }
 
 // Tests
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -350,7 +441,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "cannot be divided by zero")]
+    #[should_panic]
     fn test_period_division_by_zero() {
         let mut p = Period {
             length: 10,

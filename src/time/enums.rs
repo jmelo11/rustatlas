@@ -1,3 +1,5 @@
+/// # Frequency
+/// Enum representing a financial frequency.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Frequency {
     NoFrequency = -1,
@@ -15,6 +17,8 @@ pub enum Frequency {
     OtherFrequency = 999,
 }
 
+/// # TimeUnit
+/// Enum representing a time unit.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum TimeUnit {
     Days,
@@ -23,8 +27,9 @@ pub enum TimeUnit {
     Years,
 }
 
+/// # DateGenerationRule
+/// Enum representing a date generation rule.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-
 pub enum DateGenerationRule {
     Backward,
     Forward,
@@ -38,8 +43,9 @@ pub enum DateGenerationRule {
     CDS2015,
 }
 
+/// # BusinessDayConvention
+/// Enum representing a business day convention.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-
 pub enum BusinessDayConvention {
     Following,
     ModifiedFollowing,

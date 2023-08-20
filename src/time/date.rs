@@ -1,9 +1,28 @@
 use super::enums::TimeUnit;
 use super::period::Period;
-use chrono::{Datelike, Duration, Months, NaiveDate, NaiveDateTime};
+use chrono::{Datelike, Duration, Months, NaiveDate};
 use std::fmt::Display;
 use std::ops::{Add, Sub};
 
+/// # NaiveDateExt
+/// Extends the NaiveDate struct from the chrono crate.
+/// # Examples
+/// ```
+/// use chrono::NaiveDate;
+/// use crate::time::date::NaiveDateExt;
+///
+/// let date = NaiveDate::from_ymd_opt(2020, 2, 15).unwrap();
+/// assert_eq!(date.days_in_month(), 29);
+///
+/// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
+/// assert_eq!(date.days_in_year(), 366);
+///
+/// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
+/// assert!(date.is_leap_year());
+///
+/// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+/// assert_eq!(date.advance(15, TimeUnit::Days), NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
+/// ```
 trait NaiveDateExt {
     fn days_in_month(&self) -> i32;
     fn days_in_year(&self) -> i32;
@@ -65,6 +84,19 @@ impl NaiveDateExt for NaiveDate {
     }
 }
 
+/// # Add<Period> for NaiveDate
+/// Adds a Period to a NaiveDate.
+/// # Examples
+/// ```
+/// use chrono::NaiveDate;
+/// use crate::time::date::{NaiveDateExt, Add<Period>};
+/// use crate::time::period::Period;
+/// use crate::time::enums::TimeUnit;
+///
+/// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+/// let period = Period::new(15, TimeUnit::Days);
+/// assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
+/// ```
 impl Add<Period> for NaiveDate {
     type Output = NaiveDate;
 
@@ -74,6 +106,17 @@ impl Add<Period> for NaiveDate {
         return self.advance(n, units);
     }
 }
+
+/// # Date
+/// Wrapper around the NaiveDate struct from the chrono crate.
+/// # Examples
+/// ```
+/// use crate::time::date::Date;
+/// let date = Date::from_ymd(2020, 2, 15);
+/// assert_eq!(date.day(), 15);
+/// assert_eq!(date.month(), 2);
+/// assert_eq!(date.year(), 2020);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Date {
     base_date: NaiveDate,
@@ -131,6 +174,15 @@ impl Date {
     }
 }
 
+/// # Sub for Date
+/// Subtracts two Dates and returns the difference in days.
+/// # Examples
+/// ```
+/// use crate::time::date::Date;
+/// let date1 = Date::from_ymd(2020, 2, 15);
+/// let date2 = Date::from_ymd(2020, 2, 10);
+/// assert_eq!(date1 - date2, 5);
+/// ```
 impl Sub for Date {
     type Output = i64;
 
@@ -141,6 +193,15 @@ impl Sub for Date {
     }
 }
 
+/// # Add<Period> for Date
+/// Adds a Period to a Date.
+/// # Examples
+/// ```
+/// use crate::time::date::Date;
+/// let date = Date::from_ymd(2020, 1, 15);
+/// let period = Period::new(15, TimeUnit::Days);
+/// assert_eq!(date + period, Date::from_ymd(2020, 1, 30));
+/// ```
 impl Add<Period> for Date {
     type Output = Date;
 
@@ -150,6 +211,14 @@ impl Add<Period> for Date {
     }
 }
 
+/// # Display for Date
+/// Formats a Date as a string.
+/// # Examples
+/// ```
+/// use crate::time::date::Date;
+/// let date = Date::from_ymd(2020, 1, 15);
+/// assert_eq!(date.to_string(), "2020-01-15");
+/// ```
 impl Display for Date {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let base_date = self.base_date;
@@ -227,5 +296,9 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
         let period = Period::new(15, TimeUnit::Days);
         assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
+
+        let date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+        let period = Period::new(6, TimeUnit::Months);
+        assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 7, 1).unwrap());
     }
 }
