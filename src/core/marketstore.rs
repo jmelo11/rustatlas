@@ -1,21 +1,31 @@
 use crate::{
     currencies::{enums::Currency, exchangeratemanager::ExchangeRateManager},
     rates::yieldtermstructuremanager::YieldTermStructureManager,
+    time::date::Date,
 };
 
+/// # MarketStore
+/// A store for market data.
+#[derive(Clone)]
 pub struct MarketStore {
+    reference_date: Date,
+    local_currency: Currency,
     curve_manager: YieldTermStructureManager,
     exchange_rate_manager: ExchangeRateManager,
-    local_currency: Currency,
 }
 
 impl MarketStore {
-    pub fn new(local_currency: Currency) -> MarketStore {
+    pub fn new(reference_date: Date, local_currency: Currency) -> MarketStore {
         MarketStore {
+            reference_date,
+            local_currency,
             curve_manager: YieldTermStructureManager::new(),
             exchange_rate_manager: ExchangeRateManager::new(),
-            local_currency,
         }
+    }
+
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
     }
 
     pub fn local_currency(&self) -> Currency {

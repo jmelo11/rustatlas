@@ -1,15 +1,20 @@
 use crate::{
     core::{
-        enums::Side,
         meta::{MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketData},
         registry::Registrable,
     },
     currencies::enums::Currency,
-    rates::{interestrate::{InterestRate, RateDefinition}, traits::YieldProvider},
+    rates::{
+        interestrate::{InterestRate, RateDefinition},
+        traits::YieldProvider,
+    },
     time::date::Date,
 };
 
-use super::traits::{InterestAccrual, Payable};
+use super::{
+    enums::Side,
+    traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
+};
 
 pub struct FloatingRateCoupon {
     notional: f64,
@@ -84,10 +89,6 @@ impl InterestAccrual for FloatingRateCoupon {
     }
 }
 
-pub trait RequiresFixingRate: InterestAccrual {
-    fn set_fixing_rate(&mut self, fixing_rate: f64);
-}
-
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
@@ -130,7 +131,13 @@ impl Registrable for FloatingRateCoupon {
             self.fixing_start_date,
             self.fixing_end_date,
         );
-        let currency = MetaExchangeRate::new(self.currency.numeric_code(), self.payment_date);
+        let currency = MetaExchangeRate::new(self.currency, self.payment_date);
         return MetaMarketData::new(id, Some(discount), Some(forecast), Some(currency));
+    }
+}
+
+impl Expires for FloatingRateCoupon {
+    fn is_expired(&self, date: Date) -> bool {
+        return self.payment_date < date;
     }
 }

@@ -1,7 +1,6 @@
 use super::cashflowstream::CashflowStream;
 use crate::{
-    cashflows::{cashflow::SimpleCashflow, enums::Cashflow, fixedratecoupon::FixedRateCoupon},
-    core::enums::Side,
+    cashflows::{cashflow::SimpleCashflow, enums::{Cashflow, Side}, fixedratecoupon::FixedRateCoupon},
     currencies::enums::Currency,
     rates::interestrate::InterestRate,
     time::{date::Date, enums::Frequency, schedule::Schedule},

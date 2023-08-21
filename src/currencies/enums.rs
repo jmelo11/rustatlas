@@ -1,6 +1,8 @@
-use super::structs::{CLF, CLP, EUR, JPY, USD, ZAR};
+use super::structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR};
 use super::traits::CurrencyDetails;
 
+/// # Currency
+/// Enum for currencies supported by the library
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Currency {
     USD,
@@ -9,10 +11,11 @@ pub enum Currency {
     ZAR,
     CLP,
     CLF,
+    CHF,
 }
 
-impl Currency {
-    pub fn code(&self) -> String {
+impl CurrencyDetails for Currency {
+    fn code(&self) -> String {
         match self {
             Currency::USD => USD.code(),
             Currency::EUR => EUR.code(),
@@ -20,9 +23,10 @@ impl Currency {
             Currency::ZAR => ZAR.code(),
             Currency::CLP => CLP.code(),
             Currency::CLF => CLF.code(),
+            Currency::CHF => CHF.code(),
         }
     }
-    pub fn name(&self) -> String {
+    fn name(&self) -> String {
         match self {
             Currency::USD => USD.name(),
             Currency::EUR => EUR.name(),
@@ -30,9 +34,10 @@ impl Currency {
             Currency::ZAR => ZAR.name(),
             Currency::CLP => CLP.name(),
             Currency::CLF => CLF.name(),
+            Currency::CHF => CHF.name(),
         }
     }
-    pub fn symbol(&self) -> String {
+    fn symbol(&self) -> String {
         match self {
             Currency::USD => USD.symbol(),
             Currency::EUR => EUR.symbol(),
@@ -40,9 +45,10 @@ impl Currency {
             Currency::ZAR => ZAR.symbol(),
             Currency::CLP => CLP.symbol(),
             Currency::CLF => CLF.symbol(),
+            Currency::CHF => CHF.symbol(),
         }
     }
-    pub fn precision(&self) -> u8 {
+    fn precision(&self) -> u8 {
         match self {
             Currency::USD => USD.precision(),
             Currency::EUR => EUR.precision(),
@@ -50,9 +56,10 @@ impl Currency {
             Currency::ZAR => ZAR.precision(),
             Currency::CLP => CLP.precision(),
             Currency::CLF => CLF.precision(),
+            Currency::CHF => CHF.precision(),
         }
     }
-    pub fn numeric_code(&self) -> u16 {
+    fn numeric_code(&self) -> u16 {
         match self {
             Currency::USD => USD.numeric_code(),
             Currency::EUR => EUR.numeric_code(),
@@ -60,6 +67,7 @@ impl Currency {
             Currency::ZAR => ZAR.numeric_code(),
             Currency::CLP => CLP.numeric_code(),
             Currency::CLF => CLF.numeric_code(),
+            Currency::CHF => CHF.numeric_code(),
         }
     }
 }

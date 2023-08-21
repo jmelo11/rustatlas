@@ -1,23 +1,38 @@
-use crate::time::date::Date;
+use crate::{currencies::enums::Currency, time::date::Date};
 
+/// # MetaExchangeRate
+/// Meta data for an exchange rate. Holds the currency and the reference date required to fetch the
+/// exchange rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaExchangeRate {
-    pub currency: u16,
-    pub reference_date: Date,
+    currency: Currency,
+    reference_date: Date,
 }
 
 impl MetaExchangeRate {
-    pub fn new(currency: u16, reference_date: Date) -> MetaExchangeRate {
+    pub fn new(currency: Currency, reference_date: Date) -> MetaExchangeRate {
         MetaExchangeRate {
             currency,
             reference_date,
         }
     }
+
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
+
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
+    }
 }
+
+/// # MetaDiscountFactor
+/// Meta data for a discount factor. Holds the discount curve id and the reference date required to
+/// fetch the discount factor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaDiscountFactor {
-    pub discount_curve_id: usize,
-    pub reference_date: Date,
+    discount_curve_id: usize,
+    reference_date: Date,
 }
 
 impl MetaDiscountFactor {
@@ -27,13 +42,28 @@ impl MetaDiscountFactor {
             reference_date,
         }
     }
+
+    pub fn discount_curve_id(&self) -> usize {
+        self.discount_curve_id
+    }
+
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
+    }
+
+    pub fn set_reference_date(&mut self, reference_date: Date) {
+        self.reference_date = reference_date;
+    }
 }
 
+/// # MetaForwardRate
+/// Meta data for a forward rate. Holds the forward curve id and the start and end dates required
+/// to fetch the forward rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaForwardRate {
-    pub forward_curve_id: usize,
-    pub start_date: Date,
-    pub end_date: Date,
+    forward_curve_id: usize,
+    start_date: Date,
+    end_date: Date,
 }
 
 impl MetaForwardRate {
@@ -44,8 +74,22 @@ impl MetaForwardRate {
             end_date,
         }
     }
+
+    pub fn forward_curve_id(&self) -> usize {
+        self.forward_curve_id
+    }
+
+    pub fn start_date(&self) -> Date {
+        self.start_date
+    }
+
+    pub fn end_date(&self) -> Date {
+        self.end_date
+    }
 }
 
+/// # MetaMarketData
+/// Meta data for market data. Holds all the meta data required to fetch the market data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaMarketData {
     id: usize,
@@ -81,6 +125,8 @@ impl MetaMarketData {
     }
 }
 
+/// # MarketData
+/// Market data. Holds all the data required to price a cashflow.
 pub struct MarketData {
     id: usize,
     df: Option<f64>,

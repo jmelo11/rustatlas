@@ -58,61 +58,59 @@ impl Period {
         }
     }
 
-    pub fn frequency(&self) -> Result<Frequency, String> {
+    pub fn frequency(&self) -> Frequency {
         let length = self.length.abs(); // assuming `length` is i32 or some integer type
 
         if length == 0 {
             match self.units {
-                TimeUnit::Years => return Ok(Frequency::Once),
-                _ => return Ok(Frequency::NoFrequency),
+                TimeUnit::Years => return Frequency::Once,
+                _ => return Frequency::NoFrequency,
             }
         }
 
         match self.units {
             TimeUnit::Years => {
                 if length == 1 {
-                    Ok(Frequency::Annual)
+                    Frequency::Annual
                 } else {
-                    Ok(Frequency::OtherFrequency)
+                    Frequency::OtherFrequency
                 }
             }
             TimeUnit::Months => {
                 let quotient = 12 / length;
                 if 12 % length == 0 && length <= 12 {
                     match quotient {
-                        1 => Ok(Frequency::Annual),
-                        2 => Ok(Frequency::Semiannual),
-                        3 => Ok(Frequency::Quarterly),
-                        4 => Ok(Frequency::EveryFourthMonth),
-                        6 => Ok(Frequency::Bimonthly),
-                        12 => Ok(Frequency::Monthly),
-                        _ => Ok(Frequency::OtherFrequency),
+                        1 => Frequency::Annual,
+                        2 => Frequency::Semiannual,
+                        3 => Frequency::Quarterly,
+                        4 => Frequency::EveryFourthMonth,
+                        6 => Frequency::Bimonthly,
+                        12 => Frequency::Monthly,
+                        _ => Frequency::OtherFrequency,
                     }
                 } else {
-                    Ok(Frequency::OtherFrequency)
+                    Frequency::OtherFrequency
                 }
             }
             TimeUnit::Weeks => match length {
-                1 => Ok(Frequency::Weekly),
-                2 => Ok(Frequency::Biweekly),
-                4 => Ok(Frequency::EveryFourthWeek),
-                _ => Ok(Frequency::OtherFrequency),
+                1 => Frequency::Weekly,
+                2 => Frequency::Biweekly,
+                4 => Frequency::EveryFourthWeek,
+                _ => Frequency::OtherFrequency,
             },
             TimeUnit::Days => {
                 if length == 1 {
-                    Ok(Frequency::Daily)
+                    Frequency::Daily
                 } else {
-                    Ok(Frequency::OtherFrequency)
+                    Frequency::OtherFrequency
                 }
             }
-            _ => Err(format!("Unsupported time unit ({:?})", self.units)),
         }
     }
 
-    pub fn normalize(&mut self) -> Result<(), String> {
+    pub fn normalize(&mut self) {
         if self.length == 0 {
             self.units = TimeUnit::Days;
-            return Ok(());
         }
 
         match self.units {
@@ -129,9 +127,7 @@ impl Period {
                 }
             }
             TimeUnit::Weeks | TimeUnit::Years => {}
-            _ => return Err(format!("Unsupported time unit ({:?})", self.units)),
         }
-        Ok(())
     }
 
     pub fn length(&self) -> i32 {
@@ -247,8 +243,6 @@ impl AddAssign for Period {
                     }
                     _ => panic!("unknown time unit ({:?})", other.units),
                 },
-
-                _ => panic!("unknown time unit ({:?})", self.units),
             }
         }
     }
@@ -456,13 +450,9 @@ mod tests {
             length: 7,
             units: TimeUnit::Days,
         };
-        match p.normalize() {
-            Ok(_) => {
-                assert_eq!(p.length, 1);
-                assert_eq!(p.units, TimeUnit::Weeks);
-            }
-            Err(e) => panic!("Error: {}", e),
-        };
+        p.normalize();
+        assert_eq!(p.length, 1);
+        assert_eq!(p.units, TimeUnit::Weeks);
     }
 
     #[test]
@@ -471,13 +461,9 @@ mod tests {
             length: 12,
             units: TimeUnit::Months,
         };
-        match p.normalize() {
-            Ok(_) => {
-                assert_eq!(p.length, 1);
-                assert_eq!(p.units, TimeUnit::Years);
-            }
-            Err(e) => panic!("Error: {}", e),
-        };
+        p.normalize();
+        assert_eq!(p.length, 1);
+        assert_eq!(p.units, TimeUnit::Years);
     }
 
     #[test]
@@ -567,6 +553,4 @@ mod tests {
         };
         p1 += p2;
     }
-
-    // ... You can add more test cases for more specific scenarios.
 }

@@ -18,6 +18,7 @@ use crate::{
 /// let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
 /// assert_eq!(term_structure.reference_date(), reference_date);
 /// ```
+#[derive(Clone, Copy)]
 pub struct FlatForwardTermStructure {
     reference_date: Date,
     rate: InterestRate,

@@ -1,5 +1,9 @@
-use crate::{core::enums::Side, time::date::Date};
+use crate::time::date::Date;
 
+use super::enums::Side;
+
+/// # InterestAccrual
+/// A trait that defines the accrual period of an instrument.
 pub trait InterestAccrual {
     fn accrual_start_date(&self) -> Date;
     fn accrual_end_date(&self) -> Date;
@@ -21,8 +25,22 @@ pub trait InterestAccrual {
     }
 }
 
+/// # RequiresFixingRate
+/// A trait that defines if an instrument requires a fixing rate.
+pub trait RequiresFixingRate: InterestAccrual {
+    fn set_fixing_rate(&mut self, fixing_rate: f64);
+}
+
+/// # Payable
+/// A trait that defines the payment of an instrument.
 pub trait Payable {
     fn amount(&self) -> f64;
     fn side(&self) -> Side;
     fn payment_date(&self) -> Date;
+}
+
+/// # Expires
+/// A trait that defines if an instrument expires.
+pub trait Expires {
+    fn is_expired(&self, date: Date) -> bool;
 }

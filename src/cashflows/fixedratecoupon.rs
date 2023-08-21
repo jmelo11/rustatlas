@@ -1,6 +1,6 @@
 use super::cashflow::SimpleCashflow;
-use super::traits::{InterestAccrual, Payable};
-use crate::core::enums::Side;
+use super::enums::Side;
+use super::traits::{Expires, InterestAccrual, Payable};
 use crate::core::meta::MetaMarketData;
 use crate::core::registry::Registrable;
 use crate::currencies::enums::Currency;
@@ -77,10 +77,16 @@ impl Payable for FixedRateCoupon {
     }
 }
 
+impl Expires for FixedRateCoupon {
+    fn is_expired(&self, date: Date) -> bool {
+        return self.cashflow.is_expired(date);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::enums::Side;
+    use crate::cashflows::enums::Side;
     use crate::currencies::enums::Currency;
     use crate::rates::enums::Compounding;
     use crate::rates::interestrate::InterestRate;

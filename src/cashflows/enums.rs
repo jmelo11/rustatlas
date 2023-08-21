@@ -1,16 +1,27 @@
 use std::fmt::{Display, Formatter, Result};
 
 use crate::{
-    core::{enums::Side, meta::MetaMarketData, registry::Registrable},
+    core::{meta::MetaMarketData, registry::Registrable},
     time::date::Date,
 };
 
 use super::{
     cashflow::SimpleCashflow,
     fixedratecoupon::FixedRateCoupon,
-    floatingratecoupon::{FloatingRateCoupon, RequiresFixingRate},
-    traits::{InterestAccrual, Payable},
+    floatingratecoupon::FloatingRateCoupon,
+    traits::{InterestAccrual, Payable, RequiresFixingRate},
 };
+
+/// # Side
+/// Enum that represents the side of a cashflow.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Side {
+    Pay = -1,
+    Receive = 1,
+}
+
+/// # Cashflow
+/// Enum that represents a cashflow.
 pub enum Cashflow {
     Redemption(SimpleCashflow),
     Disbursement(SimpleCashflow),

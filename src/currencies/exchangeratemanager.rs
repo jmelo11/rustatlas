@@ -7,6 +7,7 @@ pub struct FxRecepy {
     risk_free_curve_id: usize,
 }
 
+#[derive(Clone)]
 pub struct ExchangeRateManager {
     fx_recepies: HashMap<Currency, usize>,
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
@@ -20,6 +21,14 @@ impl ExchangeRateManager {
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: HashMap::new(),
         }
+    }
+
+    pub fn with_exchange_rates(
+        &mut self,
+        exchange_rate_map: HashMap<(Currency, Currency), f64>,
+    ) -> &mut Self {
+        self.exchange_rate_map = exchange_rate_map;
+        return self;
     }
 
     pub fn add_fx_recepy(&mut self, fx_recepy: FxRecepy) {
@@ -88,8 +97,8 @@ impl ExchangeRateManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::currencies::enums::Currency::{EUR, USD};
-        
+    use crate::currencies::enums::Currency::{CLP, EUR, USD};
+
     #[test]
     fn test_same_currency() {
         let mut manager = ExchangeRateManager {
@@ -146,5 +155,18 @@ mod tests {
 
         assert_eq!(manager.get_exchange_rate(EUR, USD).unwrap(), 1.0 / 0.85);
         assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
+    }
+
+    #[test]
+    fn test_triangulation_case() {
+        let mut manager = ExchangeRateManager::new();
+        manager.add_exchange_rate(CLP, USD, 800.0);
+        manager.add_exchange_rate(USD, EUR, 1.1);
+
+        assert_eq!(manager.get_exchange_rate(CLP, EUR).unwrap(), 1.1 * 800.0);
+        assert_eq!(
+            manager.get_exchange_rate(EUR, CLP).unwrap(),
+            1.0 / (1.1 * 800.0)
+        );
     }
 }

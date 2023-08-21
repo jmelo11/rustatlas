@@ -6,3 +6,7 @@ pub mod models;
 pub mod rates;
 pub mod time;
 pub mod visitors;
+
+mod examples{
+    
+}

@@ -1,11 +1,32 @@
 use super::traits::CurrencyDetails;
 
+/// # USD
+/// Struct for USD currency
 pub struct USD;
+
+/// # EUR
+/// Struct for EUR currency
 pub struct EUR;
+
+/// # JPY
+/// Struct for JPY currency
 pub struct JPY;
+
+/// # ZAR
+/// Struct for ZAR currency
 pub struct ZAR;
+
+/// # CLP
+/// Struct for CLP currency
 pub struct CLP;
+
+/// # CLF
+/// Struct for CLF currency
 pub struct CLF;
+
+/// # CHF
+/// Struct for CHF currency
+pub struct CHF;
 
 impl CurrencyDetails for USD {
     fn code(&self) -> String {
@@ -112,5 +133,23 @@ impl CurrencyDetails for CLF {
     }
     fn numeric_code(&self) -> u16 {
         return 990;
+    }
+}
+
+impl CurrencyDetails for CHF {
+    fn code(&self) -> String {
+        return "CHF".to_string();
+    }
+    fn name(&self) -> String {
+        return "Swiss Franc".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "Fr".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 756;
     }
 }

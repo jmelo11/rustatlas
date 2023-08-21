@@ -1,3 +1,5 @@
+/// # CurrencyDetails
+/// Trait for currency details
 pub trait CurrencyDetails {
     fn code(&self) -> String;
     fn name(&self) -> String;
