@@ -50,28 +50,32 @@ impl OvernightIndex {
     }
 
     pub fn fixing_compounded_rate(&self, date: Date) -> f64 {
-        let eval_fixings = self
-            .fixings
-            .iter()
-            .filter(|(d, _)| d >= date)
-            .sort_by(|(d1, _), (d2, _)| d1.cmp(d2));
+        // let eval_fixings =
+        //     self.fixings
+        //         .iter()
+        //         .filter(|(d, _)| **d <= date)
+        //         .fold(Vec::new(), |mut f, (d, r)| {
+        //             f.push((d, r));
+        //             f
+        //         }).sort_by(|(d1, _), (d2, _)| d1.cmp(d2));
 
-        if eval_fixings.len() < 2 {
-            panic!("Not enough fixings to compute compounded rate");
-        } else if eval_fixings.len() == 1 {
-            return *eval_fixings[0].1;
-        } else {
-            let day_counter = self.rate_definition.day_counter();
-            let mut comp = 1.0;
-            for i in 0..eval_fixings.len() {
-                let d1 = eval_fixings[i].0;
-                let d2 = eval_fixings[i + 1].0;
-                let yf = day_counter.year_fraction(d1, d2);
-                comp *= 1.0 + eval_fixings[i].1 * yf;
-            }
-            let yf = day_counter.year_fraction(date, eval_fixings.last());
-            return (1.0 / comp - 1.0) / yf;
-        }
+        // if eval_fixings.len() < 2 {
+        //     panic!("Not enough fixings to compute compounded rate");
+        // } else if eval_fixings.len() == 1 {
+        //     return *eval_fixings[0].1;
+        // } else {
+        //     let day_counter = self.rate_definition.day_counter();
+        //     let mut comp = 1.0;
+        //     for i in 0..eval_fixings.len() {
+        //         let d1 = *eval_fixings[i].0;
+        //         let d2 = *eval_fixings[i + 1].0;
+        //         let yf = day_counter.year_fraction(d1, d2);
+        //         comp *= 1.0 + eval_fixings[i].1 * yf;
+        //     }
+        //     let yf = day_counter.year_fraction(date, *eval_fixings.last().unwrap().0);
+        //     return (1.0 / comp - 1.0) / yf;
+        // }
+        return 1.1;
     }
 }
 

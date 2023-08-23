@@ -87,7 +87,6 @@ impl ExchangeRateStore {
         }
         None
     }
-
 }
 
 #[cfg(test)]
@@ -130,10 +129,7 @@ mod tests {
             exchange_rate_cache: HashMap::new(),
         };
 
-        assert_eq!(
-            manager.get_exchange_rate(USD, EUR),
-            Err("Exchange rate not found for the given currencies".into())
-        );
+        assert_eq!(manager.get_exchange_rate(USD, EUR), None);
     }
 
     #[test]

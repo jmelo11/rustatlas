@@ -148,8 +148,10 @@ impl Registrable for FloatingRateCoupon {
             self.forecast_curve_id,
             self.fixing_start_date,
             self.fixing_end_date,
+            self.rate_definition.compounding(),
+            self.rate_definition.frequency(),
         );
-        let currency = MetaExchangeRate::new(self.currency, self.payment_date);
+        let currency = MetaExchangeRate::new(self.currency, None, None);
         return MetaMarketDataNode::new(id, Some(discount), Some(forecast), Some(currency));
     }
 }

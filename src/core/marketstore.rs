@@ -48,10 +48,14 @@ impl MarketStore {
     }
 
     pub fn get_exchange_rate(
-        &self,
+        &mut self,
         first_currency: Currency,
-        second_currency: Currency,
+        second_currency: Option<Currency>,
     ) -> Option<f64> {
+        let second_currency = match second_currency {
+            Some(ccy) => ccy,
+            None => self.local_currency,
+        };
         return self
             .exchange_rate_manager
             .get_exchange_rate(first_currency, second_currency);

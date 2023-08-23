@@ -2,10 +2,6 @@ use crate::{cashflows::enums::Cashflow, core::traits::Registrable};
 
 pub trait CashflowsBounds {
     fn cashflows(&self) -> &Vec<Cashflow>;
-    fn sort_stream(&mut self) {
-        self.cashflows()
-            .sort_by(|a, b| a.registry_id().cmp(&b.registry_id()));
-    }
 
     fn lower_bound(&self) -> usize {
         match self.cashflows().first() {

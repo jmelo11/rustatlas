@@ -14,14 +14,14 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaExchangeRate {
     first_currency: Currency,
-    second_currency: Currency,
+    second_currency: Option<Currency>,
     reference_date: Option<Date>,
 }
 
 impl MetaExchangeRate {
     pub fn new(
         first_currency: Currency,
-        second_currency: Currency,
+        second_currency: Option<Currency>,
         reference_date: Option<Date>,
     ) -> MetaExchangeRate {
         MetaExchangeRate {
@@ -35,7 +35,7 @@ impl MetaExchangeRate {
         self.first_currency
     }
 
-    pub fn second_currency(&self) -> Currency {
+    pub fn second_currency(&self) -> Option<Currency> {
         self.second_currency
     }
 

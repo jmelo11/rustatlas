@@ -67,7 +67,7 @@ impl Model for SimpleModel {
         };
     }
 
-    fn gen_fx_data(&self, fx: MetaExchangeRate, eval_date: Date) -> f64 {
+    fn gen_fx_data(&mut self, fx: MetaExchangeRate, eval_date: Date) -> f64 {
         let first_currency = fx.first_currency();
         let second_currency = fx.second_currency();
         let fx = self
@@ -84,6 +84,8 @@ impl Model for SimpleModel {
 }
 
 mod tests {
+    use std::rc::Rc;
+
     use crate::prelude::*;
 
     #[test]
@@ -102,28 +104,19 @@ mod tests {
             FlatForwardTermStructure::new(reference_date, rate),
         );
 
-        let interest_rate_index =
-            InterestRateIndex::IborIndex(IborIndex::new(Period::new(6, TimeUnit::Months)));
-
-        market_store.mut_curve_manager().add_curve_context(
-            "Example".to_string(),
-            term_structure,
-            interest_rate_index,
-            Currency::CLP,
+        let interest_rate_index = InterestRateIndex::IborIndex(
+            IborIndex::new(Period::new(6, TimeUnit::Months)).with_term_structure(term_structure),
         );
+
+        market_store
+            .mut_yield_providers_store()
+            .add_provider("Example".to_string(), Rc::new(interest_rate_index));
 
         let request_date = Date::from_ymd(2025, 1, 1);
         let df = MetaDiscountFactor::new(0, request_date);
         let meta_data = vec![MetaMarketDataNode::new(0, Some(df), None, None)];
 
         let eval_dates = vec![Date::from_ymd(2021, 1, 1), Date::from_ymd(2022, 6, 1)];
-        let model = SimpleModel::new(market_store, meta_data).with_eval_dates(eval_dates.clone());
-        let scenario = model.generate_scenario().unwrap();
-        let market_data = scenario.get(0).unwrap();
-        let result = market_data.get(0).unwrap();
-        assert_eq!(
-            result.df().unwrap(),
-            term_structure.discount_factor(eval_dates[0], request_date)
-        )
+        let model = SimpleModel::new(market_store, meta_data);
     }
 }

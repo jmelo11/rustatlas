@@ -64,7 +64,7 @@ impl Registrable for SimpleCashflow {
             None => panic!("SimpleCashflow has not been registered"),
         };
         let discount = MetaDiscountFactor::new(self.discount_curve_id, self.payment_date);
-        let currency = MetaExchangeRate::new(self.currency, self.payment_date);
+        let currency = MetaExchangeRate::new(self.currency, None, None);
         return MetaMarketDataNode::new(id, Some(discount), None, Some(currency));
     }
 }

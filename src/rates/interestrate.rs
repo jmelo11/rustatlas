@@ -4,16 +4,11 @@ use crate::time::daycounters::enums::DayCounter;
 use crate::time::daycounters::traits::DayCountProvider;
 use crate::time::enums::Frequency;
 
-use super::traits::YieldProvider;
-
 /// # RateDefinition
 /// Struct that defines a rate.
 /// # Example
 /// ```
-/// use rustatlas::rates::enums::Compounding;
-/// use rustatlas::time::enums::Frequency;
-/// use rustatlas::time::daycounters::enums::DayCounter;
-/// use rustatlas::rates::interestrate::RateDefinition;
+/// use rustatlas::prelude::*
 /// let rate_definition = RateDefinition::new(Compounding::Simple, Frequency::Annual, DayCounter::Actual360);
 /// assert_eq!(rate_definition.compounding(), Compounding::Simple);
 /// assert_eq!(rate_definition.frequency(), Frequency::Annual);
@@ -64,10 +59,7 @@ impl RateDefinition {
 /// Struct that defines an interest rate.
 /// # Example
 /// ```
-/// use rustatlas::rates::enums::Compounding;
-/// use rustatlas::time::enums::Frequency;
-/// use rustatlas::time::daycounters::enums::DayCounter;
-/// use rustatlas::rates::interestrate::InterestRate;
+/// use rustatlas::prelude::*;
 /// let rate = InterestRate::new(0.05, Compounding::Simple, Frequency::Annual, DayCounter::Actual360);
 /// assert_eq!(rate.rate(), 0.05);
 /// assert_eq!(rate.compounding(), Compounding::Simple);
@@ -203,13 +195,7 @@ impl InterestRate {
 /// Implement YieldProvider for InterestRate.
 /// # Example
 /// ```
-/// use rustatlas::rates::enums::Compounding;
-/// use rustatlas::time::enums::Frequency;
-/// use rustatlas::time::daycounters::enums::DayCounter;
-/// use rustatlas::rates::interestrate::InterestRate;
-/// use rustatlas::rates::traits::YieldProvider;
-/// use rustatlas::time::date::Date;
-/// use rustatlas::time::daycounters::traits::DayCountProvider;
+/// use rustatlas::prelude::*;
 /// let start_date = Date::from_ymd(2020, 1, 1);
 /// let end_date = Date::from_ymd(2020, 2, 1);
 /// let day_count = DayCounter::Actual360;
@@ -223,10 +209,7 @@ impl InterestRate {
 
 #[cfg(test)]
 mod tests {
-    use crate::rates::enums::Compounding;
-    use crate::rates::interestrate::{InterestRate, RateDefinition};
-    use crate::time::daycounters::enums::DayCounter;
-    use crate::time::enums::Frequency;
+    use crate::prelude::*;
 
     #[test]
     fn test_rate_definition_new() {
@@ -242,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_rate_definition_common_definition() {
-        let rd = RateDefinition::common_definition();
+        let rd = RateDefinition::default();
         assert_eq!(rd.compounding(), Compounding::Simple);
         assert_eq!(rd.frequency(), Frequency::Annual);
         assert_eq!(rd.day_counter(), DayCounter::Actual360);

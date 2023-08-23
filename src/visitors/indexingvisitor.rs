@@ -1,6 +1,5 @@
 use crate::{
-    core::{meta::MetaMarketDataNode, traits::Registrable},
-    instruments::fixedrateinstrument::FixedRateInstrument,
+    core::meta::MetaMarketDataNode, instruments::fixedrateinstrument::FixedRateInstrument,
 };
 
 use super::traits::Visit;
@@ -15,16 +14,12 @@ impl IndexingVisitor {
             meta_market_data: Vec::new(),
         }
     }
-
-    pub fn meta_market_data(&self) -> &Vec<MetaMarketDataNode> {
-        &self.meta_market_data
-    }
 }
 
 impl Visit<FixedRateInstrument> for IndexingVisitor {
-    fn visit(&mut self, instruments: &mut Vec<FixedRateInstrument>) {}
+    fn visit(&mut self, instruments: &mut [&FixedRateInstrument]) {}
 
-    fn par_visit(&mut self, instruments: &mut Vec<FixedRateInstrument>) {
+    fn par_visit(&mut self, instruments: &mut [&FixedRateInstrument]) {
         self.visit(instruments);
     }
 }

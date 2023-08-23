@@ -8,9 +8,9 @@ use crate::{
 pub trait Model {
     fn gen_fwd_data(&self, fwd: MetaForwardRate, eval_date: Date) -> f64;
     fn gen_df_data(&self, df: MetaDiscountFactor, eval_date: Date) -> f64;
-    fn gen_fx_data(&self, fx: MetaExchangeRate, eval_date: Date) -> f64;
+    fn gen_fx_data(&mut self, fx: MetaExchangeRate, eval_date: Date) -> f64;
 
-    fn gen_node(&self, eval_date: Date, meta_data: &MetaMarketDataNode) -> MarketDataNode {
+    fn gen_node(&mut self, eval_date: Date, meta_data: &MetaMarketDataNode) -> MarketDataNode {
         let id = meta_data.id();
         let df = match meta_data.df() {
             Some(df) => Some(self.gen_df_data(df, eval_date)),
