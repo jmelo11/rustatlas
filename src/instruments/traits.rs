@@ -1,32 +1,14 @@
-use crate::{cashflows::enums::Cashflow, core::registry::Registrable};
+use crate::{cashflows::enums::Cashflow, core::traits::Registrable};
 
-pub struct CashflowStream {
-    cashflows: Vec<Cashflow>,
-}
-
-impl CashflowStream {
-    pub fn new(cashflows: Vec<Cashflow>) -> CashflowStream {
-        CashflowStream { cashflows }
-    }
-
-    pub fn cashflows(&mut self) -> &mut Vec<Cashflow> {
-        return &mut self.cashflows;
-    }
-}
-pub trait CashflowStreamBounds {
-    fn sort_stream(&mut self);
-    fn lower_bound(&self) -> usize;
-    fn upper_bound(&self) -> usize;
-}
-
-impl CashflowStreamBounds for CashflowStream {
+pub trait CashflowsBounds {
+    fn cashflows(&self) -> &Vec<Cashflow>;
     fn sort_stream(&mut self) {
-        self.cashflows
+        self.cashflows()
             .sort_by(|a, b| a.registry_id().cmp(&b.registry_id()));
     }
 
     fn lower_bound(&self) -> usize {
-        match self.cashflows.first() {
+        match self.cashflows().first() {
             Some(cashflow) => match cashflow.registry_id() {
                 Some(id) => id,
                 None => panic!("First cashflow has no registry_id"),
@@ -36,7 +18,7 @@ impl CashflowStreamBounds for CashflowStream {
     }
 
     fn upper_bound(&self) -> usize {
-        match self.cashflows.last() {
+        match self.cashflows().last() {
             Some(cashflow) => match cashflow.registry_id() {
                 Some(id) => id,
                 None => panic!("Last cashflow has no registry_id"),

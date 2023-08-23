@@ -1,5 +1,8 @@
 use crate::{
-    rates::{enums::Compounding, traits::YieldProvider},
+    rates::{
+        enums::Compounding,
+        traits::{HasReferenceDate, YieldProvider},
+    },
     time::{date::Date, enums::Frequency},
 };
 
@@ -13,11 +16,22 @@ pub enum YieldTermStructure {
     Other,
 }
 
-impl YieldProvider for YieldTermStructure {
-    fn discount_factor(&self, start: Date, end: Date) -> f64 {
+impl HasReferenceDate for YieldTermStructure {
+    fn reference_date(&self) -> Date {
         match self {
             YieldTermStructure::FlatForwardTermStructure(term_structure) => {
-                term_structure.discount_factor(start, end)
+                term_structure.reference_date()
+            }
+            YieldTermStructure::Other => panic!("No reference date for this term structure"),
+        }
+    }
+}
+
+impl YieldProvider for YieldTermStructure {
+    fn discount_factor(&self, date: Date) -> f64 {
+        match self {
+            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+                term_structure.discount_factor(date)
             }
             YieldTermStructure::Other => panic!("No discount for this term structure"),
         }
@@ -35,15 +49,6 @@ impl YieldProvider for YieldTermStructure {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
             YieldTermStructure::Other => panic!("No forward rate for this term structure"),
-        }
-    }
-
-    fn compound_factor(&self, start: Date, end: Date) -> f64 {
-        match self {
-            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
-                term_structure.compound_factor(start, end)
-            }
-            YieldTermStructure::Other => panic!("No compound factor for this term structure"),
         }
     }
 }

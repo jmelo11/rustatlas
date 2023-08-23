@@ -10,9 +10,7 @@ use crate::time::date::Date;
 /// where Y1, M1, D1 are the year, month and day of the start date, and Y2, M2, D2 are the year, month and day of the end date.
 /// # Example
 /// ```
-/// use crate::time::daycounters::thirty360::Thirty360;
-/// use crate::time::traits::DayCountProvider;
-/// use crate::time::date::Date;
+/// use rustatlas::prelude::*;
 ///
 /// let start = Date::from_ymd(2020, 1, 1);
 /// let end = Date::from_ymd(2020, 2, 1);
@@ -24,45 +22,25 @@ pub struct Thirty360;
 
 impl DayCountProvider for Thirty360 {
     fn day_count(&self, start: Date, end: Date) -> i64 {
-        let mut d1 = start.day() as i32;
-        let mut d2 = end.day() as i32;
-        let mut m1 = start.month() as i32;
-        let mut m2 = end.month() as i32;
-        let mut y1 = start.year();
-        let mut y2 = end.year();
+        // Day dd1 = d1.dayOfMonth(), dd2 = d2.dayOfMonth();
+        // Month mm1 = d1.month(), mm2 = d2.month();
+        // Year yy1 = d1.year(), yy2 = d2.year();
 
-        if d1 == 31 {
-            d1 = 30;
-        }
-        if d2 == 31 {
-            d2 = 30;
-        }
+        // if (dd1 == 31) { dd1 = 30; }
+        // if (dd2 == 31 && dd1 == 30) { dd2 = 30; }
 
-        if d1 == 30 && d2 == 30 {
-            d2 = 31;
-        }
+        // return 360*(yy2-yy1) + 30*(mm2-mm1) + (dd2-dd1);
+        let d1 = start.day() as i64;
+        let d2 = end.day() as i64;
+        let m1 = start.month() as i64;
+        let m2 = end.month() as i64;
+        let y1 = start.year() as i64;
+        let y2 = end.year() as i64;
 
-        if d1 == 30 && d2 == 31 {
-            d2 = 1;
-            m2 += 1;
-        }
+        let dd1 = if d1 == 31 { 30 } else { d1 };
+        let dd2 = if d2 == 31 && dd1 == 30 { 30 } else { d2 };
 
-        if d1 == 31 && d2 == 30 {
-            d2 = 1;
-            m2 += 1;
-        }
-
-        if d1 == 31 && d2 == 31 {
-            d2 = 1;
-            m2 += 1;
-        }
-
-        if m1 == 12 && m2 == 1 {
-            m2 = 12;
-            y2 -= 1;
-        }
-
-        return (360 * (y2 - y1) + 30 * (m2 - m1) + (d2 - d1)) as i64;
+        return 360 * (y2 - y1) + 30 * (m2 - m1) + (dd2 - dd1);
     }
 
     fn year_fraction(&self, start: Date, end: Date) -> f64 {

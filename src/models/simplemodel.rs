@@ -1,92 +1,129 @@
-use std::ops::Deref;
-
 use crate::core::marketstore::MarketStore;
 
-use crate::core::meta::{MarketData, MetaDiscountFactor, MetaExchangeRate, MetaForwardRate};
+use crate::core::meta::{
+    MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketDataNode,
+};
 use crate::rates::traits::YieldProvider;
-use crate::{core::meta::MetaMarketData, time::date::Date};
+use crate::time::date::Date;
 
-use super::traits::{Model, Scenario};
+use super::traits::Model;
 
 /// # SimpleModel
 /// A simple model that provides market data based in the current market state.
+///
+/// ## Parameters
+/// * `market_store` - The market store.
+/// * `meta_market_data` - The meta market data.
+/// * `eval_dates` - The evaluation dates.
+#[derive(Clone)]
 pub struct SimpleModel {
     market_store: MarketStore,
-    meta_market_data: Vec<MetaMarketData>,
-    eval_dates: Vec<Date>,
+    meta_market_data: Vec<MetaMarketDataNode>,
 }
 
 impl SimpleModel {
-    pub fn new(market_store: MarketStore, meta_market_data: Vec<MetaMarketData>) -> SimpleModel {
+    pub fn new(
+        market_store: MarketStore,
+        meta_market_data: Vec<MetaMarketDataNode>,
+    ) -> SimpleModel {
         SimpleModel {
             market_store,
             meta_market_data,
-            eval_dates: Vec::new(),
         }
-    }
-
-    pub fn with_eval_dates(mut self, eval_dates: Vec<Date>) -> SimpleModel {
-        self.eval_dates = eval_dates;
-        return self;
     }
 }
 
 impl Model for SimpleModel {
-    fn eval_dates(&self) -> Vec<Date> {
-        return self.eval_dates;
-    }
-
-    fn generate_df_data(&self, df: MetaDiscountFactor, eval_date: Date) -> f64 {
-        let id = df.discount_curve_id();
+    fn gen_df_data(&self, df: MetaDiscountFactor, eval_date: Date) -> f64 {
         let date = df.reference_date();
-        return 1.0;
-    }
-
-    fn generate_fwd_data(&self, fwd: MetaForwardRate, eval_date: Date) -> f64 {
-        let id = fwd.forward_curve_id();
-        let start_date = fwd.start_date();
-
-        return 0.0;
-    }
-
-    fn generate_fx_data(&self, fx: MetaExchangeRate, eval_date: Date) -> f64 {
-        // pending
-        return 0.0;
-    }
-
-    fn generate_scenario(&self) -> Option<Scenario> {
-        let mut scenario = Vec::new();
-        for eval_date in self.eval_dates.iter() {
-            let market_data = self.generate_market_data(*eval_date);
-            scenario.push(market_data);
+        if eval_date > date {
+            return 0.0;
+        } else if eval_date == date {
+            return 1.0;
         }
-        return Some(scenario);
+        let id: usize = df.provider_id();
+        let provider = self.market_store.get_provider_by_id(id);
+        let df = match provider {
+            Some(curve) => {
+                return curve.discount_factor(date);
+            }
+            None => panic!("No curve found for id {}", id),
+        };
     }
 
-    fn generate_market_data(&self, eval_date: Date) -> Vec<MarketData> {
-        let mut market_data = Vec::new();
-        let mut results = (Option::None, Option::None, Option::None);
-        for meta in self.meta_market_data.iter() {
-            match meta.df() {
-                Some(df) => {
-                    results.0 = Some(self.generate_df_data(df, eval_date));
-                }
-                None => (),
+    fn gen_fwd_data(&self, fwd: MetaForwardRate, eval_date: Date) -> f64 {
+        let id = fwd.provider_id();
+        let provider = self.market_store.get_provider_by_id(id);
+        let fwd = match provider {
+            Some(curve) => {
+                return curve.forward_rate(
+                    fwd.start_date(),
+                    fwd.end_date(),
+                    fwd.compounding(),
+                    fwd.frequency(),
+                );
             }
-            match meta.fwd() {
-                Some(fwd) => {
-                    results.1 = Some(self.generate_fwd_data(fwd, eval_date));
-                }
-                None => (),
-            }
-            match meta.fx() {
-                Some(fx) => {
-                    results.2 = Some(self.generate_fx_data(fx, eval_date));
-                }
-                None => (),
-            }
-            market_data.push(MarketData::new(meta.id(), results.0, results.1, results.2));
+            None => panic!("No curve found for id {}", id),
+        };
+    }
+
+    fn gen_fx_data(&self, fx: MetaExchangeRate, eval_date: Date) -> f64 {
+        let first_currency = fx.first_currency();
+        let second_currency = fx.second_currency();
+        let fx = self
+            .market_store
+            .get_exchange_rate(first_currency, second_currency);
+        match fx {
+            Some(fx) => return fx,
+            None => panic!(
+                "No exchange rate found for {:?} and {:?}",
+                first_currency, second_currency
+            ),
         }
-        return market_data;
+    }
+}
+
+mod tests {
+    use crate::prelude::*;
+
+    #[test]
+    fn test_market_data_generation() {
+        let reference_date = Date::from_ymd(2021, 1, 1);
+        let local_currency = Currency::USD;
+        let mut market_store = MarketStore::new(reference_date, local_currency);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let term_structure = YieldTermStructure::FlatForwardTermStructure(
+            FlatForwardTermStructure::new(reference_date, rate),
+        );
+
+        let interest_rate_index =
+            InterestRateIndex::IborIndex(IborIndex::new(Period::new(6, TimeUnit::Months)));
+
+        market_store.mut_curve_manager().add_curve_context(
+            "Example".to_string(),
+            term_structure,
+            interest_rate_index,
+            Currency::CLP,
+        );
+
+        let request_date = Date::from_ymd(2025, 1, 1);
+        let df = MetaDiscountFactor::new(0, request_date);
+        let meta_data = vec![MetaMarketDataNode::new(0, Some(df), None, None)];
+
+        let eval_dates = vec![Date::from_ymd(2021, 1, 1), Date::from_ymd(2022, 6, 1)];
+        let model = SimpleModel::new(market_store, meta_data).with_eval_dates(eval_dates.clone());
+        let scenario = model.generate_scenario().unwrap();
+        let market_data = scenario.get(0).unwrap();
+        let result = market_data.get(0).unwrap();
+        assert_eq!(
+            result.df().unwrap(),
+            term_structure.discount_factor(eval_dates[0], request_date)
+        )
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     core::{
-        meta::{MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketData},
-        registry::Registrable,
+        meta::{MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketDataNode},
+        traits::Registrable,
     },
     currencies::enums::Currency,
     rates::{
@@ -16,6 +16,21 @@ use super::{
     traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
 };
 
+/// # FloatingRateCoupon
+/// A floating rate coupon is a cashflow that pays a floating rate of interest on a notional amount.
+///
+/// ## Parameters
+/// * `notional` - The notional amount of the coupon
+/// * `spread` - The spread over the floating rate
+/// * `accrual_start_date` - The date from which the coupon accrues interest
+/// * `accrual_end_date` - The date until which the coupon accrues interest
+/// * `payment_date` - The date on which the coupon is paid
+/// * `fixing_date` - The date from which the floating rate is observed
+/// * `rate_definition` - The definition of the floating rate
+/// * `discount_curve_id` - The ID of the discount curve used to calculate the present value of the coupon
+/// * `forecast_curve_id` - The ID of the forecast curve used to calculate the present value of the coupon
+/// * `currency` - The currency of the coupon
+/// * `side` - The side of the coupon (Pay or Receive)
 pub struct FloatingRateCoupon {
     notional: f64,
     spread: f64,
@@ -33,6 +48,7 @@ pub struct FloatingRateCoupon {
     forecast_curve_id: usize,
     currency: Currency,
     side: Side,
+    in_arrears: bool,
     registry_id: Option<usize>,
 }
 
@@ -50,6 +66,7 @@ impl FloatingRateCoupon {
         forecast_curve_id: usize,
         currency: Currency,
         side: Side,
+        in_arrears: bool,
     ) -> FloatingRateCoupon {
         FloatingRateCoupon {
             notional,
@@ -66,6 +83,7 @@ impl FloatingRateCoupon {
             forecast_curve_id,
             currency,
             side,
+            in_arrears,
             registry_id: None,
         }
     }
@@ -120,7 +138,7 @@ impl Registrable for FloatingRateCoupon {
         self.registry_id = Some(id);
     }
 
-    fn meta_market_data(&self) -> MetaMarketData {
+    fn meta_market_data(&self) -> MetaMarketDataNode {
         let id = match self.registry_id {
             Some(id) => id,
             None => panic!("FloatingRateCoupon has not been registered"),
@@ -132,7 +150,7 @@ impl Registrable for FloatingRateCoupon {
             self.fixing_end_date,
         );
         let currency = MetaExchangeRate::new(self.currency, self.payment_date);
-        return MetaMarketData::new(id, Some(discount), Some(forecast), Some(currency));
+        return MetaMarketDataNode::new(id, Some(discount), Some(forecast), Some(currency));
     }
 }
 

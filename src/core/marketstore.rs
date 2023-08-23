@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use crate::{
-    currencies::{enums::Currency, exchangeratemanager::ExchangeRateManager},
-    rates::yieldtermstructuremanager::YieldTermStructureManager,
+    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
+    rates::traits::{HasReferenceDate, YieldProvider},
+    rates::yieldproviderstore::YieldProviderStore,
     time::date::Date,
 };
 
@@ -10,8 +13,8 @@ use crate::{
 pub struct MarketStore {
     reference_date: Date,
     local_currency: Currency,
-    curve_manager: YieldTermStructureManager,
-    exchange_rate_manager: ExchangeRateManager,
+    exchange_rate_manager: ExchangeRateStore,
+    yield_provider_store: YieldProviderStore,
 }
 
 impl MarketStore {
@@ -19,24 +22,48 @@ impl MarketStore {
         MarketStore {
             reference_date,
             local_currency,
-            curve_manager: YieldTermStructureManager::new(),
-            exchange_rate_manager: ExchangeRateManager::new(),
+            exchange_rate_manager: ExchangeRateStore::new(),
+            yield_provider_store: YieldProviderStore::new(),
         }
-    }
-
-    pub fn reference_date(&self) -> Date {
-        self.reference_date
     }
 
     pub fn local_currency(&self) -> Currency {
         self.local_currency
     }
 
-    pub fn curve_manager(&mut self) -> &mut YieldTermStructureManager {
-        &mut self.curve_manager
+    pub fn exchange_rate_manager(&self) -> &ExchangeRateStore {
+        &self.exchange_rate_manager
     }
 
-    pub fn exchange_rate_manager(&mut self) -> &mut ExchangeRateManager {
+    pub fn mut_exchange_rate_manager(&mut self) -> &mut ExchangeRateStore {
         &mut self.exchange_rate_manager
+    }
+
+    pub fn yield_provider_store(&self) -> &YieldProviderStore {
+        &self.yield_provider_store
+    }
+
+    pub fn mut_yield_providers_store(&mut self) -> &mut YieldProviderStore {
+        &mut self.yield_provider_store
+    }
+
+    pub fn get_exchange_rate(
+        &self,
+        first_currency: Currency,
+        second_currency: Currency,
+    ) -> Option<f64> {
+        return self
+            .exchange_rate_manager
+            .get_exchange_rate(first_currency, second_currency);
+    }
+
+    pub fn get_provider_by_id(&self, id: usize) -> Option<&Rc<dyn YieldProvider>> {
+        return self.yield_provider_store.get_provider_by_id(id);
+    }
+}
+
+impl HasReferenceDate for MarketStore {
+    fn reference_date(&self) -> Date {
+        self.reference_date
     }
 }

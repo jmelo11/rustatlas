@@ -1,13 +1,25 @@
 use super::cashflow::SimpleCashflow;
 use super::enums::Side;
 use super::traits::{Expires, InterestAccrual, Payable};
-use crate::core::meta::MetaMarketData;
-use crate::core::registry::Registrable;
+use crate::core::meta::MetaMarketDataNode;
+use crate::core::traits::Registrable;
 use crate::currencies::enums::Currency;
 use crate::rates::interestrate::InterestRate;
 use crate::rates::traits::YieldProvider;
 use crate::time::date::Date;
 
+/// # FixedRateCoupon
+/// A fixed rate coupon is a cashflow that pays a fixed rate of interest on a notional amount.
+///
+/// ## Parameters
+/// * `notional` - The notional amount of the coupon
+/// * `rate` - The fixed rate of interest
+/// * `accrual_start_date` - The date from which the coupon accrues interest
+/// * `accrual_end_date` - The date until which the coupon accrues interest
+/// * `payment_date` - The date on which the coupon is paid
+/// * `discount_curve_id` - The ID of the discount curve used to calculate the present value of the coupon
+/// * `currency` - The currency of the coupon
+/// * `side` - The side of the coupon (Pay or Receive)
 pub struct FixedRateCoupon {
     notional: f64,
     rate: InterestRate,
@@ -47,7 +59,7 @@ impl Registrable for FixedRateCoupon {
         self.cashflow.register_id(id);
     }
 
-    fn meta_market_data(&self) -> MetaMarketData {
+    fn meta_market_data(&self) -> MetaMarketDataNode {
         return self.cashflow.meta_market_data();
     }
 }

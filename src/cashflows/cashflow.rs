@@ -1,7 +1,7 @@
 use super::enums::Side;
 use super::traits::{Expires, Payable};
-use crate::core::meta::{MetaDiscountFactor, MetaExchangeRate, MetaMarketData};
-use crate::core::registry::Registrable;
+use crate::core::meta::{MetaDiscountFactor, MetaExchangeRate, MetaMarketDataNode};
+use crate::core::traits::Registrable;
 use crate::currencies::enums::Currency;
 use crate::time::date::Date;
 
@@ -58,14 +58,14 @@ impl Registrable for SimpleCashflow {
         self.registry_id = Some(id);
     }
 
-    fn meta_market_data(&self) -> MetaMarketData {
+    fn meta_market_data(&self) -> MetaMarketDataNode {
         let id = match self.registry_id {
             Some(id) => id,
             None => panic!("SimpleCashflow has not been registered"),
         };
         let discount = MetaDiscountFactor::new(self.discount_curve_id, self.payment_date);
         let currency = MetaExchangeRate::new(self.currency, self.payment_date);
-        return MetaMarketData::new(id, Some(discount), None, Some(currency));
+        return MetaMarketDataNode::new(id, Some(discount), None, Some(currency));
     }
 }
 

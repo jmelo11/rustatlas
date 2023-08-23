@@ -8,15 +8,15 @@ pub struct FxRecepy {
 }
 
 #[derive(Clone)]
-pub struct ExchangeRateManager {
+pub struct ExchangeRateStore {
     fx_recepies: HashMap<Currency, usize>,
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
     exchange_rate_cache: HashMap<(Currency, Currency), f64>,
 }
 
-impl ExchangeRateManager {
-    pub fn new() -> ExchangeRateManager {
-        ExchangeRateManager {
+impl ExchangeRateStore {
+    pub fn new() -> ExchangeRateStore {
+        ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: HashMap::new(),
@@ -40,21 +40,17 @@ impl ExchangeRateManager {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
-    pub fn get_exchange_rate(
-        &mut self,
-        first_ccy: Currency,
-        second_ccy: Currency,
-    ) -> Result<f64, String> {
-        let mut first_ccy = first_ccy;
-        let mut second_ccy = second_ccy;
+    pub fn get_exchange_rate(&mut self, first_ccy: Currency, second_ccy: Currency) -> Option<f64> {
+        let first_ccy = first_ccy;
+        let second_ccy = second_ccy;
 
         if first_ccy == second_ccy {
-            return Ok(1.0);
+            return Some(1.0);
         }
 
         let cache_key = (first_ccy, second_ccy);
         if let Some(cached_rate) = self.exchange_rate_cache.get(&cache_key) {
-            return Ok(*cached_rate);
+            return Some(*cached_rate);
         }
 
         let mut q: VecDeque<(Currency, f64)> = VecDeque::new();
@@ -71,7 +67,7 @@ impl ExchangeRateManager {
                             .insert((first_ccy, second_ccy), new_rate);
                         self.exchange_rate_cache
                             .insert((second_ccy, first_ccy), 1.0 / new_rate);
-                        return Ok(new_rate);
+                        return Some(new_rate);
                     }
                     visited.insert(dest);
                     q.push_back((dest, new_rate));
@@ -82,16 +78,16 @@ impl ExchangeRateManager {
                             .insert((first_ccy, second_ccy), new_rate);
                         self.exchange_rate_cache
                             .insert((second_ccy, first_ccy), 1.0 / new_rate);
-                        return Ok(new_rate);
+                        return Some(new_rate);
                     }
                     visited.insert(source);
                     q.push_back((source, new_rate));
                 }
             }
         }
-
-        Err("Exchange rate not found for the given currencies".into())
+        None
     }
+
 }
 
 #[cfg(test)]
@@ -101,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_same_currency() {
-        let mut manager = ExchangeRateManager {
+        let mut manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: HashMap::new(),
@@ -112,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_cache() {
-        let mut manager = ExchangeRateManager {
+        let mut manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
@@ -128,7 +124,7 @@ mod tests {
 
     #[test]
     fn test_nonexistent_rate() {
-        let mut manager = ExchangeRateManager {
+        let mut manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: HashMap::new(),
@@ -142,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_complex_case() {
-        let mut manager = ExchangeRateManager {
+        let mut manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
@@ -159,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_triangulation_case() {
-        let mut manager = ExchangeRateManager::new();
+        let mut manager = ExchangeRateStore::new();
         manager.add_exchange_rate(CLP, USD, 800.0);
         manager.add_exchange_rate(USD, EUR, 1.1);
 

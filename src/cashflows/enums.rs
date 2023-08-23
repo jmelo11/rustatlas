@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 use crate::{
-    core::{meta::MetaMarketData, registry::Registrable},
+    core::{meta::MetaMarketDataNode, traits::Registrable},
     time::date::Date,
 };
 
@@ -77,7 +77,7 @@ impl Registrable for Cashflow {
         }
     }
 
-    fn meta_market_data(&self) -> MetaMarketData {
+    fn meta_market_data(&self) -> MetaMarketDataNode {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.meta_market_data(),
             Cashflow::Disbursement(cashflow) => cashflow.meta_market_data(),

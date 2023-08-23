@@ -1,27 +1,45 @@
-use crate::{currencies::enums::Currency, time::date::Date};
+use crate::{
+    currencies::enums::Currency,
+    prelude::{Compounding, Frequency},
+    time::date::Date,
+};
 
 /// # MetaExchangeRate
 /// Meta data for an exchange rate. Holds the currency and the reference date required to fetch the
 /// exchange rate.
+///
+/// ## Parameters
+/// * `currency` - The currency of the exchange rate.
+/// * `reference_date` - The reference date of the exchange rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaExchangeRate {
-    currency: Currency,
-    reference_date: Date,
+    first_currency: Currency,
+    second_currency: Currency,
+    reference_date: Option<Date>,
 }
 
 impl MetaExchangeRate {
-    pub fn new(currency: Currency, reference_date: Date) -> MetaExchangeRate {
+    pub fn new(
+        first_currency: Currency,
+        second_currency: Currency,
+        reference_date: Option<Date>,
+    ) -> MetaExchangeRate {
         MetaExchangeRate {
-            currency,
+            first_currency,
+            second_currency,
             reference_date,
         }
     }
 
-    pub fn currency(&self) -> Currency {
-        self.currency
+    pub fn first_currency(&self) -> Currency {
+        self.first_currency
     }
 
-    pub fn reference_date(&self) -> Date {
+    pub fn second_currency(&self) -> Currency {
+        self.second_currency
+    }
+
+    pub fn reference_date(&self) -> Option<Date> {
         self.reference_date
     }
 }
@@ -29,22 +47,26 @@ impl MetaExchangeRate {
 /// # MetaDiscountFactor
 /// Meta data for a discount factor. Holds the discount curve id and the reference date required to
 /// fetch the discount factor.
+///
+/// ## Parameters
+/// * `discount_curve_id` - The discount curve id of the discount factor.
+/// * `reference_date` - The reference date of the discount factor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaDiscountFactor {
-    discount_curve_id: usize,
+    provider_id: usize,
     reference_date: Date,
 }
 
 impl MetaDiscountFactor {
-    pub fn new(discount_curve_id: usize, reference_date: Date) -> MetaDiscountFactor {
+    pub fn new(provider_id: usize, reference_date: Date) -> MetaDiscountFactor {
         MetaDiscountFactor {
-            discount_curve_id,
+            provider_id,
             reference_date,
         }
     }
 
-    pub fn discount_curve_id(&self) -> usize {
-        self.discount_curve_id
+    pub fn provider_id(&self) -> usize {
+        self.provider_id
     }
 
     pub fn reference_date(&self) -> Date {
@@ -59,24 +81,41 @@ impl MetaDiscountFactor {
 /// # MetaForwardRate
 /// Meta data for a forward rate. Holds the forward curve id and the start and end dates required
 /// to fetch the forward rate.
+///
+/// ## Parameters
+/// * `forward_curve_id` - The forward curve id of the forward rate.
+/// * `start_date` - The start date of the forward rate.
+/// * `end_date` - The end date of the forward rate.
+/// * `compounding` - The compounding of the forward rate.
+/// * `frequency` - The frequency of the forward rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MetaForwardRate {
-    forward_curve_id: usize,
+    provider_id: usize,
     start_date: Date,
     end_date: Date,
+    compounding: Compounding,
+    frequency: Frequency,
 }
 
 impl MetaForwardRate {
-    pub fn new(forward_curve_id: usize, start_date: Date, end_date: Date) -> MetaForwardRate {
+    pub fn new(
+        provider_id: usize,
+        start_date: Date,
+        end_date: Date,
+        compounding: Compounding,
+        frequency: Frequency,
+    ) -> MetaForwardRate {
         MetaForwardRate {
-            forward_curve_id,
+            provider_id,
             start_date,
             end_date,
+            compounding,
+            frequency,
         }
     }
 
-    pub fn forward_curve_id(&self) -> usize {
-        self.forward_curve_id
+    pub fn provider_id(&self) -> usize {
+        self.provider_id
     }
 
     pub fn start_date(&self) -> Date {
@@ -86,26 +125,40 @@ impl MetaForwardRate {
     pub fn end_date(&self) -> Date {
         self.end_date
     }
+
+    pub fn compounding(&self) -> Compounding {
+        self.compounding
+    }
+
+    pub fn frequency(&self) -> Frequency {
+        self.frequency
+    }
 }
 
-/// # MetaMarketData
+/// # MetaMarketDataNode
 /// Meta data for market data. Holds all the meta data required to fetch the market data.
+///
+/// ## Parameters
+/// * `id` - The id of the market data.
+/// * `df` - The discount factor meta data.
+/// * `fwd` - The forward rate meta data.
+/// * `fx` - The exchange rate meta data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MetaMarketData {
+pub struct MetaMarketDataNode {
     id: usize,
     df: Option<MetaDiscountFactor>,
     fwd: Option<MetaForwardRate>,
     fx: Option<MetaExchangeRate>,
 }
 
-impl MetaMarketData {
+impl MetaMarketDataNode {
     pub fn new(
         id: usize,
         df: Option<MetaDiscountFactor>,
         fwd: Option<MetaForwardRate>,
         fx: Option<MetaExchangeRate>,
-    ) -> MetaMarketData {
-        MetaMarketData { id, df, fwd, fx }
+    ) -> MetaMarketDataNode {
+        MetaMarketDataNode { id, df, fwd, fx }
     }
 
     pub fn id(&self) -> usize {
@@ -125,18 +178,24 @@ impl MetaMarketData {
     }
 }
 
-/// # MarketData
+/// # MarketDataNode
 /// Market data. Holds all the data required to price a cashflow.
-pub struct MarketData {
+///
+/// ## Parameters
+/// * `id` - The id of the market data.
+/// * `df` - The discount factor.
+/// * `fwd` - The forward rate.
+/// * `fx` - The exchange rate.
+pub struct MarketDataNode {
     id: usize,
     df: Option<f64>,
     fwd: Option<f64>,
     fx: Option<f64>,
 }
 
-impl MarketData {
-    pub fn new(id: usize, df: Option<f64>, fwd: Option<f64>, fx: Option<f64>) -> MarketData {
-        MarketData { id, df, fwd, fx }
+impl MarketDataNode {
+    pub fn new(id: usize, df: Option<f64>, fwd: Option<f64>, fx: Option<f64>) -> MarketDataNode {
+        MarketDataNode { id, df, fwd, fx }
     }
 
     pub fn id(&self) -> usize {

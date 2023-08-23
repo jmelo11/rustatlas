@@ -5,8 +5,7 @@ use std::ops::{Add, AddAssign, DivAssign, MulAssign, Neg, Sub, SubAssign};
 /// Struct representing a financial period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::{Frequency, TimeUnit};
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
 ///
 /// let p = Period::new(5, TimeUnit::Days);
 /// assert_eq!(p.length(), 5);
@@ -54,7 +53,6 @@ impl Period {
                 length: 1,
             }),
             Frequency::OtherFrequency => Err("unknown frequency".to_string()),
-            _ => Err(format!("unknown frequency ({:?})", freq)),
         }
     }
 
@@ -143,8 +141,7 @@ impl Period {
 /// Negates a Period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
 /// let p = Period::new(5, TimeUnit::Days);
 /// let negated = -p;
 /// assert_eq!(negated.length(), -5);
@@ -165,8 +162,7 @@ impl Neg for Period {
 /// Adds a Period to another Period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
 /// let mut p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// p1 += p2;
@@ -252,8 +248,7 @@ impl AddAssign for Period {
 /// Adds a Period to another Period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
 /// let p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// let p3 = p1 + p2;
@@ -274,8 +269,8 @@ impl Add for Period {
 /// Subtracts a Period from another Period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
+/// 
 /// let mut p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// p1 -= p2;
@@ -292,8 +287,8 @@ impl SubAssign for Period {
 /// Subtracts a Period from another Period.
 /// # Examples
 /// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
+/// use rustatlas::prelude::*;
+/// 
 /// let p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// let p3 = p1 - p2;
@@ -310,7 +305,7 @@ impl Sub for Period {
     }
 }
 
-/// # MulAssign<i32> for Period
+/// # MulAssign`<i32>` for Period
 /// Multiplies a Period by an integer.
 /// # Examples
 /// ```
@@ -327,7 +322,7 @@ impl MulAssign<i32> for Period {
     }
 }
 
-/// # DivAssign<i32> for Period
+/// # DivAssign`<i32>` for Period
 /// Divides a Period by an integer.
 /// # Examples
 /// ```

@@ -84,7 +84,7 @@ impl NaiveDateExt for NaiveDate {
     }
 }
 
-/// # Add<Period> for NaiveDate
+/// # Add`<Period>` for NaiveDate
 /// Adds a Period to a NaiveDate.
 /// # Examples
 /// ```
@@ -193,7 +193,7 @@ impl Sub for Date {
     }
 }
 
-/// # Add<Period> for Date
+/// # Add`<Period>` for Date
 /// Adds a Period to a Date.
 /// # Examples
 /// ```

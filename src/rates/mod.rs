@@ -3,4 +3,4 @@ pub mod interestrate;
 pub mod interestrateindex;
 pub mod traits;
 pub mod yieldtermstructure;
-pub mod yieldtermstructuremanager;
+pub mod yieldproviderstore;

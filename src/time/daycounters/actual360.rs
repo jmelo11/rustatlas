@@ -10,9 +10,7 @@ use crate::time::date::Date;
 /// where ActualDays is the number of days between the start date and the end date.
 /// # Example
 /// ```
-/// use crate::time::daycounters::actual360::Actual360;
-/// use crate::time::traits::DayCountProvider;
-/// use crate::time::date::Date;
+/// use rustatlas::prelude::*;
 ///
 /// let start = Date::from_ymd(2020, 1, 1);
 /// let end = Date::from_ymd(2020, 2, 1);

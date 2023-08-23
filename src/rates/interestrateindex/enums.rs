@@ -3,7 +3,7 @@ use crate::{
     time::{date::Date, period::Period},
 };
 
-use super::{iborindex::IborIndex, traits::FixingRateHolder};
+use super::{iborindex::IborIndex, traits::FloatingRateProvider};
 
 /// # InterestRateIndex
 /// Enum that defines an interest rate index.
@@ -13,7 +13,7 @@ pub enum InterestRateIndex {
     Other,
 }
 
-impl FixingRateHolder for InterestRateIndex {
+impl FloatingRateProvider for InterestRateIndex {
     fn fixing(&self, date: Date) -> Option<f64> {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => ibor_index.fixing(date),
