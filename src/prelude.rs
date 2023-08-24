@@ -24,7 +24,8 @@ pub use crate::{
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
     time::{
-        date::Date,
+        date::{Date, NaiveDateExt},
+        schedule::Schedule,
         daycounters::{
             actual360::Actual360, actual365::Actual365, enums::*, thirty360::Thirty360,
             traits::DayCountProvider,

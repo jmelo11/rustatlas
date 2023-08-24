@@ -1,33 +1,31 @@
 use super::enums::TimeUnit;
 use super::period::Period;
-use chrono::{Datelike, Duration, Months, NaiveDate};
+use chrono::{Datelike, Duration, Months, NaiveDate, Weekday};
 use std::fmt::Display;
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 /// # NaiveDateExt
-/// Extends the NaiveDate struct from the chrono crate.
+/// Extends the NaiveDate struct from the chrono rustatlas.
 /// # Examples
 /// ```
+/// use rustatlas::prelude::*;
 /// use chrono::NaiveDate;
-/// use crate::time::date::NaiveDateExt;
 ///
 /// let date = NaiveDate::from_ymd_opt(2020, 2, 15).unwrap();
 /// assert_eq!(date.days_in_month(), 29);
-///
 /// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
 /// assert_eq!(date.days_in_year(), 366);
-///
 /// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
 /// assert!(date.is_leap_year());
-///
 /// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
 /// assert_eq!(date.advance(15, TimeUnit::Days), NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
 /// ```
-trait NaiveDateExt {
+pub trait NaiveDateExt {
     fn days_in_month(&self) -> i32;
     fn days_in_year(&self) -> i32;
     fn is_leap_year(&self) -> bool;
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate;
+    fn end_of_month(&self, date: NaiveDate) -> NaiveDate;
 }
 
 impl NaiveDateExt for NaiveDate {
@@ -82,6 +80,15 @@ impl NaiveDateExt for NaiveDate {
             }
         };
     }
+
+    fn end_of_month(&self, date: NaiveDate) -> NaiveDate {
+        let month = date.month();
+        let year = date.year();
+        let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+        end_of_month = end_of_month + Months::new(1);
+        end_of_month = end_of_month - Duration::days(1);
+        end_of_month
+    }
 }
 
 /// # Add`<Period>` for NaiveDate
@@ -89,9 +96,7 @@ impl NaiveDateExt for NaiveDate {
 /// # Examples
 /// ```
 /// use chrono::NaiveDate;
-/// use crate::time::date::{NaiveDateExt, Add<Period>};
-/// use crate::time::period::Period;
-/// use crate::time::enums::TimeUnit;
+/// use rustatlas::prelude::*;
 ///
 /// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
 /// let period = Period::new(15, TimeUnit::Days);
@@ -108,11 +113,11 @@ impl Add<Period> for NaiveDate {
 }
 
 /// # Date
-/// Wrapper around the NaiveDate struct from the chrono crate.
+/// Wrapper around the NaiveDate struct from the chrono rustatlas.
 /// # Examples
 /// ```
-/// use crate::time::date::Date;
-/// let date = Date::from_ymd(2020, 2, 15);
+/// use rustatlas::time::date::Date;
+/// let date = Date::new(2020, 2, 15);
 /// assert_eq!(date.day(), 15);
 /// assert_eq!(date.month(), 2);
 /// assert_eq!(date.year(), 2020);
@@ -123,16 +128,22 @@ pub struct Date {
 }
 
 impl Date {
-    pub fn new(base_date: NaiveDate) -> Date {
+    pub fn new(year: i32, month: u32, day: u32) -> Date {
+        let base_date = NaiveDate::from_ymd_opt(year, month, day);
+        match base_date {
+            Some(base_date) => Date::from_base_date(base_date),
+            None => panic!("Invalid date: {}-{}-{}", year, month, day),
+        }
+    }
+
+    pub fn from_base_date(base_date: NaiveDate) -> Date {
         Date { base_date }
     }
 
+    // deprecated
+    #[deprecated]
     pub fn from_ymd(year: i32, month: u32, day: u32) -> Date {
-        let base_date = NaiveDate::from_ymd_opt(year, month, day);
-        match base_date {
-            Some(base_date) => Date::new(base_date),
-            None => panic!("Invalid date: {}-{}-{}", year, month, day),
-        }
+        Date::new(year, month, day)
     }
 
     pub fn base_date(&self) -> NaiveDate {
@@ -165,12 +176,26 @@ impl Date {
 
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
         let base_date = self.base_date.advance(n, units);
-        Date::new(base_date)
+        Date::from_base_date(base_date)
     }
 
     pub fn add_period(&self, period: Period) -> Date {
         let base_date = self.base_date + period;
-        Date::new(base_date)
+        Date::from_base_date(base_date)
+    }
+
+    pub fn end_of_month(&self) -> Date {
+        let base_date = self.base_date.end_of_month(self.base_date);
+        Date::from_base_date(base_date)
+    }
+
+    pub fn weekday(&self) -> Weekday {
+        self.base_date.weekday()
+    }
+
+    pub fn empty() -> Date {
+        //min
+        Date::from_base_date(NaiveDate::MIN)
     }
 }
 
@@ -178,9 +203,9 @@ impl Date {
 /// Subtracts two Dates and returns the difference in days.
 /// # Examples
 /// ```
-/// use crate::time::date::Date;
-/// let date1 = Date::from_ymd(2020, 2, 15);
-/// let date2 = Date::from_ymd(2020, 2, 10);
+/// use rustatlas::time::date::Date;
+/// let date1 = Date::new(2020, 2, 15);
+/// let date2 = Date::new(2020, 2, 10);
 /// assert_eq!(date1 - date2, 5);
 /// ```
 impl Sub for Date {
@@ -197,17 +222,81 @@ impl Sub for Date {
 /// Adds a Period to a Date.
 /// # Examples
 /// ```
-/// use crate::time::date::Date;
-/// let date = Date::from_ymd(2020, 1, 15);
+/// use rustatlas::prelude::*;
+/// let date = Date::new(2020, 1, 15);
 /// let period = Period::new(15, TimeUnit::Days);
-/// assert_eq!(date + period, Date::from_ymd(2020, 1, 30));
+/// assert_eq!(date + period, Date::new(2020, 1, 30));
 /// ```
 impl Add<Period> for Date {
     type Output = Date;
 
     fn add(self, rhs: Period) -> Self::Output {
-        let base_date = self.base_date + rhs;
-        Date::new(base_date)
+        let base_date: NaiveDate = self.base_date + rhs;
+        Date::from_base_date(base_date)
+    }
+}
+
+/// # Add`<i64>` for Date
+/// Adds an i64 to a Date.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let date = Date::new(2020, 1, 15);
+/// assert_eq!(date + 15, Date::new(2020, 1, 30));
+/// ```
+impl Add<i64> for Date {
+    type Output = Date;
+
+    fn add(self, rhs: i64) -> Self::Output {
+        let base_date: NaiveDate = self.base_date + Duration::days(rhs as i64);
+        Date::from_base_date(base_date)
+    }
+}
+
+/// # AddAssign`<i64>` for Date
+/// Adds an i64 to a Date.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let mut date = Date::new(2020, 1, 15);
+/// date += 15;
+/// assert_eq!(date, Date::new(2020, 1, 30));
+/// ```
+impl AddAssign<i64> for Date {
+    fn add_assign(&mut self, rhs: i64) {
+        self.base_date = self.base_date + Duration::days(rhs as i64);
+    }
+}
+
+/// # Sub`<i64>` for Date
+/// Subtracts an i64 from a Date.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let date = Date::new(2020, 1, 30);
+/// assert_eq!(date - 15, Date::new(2020, 1, 15));
+/// ```
+impl Sub<i64> for Date {
+    type Output = Date;
+
+    fn sub(self, rhs: i64) -> Self::Output {
+        let base_date: NaiveDate = self.base_date - Duration::days(rhs as i64);
+        Date::from_base_date(base_date)
+    }
+}
+
+/// # SubAssign`<i64>` for Date
+/// Subtracts an i64 from a Date.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let mut date = Date::new(2020, 1, 30);
+/// date -= 15;
+/// assert_eq!(date, Date::new(2020, 1, 15));
+/// ```
+impl SubAssign<i64> for Date {
+    fn sub_assign(&mut self, rhs: i64) {
+        self.base_date = self.base_date - Duration::days(rhs as i64);
     }
 }
 
@@ -215,8 +304,8 @@ impl Add<Period> for Date {
 /// Formats a Date as a string.
 /// # Examples
 /// ```
-/// use crate::time::date::Date;
-/// let date = Date::from_ymd(2020, 1, 15);
+/// use rustatlas::time::date::Date;
+/// let date = Date::new(2020, 1, 15);
 /// assert_eq!(date.to_string(), "2020-01-15");
 /// ```
 impl Display for Date {

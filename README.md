@@ -30,9 +30,10 @@ A rust version of Atlas
 - [ ] Curvas de tasas UF/Colateral CLP
 - [ ] Conectar monedas
 
-## Schedule
+## Time
 
 - [ ] Crear calendarios basicos
+- [ ] Crear Schedule
 
 ## Software
 
