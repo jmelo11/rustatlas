@@ -1,16 +1,16 @@
-use crate::{
-    core::meta::{
-        MarketDataNode, MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketDataNode,
-    },
-    time::date::Date,
-};
+use crate::{core::meta::*, time::date::Date};
 
+/// # Model
+/// A model that provides market data based in the current market state.
+///
+/// ## Parameters
+/// * `market_store` - The market store.
+/// * `market_request` - The market data request vector.
 pub trait Model {
-    fn gen_fwd_data(&self, fwd: MetaForwardRate, eval_date: Date) -> f64;
-    fn gen_df_data(&self, df: MetaDiscountFactor, eval_date: Date) -> f64;
-    fn gen_fx_data(&mut self, fx: MetaExchangeRate, eval_date: Date) -> f64;
-
-    fn gen_node(&mut self, eval_date: Date, meta_data: &MetaMarketDataNode) -> MarketDataNode {
+    fn gen_df_data(&self, df: DiscountFactorRequest, eval_date: Date) -> f64;
+    fn gen_fx_data(&mut self, fx: ExchangeRateRequest, eval_date: Date) -> f64;
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest, eval_date: Date) -> f64;
+    fn gen_node(&mut self, eval_date: Date, meta_data: &MarketRequest) -> MarketData {
         let id = meta_data.id();
         let df = match meta_data.df() {
             Some(df) => Some(self.gen_df_data(df, eval_date)),
@@ -24,6 +24,6 @@ pub trait Model {
             Some(fx) => Some(self.gen_fx_data(fx, eval_date)),
             None => None,
         };
-        return MarketDataNode::new(id, df, fwd, fx);
+        return MarketData::new(id, df, fwd, fx);
     }
 }

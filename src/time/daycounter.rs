@@ -1,7 +1,7 @@
-use super::actual360::Actual360;
-use super::actual365::Actual365;
-use super::thirty360::Thirty360;
-use super::traits::DayCountProvider;
+use super::daycounters::actual360::Actual360;
+use super::daycounters::actual365::Actual365;
+use super::daycounters::thirty360::Thirty360;
+use super::daycounters::traits::DayCountProvider;
 use crate::time::date::Date;
 
 /// # DayCounter

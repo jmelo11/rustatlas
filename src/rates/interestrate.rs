@@ -1,6 +1,6 @@
 use crate::rates::enums::Compounding;
 use crate::time::date::Date;
-use crate::time::daycounters::enums::DayCounter;
+use crate::time::daycounter::DayCounter;
 use crate::time::daycounters::traits::DayCountProvider;
 use crate::time::enums::Frequency;
 

@@ -119,7 +119,7 @@ impl YieldProvider for IborIndex {
             }
         }
         match self.term_structure {
-            Some(term_structure) => term_structure.forward_rate(start_date, end_date, comp, freq),
+            Some(ts) => ts.forward_rate(start_date, end_date, comp, freq),
             None => panic!("No term structure for this IborIndex"),
         }
     }

@@ -1,8 +1,6 @@
 use crate::core::marketstore::MarketStore;
 
-use crate::core::meta::{
-    MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketDataNode,
-};
+use crate::core::meta::*;
 use crate::rates::traits::YieldProvider;
 use crate::time::date::Date;
 
@@ -14,27 +12,23 @@ use super::traits::Model;
 /// ## Parameters
 /// * `market_store` - The market store.
 /// * `meta_market_data` - The meta market data.
-/// * `eval_dates` - The evaluation dates.
 #[derive(Clone)]
 pub struct SimpleModel {
     market_store: MarketStore,
-    meta_market_data: Vec<MetaMarketDataNode>,
+    market_request: Vec<MarketRequest>,
 }
 
 impl SimpleModel {
-    pub fn new(
-        market_store: MarketStore,
-        meta_market_data: Vec<MetaMarketDataNode>,
-    ) -> SimpleModel {
+    pub fn new(market_store: MarketStore, market_request: Vec<MarketRequest>) -> SimpleModel {
         SimpleModel {
             market_store,
-            meta_market_data,
+            market_request,
         }
     }
 }
 
 impl Model for SimpleModel {
-    fn gen_df_data(&self, df: MetaDiscountFactor, eval_date: Date) -> f64 {
+    fn gen_df_data(&self, df: DiscountFactorRequest, eval_date: Date) -> f64 {
         let date = df.reference_date();
         if eval_date > date {
             return 0.0;
@@ -51,7 +45,7 @@ impl Model for SimpleModel {
         };
     }
 
-    fn gen_fwd_data(&self, fwd: MetaForwardRate, eval_date: Date) -> f64 {
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest, eval_date: Date) -> f64 {
         let id = fwd.provider_id();
         let provider = self.market_store.get_provider_by_id(id);
         let fwd = match provider {
@@ -67,7 +61,7 @@ impl Model for SimpleModel {
         };
     }
 
-    fn gen_fx_data(&mut self, fx: MetaExchangeRate, eval_date: Date) -> f64 {
+    fn gen_fx_data(&mut self, fx: ExchangeRateRequest, eval_date: Date) -> f64 {
         let first_currency = fx.first_currency();
         let second_currency = fx.second_currency();
         let fx = self
@@ -84,13 +78,12 @@ impl Model for SimpleModel {
 }
 
 mod tests {
-    use std::rc::Rc;
-
     use crate::prelude::*;
+    use std::rc::Rc;
 
     #[test]
     fn test_market_data_generation() {
-        let reference_date = Date::from_ymd(2021, 1, 1);
+        let reference_date = Date::new(2021, 1, 1);
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(reference_date, local_currency);
         let rate = InterestRate::new(
@@ -112,11 +105,11 @@ mod tests {
             .mut_yield_providers_store()
             .add_provider("Example".to_string(), Rc::new(interest_rate_index));
 
-        let request_date = Date::from_ymd(2025, 1, 1);
-        let df = MetaDiscountFactor::new(0, request_date);
-        let meta_data = vec![MetaMarketDataNode::new(0, Some(df), None, None)];
+        let request_date = Date::new(2025, 1, 1);
+        let df = DiscountFactorRequest::new(0, request_date);
+        let meta_data = vec![MarketRequest::new(0, Some(df), None, None)];
 
-        let eval_dates = vec![Date::from_ymd(2021, 1, 1), Date::from_ymd(2022, 6, 1)];
+        let eval_dates = vec![Date::new(2021, 1, 1), Date::new(2022, 6, 1)];
         let model = SimpleModel::new(market_store, meta_data);
     }
 }

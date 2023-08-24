@@ -1,7 +1,7 @@
 use crate::time::date::Date;
 use std::collections::HashSet;
 
-use super::calendar::{ImplCalendar, IsCalendar};
+use super::traits::{ImplCalendar, IsCalendar};
 
 pub struct WeekendsOnly {
     added_holidays: HashSet<Date>,
@@ -46,10 +46,9 @@ impl IsCalendar for WeekendsOnly {}
 
 mod tests {
     use super::*;
-    use crate::time::calendars::calendar::IsCalendar;
+    use crate::time::calendars::traits::IsCalendar;
     use crate::time::calendars::weekendsonly::WeekendsOnly;
     use crate::time::date::Date;
-    use crate::time::period::Period;
 
     #[test]
     fn test_weekendsonly() {

@@ -1,17 +1,15 @@
 use crate::{
     core::{
-        meta::{MetaDiscountFactor, MetaExchangeRate, MetaForwardRate, MetaMarketDataNode},
+        meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest, MarketRequest},
         traits::Registrable,
     },
     currencies::enums::Currency,
-    rates::{
-        interestrate::{InterestRate, RateDefinition},
-        traits::YieldProvider,
-    },
+    rates::interestrate::{InterestRate, RateDefinition},
     time::date::Date,
 };
 
 use super::{
+    cashflow::SimpleCashflow,
     enums::Side,
     traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
 };
@@ -35,21 +33,13 @@ pub struct FloatingRateCoupon {
     notional: f64,
     spread: f64,
     fixing_rate: Option<f64>,
-    amount: Option<f64>,
-
     accrual_start_date: Date,
     accrual_end_date: Date,
-    payment_date: Date,
-    fixing_start_date: Date,
-    fixing_end_date: Date,
-
+    fixing_date: Date,
     rate_definition: RateDefinition,
-    discount_curve_id: usize,
-    forecast_curve_id: usize,
-    currency: Currency,
-    side: Side,
     in_arrears: bool,
-    registry_id: Option<usize>,
+    forecast_curve_id: Option<usize>,
+    cashflow: SimpleCashflow,
 }
 
 impl FloatingRateCoupon {
@@ -59,11 +49,8 @@ impl FloatingRateCoupon {
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
-        fixing_start_date: Date,
-        fixing_end_date: Date,
+        fixing_date: Date,
         rate_definition: RateDefinition,
-        discount_curve_id: usize,
-        forecast_curve_id: usize,
         currency: Currency,
         side: Side,
         in_arrears: bool,
@@ -72,20 +59,22 @@ impl FloatingRateCoupon {
             notional,
             spread,
             fixing_rate: None,
-            amount: None,
             accrual_start_date,
             accrual_end_date,
-            payment_date,
-            fixing_start_date,
-            fixing_end_date,
+            fixing_date,
             rate_definition,
-            discount_curve_id,
-            forecast_curve_id,
-            currency,
-            side,
             in_arrears,
-            registry_id: None,
+            forecast_curve_id: None,
+            cashflow: SimpleCashflow::new(payment_date, currency, side),
         }
+    }
+
+    pub fn set_discount_curve_id(&mut self, id: usize) {
+        self.cashflow.set_discount_curve_id(id);
+    }
+
+    pub fn set_forecast_curve_id(&mut self, id: usize) {
+        self.forecast_curve_id = Some(id);
     }
 }
 
@@ -110,54 +99,56 @@ impl InterestAccrual for FloatingRateCoupon {
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
-        self.amount = Some(self.accrued_amount(self.accrual_start_date, self.accrual_end_date));
+        self.cashflow
+            .set_amount(self.accrued_amount(self.accrual_start_date, self.accrual_end_date));
     }
 }
 
 impl Payable for FloatingRateCoupon {
     fn amount(&self) -> f64 {
-        return match self.amount {
-            Some(amount) => amount,
-            None => panic!("No amount has been set"),
-        };
+        return self.cashflow.amount();
     }
     fn side(&self) -> Side {
-        return self.side;
+        return self.cashflow.side();
     }
     fn payment_date(&self) -> Date {
-        return self.payment_date;
+        return self.cashflow.payment_date();
     }
 }
 
 impl Registrable for FloatingRateCoupon {
     fn registry_id(&self) -> Option<usize> {
-        return self.registry_id;
+        return self.cashflow.registry_id();
     }
 
     fn register_id(&mut self, id: usize) {
-        self.registry_id = Some(id);
+        self.cashflow.register_id(id);
     }
 
-    fn meta_market_data(&self) -> MetaMarketDataNode {
-        let id = match self.registry_id {
+    fn market_request(&self) -> MarketRequest {
+        let id = match self.cashflow.registry_id() {
             Some(id) => id,
             None => panic!("FloatingRateCoupon has not been registered"),
         };
-        let discount = MetaDiscountFactor::new(self.discount_curve_id, self.payment_date);
-        let forecast = MetaForwardRate::new(
-            self.forecast_curve_id,
-            self.fixing_start_date,
-            self.fixing_end_date,
+        let tmp = self.cashflow.market_request();
+        let forecast_curve_id = match self.forecast_curve_id {
+            Some(id) => id,
+            None => panic!("FloatingRateCoupon does not have a forecast curve id"),
+        };
+        let forecast = ForwardRateRequest::new(
+            forecast_curve_id,
+            self.accrual_start_date,
+            self.accrual_end_date,
+            self.fixing_date,
             self.rate_definition.compounding(),
             self.rate_definition.frequency(),
         );
-        let currency = MetaExchangeRate::new(self.currency, None, None);
-        return MetaMarketDataNode::new(id, Some(discount), Some(forecast), Some(currency));
+        return MarketRequest::new(id, tmp.df(), Some(forecast), tmp.fx());
     }
 }
 
 impl Expires for FloatingRateCoupon {
     fn is_expired(&self, date: Date) -> bool {
-        return self.payment_date < date;
+        return self.cashflow.payment_date() < date;
     }
 }

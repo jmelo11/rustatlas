@@ -4,20 +4,16 @@ use crate::{
         interestrate::InterestRate,
         traits::{HasReferenceDate, YieldProvider},
     },
-    time::{date::Date, daycounters::traits::DayCountProvider, enums::Frequency},
+    time::{date::Date, daycounters::traits::*, enums::Frequency},
 };
 
 /// # FlatForwardTermStructure
 /// Struct that defines a flat forward term structure.
 /// # Example
 /// ```
-/// use rustatlas::rates::enums::Compounding;
-/// use rustatlas::time::daycounters::enums::DayCounter;
-/// use rustatlas::time::date::Date;
-/// use rustatlas::time::enums::Frequency;
-/// use rustatlas::rates::interestrate::InterestRate;
-/// use rustatlas::rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure;
-/// let reference_date = Date::from_ymd(2023, 8, 19);
+/// use rustatlas::prelude::*;
+///
+/// let reference_date = Date::new(2023, 8, 19);
 /// let interest_rate: InterestRate = InterestRate::new(0.05, Compounding::Simple, Frequency::Annual, DayCounter::Actual360);
 /// let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
 /// assert_eq!(term_structure.reference_date(), reference_date);
@@ -70,13 +66,14 @@ impl YieldProvider for FlatForwardTermStructure {
 
 #[cfg(test)]
 mod tests {
-    use crate::time::daycounters::enums::DayCounter;
+    use crate::time::daycounter::DayCounter;
+    use crate::time::daycounters::traits::DayCountProvider;
 
     use super::*;
 
     #[test]
     fn test_reference_date() {
-        let reference_date = Date::from_ymd(2023, 8, 19);
+        let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,
             Compounding::Simple,
@@ -90,14 +87,14 @@ mod tests {
 
     #[test]
     fn test_discount() {
-        let reference_date = Date::from_ymd(2023, 8, 19);
+        let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,
             Compounding::Simple,
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let target_date = Date::from_ymd(2024, 8, 19);
+        let target_date = Date::new(2024, 8, 19);
 
         let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
 
@@ -109,15 +106,15 @@ mod tests {
 
     #[test]
     fn test_forward_rate() {
-        let reference_date = Date::from_ymd(2023, 8, 19);
+        let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,
             Compounding::Simple,
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let start_date = Date::from_ymd(2023, 9, 19);
-        let end_date = Date::from_ymd(2024, 9, 19);
+        let start_date = Date::new(2023, 9, 19);
+        let end_date = Date::new(2024, 9, 19);
         let comp = Compounding::Simple;
         let freq = Frequency::Annual;
 

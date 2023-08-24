@@ -1,11 +1,10 @@
 use super::cashflow::SimpleCashflow;
 use super::enums::Side;
 use super::traits::{Expires, InterestAccrual, Payable};
-use crate::core::meta::MetaMarketDataNode;
+use crate::core::meta::MarketRequest;
 use crate::core::traits::Registrable;
 use crate::currencies::enums::Currency;
 use crate::rates::interestrate::InterestRate;
-use crate::rates::traits::YieldProvider;
 use crate::time::date::Date;
 
 /// # FixedRateCoupon
@@ -17,7 +16,6 @@ use crate::time::date::Date;
 /// * `accrual_start_date` - The date from which the coupon accrues interest
 /// * `accrual_end_date` - The date until which the coupon accrues interest
 /// * `payment_date` - The date on which the coupon is paid
-/// * `discount_curve_id` - The ID of the discount curve used to calculate the present value of the coupon
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
 pub struct FixedRateCoupon {
@@ -35,18 +33,22 @@ impl FixedRateCoupon {
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
-        discount_curve_id: usize,
         currency: Currency,
         side: Side,
     ) -> FixedRateCoupon {
         let amount = notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
+        let cashflow = SimpleCashflow::new_with_amount(amount, payment_date, currency, side);
         FixedRateCoupon {
             notional,
             rate,
             accrual_start_date,
             accrual_end_date,
-            cashflow: SimpleCashflow::new(amount, payment_date, discount_curve_id, currency, side),
+            cashflow: cashflow,
         }
+    }
+
+    pub fn set_discount_curve_id(&mut self, id: usize) {
+        self.cashflow.set_discount_curve_id(id);
     }
 }
 
@@ -59,8 +61,8 @@ impl Registrable for FixedRateCoupon {
         self.cashflow.register_id(id);
     }
 
-    fn meta_market_data(&self) -> MetaMarketDataNode {
-        return self.cashflow.meta_market_data();
+    fn market_request(&self) -> MarketRequest {
+        return self.cashflow.market_request();
     }
 }
 
@@ -103,7 +105,7 @@ mod tests {
     use crate::rates::enums::Compounding;
     use crate::rates::interestrate::InterestRate;
     use crate::time::date::Date;
-    use crate::time::daycounters::enums::DayCounter;
+    use crate::time::daycounter::DayCounter;
     use crate::time::enums::Frequency;
 
     #[test]
@@ -115,10 +117,9 @@ mod tests {
             Frequency::Annual,
             DayCounter::Thirty360,
         );
-        let accrual_start_date = Date::from_ymd(2023, 1, 1);
-        let accrual_end_date = Date::from_ymd(2023, 12, 31);
-        let payment_date = Date::from_ymd(2024, 1, 1);
-        let discount_curve_id = 1;
+        let accrual_start_date = Date::new(2023, 1, 1);
+        let accrual_end_date = Date::new(2023, 12, 31);
+        let payment_date = Date::new(2024, 1, 1);
         let currency = Currency::JPY;
 
         let coupon = FixedRateCoupon::new(
@@ -127,7 +128,6 @@ mod tests {
             accrual_start_date,
             accrual_end_date,
             payment_date,
-            discount_curve_id,
             currency,
             Side::Pay,
         );
@@ -145,22 +145,23 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let accrual_start_date = Date::from_ymd(2023, 1, 1);
-        let accrual_end_date = Date::from_ymd(2023, 12, 31);
-        let payment_date = Date::from_ymd(2024, 1, 1);
+        let accrual_start_date = Date::new(2023, 1, 1);
+        let accrual_end_date = Date::new(2023, 12, 31);
+        let payment_date = Date::new(2024, 1, 1);
         let discount_curve_id = 1;
         let currency = Currency::USD;
 
-        let coupon = FixedRateCoupon::new(
+        let mut coupon = FixedRateCoupon::new(
             notional,
             rate,
             accrual_start_date,
             accrual_end_date,
             payment_date,
-            discount_curve_id,
             currency,
             Side::Pay,
         );
+
+        coupon.set_discount_curve_id(discount_curve_id);
 
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);

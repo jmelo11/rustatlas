@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::time::date::Date;
 
-use super::calendar::{ImplCalendar, IsCalendar};
+use super::traits::{ImplCalendar, IsCalendar};
 
 pub struct NullCalendar {
     added_holidays: HashSet<Date>,
@@ -47,10 +47,9 @@ impl IsCalendar for NullCalendar {}
 
 mod tests {
     use super::*;
-    use crate::time::calendars::calendar::IsCalendar;
     use crate::time::calendars::nullcalendar::NullCalendar;
+    use crate::time::calendars::traits::IsCalendar;
     use crate::time::date::Date;
-    use crate::time::period::Period;
 
     #[test]
     fn test_nullcalendar() {

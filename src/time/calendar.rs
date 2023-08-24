@@ -1,10 +1,8 @@
+use super::calendars::nullcalendar::NullCalendar;
+use super::calendars::traits::{ImplCalendar, IsCalendar};
+use super::calendars::weekendsonly::WeekendsOnly;
+use crate::time::date::Date;
 use std::collections::HashSet;
-
-use crate::prelude::Date;
-
-use super::calendar::{ImplCalendar, IsCalendar};
-use super::nullcalendar::NullCalendar;
-use super::weekendsonly::WeekendsOnly;
 
 pub enum Calendar {
     NullCalendar(NullCalendar),
