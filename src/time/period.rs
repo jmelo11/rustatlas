@@ -1,5 +1,5 @@
 use super::enums::{Frequency, TimeUnit};
-use std::ops::{Add, AddAssign, DivAssign, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 /// # Period
 /// Struct representing a financial period.
@@ -52,7 +52,7 @@ impl Period {
                 units: TimeUnit::Days,
                 length: 1,
             }),
-            Frequency::OtherFrequency => Err("unknown frequency".to_string()),
+            Frequency::OtherFrequency => Err("OtherFrequency is not a valid value for Period".to_string()),
         }
     }
 
@@ -270,7 +270,7 @@ impl Add for Period {
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
-/// 
+///
 /// let mut p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// p1 -= p2;
@@ -288,7 +288,7 @@ impl SubAssign for Period {
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
-/// 
+///
 /// let p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
 /// let p3 = p1 - p2;
@@ -304,6 +304,30 @@ impl Sub for Period {
         result
     }
 }
+
+/// # Mul`<i32>` for Period
+/// Multiplies a Period by an integer.
+/// # Examples
+/// ```
+/// use rustatlas::time::enums::TimeUnit;
+/// use rustatlas::time::period::Period;
+/// let p = Period::new(5, TimeUnit::Days);
+/// let p2 = p * 2;
+/// assert_eq!(p2.length(), 10);
+/// assert_eq!(p2.units(), TimeUnit::Days);
+/// ```
+impl Mul<i32> for Period {
+    type Output = Period;
+
+    fn mul(self, n: i32) -> Self::Output {
+        Period {
+            length: self.length * n,
+            units: self.units,
+        }
+    }
+}
+
+
 
 /// # MulAssign`<i32>` for Period
 /// Multiplies a Period by an integer.

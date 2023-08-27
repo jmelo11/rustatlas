@@ -1,6 +1,6 @@
-use super::enums::TimeUnit;
+use super::enums::*;
 use super::period::Period;
-use chrono::{Datelike, Duration, Months, NaiveDate, Weekday};
+use chrono::{Datelike, Duration, Months, NaiveDate};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
@@ -25,7 +25,7 @@ pub trait NaiveDateExt {
     fn days_in_year(&self) -> i32;
     fn is_leap_year(&self) -> bool;
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate;
-    fn end_of_month(&self, date: NaiveDate) -> NaiveDate;
+    fn end_of_month(date: NaiveDate) -> NaiveDate;
 }
 
 impl NaiveDateExt for NaiveDate {
@@ -81,7 +81,7 @@ impl NaiveDateExt for NaiveDate {
         };
     }
 
-    fn end_of_month(&self, date: NaiveDate) -> NaiveDate {
+    fn end_of_month(date: NaiveDate) -> NaiveDate {
         let month = date.month();
         let year = date.year();
         let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
@@ -109,6 +109,27 @@ impl Add<Period> for NaiveDate {
         let n = rhs.length();
         let units = rhs.units();
         return self.advance(n, units);
+    }
+}
+
+/// # Sub`<Period>` for NaiveDate
+/// Subtracts a Period from a NaiveDate.
+/// # Examples
+/// ```
+/// use chrono::NaiveDate;
+/// use rustatlas::prelude::*;
+/// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+/// let period = Period::new(15, TimeUnit::Days);
+/// assert_eq!(date - period, NaiveDate::from_ymd_opt(2019, 12, 31).unwrap());
+/// ```
+
+impl Sub<Period> for NaiveDate {
+    type Output = NaiveDate;
+
+    fn sub(self, rhs: Period) -> Self::Output {
+        let n = rhs.length();
+        let units = rhs.units();
+        return self.advance(-n, units);
     }
 }
 
@@ -184,13 +205,38 @@ impl Date {
         Date::from_base_date(base_date)
     }
 
-    pub fn end_of_month(&self) -> Date {
-        let base_date = self.base_date.end_of_month(self.base_date);
+    // testing needed
+    pub fn end_of_month(date: Date) -> Date {
+        let base_date = NaiveDate::end_of_month(date.base_date);
         Date::from_base_date(base_date)
     }
 
+    // testing needed
+    pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
+        let base_date = Date::new(year, month, 1);
+        let first = base_date.weekday();
+        let skip = n - if day_of_week >= first { 1 } else { 0 };
+        let day = 1 + day_of_week  + skip * 7 - first;
+        let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
+        Date::from_base_date(base_date)
+    }
+
+    // testing needed
+    pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
+        let wd = date.weekday();
+        return date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64;
+    }
+
     pub fn weekday(&self) -> Weekday {
-        self.base_date.weekday()
+        match self.base_date.weekday() {
+            chrono::Weekday::Mon => Weekday::Monday,
+            chrono::Weekday::Tue => Weekday::Tuesday,
+            chrono::Weekday::Wed => Weekday::Wednesday,
+            chrono::Weekday::Thu => Weekday::Thursday,
+            chrono::Weekday::Fri => Weekday::Friday,
+            chrono::Weekday::Sat => Weekday::Saturday,
+            chrono::Weekday::Sun => Weekday::Sunday,
+        }
     }
 
     pub fn empty() -> Date {
@@ -232,6 +278,24 @@ impl Add<Period> for Date {
 
     fn add(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date + rhs;
+        Date::from_base_date(base_date)
+    }
+}
+
+/// # Sub`<Period>` for Date
+/// Subtracts a Period from a Date.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let date = Date::new(2020, 1, 15);
+/// let period = Period::new(15, TimeUnit::Days);
+/// assert_eq!(date - period, Date::new(2019, 12, 31));
+/// ```
+impl Sub<Period> for Date {
+    type Output = Date;
+
+    fn sub(self, rhs: Period) -> Self::Output {
+        let base_date: NaiveDate = self.base_date - rhs;
         Date::from_base_date(base_date)
     }
 }
@@ -389,5 +453,47 @@ mod tests {
         let date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
         let period = Period::new(6, TimeUnit::Months);
         assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 7, 1).unwrap());
+    }
+
+    #[test]
+    fn test_end_of_month() {
+        let date = Date::new(2023, 8, 15);
+        let end_date = Date::end_of_month(date);
+        assert_eq!(end_date.day(), 31);
+    }
+
+    #[test]
+    fn test_nth_weekday() {
+        let date = Date::nth_weekday(1, Weekday::Monday, 8, 2023);
+        assert_eq!(date.day(), 7); // 1st Monday of August 2023 should be on 7th
+        assert_eq!(date.month(), 8);
+        assert_eq!(date.year(), 2023);
+
+        let date = Date::nth_weekday(3, Weekday::Saturday, 1, 2023);
+        assert_eq!(date.day(), 21); 
+        assert_eq!(date.month(), 1);
+        assert_eq!(date.year(), 2023);
+    }
+
+    #[test]
+    fn test_next_weekday() {
+        let date = Date::new(2023, 1, 1);
+        let next_wed = Date::next_weekday(date, Weekday::Wednesday);
+        assert_eq!(next_wed.day(), 4); 
+        assert_eq!(next_wed.month(), 1);
+        assert_eq!(next_wed.year(), 2023);
+
+        //ql.Date.nextWeekday(ql.Date(28, ql.February, 2023), ql.Monday)
+        let date = Date::new(2023, 2, 28);
+        let next_mon = Date::next_weekday(date, Weekday::Monday);
+        assert_eq!(next_mon.day(), 6);
+        assert_eq!(next_mon.month(), 3);
+        assert_eq!(next_mon.year(), 2023);
+    }
+
+    #[test]
+    fn test_empty() {
+        let date = Date::empty();
+        assert_eq!(date, Date::from_base_date(NaiveDate::MIN));
     }
 }

@@ -1,9 +1,9 @@
 use crate::{
     time::date::Date,
-    time::enums::{BusinessDayConvention, TimeUnit},
+    time::enums::{BusinessDayConvention, TimeUnit, Weekday},
     time::period::Period,
 };
-use chrono::Weekday;
+
 use std::collections::HashSet;
 
 pub trait ImplCalendar {
@@ -24,7 +24,7 @@ pub trait ImplCalendar {
     fn business_day_list(&self, from: Date, to: Date) -> Vec<Date>;
 
     fn is_weekend(&self, weekday: &Weekday) -> bool {
-        weekday == &Weekday::Sat || weekday == &Weekday::Sun
+        weekday == &Weekday::Saturday || weekday == &Weekday::Sunday
     }
 }
 
@@ -41,6 +41,13 @@ pub trait IsCalendar: ImplCalendar {
             return true;
         }
         self.impl_is_business_day(date)
+    }
+
+    fn end_of_month(&self, date: Date) -> Date {
+        self.adjust(
+            Date::end_of_month(date),
+            Some(BusinessDayConvention::Preceding),
+        )
     }
 
     fn is_end_of_month(&self, date: &Date) -> bool {
@@ -188,7 +195,7 @@ pub trait IsCalendar: ImplCalendar {
             _ => {
                 d1 = d1 + period;
                 if end_of_month && self.is_end_of_month(&date) {
-                    d1 = date.end_of_month();
+                    d1 = Date::end_of_month(date);
                 }
                 d1 = self.adjust(d1, convention);
             }
