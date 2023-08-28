@@ -1,10 +1,10 @@
 use super::date::Date;
 use super::enums::*;
 
-struct IMM {}
+pub struct IMM {}
 
 impl IMM {
-    fn is_imm_date(date: Date, main_cycle: bool) -> bool {
+    pub fn is_imm_date(date: Date, main_cycle: bool) -> bool {
         if date.weekday() != Weekday::Wednesday {
             return false;
         }
@@ -20,7 +20,7 @@ impl IMM {
         }
     }
 
-    fn is_imm_code(in_: String, main_cycle: bool) -> bool {
+    pub fn is_imm_code(in_: String, main_cycle: bool) -> bool {
         if in_.len() != 2 {
             return false;
         }
@@ -38,7 +38,7 @@ impl IMM {
         return loc != None;
     }
 
-    fn code(imm_date: Date) -> String {
+    pub fn code(imm_date: Date) -> String {
         if !IMM::is_imm_date(imm_date, false) {
             panic!("{} is not an IMM date", imm_date);
         }
@@ -60,7 +60,7 @@ impl IMM {
         }
     }
 
-    fn date(imm_code: String, reference_date: Date) -> Date {
+    pub fn date(imm_code: String, reference_date: Date) -> Date {
         if reference_date == Date::empty() {
             panic!("No reference date provided");
         }
@@ -99,7 +99,7 @@ impl IMM {
         return result;
     }
 
-    fn next_date(reference_date: Date, main_cycle: bool) -> Date {
+    pub fn next_date(reference_date: Date, main_cycle: bool) -> Date {
         if reference_date == Date::empty() {
             panic!("No reference date provided");
         }
@@ -124,17 +124,17 @@ impl IMM {
         return result;
     }
 
-    fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
+    pub fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
         let imm_date = IMM::date(imm_code, reference_date);
         return IMM::next_date(imm_date + 1, main_cycle);
     }
 
-    fn next_code(d: Date, main_cycle: bool) -> String {
+    pub fn next_code(d: Date, main_cycle: bool) -> String {
         let next = IMM::next_date(d, main_cycle);
         return IMM::code(next);
     }
 
-    fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
+    pub fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
         let imm_date = IMM::date(imm_code, reference_date);
         let next = IMM::next_date(imm_date, main_cycle);
         return IMM::code(next);
