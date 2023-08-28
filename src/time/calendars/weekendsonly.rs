@@ -3,6 +3,7 @@ use std::collections::HashSet;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WeekendsOnly {
     added_holidays: HashSet<Date>,
     removed_holidays: HashSet<Date>,

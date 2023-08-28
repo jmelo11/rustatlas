@@ -20,13 +20,14 @@ pub use crate::{
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
     time::{
+        calendar::*,
         date::{Date, NaiveDateExt},
         daycounter::*,
         daycounters::{
             actual360::Actual360, actual365::Actual365, thirty360::Thirty360, traits::*,
         },
         enums::*,
-        period::Period,
-        schedule::Schedule,
+        period::*,
+        schedule::*,
     },
 };
