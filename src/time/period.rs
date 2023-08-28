@@ -1,5 +1,8 @@
 use super::enums::{Frequency, TimeUnit};
-use std::ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::{
+    cmp::Ordering,
+    ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 /// # Period
 /// Struct representing a financial period.
@@ -52,7 +55,9 @@ impl Period {
                 units: TimeUnit::Days,
                 length: 1,
             }),
-            Frequency::OtherFrequency => Err("OtherFrequency is not a valid value for Period".to_string()),
+            Frequency::OtherFrequency => {
+                Err("OtherFrequency is not a valid value for Period".to_string())
+            }
         }
     }
 
@@ -134,6 +139,69 @@ impl Period {
 
     pub fn units(&self) -> TimeUnit {
         self.units
+    }
+}
+
+/// # PartialEq for Period
+/// Compares two Periods.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(5, TimeUnit::Days);
+/// assert_eq!(p1, p2);
+///
+/// let p3 = Period::new(5, TimeUnit::Days);
+/// let p4 = Period::new(5, TimeUnit::Weeks);
+/// assert!(p3<p4);
+/// ```
+impl PartialOrd for Period {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.length == other.length {
+            self.units.partial_cmp(&other.units)
+        } else {
+            self.length.partial_cmp(&other.length)
+        }
+    }
+}
+
+/// # Ord for Period
+/// Compares two Periods.
+/// # Examples
+/// ```
+/// use rustatlas::prelude::*;
+/// let p1 = Period::new(5, TimeUnit::Days);
+/// let p2 = Period::new(5, TimeUnit::Days);
+/// assert_eq!(p1, p2);
+/// ```
+impl Ord for Period {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.length == other.length {
+            self.units.cmp(&other.units)
+        } else {
+            self.length.cmp(&other.length)
+        }
+    }
+
+    fn max(self, other: Self) -> Self
+    where
+        Self: Sized,
+    {
+        std::cmp::max_by(self, other, Ord::cmp)
+    }
+
+    fn min(self, other: Self) -> Self
+    where
+        Self: Sized,
+    {
+        std::cmp::min_by(self, other, Ord::cmp)
+    }
+
+    fn clamp(self, min: Self, max: Self) -> Self
+    where
+        Self: Sized,
+    {
+        std::cmp::min(std::cmp::max(self, min), max)
     }
 }
 
@@ -326,8 +394,6 @@ impl Mul<i32> for Period {
         }
     }
 }
-
-
 
 /// # MulAssign`<i32>` for Period
 /// Multiplies a Period by an integer.

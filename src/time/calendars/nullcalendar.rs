@@ -4,9 +4,19 @@ use crate::time::date::Date;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NullCalendar {
     added_holidays: HashSet<Date>,
     removed_holidays: HashSet<Date>,
+}
+
+impl NullCalendar {
+    pub fn new() -> Self {
+        NullCalendar {
+            added_holidays: HashSet::new(),
+            removed_holidays: HashSet::new(),
+        }
+    }
 }
 
 impl ImplCalendar for NullCalendar {

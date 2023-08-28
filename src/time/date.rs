@@ -23,6 +23,7 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 pub trait NaiveDateExt {
     fn days_in_month(&self) -> i32;
     fn days_in_year(&self) -> i32;
+    fn day_of_year(&self) -> i32;
     fn is_leap_year(&self) -> bool;
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate;
     fn end_of_month(date: NaiveDate) -> NaiveDate;
@@ -51,6 +52,16 @@ impl NaiveDateExt for NaiveDate {
         } else {
             365
         }
+    }
+
+    fn day_of_year(&self) -> i32 {
+        let mut day = 0;
+        for m in 1..self.month() {
+            day += NaiveDate::from_ymd_opt(self.year(), m, 1)
+                .unwrap()
+                .days_in_month();
+        }
+        day + self.day() as i32
     }
 
     fn is_leap_year(&self) -> bool {
@@ -161,12 +172,6 @@ impl Date {
         Date { base_date }
     }
 
-    // deprecated
-    #[deprecated]
-    pub fn from_ymd(year: i32, month: u32, day: u32) -> Date {
-        Date::new(year, month, day)
-    }
-
     pub fn base_date(&self) -> NaiveDate {
         self.base_date
     }
@@ -187,8 +192,8 @@ impl Date {
         self.base_date.days_in_month()
     }
 
-    pub fn days_in_year(&self) -> i32 {
-        self.base_date.days_in_year()
+    pub fn day_of_year(&self) -> i32 {
+        self.base_date.day_of_year()
     }
 
     pub fn is_leap_year(&self) -> bool {
@@ -216,7 +221,7 @@ impl Date {
         let base_date = Date::new(year, month, 1);
         let first = base_date.weekday();
         let skip = n - if day_of_week >= first { 1 } else { 0 };
-        let day = 1 + day_of_week  + skip * 7 - first;
+        let day = 1 + day_of_week + skip * 7 - first;
         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
         Date::from_base_date(base_date)
     }
@@ -470,7 +475,7 @@ mod tests {
         assert_eq!(date.year(), 2023);
 
         let date = Date::nth_weekday(3, Weekday::Saturday, 1, 2023);
-        assert_eq!(date.day(), 21); 
+        assert_eq!(date.day(), 21);
         assert_eq!(date.month(), 1);
         assert_eq!(date.year(), 2023);
     }
@@ -479,11 +484,10 @@ mod tests {
     fn test_next_weekday() {
         let date = Date::new(2023, 1, 1);
         let next_wed = Date::next_weekday(date, Weekday::Wednesday);
-        assert_eq!(next_wed.day(), 4); 
+        assert_eq!(next_wed.day(), 4);
         assert_eq!(next_wed.month(), 1);
         assert_eq!(next_wed.year(), 2023);
 
-        //ql.Date.nextWeekday(ql.Date(28, ql.February, 2023), ql.Monday)
         let date = Date::new(2023, 2, 28);
         let next_mon = Date::next_weekday(date, Weekday::Monday);
         assert_eq!(next_mon.day(), 6);
