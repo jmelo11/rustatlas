@@ -96,6 +96,42 @@ impl Schedule {
     pub fn dates(&self) -> &Vec<Date> {
         return &self.dates;
     }
+
+    pub fn is_regular(&self) -> &Vec<bool> {
+        return &self.is_regular;
+    }
+
+    pub fn tenor(&self) -> Period {
+        return self.tenor;
+    }
+
+    pub fn calendar(&self) -> Calendar {
+        return self.calendar.clone();
+    }
+
+    pub fn convention(&self) -> BusinessDayConvention {
+        return self.convention;
+    }
+
+    pub fn termination_date_convention(&self) -> BusinessDayConvention {
+        return self.termination_date_convention;
+    }
+
+    pub fn rule(&self) -> DateGenerationRule {
+        return self.rule;
+    }
+
+    pub fn end_of_month(&self) -> bool {
+        return self.end_of_month;
+    }
+
+    pub fn first_date(&self) -> Date {
+        return self.first_date;
+    }
+
+    pub fn next_to_last_date(&self) -> Date {
+        return self.next_to_last_date;
+    }
 }
 
 /// # MakeSchedule
