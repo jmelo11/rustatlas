@@ -4,7 +4,7 @@ use crate::{
         interestrate::InterestRate,
         traits::{HasReferenceDate, YieldProvider},
     },
-    time::{date::Date, daycounters::traits::*, enums::Frequency},
+    time::{date::Date, enums::Frequency},
 };
 
 /// # FlatForwardTermStructure
@@ -67,7 +67,6 @@ impl YieldProvider for FlatForwardTermStructure {
 #[cfg(test)]
 mod tests {
     use crate::time::daycounter::DayCounter;
-    use crate::time::daycounters::traits::DayCountProvider;
 
     use super::*;
 
