@@ -21,15 +21,7 @@ use crate::time::date::Date;
 pub struct Thirty360;
 
 impl DayCountProvider for Thirty360 {
-    fn day_count(&self, start: Date, end: Date) -> i64 {
-        // Day dd1 = d1.dayOfMonth(), dd2 = d2.dayOfMonth();
-        // Month mm1 = d1.month(), mm2 = d2.month();
-        // Year yy1 = d1.year(), yy2 = d2.year();
-
-        // if (dd1 == 31) { dd1 = 30; }
-        // if (dd2 == 31 && dd1 == 30) { dd2 = 30; }
-
-        // return 360*(yy2-yy1) + 30*(mm2-mm1) + (dd2-dd1);
+    fn day_count(start: Date, end: Date) -> i64 {
         let d1 = start.day() as i64;
         let d2 = end.day() as i64;
         let m1 = start.month() as i64;
@@ -43,7 +35,7 @@ impl DayCountProvider for Thirty360 {
         return 360 * (y2 - y1) + 30 * (m2 - m1) + (dd2 - dd1);
     }
 
-    fn year_fraction(&self, start: Date, end: Date) -> f64 {
-        return self.day_count(start, end) as f64 / 360.0;
+    fn year_fraction(start: Date, end: Date) -> f64 {
+        return Thirty360::day_count(start, end) as f64 / 360.0;
     }
 }

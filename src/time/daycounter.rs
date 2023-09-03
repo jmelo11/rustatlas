@@ -13,20 +13,20 @@ pub enum DayCounter {
     Thirty360,
 }
 
-impl DayCountProvider for DayCounter {
-    fn day_count(&self, start: Date, end: Date) -> i64 {
+impl DayCounter {
+    pub fn day_count(&self, start: Date, end: Date) -> i64 {
         match self {
-            DayCounter::Actual360 => Actual360.day_count(start, end),
-            DayCounter::Actual365 => Actual365.day_count(start, end),
-            DayCounter::Thirty360 => Thirty360.day_count(start, end),
+            DayCounter::Actual360 => Actual360::day_count(start, end),
+            DayCounter::Actual365 => Actual365::day_count(start, end),
+            DayCounter::Thirty360 => Thirty360::day_count(start, end),
         }
     }
 
-    fn year_fraction(&self, start: Date, end: Date) -> f64 {
+    pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
         match self {
-            DayCounter::Actual360 => Actual360.year_fraction(start, end),
-            DayCounter::Actual365 => Actual365.year_fraction(start, end),
-            DayCounter::Thirty360 => Thirty360.year_fraction(start, end),
+            DayCounter::Actual360 => Actual360::year_fraction(start, end),
+            DayCounter::Actual365 => Actual365::year_fraction(start, end),
+            DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
         }
     }
 }
