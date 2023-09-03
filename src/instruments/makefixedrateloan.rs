@@ -4,6 +4,7 @@ use crate::{
         fixedratecoupon::FixedRateCoupon,
     },
     currencies::enums::Currency,
+    prelude::HasCashflows,
     rates::interestrate::InterestRate,
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
 };
@@ -22,6 +23,7 @@ pub struct MakeFixedRateLoan {
     side: Side,
     notional: f64,
     structure: Structure,
+    discount_curve_id: Option<usize>,
 }
 
 impl MakeFixedRateLoan {
@@ -35,7 +37,13 @@ impl MakeFixedRateLoan {
             side: Side::Receive,
             currency: Currency::USD,
             structure: Structure::Other,
+            discount_curve_id: None,
         }
+    }
+
+    pub fn with_discount_curve_id(mut self, id: usize) -> MakeFixedRateLoan {
+        self.discount_curve_id = Some(id);
+        self
     }
 
     pub fn with_period(mut self, period: Period) -> MakeFixedRateLoan {
@@ -81,7 +89,7 @@ impl MakeFixedRateLoan {
                 let schedule =
                     MakeSchedule::new(self.start_date, self.end_date, self.period).build();
                 let notionals =
-                    notionals_vector(schedule.dates().len(), self.notional, Structure::Bullet);
+                    notionals_vector(schedule.dates().len() - 1, self.notional, Structure::Bullet);
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 let last_date = vec![*schedule.dates().last().unwrap()];
@@ -114,13 +122,18 @@ impl MakeFixedRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
-                FixedRateInstrument::new(
+                let mut instrument = FixedRateInstrument::new(
                     self.start_date,
                     self.end_date,
                     self.notional,
                     self.rate,
                     cashflows,
-                )
+                );
+                match self.discount_curve_id {
+                    Some(id) => instrument.set_discount_curve_id(id),
+                    None => (),
+                };
+                instrument
             }
             _ => panic!("Not implemented"),
         }

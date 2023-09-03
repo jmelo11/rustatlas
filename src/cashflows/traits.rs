@@ -8,18 +8,31 @@ pub trait InterestAccrual {
     fn accrual_start_date(&self) -> Date;
     fn accrual_end_date(&self) -> Date;
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64;
+
     fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> (Date, Date) {
-        let first_date = if start_date < self.accrual_start_date() {
-            self.accrual_start_date()
+        let accrual_start = self.accrual_start_date();
+        let accrual_end = self.accrual_end_date();
+
+        // Check if the ranges intersect
+        if start_date <= accrual_end && end_date >= accrual_start {
+            // The ranges intersect, so we find the relevant accrual dates
+            let relevant_start = if accrual_start >= start_date {
+                accrual_start
+            } else {
+                start_date
+            };
+
+            let relevant_end = if accrual_end <= end_date {
+                accrual_end
+            } else {
+                end_date
+            };
+
+            (relevant_start, relevant_end)
         } else {
-            start_date
-        };
-        let last_date = if end_date > self.accrual_end_date() {
-            self.accrual_end_date()
-        } else {
-            end_date
-        };
-        return (first_date, last_date);
+            // The ranges do not intersect, so return Date::empty()
+            (Date::empty(), Date::empty())
+        }
     }
 }
 

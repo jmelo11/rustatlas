@@ -55,6 +55,7 @@ impl ImplCalendar for NullCalendar {
 
 impl IsCalendar for NullCalendar {}
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::time::calendars::nullcalendar::NullCalendar;
@@ -63,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_nullcalendar() {
-        let mut cal = NullCalendar {
+        let cal = NullCalendar {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         };

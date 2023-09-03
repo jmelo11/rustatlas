@@ -5,11 +5,12 @@ use crate::{
 };
 
 /// # ExchangeRateRequest
-/// Meta data for an exchange rate. Holds the currency and the reference date required to fetch the
-/// exchange rate.
+/// Meta data for an exchange rate. Holds the first currency, the second currency and the reference
+/// date required to fetch the exchange rate.
 ///
 /// ## Parameters
-/// * `currency` - The currency of the exchange rate.
+/// * `first_currency` - The first currency of the exchange rate.
+/// * `second_currency` - The second currency of the exchange rate.
 /// * `reference_date` - The reference date of the exchange rate.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExchangeRateRequest {
@@ -50,31 +51,24 @@ impl ExchangeRateRequest {
 ///
 /// ## Parameters
 /// * `discount_curve_id` - The discount curve id of the discount factor.
-/// * `reference_date` - The reference date of the discount factor.
+/// * `date` - The reference date of the discount factor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiscountFactorRequest {
     provider_id: usize,
-    reference_date: Date,
+    date: Date,
 }
 
 impl DiscountFactorRequest {
-    pub fn new(provider_id: usize, reference_date: Date) -> DiscountFactorRequest {
-        DiscountFactorRequest {
-            provider_id,
-            reference_date,
-        }
+    pub fn new(provider_id: usize, date: Date) -> DiscountFactorRequest {
+        DiscountFactorRequest { provider_id, date }
     }
 
     pub fn provider_id(&self) -> usize {
         self.provider_id
     }
 
-    pub fn reference_date(&self) -> Date {
-        self.reference_date
-    }
-
-    pub fn set_reference_date(&mut self, reference_date: Date) {
-        self.reference_date = reference_date;
+    pub fn date(&self) -> Date {
+        self.date
     }
 }
 
@@ -83,7 +77,7 @@ impl DiscountFactorRequest {
 /// to fetch the forward rate.
 ///
 /// ## Parameters
-/// * `forward_curve_id` - The forward curve id of the forward rate.
+/// * `provider_id` - The forward curve id of the forward rate.
 /// * `start_date` - The start date of the forward rate.
 /// * `end_date` - The end date of the forward rate.
 /// * `compounding` - The compounding of the forward rate.
@@ -193,7 +187,7 @@ impl MarketRequest {
 /// * `df` - The discount factor.
 /// * `fwd` - The forward rate.
 /// * `fx` - The exchange rate.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct MarketData {
     id: usize,
     df: Option<f64>,

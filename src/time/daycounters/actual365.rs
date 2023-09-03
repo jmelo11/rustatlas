@@ -12,11 +12,10 @@ use crate::time::date::Date;
 /// ```
 /// use rustatlas::prelude::*;
 ///
-/// let start = Date::from_ymd(2020, 1, 1);
-/// let end = Date::from_ymd(2020, 2, 1);
-/// let day_count = Actual365 {};
-/// assert_eq!(day_count.day_count(start, end), 31);
-/// assert_eq!(day_count.year_fraction(start, end), 31.0 / 365.0);
+/// let start = Date::new(2020, 1, 1);
+/// let end = Date::new(2020, 2, 1);
+/// assert_eq!(Actual365::day_count(start, end), 31);
+/// assert_eq!(Actual365::year_fraction(start, end), 31.0 / 365.0);
 /// ```
 pub struct Actual365;
 

@@ -45,11 +45,11 @@ impl ImplCalendar for WeekendsOnly {
 
 impl IsCalendar for WeekendsOnly {}
 
+#[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::time::calendars::traits::IsCalendar;
-    use crate::time::calendars::weekendsonly::WeekendsOnly;
-    use crate::time::date::Date;
+    use std::collections::HashSet;
+
+    use crate::time::{calendars::{weekendsonly::WeekendsOnly, traits::IsCalendar}, date::Date};
 
     #[test]
     fn test_weekendsonly() {

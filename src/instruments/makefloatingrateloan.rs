@@ -4,7 +4,7 @@ use crate::{
         floatingratecoupon::FloatingRateCoupon,
     },
     currencies::enums::Currency,
-    rates::{interestrate::RateDefinition, interestrateindex::enums::InterestRateIndex},
+    rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
 };
 
@@ -24,6 +24,8 @@ pub struct MakeFloatingRateLoan {
     side: Side,
     spread: f64,
     structure: Structure,
+    forecast_curve_id: Option<usize>,
+    discount_curve_id: Option<usize>,
 }
 
 impl MakeFloatingRateLoan {
@@ -38,7 +40,19 @@ impl MakeFloatingRateLoan {
             currency: Currency::USD,
             side: Side::Receive,
             structure: Structure::Other,
+            forecast_curve_id: None,
+            discount_curve_id: None,
         }
+    }
+
+    pub fn with_forecast_curve_id(mut self, forecast_curve_id: usize) -> MakeFloatingRateLoan {
+        self.forecast_curve_id = Some(forecast_curve_id);
+        return self;
+    }
+
+    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> MakeFloatingRateLoan {
+        self.discount_curve_id = Some(discount_curve_id);
+        return self;
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLoan {
@@ -85,14 +99,14 @@ impl MakeFloatingRateLoan {
         return self;
     }
 
-    pub fn build(self) -> FloatingRateInstrument {
+    pub fn build(&self) -> FloatingRateInstrument {
         match self.structure {
             Structure::Bullet => {
                 let mut cashflows = Vec::new();
                 let schedule =
                     MakeSchedule::new(self.start_date, self.end_date, self.period).build();
                 let notionals =
-                    notionals_vector(schedule.dates().len(), self.notional, Structure::Bullet);
+                    notionals_vector(schedule.dates().len() - 1, self.notional, Structure::Bullet);
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 let last_date = vec![*schedule.dates().last().unwrap()];
                 let notional = vec![self.notional];
@@ -125,6 +139,24 @@ impl MakeFloatingRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
+
+                match self.forecast_curve_id {
+                    Some(id) => {
+                        cashflows
+                            .iter_mut()
+                            .for_each(|cf| cf.set_forecast_curve_id(id));
+                    }
+                    None => {}
+                }
+
+                match self.discount_curve_id {
+                    Some(id) => {
+                        cashflows
+                            .iter_mut()
+                            .for_each(|cf| cf.set_discount_curve_id(id));
+                    }
+                    None => {}
+                }
                 FloatingRateInstrument::new(
                     self.start_date,
                     self.end_date,
@@ -161,7 +193,6 @@ fn build_coupons_from_notionals(
             rate_definition,
             currency,
             side,
-            false,
         );
         cashflows.push(Cashflow::FloatingRateCoupon(coupon));
     }

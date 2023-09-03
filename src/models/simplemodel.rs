@@ -1,6 +1,7 @@
 use crate::core::marketstore::MarketStore;
 
 use crate::core::meta::*;
+use crate::rates::traits::YieldProvider;
 use crate::time::date::Date;
 
 use super::traits::Model;
@@ -24,15 +25,15 @@ impl SimpleModel {
 
 impl Model for SimpleModel {
     fn gen_df_data(&self, df: DiscountFactorRequest, eval_date: Date) -> f64 {
-        let date = df.reference_date();
+        let date = df.date();
         if eval_date > date {
             return 0.0;
         } else if eval_date == date {
             return 1.0;
         }
         let id: usize = df.provider_id();
-        let provider = self.market_store.get_provider_by_id(id);
-        match provider {
+        let index = self.market_store.get_index_by_id(id);
+        match index {
             Some(curve) => {
                 return curve.discount_factor(date);
             }
@@ -40,23 +41,22 @@ impl Model for SimpleModel {
         };
     }
 
-    fn gen_fwd_data(&self, fwd: ForwardRateRequest, eval_date: Date) -> f64 {
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest, _eval_date: Date) -> f64 {
         let id = fwd.provider_id();
-        let provider = self.market_store.get_provider_by_id(id);
-        match provider {
-            Some(curve) => {
-                return curve.forward_rate(
-                    fwd.start_date(),
-                    fwd.end_date(),
-                    fwd.compounding(),
-                    fwd.frequency(),
-                );
+        let index = self.market_store.get_index_by_id(id);
+        match index {
+            Some(idx) => {
+                let start_date = fwd.start_date();
+                let end_date = fwd.end_date();
+                let compounding = fwd.compounding();
+                let frequency = fwd.frequency();
+                return idx.forward_rate(start_date, end_date, compounding, frequency);
             }
             None => panic!("No curve found for id {}", id),
         };
     }
 
-    fn gen_fx_data(&self, fx: ExchangeRateRequest, eval_date: Date) -> f64 {
+    fn gen_fx_data(&self, fx: ExchangeRateRequest, _eval_date: Date) -> f64 {
         let first_currency = fx.first_currency();
         let second_currency = fx.second_currency();
         let fx = self
@@ -69,65 +69,5 @@ impl Model for SimpleModel {
                 first_currency, second_currency
             ),
         }
-    }
-}
-
-mod tests {
-    use std::rc::Rc;
-
-    use crate::{
-        core::{
-            marketstore::MarketStore,
-            meta::{DiscountFactorRequest, MarketRequest},
-        },
-        currencies::enums::Currency,
-        rates::{
-            enums::Compounding,
-            interestrate::InterestRate,
-            interestrateindex::{enums::InterestRateIndex, iborindex::IborIndex},
-            yieldtermstructure::{
-                enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
-            },
-        },
-        time::{
-            date::Date,
-            daycounter::DayCounter,
-            enums::{Frequency, TimeUnit},
-            period::Period,
-        },
-    };
-
-    use super::SimpleModel;
-
-    #[test]
-    fn test_market_data_generation() {
-        let reference_date = Date::new(2021, 1, 1);
-        let local_currency = Currency::USD;
-        let mut market_store = MarketStore::new(reference_date, local_currency);
-        let rate = InterestRate::new(
-            0.05,
-            Compounding::Simple,
-            Frequency::Annual,
-            DayCounter::Actual360,
-        );
-
-        let term_structure = YieldTermStructure::FlatForwardTermStructure(
-            FlatForwardTermStructure::new(reference_date, rate),
-        );
-
-        let interest_rate_index = InterestRateIndex::IborIndex(
-            IborIndex::new(Period::new(6, TimeUnit::Months)).with_term_structure(term_structure),
-        );
-
-        market_store
-            .mut_yield_providers_store()
-            .add_provider("Example".to_string(), Rc::new(interest_rate_index));
-
-        let request_date = Date::new(2025, 1, 1);
-        let df = DiscountFactorRequest::new(0, request_date);
-        let meta_data = vec![MarketRequest::new(0, Some(df), None, None)];
-
-        let eval_dates = vec![Date::new(2021, 1, 1), Date::new(2022, 6, 1)];
-        let model = SimpleModel::new(market_store);
     }
 }

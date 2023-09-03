@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     rates::{
         enums::Compounding,
-        interestrate::RateDefinition,
+        interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::enums::YieldTermStructure,
     },
@@ -14,8 +14,11 @@ use crate::{
     },
 };
 
-use super::traits::FloatingRateProvider;
+use super::traits::FixingProvider;
 
+/// # OvernightIndex
+/// Overnight index.
+#[derive(Clone)]
 pub struct OvernightIndex {
     fixings: HashMap<Date, f64>,
     term_structure: Option<YieldTermStructure>,
@@ -33,6 +36,18 @@ impl OvernightIndex {
         }
     }
 
+    pub fn term_structure(&self) -> Option<YieldTermStructure> {
+        self.term_structure
+    }
+
+    pub fn rate_definition(&self) -> RateDefinition {
+        self.rate_definition.clone()
+    }
+
+    pub fn tenor(&self) -> Period {
+        self.tenor
+    }
+
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
@@ -48,36 +63,30 @@ impl OvernightIndex {
         self
     }
 
-    pub fn fixing_compounded_rate(&self, start_date: Date) -> Option<f64> {
-        let mut sorted_dates: Vec<&Date> = self
-            .fixings
-            .keys()
-            .filter(|&&date| date >= start_date)
-            .collect();
-        sorted_dates.sort();
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> f64 {
+        let start_index = match self.fixings.get(&start_date) {
+            Some(rate) => *rate,
+            None => panic!("No fixing rate for date {}", start_date),
+        };
+        let end_index = match self.fixings.get(&end_date) {
+            Some(rate) => *rate,
+            None => panic!("No fixing rate for date {}", end_date),
+        };
 
-        if sorted_dates.is_empty() {
-            return None;
-        }
-
+        let comp = end_index / start_index;
         let day_counter = self.rate_definition.day_counter();
-
-        let mut compounded_product = 1.0;
-        let mut prev_date = start_date;
-
-        for &date in sorted_dates.iter() {
-            let rate = self.fixings.get(date).unwrap();
-            let year_fraction = day_counter.year_fraction(prev_date, *date);
-
-            compounded_product *= 1.0 + rate * year_fraction;
-            prev_date = *date;
-        }
-
-        Some(compounded_product - 1.0)
+        InterestRate::implied_rate(
+            comp,
+            day_counter,
+            self.rate_definition.compounding(),
+            self.rate_definition.frequency(),
+            day_counter.year_fraction(start_date, end_date),
+        )
+        .rate()
     }
 }
 
-impl FloatingRateProvider for OvernightIndex {
+impl FixingProvider for OvernightIndex {
     fn fixing(&self, date: Date) -> Option<f64> {
         match self.fixings.get(&date) {
             Some(rate) => Some(*rate),
@@ -87,14 +96,6 @@ impl FloatingRateProvider for OvernightIndex {
 
     fn add_fixing(&mut self, date: Date, rate: f64) {
         self.fixings.insert(date, rate);
-    }
-
-    fn rate_definition(&self) -> RateDefinition {
-        self.rate_definition.clone()
-    }
-
-    fn fixing_tenor(&self) -> Period {
-        self.tenor
     }
 }
 
@@ -130,25 +131,37 @@ impl YieldProvider for OvernightIndex {
     ) -> f64 {
         // mixed case - return w.a.
         if start_date < self.reference_date() && end_date > self.reference_date() {
-            let comp_rate = match self.fixing_compounded_rate(start_date) {
-                Some(rate) => rate,
-                None => panic!("No fixing rate for this OvernightIndex"),
+            let first_fixing = match self.fixing(start_date) {
+                Some(fixing) => fixing,
+                None => panic!("No fixing rate for date {}", self.reference_date()),
             };
-            let forecast_rate = match self.term_structure {
-                Some(term_structure) => {
-                    term_structure.forward_rate(start_date, end_date, comp, freq)
-                }
+            let second_fixing = match self.fixing(self.reference_date()) {
+                Some(fixing) => fixing,
+                None => panic!("No fixing rate for date {}", end_date),
+            };
+
+            let df = match self.term_structure {
+                Some(term_structure) => term_structure.discount_factor(end_date),
                 None => panic!("No term structure for this OvernightIndex"),
             };
-            let t1 = self
-                .rate_definition
-                .day_counter()
-                .year_fraction(start_date, self.reference_date());
-            let t2 = self
-                .rate_definition
-                .day_counter()
-                .year_fraction(self.reference_date(), end_date);
-            return (comp_rate * t1 + forecast_rate * t2) / (t1 + t2);
+
+            let third_fixing = second_fixing / df;
+
+            let comp = third_fixing / first_fixing;
+            let day_counter = self.rate_definition.day_counter();
+            return InterestRate::implied_rate(
+                comp,
+                day_counter,
+                self.rate_definition.compounding(),
+                self.rate_definition.frequency(),
+                day_counter.year_fraction(start_date, end_date),
+            )
+            .rate();
+        }
+
+        // past fixing case
+        if start_date < self.reference_date() && end_date <= self.reference_date() {
+            return self.average_rate(start_date, end_date);
         }
 
         // forecast case
@@ -157,7 +170,7 @@ impl YieldProvider for OvernightIndex {
                 Some(term_structure) => {
                     return term_structure.forward_rate(start_date, end_date, comp, freq)
                 }
-                None => panic!("No term structure for this IborIndex"),
+                None => panic!("No term structure for this OvernightIndex"),
             }
         } else {
             panic!("Invalid start and end dates")
@@ -167,68 +180,105 @@ impl YieldProvider for OvernightIndex {
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+        time::daycounter::DayCounter,
+    };
+
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
-    fn test_fixing_compounded_rate_no_fixings() {
-        let index = OvernightIndex::new().with_rate_definition(RateDefinition::default());
-
-        let start_date = Date::new(2022, 1, 1);
-
-        assert_eq!(index.fixing_compounded_rate(start_date), None);
+    fn test_new_overnight_index() {
+        let overnight_index = OvernightIndex::new();
+        assert!(overnight_index.fixings.is_empty());
+        assert!(overnight_index.term_structure.is_none());
     }
 
     #[test]
-    fn test_fixing_compounded_rate_single_fixing() {
-        let mut fixings = HashMap::new();
-        fixings.insert(Date::new(2022, 1, 2), 0.01);
-
-        let index = OvernightIndex::new()
-            .with_rate_definition(RateDefinition::default())
-            .with_fixings(fixings);
-
-        let start_date = Date::new(2022, 1, 1);
-
-        assert_eq!(
-            index.fixing_compounded_rate(start_date),
-            Some(0.01 * 1.0 / 360.0)
-        );
+    fn test_with_rate_definition() {
+        let overnight_index = OvernightIndex::new().with_rate_definition(RateDefinition::default());
+        assert_eq!(overnight_index.rate_definition, RateDefinition::default());
     }
 
     #[test]
-    fn test_fixing_compounded_rate_multiple_fixings() {
+    fn test_with_fixings() {
         let mut fixings = HashMap::new();
-        fixings.insert(Date::new(2022, 1, 2), 0.01);
-        fixings.insert(Date::new(2022, 1, 3), 0.02);
-        fixings.insert(Date::new(2022, 1, 4), 0.015);
-
-        let index = OvernightIndex::new()
-            .with_rate_definition(RateDefinition::default())
-            .with_fixings(fixings);
-
-        let start_date = Date::new(2022, 1, 1);
-
-        let expected_result =
-            (1.0 + 0.01 * 1.0 / 360.0) * (1.0 + 0.02 * 1.0 / 360.0) * (1.0 + 0.015 * 1.0 / 360.0)
-                - 1.0;
-
-        assert_eq!(
-            index.fixing_compounded_rate(start_date),
-            Some(expected_result)
-        );
+        fixings.insert(Date::new(2021, 1, 1), 0.02);
+        let overnight_index = OvernightIndex::new().with_fixings(fixings.clone());
+        assert_eq!(overnight_index.fixings, fixings);
     }
 
     #[test]
-    fn test_fixing_compounded_rate_with_future_date() {
+    fn test_average_rate() {
         let mut fixings = HashMap::new();
-        fixings.insert(Date::new(2022, 1, 2), 0.01);
+        let start_date = Date::new(2021, 1, 1);
+        let end_date = Date::new(2022, 1, 1);
 
-        let index = OvernightIndex::new()
-            .with_rate_definition(RateDefinition::default())
+        fixings.insert(start_date, 100.0);
+        fixings.insert(end_date, 105.0);
+        let overnight_index = OvernightIndex::new()
+            .with_fixings(fixings)
+            .with_rate_definition(RateDefinition::default());
+
+        let average_rate = overnight_index.average_rate(start_date, end_date);
+
+        // Add your assertions here based on how average_rate is calculated
+        assert!(average_rate > 0.0);
+    }
+
+    #[test]
+    fn test_fixing() {
+        let mut fixings = HashMap::new();
+        fixings.insert(Date::new(2021, 1, 1), 0.02);
+        let overnight_index = OvernightIndex::new().with_fixings(fixings);
+
+        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1)), Some(0.02));
+        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 2)), None);
+    }
+
+    #[test]
+    fn test_reference_date() {
+        let mut fixings = HashMap::new();
+        let ref_date = Date::new(2021, 1, 1);
+
+        fixings.insert(ref_date, 100.0);
+        let mut overnight_index = OvernightIndex::new()
+            .with_fixings(fixings.clone())
+            .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
+                FlatForwardTermStructure::new(
+                    ref_date,
+                    InterestRate::new(
+                        0.02,
+                        Compounding::Simple,
+                        Frequency::Annual,
+                        DayCounter::Actual360,
+                    ),
+                ),
+            ));
+
+        assert_eq!(overnight_index.reference_date(), ref_date);
+
+        let next_date = Date::new(2021, 1, 2);
+        overnight_index.add_fixing(next_date, 100.2);
+
+        assert_eq!(overnight_index.reference_date(), next_date);
+
+        let next_date_2 = Date::new(2021, 1, 3);
+        let overnight_index = OvernightIndex::new()
+            .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
+                FlatForwardTermStructure::new(
+                    next_date_2,
+                    InterestRate::new(
+                        0.02,
+                        Compounding::Simple,
+                        Frequency::Annual,
+                        DayCounter::Actual360,
+                    ),
+                ),
+            ))
             .with_fixings(fixings);
 
-        let start_date = Date::new(2022, 1, 3);
-
-        assert_eq!(index.fixing_compounded_rate(start_date), None);
+        assert_eq!(overnight_index.reference_date(), ref_date);
     }
 }

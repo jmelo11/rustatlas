@@ -20,14 +20,16 @@ A rust version of Atlas
 
 - [ ] Loans:
   - [ ] Fijos
-    - [ ] Bullet
+    - [X] Bullet
     - [ ] Amortizable
     - [ ] Cero
     - [ ] Cuotas iguales
+    - [ ] Irregular
   - [ ] Flotantes
-    - [ ] Bullet
+    - [X] Bullet
     - [ ] Amortizable
     - [ ] Cero
+    - [ ] Irregular
   - [ ] Mixtos
 - [ ] Cuentas corrientes
 - [ ] Swaps
@@ -55,7 +57,7 @@ A rust version of Atlas
   - [ ] USA
 
 - [X] Crear fechas
-- [ ] Crear schedule
+- [X] Crear schedule
 
 ## Software
 

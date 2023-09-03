@@ -52,7 +52,6 @@ impl FloatingRateCoupon {
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
-        in_arrears: bool,
     ) -> FloatingRateCoupon {
         FloatingRateCoupon {
             notional,

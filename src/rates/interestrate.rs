@@ -7,8 +7,8 @@ use crate::time::enums::Frequency;
 /// Struct that defines a rate.
 /// # Example
 /// ```
-/// use rustatlas::prelude::*
-/// let rate_definition = RateDefinition::new(Compounding::Simple, Frequency::Annual, DayCounter::Actual360);
+/// use rustatlas::prelude::*;
+/// let rate_definition = RateDefinition::new(DayCounter::Actual360, Compounding::Simple, Frequency::Annual);
 /// assert_eq!(rate_definition.compounding(), Compounding::Simple);
 /// assert_eq!(rate_definition.frequency(), Frequency::Annual);
 /// assert_eq!(rate_definition.day_counter(), DayCounter::Actual360);
@@ -181,30 +181,14 @@ impl InterestRate {
 
     pub fn forward_rate(
         &self,
-        start_date: Date,
-        end_date: Date,
-        comp: Compounding,
-        freq: Frequency,
+        _start_date: Date,
+        _end_date: Date,
+        _comp: Compounding,
+        _freq: Frequency,
     ) -> f64 {
         return self.rate;
     }
 }
-
-/// # YieldProvider for InterestRate
-/// Implement YieldProvider for InterestRate.
-/// # Example
-/// ```
-/// use rustatlas::prelude::*;
-/// let start_date = Date::from_ymd(2020, 1, 1);
-/// let end_date = Date::from_ymd(2020, 2, 1);
-/// let day_count = DayCounter::Actual360;
-/// let compounding = Compounding::Simple;
-/// let frequency = Frequency::Annual;
-/// let rate = InterestRate::new(0.05, compounding, frequency, day_count);
-/// assert_eq!(rate.compound_factor(start_date, end_date), 1.0043055555555556);
-/// assert_eq!(rate.discount_factor(start_date, end_date), 0.9957129027796985);
-/// assert_eq!(rate.forward_rate(start_date, end_date, compounding, frequency), 0.05);
-/// ```
 
 #[cfg(test)]
 mod tests {

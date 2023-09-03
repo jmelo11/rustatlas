@@ -1,9 +1,9 @@
-use std::rc::Rc;
-
 use crate::{
     currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
-    rates::traits::{HasReferenceDate, YieldProvider},
-    rates::yieldproviderstore::YieldProviderStore,
+    rates::{
+        indexstore::IndexStore, interestrateindex::enums::InterestRateIndex,
+        traits::HasReferenceDate,
+    },
     time::date::Date,
 };
 
@@ -14,7 +14,7 @@ pub struct MarketStore {
     reference_date: Date,
     local_currency: Currency,
     exchange_rate_store: ExchangeRateStore,
-    yield_provider_store: YieldProviderStore,
+    index_store: IndexStore,
 }
 
 impl MarketStore {
@@ -23,7 +23,7 @@ impl MarketStore {
             reference_date,
             local_currency,
             exchange_rate_store: ExchangeRateStore::new(),
-            yield_provider_store: YieldProviderStore::new(),
+            index_store: IndexStore::new(),
         }
     }
 
@@ -39,12 +39,12 @@ impl MarketStore {
         &mut self.exchange_rate_store
     }
 
-    pub fn yield_provider_store(&self) -> &YieldProviderStore {
-        &self.yield_provider_store
+    pub fn index_store(&self) -> &IndexStore {
+        &self.index_store
     }
 
-    pub fn mut_yield_providers_store(&mut self) -> &mut YieldProviderStore {
-        &mut self.yield_provider_store
+    pub fn mut_index_store(&mut self) -> &mut IndexStore {
+        &mut self.index_store
     }
 
     pub fn get_exchange_rate(
@@ -61,8 +61,8 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_provider_by_id(&self, id: usize) -> Option<&Rc<dyn YieldProvider>> {
-        return self.yield_provider_store.get_provider_by_id(id);
+    pub fn get_index_by_id(&self, id: usize) -> Option<&InterestRateIndex> {
+        return self.index_store.get_index_by_id(id);
     }
 }
 

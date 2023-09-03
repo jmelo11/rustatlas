@@ -4,12 +4,21 @@ use crate::time::date::Date;
 
 use crate::visitors::traits::HasCashflows;
 
+/// # FixedRateInstrument
+/// A fixed rate instrument.
+///
+/// ## Parameters
+/// * `start_date` - The start date.
+/// * `end_date` - The end date.
+/// * `notional` - The notional.
+/// * `rate` - The rate.
+/// * `cashflows` - The cashflows.
 pub struct FixedRateInstrument {
     start_date: Date,
     end_date: Date,
     notional: f64,
-    cashflows: Vec<Cashflow>,
     rate: InterestRate,
+    cashflows: Vec<Cashflow>,
 }
 
 impl FixedRateInstrument {
@@ -26,12 +35,6 @@ impl FixedRateInstrument {
             notional: notional,
             rate: rate,
             cashflows: cashflows,
-        }
-    }
-
-    pub fn set_discount_curve(&mut self, id: usize) {
-        for cf in self.mut_cashflows() {
-            cf.set_discount_curve_id(id);
         }
     }
 
@@ -64,7 +67,6 @@ impl HasCashflows for FixedRateInstrument {
 
 #[cfg(test)]
 mod dev {
-    use std::rc::Rc;
 
     use crate::{
         cashflows::cashflow::Side,
@@ -75,7 +77,7 @@ mod dev {
         rates::{
             enums::Compounding,
             interestrate::InterestRate,
-            interestrateindex::overnightindex::OvernightIndex,
+            interestrateindex::{enums::InterestRateIndex, overnightindex::OvernightIndex},
             yieldtermstructure::{
                 enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
             },
@@ -104,9 +106,10 @@ mod dev {
             ref_date, rate,
         ));
         let index = OvernightIndex::new().with_term_structure(curve);
-        market_store
-            .mut_yield_providers_store()
-            .add_provider("Testing".to_string(), Rc::new(index));
+        market_store.mut_index_store().add_index(
+            "Testing".to_string(),
+            InterestRateIndex::OvernightIndex(index),
+        );
         return market_store;
     }
 
@@ -139,7 +142,7 @@ mod dev {
             println!("{}", cf);
         }
 
-        let mut indexer = IndexingVisitor::new();
+        let indexer = IndexingVisitor::new();
         indexer.visit(&mut instrument);
 
         let market_store = create_store();

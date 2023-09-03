@@ -1,4 +1,4 @@
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Sub};
 
 /// # Frequency
 /// Enum representing a financial frequency.

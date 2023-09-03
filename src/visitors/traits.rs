@@ -2,7 +2,7 @@ use crate::cashflows::cashflow::Cashflow;
 
 pub trait Visit<T, U> {
     type Output;
-    fn visit(&mut self, visitable: &mut T) -> Self::Output;
+    fn visit(&self, visitable: &mut T) -> Self::Output;
 }
 
 pub trait ConstVisit<T, U> {

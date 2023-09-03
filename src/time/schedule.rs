@@ -25,10 +25,7 @@ fn next_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     return result;
 }
 
-fn allows_end_of_month(period: Period) -> bool {
-    return period.units() == TimeUnit::Months
-        || period.units() == TimeUnit::Years && period >= Period::new(1, TimeUnit::Months);
-}
+
 
 fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     let mut result = Date::new(date.year(), date.month(), 20);
@@ -293,7 +290,6 @@ impl MakeSchedule {
         let null_calendar = Calendar::NullCalendar(NullCalendar::new());
         let mut periods = 1;
         let mut seed = Date::empty();
-        let mut exit_date = Date::empty();
 
         match self.rule {
             DateGenerationRule::Zero => {
@@ -322,7 +318,7 @@ impl MakeSchedule {
                     seed = self.next_to_last_date;
                 }
 
-                exit_date = self.effective_date;
+                let mut exit_date = self.effective_date;
                 if self.first_date != Date::empty() {
                     exit_date = self.first_date;
                 }
@@ -434,7 +430,7 @@ impl MakeSchedule {
                     }
                 }
 
-                exit_date = self.termination_date;
+                let mut exit_date = self.termination_date;
 
                 if self.next_to_last_date != Date::empty() {
                     exit_date = self.next_to_last_date;
@@ -590,6 +586,11 @@ mod tests {
 
     use super::*;
 
+    fn allows_end_of_month(period: Period) -> bool {
+        return period.units() == TimeUnit::Months
+            || period.units() == TimeUnit::Years && period >= Period::new(1, TimeUnit::Months);
+    }
+    
     #[test]
     fn test_next_twentieth() {
         let date = Date::new(2022, 1, 1);

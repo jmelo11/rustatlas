@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, HashSet, VecDeque}, borrow::BorrowMut, cell::RefCell};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet, VecDeque},
+};
 
 use super::enums::Currency;
 
@@ -64,10 +67,8 @@ impl ExchangeRateStore {
                 if source == current_ccy && !visited.contains(&dest) {
                     let new_rate = rate * map_rate;
                     if dest == second_ccy {
-                        mutable_cache
-                            .insert((first_ccy, second_ccy), new_rate);
-                        mutable_cache
-                            .insert((second_ccy, first_ccy), 1.0 / new_rate);
+                        mutable_cache.insert((first_ccy, second_ccy), new_rate);
+                        mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
                         return Some(new_rate);
                     }
                     visited.insert(dest);
@@ -75,10 +76,8 @@ impl ExchangeRateStore {
                 } else if dest == current_ccy && !visited.contains(&source) {
                     let new_rate = rate / map_rate;
                     if source == second_ccy {
-                        mutable_cache
-                            .insert((first_ccy, second_ccy), new_rate);
-                        mutable_cache
-                            .insert((second_ccy, first_ccy), 1.0 / new_rate);
+                        mutable_cache.insert((first_ccy, second_ccy), new_rate);
+                        mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
                         return Some(new_rate);
                     }
                     visited.insert(source);
@@ -119,7 +118,14 @@ mod tests {
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
-        assert_eq!(manager.exchange_rate_cache.borrow().get(&(USD, EUR)).unwrap(), &0.85);
+        assert_eq!(
+            manager
+                .exchange_rate_cache
+                .borrow()
+                .get(&(USD, EUR))
+                .unwrap(),
+            &0.85
+        );
     }
 
     #[test]

@@ -33,7 +33,6 @@ pub fn build_cashflows(
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
-            _ => (),
         }
     }
 }

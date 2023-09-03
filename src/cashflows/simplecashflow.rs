@@ -11,10 +11,11 @@ use crate::time::date::Date;
 /// ## Example
 /// ```
 /// use rustatlas::prelude::*;
-/// let cashflow = SimpleCashflow::new(100.0, Date::from_ymd(2020, 1, 1), 0, Currency::USD, Side::Receive);
+/// let payment_date = Date::new(2020, 1, 1);
+/// let cashflow = SimpleCashflow::new_with_amount(100.0, payment_date, Currency::USD, Side::Receive);
 /// assert_eq!(cashflow.amount(), 100.0);
 /// assert_eq!(cashflow.side(), Side::Receive);
-/// assert_eq!(cashflow.payment_date(), Date::from_ymd(2020, 1, 1));
+/// assert_eq!(cashflow.payment_date(), payment_date);
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SimpleCashflow {
@@ -73,14 +74,12 @@ impl Registrable for SimpleCashflow {
     }
 
     fn market_request(&self) -> MarketRequest {
-        let id = match self.registry_id {
-            Some(id) => id,
-            None => panic!("SimpleCashflow has not been registered"),
-        };
-        let discount_curve_id = match self.discount_curve_id {
-            Some(id) => id,
-            None => panic!("SimpleCashflow does not have a discount curve id"),
-        };
+        let id = self
+            .registry_id
+            .expect("SimpleCashflow does not have a registry id");
+        let discount_curve_id = self
+            .discount_curve_id
+            .expect("SimpleCashflow does not have a discount curve id");
         let discount = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
         let currency = ExchangeRateRequest::new(self.currency, None, None);
         return MarketRequest::new(id, Some(discount), None, Some(currency));
@@ -89,10 +88,7 @@ impl Registrable for SimpleCashflow {
 
 impl Payable for SimpleCashflow {
     fn amount(&self) -> f64 {
-        return match self.amount {
-            Some(amount) => amount,
-            None => panic!("SimpleCashflow does not have an amount"),
-        };
+        return self.amount.expect("SimpleCashflow does not have an amount");
     }
     fn side(&self) -> Side {
         return self.side;
@@ -108,5 +104,3 @@ impl Expires for SimpleCashflow {
         return self.payment_date < date;
     }
 }
-
-

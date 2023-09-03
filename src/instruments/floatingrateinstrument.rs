@@ -4,6 +4,16 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
+/// # FloatingRateInstrument
+/// A floating rate instrument.
+///
+/// ## Parameters
+/// * `start_date` - The start date.
+/// * `end_date` - The end date.
+/// * `notional` - The notional.
+/// * `spread` - The spread.
+/// * `side` - The side.
+/// * `cashflows` - The cashflows.
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
@@ -65,10 +75,8 @@ impl HasCashflows for FloatingRateInstrument {
 
 #[cfg(test)]
 mod dev {
-    use std::rc::Rc;
 
     use crate::{
-        cashflows::cashflow::Side,
         core::{marketstore::MarketStore, meta::MarketData},
         currencies::enums::Currency,
         instruments::makefloatingrateloan::MakeFloatingRateLoan,
@@ -76,16 +84,17 @@ mod dev {
         rates::{
             enums::Compounding,
             interestrate::InterestRate,
-            interestrateindex::overnightindex::OvernightIndex,
+            interestrateindex::{enums::InterestRateIndex, overnightindex::OvernightIndex},
             yieldtermstructure::{
                 enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
             },
         },
         time::{date::Date, daycounter::DayCounter, enums::Frequency},
         visitors::{
+            fixingvisitor::FixingVisitor,
             indexingvisitor::IndexingVisitor,
             npvconstvisitor::NPVConstVisitor,
-            traits::{ConstVisit, HasCashflows, Visit},
+            traits::{ConstVisit, Visit},
         },
     };
 
@@ -105,9 +114,10 @@ mod dev {
             ref_date, rate,
         ));
         let index = OvernightIndex::new().with_term_structure(curve);
-        market_store
-            .mut_yield_providers_store()
-            .add_provider("Testing".to_string(), Rc::new(index));
+        market_store.mut_index_store().add_index(
+            "Testing".to_string(),
+            InterestRateIndex::OvernightIndex(index),
+        );
         return market_store;
     }
 
@@ -125,11 +135,11 @@ mod dev {
             .with_frequency(Frequency::Semiannual)
             .bullet()
             .with_notional(notional)
+            .with_discount_curve_id(0)
+            .with_forecast_curve_id(0)
             .build();
 
-        instrument.set_discount_curve_id(0);
-
-        let mut indexer = IndexingVisitor::new();
+        let indexer = IndexingVisitor::new();
         indexer.visit(&mut instrument);
 
         let model = SimpleModel::new(market_store);
@@ -142,7 +152,9 @@ mod dev {
 
         data.iter().for_each(|d| println!("{:?}", d));
 
-        let npv_visitor = NPVConstVisitor::new(data);
+        let fixing_visitor = FixingVisitor::new(data.clone());
+        fixing_visitor.visit(&mut instrument);
+        let npv_visitor = NPVConstVisitor::new(data.clone());
 
         let npv = npv_visitor.visit(&instrument);
 
