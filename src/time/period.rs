@@ -140,6 +140,13 @@ impl Period {
     pub fn units(&self) -> TimeUnit {
         self.units
     }
+
+    pub fn empty() -> Self {
+        Self {
+            length: 0,
+            units: TimeUnit::Days,
+        }
+    }
 }
 
 /// # PartialEq for Period
