@@ -1,7 +1,6 @@
 use crate::rates::enums::Compounding;
 use crate::time::date::Date;
 use crate::time::daycounter::DayCounter;
-use crate::time::daycounters::traits::DayCountProvider;
 use crate::time::enums::Frequency;
 
 /// # RateDefinition
@@ -16,29 +15,29 @@ use crate::time::enums::Frequency;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RateDefinition {
+    day_counter: DayCounter,
     compounding: Compounding,
     frequency: Frequency,
-    day_counter: DayCounter,
 }
 
 impl RateDefinition {
     pub fn new(
+        day_counter: DayCounter,
         compounding: Compounding,
         frequency: Frequency,
-        day_counter: DayCounter,
     ) -> RateDefinition {
         RateDefinition {
+            day_counter,
             compounding,
             frequency,
-            day_counter,
         }
     }
 
     pub fn default() -> RateDefinition {
         return RateDefinition::new(
+            DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Actual360,
         );
     }
 
@@ -81,7 +80,7 @@ impl InterestRate {
     ) -> InterestRate {
         InterestRate {
             rate,
-            rate_definition: RateDefinition::new(compounding, frequency, day_counter),
+            rate_definition: RateDefinition::new(day_counter, compounding, frequency),
         }
     }
 
@@ -209,14 +208,20 @@ impl InterestRate {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::{
+        rates::{
+            enums::Compounding,
+            interestrate::{InterestRate, RateDefinition},
+        },
+        time::{daycounter::DayCounter, enums::Frequency},
+    };
 
     #[test]
     fn test_rate_definition_new() {
         let rd = RateDefinition::new(
+            DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Actual360,
         );
         assert_eq!(rd.compounding(), Compounding::Simple);
         assert_eq!(rd.frequency(), Frequency::Annual);
@@ -248,9 +253,9 @@ mod tests {
     #[test]
     fn test_interest_rate_from_rate_definition() {
         let rd = RateDefinition::new(
+            DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Actual360,
         );
         let ir = InterestRate::from_rate_definition(0.05, rd);
         assert_eq!(ir.rate(), 0.05);
