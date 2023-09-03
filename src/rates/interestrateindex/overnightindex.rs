@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use crate::{
-    prelude::DayCountProvider,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
@@ -70,7 +69,7 @@ impl OvernightIndex {
             let rate = self.fixings.get(date).unwrap();
             let year_fraction = day_counter.year_fraction(prev_date, *date);
 
-            compounded_product *= (1.0 + rate * year_fraction);
+            compounded_product *= 1.0 + rate * year_fraction;
             prev_date = *date;
         }
 
@@ -103,7 +102,10 @@ impl HasReferenceDate for OvernightIndex {
     fn reference_date(&self) -> Date {
         match self.fixings.keys().max() {
             Some(date) => *date,
-            None => panic!("No reference date for this IborIndex"),
+            None => match self.term_structure {
+                Some(term_structure) => term_structure.reference_date(),
+                None => panic!("No term structure for this OvernightIndex"),
+            },
         }
     }
 }

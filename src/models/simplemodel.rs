@@ -1,7 +1,6 @@
 use crate::core::marketstore::MarketStore;
 
 use crate::core::meta::*;
-use crate::rates::traits::YieldProvider;
 use crate::time::date::Date;
 
 use super::traits::Model;
@@ -15,15 +14,11 @@ use super::traits::Model;
 #[derive(Clone)]
 pub struct SimpleModel {
     market_store: MarketStore,
-    market_request: Vec<MarketRequest>,
 }
 
 impl SimpleModel {
-    pub fn new(market_store: MarketStore, market_request: Vec<MarketRequest>) -> SimpleModel {
-        SimpleModel {
-            market_store,
-            market_request,
-        }
+    pub fn new(market_store: MarketStore) -> SimpleModel {
+        SimpleModel { market_store }
     }
 }
 
@@ -37,7 +32,7 @@ impl Model for SimpleModel {
         }
         let id: usize = df.provider_id();
         let provider = self.market_store.get_provider_by_id(id);
-        let df = match provider {
+        match provider {
             Some(curve) => {
                 return curve.discount_factor(date);
             }
@@ -48,7 +43,7 @@ impl Model for SimpleModel {
     fn gen_fwd_data(&self, fwd: ForwardRateRequest, eval_date: Date) -> f64 {
         let id = fwd.provider_id();
         let provider = self.market_store.get_provider_by_id(id);
-        let fwd = match provider {
+        match provider {
             Some(curve) => {
                 return curve.forward_rate(
                     fwd.start_date(),
@@ -61,7 +56,7 @@ impl Model for SimpleModel {
         };
     }
 
-    fn gen_fx_data(&mut self, fx: ExchangeRateRequest, eval_date: Date) -> f64 {
+    fn gen_fx_data(&self, fx: ExchangeRateRequest, eval_date: Date) -> f64 {
         let first_currency = fx.first_currency();
         let second_currency = fx.second_currency();
         let fx = self
@@ -78,8 +73,31 @@ impl Model for SimpleModel {
 }
 
 mod tests {
-    use crate::prelude::*;
     use std::rc::Rc;
+
+    use crate::{
+        core::{
+            marketstore::MarketStore,
+            meta::{DiscountFactorRequest, MarketRequest},
+        },
+        currencies::enums::Currency,
+        rates::{
+            enums::Compounding,
+            interestrate::InterestRate,
+            interestrateindex::{enums::InterestRateIndex, iborindex::IborIndex},
+            yieldtermstructure::{
+                enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
+            },
+        },
+        time::{
+            date::Date,
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+            period::Period,
+        },
+    };
+
+    use super::SimpleModel;
 
     #[test]
     fn test_market_data_generation() {
@@ -110,6 +128,6 @@ mod tests {
         let meta_data = vec![MarketRequest::new(0, Some(df), None, None)];
 
         let eval_dates = vec![Date::new(2021, 1, 1), Date::new(2022, 6, 1)];
-        let model = SimpleModel::new(market_store, meta_data);
+        let model = SimpleModel::new(market_store);
     }
 }

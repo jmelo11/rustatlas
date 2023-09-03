@@ -4,19 +4,35 @@ A rust version of Atlas
 
 ## Herramientas de Mercado
 
-- [ ] Indice Ibor/Overnight
+- [X] Indice Ibor/Overnight
 - [ ] Accrual Ibor/Overnight
 - [ ] Curvas con base RF y spreads contantes/interpolados
+- [ ] Curvas con modelos (nss, vasicek, etc)
+- [X] Fixing en periodos distintos al indice
+
+## Copones
+
+- [X] Cashflow simple
+- [X] Cupon tasa fija
+- [X] Cupon tasa flotante
 
 ## Productos
 
+- [ ] Loans:
+  - [ ] Fijos
+    - [ ] Bullet
+    - [ ] Amortizable
+    - [ ] Cero
+    - [ ] Cuotas iguales
+  - [ ] Flotantes
+    - [ ] Bullet
+    - [ ] Amortizable
+    - [ ] Cero
+  - [ ] Mixtos
+- [ ] Cuentas corrientes
 - [ ] Swaps
 - [ ] Opciones
 - [ ] Forwards
-- [ ] Cuentas corrientes
-- [ ] Loans:
-  - [ ] Mixtos
-  - [ ] Fixing en periodos distintos al indice
 
 ## Simulación
 
@@ -27,13 +43,19 @@ A rust version of Atlas
 ## Datos mercado
 
 - [ ] Cargar fixings de indices
+- [ ] Cargar monedas
 - [ ] Curvas de tasas UF/Colateral CLP
-- [ ] Conectar monedas
 
 ## Time
 
-- [ ] Crear calendarios basicos
-- [ ] Crear Schedule
+- [X] Crear calendarios
+  - [X] NullCalendar
+  - [X] WeekendsOnly
+  - [ ] Chile
+  - [ ] USA
+
+- [X] Crear fechas
+- [ ] Crear schedule
 
 ## Software
 

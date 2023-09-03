@@ -1,112 +1,176 @@
-use super::enums::Side;
-use super::traits::{Expires, Payable};
-use crate::core::meta::*;
-use crate::core::traits::Registrable;
-use crate::currencies::enums::Currency;
-use crate::time::date::Date;
+use std::fmt::{Display, Formatter, Result};
 
-/// # SimpleCashflow
-/// A simple cashflow that is payable at a given date.
-///
-/// ## Example
-/// ```
-/// use rustatlas::prelude::*;
-/// let cashflow = SimpleCashflow::new(100.0, Date::from_ymd(2020, 1, 1), 0, Currency::USD, Side::Receive);
-/// assert_eq!(cashflow.amount(), 100.0);
-/// assert_eq!(cashflow.side(), Side::Receive);
-/// assert_eq!(cashflow.payment_date(), Date::from_ymd(2020, 1, 1));
-/// ```
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct SimpleCashflow {
-    payment_date: Date,
-    currency: Currency,
-    side: Side,
-    amount: Option<f64>,
-    discount_curve_id: Option<usize>,
-    registry_id: Option<usize>,
+use crate::{
+    core::{meta::MarketRequest, traits::Registrable},
+    time::date::Date,
+};
+
+use super::{
+    fixedratecoupon::FixedRateCoupon,
+    floatingratecoupon::FloatingRateCoupon,
+    simplecashflow::SimpleCashflow,
+    traits::{InterestAccrual, Payable, RequiresFixingRate},
+};
+
+/// # Side
+/// Enum that represents the side of a cashflow.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Side {
+    Pay,
+    Receive,
 }
 
-impl SimpleCashflow {
-    pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
-        SimpleCashflow {
-            payment_date,
-            currency,
-            side,
-            amount: None,
-            discount_curve_id: None,
-            registry_id: None,
-        }
-    }
+/// # Cashflow
+/// Enum that represents a cashflow.
+pub enum Cashflow {
+    Redemption(SimpleCashflow),
+    Disbursement(SimpleCashflow),
+    FixedRateCoupon(FixedRateCoupon),
+    FloatingRateCoupon(FloatingRateCoupon),
+}
 
-    pub fn new_with_amount(
-        amount: f64,
-        payment_date: Date,
-        currency: Currency,
-        side: Side,
-    ) -> SimpleCashflow {
-        SimpleCashflow {
-            payment_date,
-            currency,
-            side,
-            amount: Some(amount),
-            discount_curve_id: None,
-            registry_id: None,
-        }
-    }
-
-    pub fn set_amount(&mut self, amount: f64) {
-        self.amount = Some(amount);
-    }
-
+impl Cashflow {
     pub fn set_discount_curve_id(&mut self, id: usize) {
-        self.discount_curve_id = Some(id);
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.set_discount_curve_id(id),
+            Cashflow::Disbursement(cashflow) => cashflow.set_discount_curve_id(id),
+            Cashflow::FixedRateCoupon(coupon) => coupon.set_discount_curve_id(id),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.set_discount_curve_id(id),
+        }
+    }
+
+    pub fn set_forecast_curve_id(&mut self, id: usize) {
+        match self {
+            Cashflow::FloatingRateCoupon(coupon) => coupon.set_forecast_curve_id(id),
+            _ => (),
+        }
     }
 }
 
-impl Registrable for SimpleCashflow {
-    fn registry_id(&self) -> Option<usize> {
-        return self.registry_id;
-    }
-
-    fn register_id(&mut self, id: usize) {
-        self.registry_id = Some(id);
-    }
-
-    fn market_request(&self) -> MarketRequest {
-        let id = match self.registry_id {
-            Some(id) => id,
-            None => panic!("SimpleCashflow has not been registered"),
-        };
-        let discount_curve_id = match self.discount_curve_id {
-            Some(id) => id,
-            None => panic!("SimpleCashflow does not have a discount curve id"),
-        };
-        let discount = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
-        let currency = ExchangeRateRequest::new(self.currency, None, None);
-        return MarketRequest::new(id, Some(discount), None, Some(currency));
-    }
-}
-
-impl Payable for SimpleCashflow {
+impl Payable for Cashflow {
     fn amount(&self) -> f64 {
-        return match self.amount {
-            Some(amount) => amount,
-            None => panic!("SimpleCashflow does not have an amount"),
-        };
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.amount(),
+            Cashflow::Disbursement(cashflow) => cashflow.amount(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.amount(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.amount(),
+        }
     }
+
     fn side(&self) -> Side {
-        return self.side;
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.side(),
+            Cashflow::Disbursement(cashflow) => cashflow.side(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.side(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.side(),
+        }
     }
 
     fn payment_date(&self) -> Date {
-        return self.payment_date;
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.payment_date(),
+            Cashflow::Disbursement(cashflow) => cashflow.payment_date(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.payment_date(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.payment_date(),
+        }
     }
 }
 
-impl Expires for SimpleCashflow {
-    fn is_expired(&self, date: Date) -> bool {
-        return self.payment_date < date;
+impl Registrable for Cashflow {
+    fn register_id(&mut self, id: usize) {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.register_id(id),
+            Cashflow::Disbursement(cashflow) => cashflow.register_id(id),
+            Cashflow::FixedRateCoupon(coupon) => coupon.register_id(id),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.register_id(id),
+        }
+    }
+
+    fn registry_id(&self) -> Option<usize> {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.registry_id(),
+            Cashflow::Disbursement(cashflow) => cashflow.registry_id(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.registry_id(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.registry_id(),
+        }
+    }
+
+    fn market_request(&self) -> MarketRequest {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.market_request(),
+            Cashflow::Disbursement(cashflow) => cashflow.market_request(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.market_request(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.market_request(),
+        }
     }
 }
 
+impl InterestAccrual for Cashflow {
+    fn accrual_end_date(&self) -> Date {
+        match self {
+            Cashflow::FixedRateCoupon(coupon) => coupon.accrual_end_date(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_end_date(),
+            _ => panic!("Not implemented"),
+        }
+    }
 
+    fn accrual_start_date(&self) -> Date {
+        match self {
+            Cashflow::FixedRateCoupon(coupon) => coupon.accrual_start_date(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_start_date(),
+            _ => panic!("Not implemented"),
+        }
+    }
+
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
+        match self {
+            Cashflow::FixedRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
+            _ => 0.0,
+        }
+    }
+}
+
+impl RequiresFixingRate for Cashflow {
+    fn set_fixing_rate(&mut self, fixing_rate: f64) {
+        match self {
+            Cashflow::FloatingRateCoupon(coupon) => coupon.set_fixing_rate(fixing_rate),
+            _ => (),
+        }
+    }
+}
+
+impl Display for Cashflow {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        match self {
+            Cashflow::Redemption(cashflow) => write!(
+                f,
+                "date: {}, amount: {}, side: {:?}",
+                cashflow.payment_date(),
+                cashflow.amount(),
+                cashflow.side()
+            ),
+            Cashflow::Disbursement(cashflow) => write!(
+                f,
+                "date: {}, amount: {}, side: {:?}",
+                cashflow.payment_date(),
+                cashflow.amount(),
+                cashflow.side()
+            ),
+            Cashflow::FixedRateCoupon(coupon) => write!(
+                f,
+                "date: {}, amount: {}, side: {:?}",
+                coupon.payment_date(),
+                coupon.amount(),
+                coupon.side()
+            ),
+            Cashflow::FloatingRateCoupon(coupon) => write!(
+                f,
+                "date: {}, amount: {}, side: {:?}",
+                coupon.payment_date(),
+                coupon.amount(),
+                coupon.side()
+            ),
+        }
+    }
+}

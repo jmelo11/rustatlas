@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::{collections::{HashMap, HashSet, VecDeque}, borrow::BorrowMut, cell::RefCell};
 
 use super::enums::Currency;
 
@@ -11,7 +11,7 @@ pub struct FxRecepy {
 pub struct ExchangeRateStore {
     fx_recepies: HashMap<Currency, usize>,
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
-    exchange_rate_cache: HashMap<(Currency, Currency), f64>,
+    exchange_rate_cache: RefCell<HashMap<(Currency, Currency), f64>>,
 }
 
 impl ExchangeRateStore {
@@ -19,7 +19,7 @@ impl ExchangeRateStore {
         ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: HashMap::new(),
+            exchange_rate_cache: RefCell::new(HashMap::new()),
         }
     }
 
@@ -40,7 +40,7 @@ impl ExchangeRateStore {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
-    pub fn get_exchange_rate(&mut self, first_ccy: Currency, second_ccy: Currency) -> Option<f64> {
+    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Option<f64> {
         let first_ccy = first_ccy;
         let second_ccy = second_ccy;
 
@@ -49,7 +49,7 @@ impl ExchangeRateStore {
         }
 
         let cache_key = (first_ccy, second_ccy);
-        if let Some(cached_rate) = self.exchange_rate_cache.get(&cache_key) {
+        if let Some(cached_rate) = self.exchange_rate_cache.borrow().get(&cache_key) {
             return Some(*cached_rate);
         }
 
@@ -58,14 +58,15 @@ impl ExchangeRateStore {
         q.push_back((first_ccy, 1.0));
         visited.insert(first_ccy);
 
+        let mut mutable_cache = self.exchange_rate_cache.borrow_mut();
         while let Some((current_ccy, rate)) = q.pop_front() {
             for (&(source, dest), &map_rate) in &self.exchange_rate_map {
                 if source == current_ccy && !visited.contains(&dest) {
                     let new_rate = rate * map_rate;
                     if dest == second_ccy {
-                        self.exchange_rate_cache
+                        mutable_cache
                             .insert((first_ccy, second_ccy), new_rate);
-                        self.exchange_rate_cache
+                        mutable_cache
                             .insert((second_ccy, first_ccy), 1.0 / new_rate);
                         return Some(new_rate);
                     }
@@ -74,9 +75,9 @@ impl ExchangeRateStore {
                 } else if dest == current_ccy && !visited.contains(&source) {
                     let new_rate = rate / map_rate;
                     if source == second_ccy {
-                        self.exchange_rate_cache
+                        mutable_cache
                             .insert((first_ccy, second_ccy), new_rate);
-                        self.exchange_rate_cache
+                        mutable_cache
                             .insert((second_ccy, first_ccy), 1.0 / new_rate);
                         return Some(new_rate);
                     }
@@ -96,10 +97,10 @@ mod tests {
 
     #[test]
     fn test_same_currency() {
-        let mut manager = ExchangeRateStore {
+        let manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: HashMap::new(),
+            exchange_rate_cache: RefCell::new(HashMap::new()),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, USD).unwrap(), 1.0);
@@ -107,26 +108,26 @@ mod tests {
 
     #[test]
     fn test_cache() {
-        let mut manager = ExchangeRateStore {
+        let manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
                 map.insert((USD, EUR), 0.85);
                 map
             },
-            exchange_rate_cache: HashMap::new(),
+            exchange_rate_cache: RefCell::new(HashMap::new()),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
-        assert_eq!(manager.exchange_rate_cache.get(&(USD, EUR)).unwrap(), &0.85);
+        assert_eq!(manager.exchange_rate_cache.borrow().get(&(USD, EUR)).unwrap(), &0.85);
     }
 
     #[test]
     fn test_nonexistent_rate() {
-        let mut manager = ExchangeRateStore {
+        let manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: HashMap::new(),
+            exchange_rate_cache: RefCell::new(HashMap::new()),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR), None);
@@ -134,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_complex_case() {
-        let mut manager = ExchangeRateStore {
+        let manager = ExchangeRateStore {
             fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
@@ -142,7 +143,7 @@ mod tests {
                 map.insert((EUR, USD), 1.0 / 0.85);
                 map
             },
-            exchange_rate_cache: HashMap::new(),
+            exchange_rate_cache: RefCell::new(HashMap::new()),
         };
 
         assert_eq!(manager.get_exchange_rate(EUR, USD).unwrap(), 1.0 / 0.85);

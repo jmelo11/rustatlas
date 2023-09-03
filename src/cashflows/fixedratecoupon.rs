@@ -1,5 +1,6 @@
-use super::cashflow::SimpleCashflow;
-use super::enums::Side;
+
+use super::cashflow::Side;
+use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
 use crate::core::meta::MarketRequest;
 use crate::core::traits::Registrable;
@@ -97,10 +98,12 @@ impl Expires for FixedRateCoupon {
     }
 }
 
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cashflows::enums::Side;
+    use crate::cashflows::cashflow::Side;
     use crate::currencies::enums::Currency;
     use crate::rates::enums::Compounding;
     use crate::rates::interestrate::InterestRate;

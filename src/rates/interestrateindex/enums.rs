@@ -1,7 +1,6 @@
 use crate::{
-    prelude::{Compounding, Frequency, YieldProvider},
-    rates::{interestrate::RateDefinition, traits::HasReferenceDate},
-    time::{date::Date, period::Period},
+    rates::{interestrate::RateDefinition, traits::{HasReferenceDate, YieldProvider}, enums::Compounding},
+    time::{date::Date, period::Period, enums::Frequency},
 };
 
 use super::{iborindex::IborIndex, traits::FloatingRateProvider};

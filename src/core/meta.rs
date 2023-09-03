@@ -1,7 +1,7 @@
 use crate::{
     currencies::enums::Currency,
-    prelude::{Compounding, Frequency},
-    time::date::Date,
+    rates::enums::Compounding,
+    time::{date::Date, enums::Frequency},
 };
 
 /// # ExchangeRateRequest
@@ -193,6 +193,7 @@ impl MarketRequest {
 /// * `df` - The discount factor.
 /// * `fwd` - The forward rate.
 /// * `fx` - The exchange rate.
+#[derive(Debug)]
 pub struct MarketData {
     id: usize,
     df: Option<f64>,

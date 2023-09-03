@@ -13,7 +13,7 @@ use crate::{
 pub struct MarketStore {
     reference_date: Date,
     local_currency: Currency,
-    exchange_rate_manager: ExchangeRateStore,
+    exchange_rate_store: ExchangeRateStore,
     yield_provider_store: YieldProviderStore,
 }
 
@@ -22,7 +22,7 @@ impl MarketStore {
         MarketStore {
             reference_date,
             local_currency,
-            exchange_rate_manager: ExchangeRateStore::new(),
+            exchange_rate_store: ExchangeRateStore::new(),
             yield_provider_store: YieldProviderStore::new(),
         }
     }
@@ -31,12 +31,12 @@ impl MarketStore {
         self.local_currency
     }
 
-    pub fn exchange_rate_manager(&self) -> &ExchangeRateStore {
-        &self.exchange_rate_manager
+    pub fn exchange_rate_store(&self) -> &ExchangeRateStore {
+        &self.exchange_rate_store
     }
 
-    pub fn mut_exchange_rate_manager(&mut self) -> &mut ExchangeRateStore {
-        &mut self.exchange_rate_manager
+    pub fn mut_exchange_rate_store(&mut self) -> &mut ExchangeRateStore {
+        &mut self.exchange_rate_store
     }
 
     pub fn yield_provider_store(&self) -> &YieldProviderStore {
@@ -48,7 +48,7 @@ impl MarketStore {
     }
 
     pub fn get_exchange_rate(
-        &mut self,
+        &self,
         first_currency: Currency,
         second_currency: Option<Currency>,
     ) -> Option<f64> {
@@ -57,7 +57,7 @@ impl MarketStore {
             None => self.local_currency,
         };
         return self
-            .exchange_rate_manager
+            .exchange_rate_store
             .get_exchange_rate(first_currency, second_currency);
     }
 

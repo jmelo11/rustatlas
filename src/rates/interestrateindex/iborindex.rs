@@ -85,7 +85,10 @@ impl HasReferenceDate for IborIndex {
     fn reference_date(&self) -> Date {
         match self.fixings.keys().max() {
             Some(date) => *date,
-            None => panic!("No reference date for this IborIndex"),
+            None => match self.term_structure {
+                Some(term_structure) => term_structure.reference_date(),
+                None => panic!("No reference date for this IborIndex"),
+            }
         }
     }
 }

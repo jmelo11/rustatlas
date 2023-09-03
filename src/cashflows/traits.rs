@@ -1,6 +1,6 @@
 use crate::time::date::Date;
 
-use super::enums::Side;
+use super::cashflow::Side;
 
 /// # InterestAccrual
 /// A trait that defines the accrual period of an instrument.

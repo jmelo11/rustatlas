@@ -1,6 +1,6 @@
 use crate::{
     core::{
-        meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest, MarketRequest},
+        meta::{ForwardRateRequest, MarketRequest},
         traits::Registrable,
     },
     currencies::enums::Currency,
@@ -9,8 +9,8 @@ use crate::{
 };
 
 use super::{
-    cashflow::SimpleCashflow,
-    enums::Side,
+    cashflow::Side,
+    simplecashflow::SimpleCashflow,
     traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
 };
 
@@ -37,7 +37,6 @@ pub struct FloatingRateCoupon {
     accrual_end_date: Date,
     fixing_date: Date,
     rate_definition: RateDefinition,
-    in_arrears: bool,
     forecast_curve_id: Option<usize>,
     cashflow: SimpleCashflow,
 }
@@ -63,7 +62,6 @@ impl FloatingRateCoupon {
             accrual_end_date,
             fixing_date,
             rate_definition,
-            in_arrears,
             forecast_curve_id: None,
             cashflow: SimpleCashflow::new(payment_date, currency, side),
         }
