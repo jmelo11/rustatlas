@@ -1,25 +1,29 @@
-// use crate::{
-//     core::meta::MetaMarketDataNode, instruments::fixedrateinstrument::FixedRateInstrument,
-// };
+use crate::core::{meta::MarketRequest, traits::Registrable};
 
-// use super::traits::Visit;
+use super::traits::{HasCashflows, Visit};
 
-// pub struct IndexingVisitor {
-//     meta_market_data: Vec<MetaMarketDataNode>,
-// }
+pub struct IndexingVisitor {
+    request: Vec<MarketRequest>,
+}
 
-// impl IndexingVisitor {
-//     pub fn new() -> IndexingVisitor {
-//         IndexingVisitor {
-//             meta_market_data: Vec::new(),
-//         }
-//     }
-// }
+impl IndexingVisitor {
+    pub fn new() -> Self {
+        IndexingVisitor {
+            request: Vec::new(),
+        }
+    }
 
-// impl Visit<FixedRateInstrument> for IndexingVisitor {
-//     fn visit(&mut self, instruments: &mut [&FixedRateInstrument]) {}
+    pub fn request(&self) -> &Vec<MarketRequest> {
+        &self.request
+    }
+}
 
-//     fn par_visit(&mut self, instruments: &mut [&FixedRateInstrument]) {
-//         self.visit(instruments);
-//     }
-// }
+impl<T: HasCashflows> Visit<T, ()> for IndexingVisitor {
+    type Output = ();
+    fn visit(&mut self, has_cashflows: &mut T) -> Self::Output {
+        has_cashflows.mut_cashflows().iter_mut().for_each(|cf| {
+            cf.register_id(self.request.len());
+            self.request.push(cf.market_request());
+        });
+    }
+}
