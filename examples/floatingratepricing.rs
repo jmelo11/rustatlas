@@ -1,5 +1,19 @@
 extern crate rustatlas;
-use rustatlas::prelude::*;
+use rustatlas::{
+    core::meta::MarketData,
+    models::{simplemodel::SimpleModel, traits::Model},
+    rates::traits::HasReferenceDate,
+    time::{
+        enums::{Frequency, TimeUnit},
+        period::Period,
+    },
+    visitors::{
+        indexingvisitor::IndexingVisitor,
+        npvconstvisitor::NPVConstVisitor,
+        traits::{ConstVisit, Visit, HasCashflows}, fixingvisitor::FixingVisitor,
+    }, instruments::makefloatingrateloan::MakeFloatingRateLoan,
+};
+
 mod common;
 use crate::common::common::*;
 

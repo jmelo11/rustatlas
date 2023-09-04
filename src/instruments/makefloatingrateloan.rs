@@ -103,8 +103,9 @@ impl MakeFloatingRateLoan {
         match self.structure {
             Structure::Bullet => {
                 let mut cashflows = Vec::new();
-                let schedule =
-                    MakeSchedule::new(self.start_date, self.end_date, self.period).build();
+                let schedule = MakeSchedule::new(self.start_date, self.end_date)
+                    .with_tenor(self.period)
+                    .build();
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, self.notional, Structure::Bullet);
                 let first_date = vec![*schedule.dates().first().unwrap()];

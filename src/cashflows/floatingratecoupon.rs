@@ -29,6 +29,7 @@ use super::{
 /// * `forecast_curve_id` - The ID of the forecast curve used to calculate the present value of the coupon
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
+#[derive(Clone, Copy)]
 pub struct FloatingRateCoupon {
     notional: f64,
     spread: f64,
@@ -66,6 +67,16 @@ impl FloatingRateCoupon {
         }
     }
 
+    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
+        self.cashflow.with_discount_curve_id(id);
+        self
+    }
+
+    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
+        self.forecast_curve_id = Some(id);
+        self
+    }
+
     pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
@@ -83,10 +94,10 @@ impl InterestAccrual for FloatingRateCoupon {
         return self.accrual_end_date;
     }
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
-        let fixing = match self.fixing_rate {
-            Some(fixing) => fixing,
-            None => panic!("No fixing rate has been set"),
-        };
+        let fixing = self
+            .fixing_rate
+            .expect("FloatingRateCoupon does not have a fixing rate");
+
         let rate = InterestRate::from_rate_definition(fixing + self.spread, self.rate_definition);
         let (d1, d2) = self.relevant_accrual_dates(start_date, end_date);
         return self.notional * (rate.compound_factor(d1, d2) - 1.0);
@@ -96,8 +107,8 @@ impl InterestAccrual for FloatingRateCoupon {
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
-        self.cashflow
-            .set_amount(self.accrued_amount(self.accrual_start_date, self.accrual_end_date));
+        let accrual = self.accrued_amount(self.accrual_start_date, self.accrual_end_date);
+        self.cashflow = self.cashflow.with_amount(accrual);
     }
 }
 

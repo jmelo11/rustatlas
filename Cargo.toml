@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.26"
 rayon = "1.7.0"
+argmin = { version = "0.7" }
+argmin-math = { version = "0.2", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }

@@ -1,14 +1,36 @@
 extern crate rustatlas;
-use rustatlas::prelude::*;
+use rustatlas::{
+    cashflows::{
+        cashflow::Side,
+        traits::{InterestAccrual, Payable},
+    },
+    core::meta::MarketData,
+    instruments::makefixedrateloan::MakeFixedRateLoan,
+    models::{simplemodel::SimpleModel, traits::Model},
+    rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
+    time::{
+        date::Date,
+        daycounter::DayCounter,
+        enums::{Frequency, TimeUnit},
+        period::Period,
+    },
+    visitors::{
+        indexingvisitor::IndexingVisitor,
+        npvconstvisitor::NPVConstVisitor,
+        traits::{ConstVisit, HasCashflows, Visit},
+    },
+};
 
 mod common;
 use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
+    let market_store = create_store();
+    let ref_date = market_store.reference_date();
 
-    let start_date = Date::new(2021, 9, 1);
-    let end_date = Date::new(2026, 9, 1);
+    let start_date = ref_date;
+    let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
         0.05,
@@ -17,8 +39,11 @@ fn starting_today_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new(start_date, end_date, rate)
-        .with_frequency(Frequency::Semiannual)
+    let mut instrument = MakeFixedRateLoan::new()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
+        .with_rate(rate)
+        .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
         .with_discount_curve_id(0)
@@ -28,7 +53,6 @@ fn starting_today_pricing() {
     let indexer = IndexingVisitor::new();
     indexer.visit(&mut instrument);
 
-    let market_store = create_store();
     let ref_date = market_store.reference_date();
 
     let model = SimpleModel::new(market_store);
@@ -56,13 +80,30 @@ fn starting_today_pricing() {
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
     );
+
+    let maturing_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
+        if cf.payment_date() == ref_date {
+            acc + cf.amount()
+        } else {
+            acc
+        }
+    });
+
+    println!(
+        "Maturing Amount between {} and {}: {}",
+        start_accrual, end_accrual, maturing_amount
+    );
 }
 
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let start_date = Date::new(2023, 9, 1);
-    let end_date = Date::new(2026, 9, 1);
+    let market_store = create_store();
+    let ref_date = market_store.reference_date();
+
+    let start_date = ref_date + Period::new(2, TimeUnit::Months);
+    let end_date = start_date + Period::new(5, TimeUnit::Years);
+
     let notional = 100_000.0;
     let rate = InterestRate::new(
         0.05,
@@ -71,8 +112,11 @@ fn forward_starting_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new(start_date, end_date, rate)
-        .with_frequency(Frequency::Semiannual)
+    let mut instrument = MakeFixedRateLoan::new()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
+        .with_rate(rate)
+        .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
         .with_discount_curve_id(0)
@@ -81,9 +125,6 @@ fn forward_starting_pricing() {
 
     let indexer = IndexingVisitor::new();
     indexer.visit(&mut instrument);
-
-    let market_store = create_store();
-    let ref_date = market_store.reference_date();
 
     let model = SimpleModel::new(market_store);
 
@@ -115,8 +156,11 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let start_date = Date::new(2020, 9, 1);
-    let end_date = Date::new(2026, 9, 1);
+    let market_store = create_store();
+    let ref_date = market_store.reference_date();
+
+    let start_date = ref_date - Period::new(2, TimeUnit::Months);
+    let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
         0.05,
@@ -125,8 +169,11 @@ fn already_started_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new(start_date, end_date, rate)
-        .with_frequency(Frequency::Semiannual)
+    let mut instrument = MakeFixedRateLoan::new()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
+        .with_rate(rate)
+        .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
         .with_discount_curve_id(0)
@@ -135,9 +182,6 @@ fn already_started_pricing() {
 
     let indexer = IndexingVisitor::new();
     indexer.visit(&mut instrument);
-
-    let market_store = create_store();
-    let ref_date = market_store.reference_date();
 
     let model = SimpleModel::new(market_store);
 

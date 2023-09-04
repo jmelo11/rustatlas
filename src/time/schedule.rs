@@ -25,8 +25,6 @@ fn next_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     return result;
 }
 
-
-
 fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     let mut result = Date::new(date.year(), date.month(), 20);
     if result > date {
@@ -149,11 +147,11 @@ pub struct MakeSchedule {
 }
 
 impl MakeSchedule {
-    pub fn new(from: Date, to: Date, tenor: Period) -> MakeSchedule {
+    pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
             termination_date: to,
-            tenor: tenor,
+            tenor: Period::empty(),
             calendar: Calendar::NullCalendar(NullCalendar::new()),
             convention: BusinessDayConvention::Unadjusted,
             termination_date_convention: BusinessDayConvention::Unadjusted,
@@ -166,23 +164,24 @@ impl MakeSchedule {
         }
     }
 
+    pub fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
+        self.tenor = tenor;
+        self
+    }
+
     pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
-        let period = Period::from_frequency(frequency);
-        match period {
-            Ok(p) => self.tenor = p,
-            Err(_) => panic!("Invalid frequency"),
-        }
-        return self;
+        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self
     }
 
     pub fn with_calendar(mut self, calendar: Calendar) -> MakeSchedule {
         self.calendar = calendar;
-        return self;
+        self
     }
 
     pub fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
-        return self;
+        self
     }
 
     pub fn with_termination_date_convention(
@@ -590,7 +589,7 @@ mod tests {
         return period.units() == TimeUnit::Months
             || period.units() == TimeUnit::Years && period >= Period::new(1, TimeUnit::Months);
     }
-    
+
     #[test]
     fn test_next_twentieth() {
         let date = Date::new(2022, 1, 1);
@@ -637,7 +636,7 @@ mod tests {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to, tenor);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor);
         assert_eq!(make_schedule.effective_date, from);
         assert_eq!(make_schedule.termination_date, to);
         assert_eq!(make_schedule.tenor, tenor);
@@ -655,7 +654,6 @@ mod tests {
         assert_eq!(make_schedule.first_date, Date::empty());
         assert_eq!(make_schedule.next_to_last_date, Date::empty());
         assert_eq!(make_schedule.dates, Vec::new());
-        assert_eq!(make_schedule.is_regular, Vec::new());
     }
 
     #[test]
@@ -664,7 +662,7 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let frequency = Frequency::Semiannual;
-        let make_schedule = MakeSchedule::new(from, to, tenor).with_frequency(frequency);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_frequency(frequency);
         assert_eq!(make_schedule.tenor, Period::new(6, TimeUnit::Months));
     }
 
@@ -674,7 +672,7 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let calendar = Calendar::NullCalendar(NullCalendar::new());
-        let make_schedule = MakeSchedule::new(from, to, tenor).with_calendar(calendar);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_calendar(calendar);
         assert_eq!(
             make_schedule.calendar,
             Calendar::NullCalendar(NullCalendar::new())
@@ -687,7 +685,7 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let convention = BusinessDayConvention::Unadjusted;
-        let make_schedule = MakeSchedule::new(from, to, tenor).with_convention(convention);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_convention(convention);
         assert_eq!(make_schedule.convention, BusinessDayConvention::Unadjusted);
     }
 
@@ -697,7 +695,7 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let termination_date_convention = BusinessDayConvention::Unadjusted;
-        let make_schedule = MakeSchedule::new(from, to, tenor)
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor)
             .with_termination_date_convention(termination_date_convention);
         assert_eq!(
             make_schedule.termination_date_convention,
@@ -711,7 +709,7 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let rule = DateGenerationRule::Backward;
-        let make_schedule = MakeSchedule::new(from, to, tenor).with_rule(rule);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_rule(rule);
         assert_eq!(make_schedule.rule, DateGenerationRule::Backward);
     }
 
@@ -720,7 +718,7 @@ mod tests {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to, tenor).forwards();
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).forwards();
         assert_eq!(make_schedule.rule, DateGenerationRule::Forward);
     }
 
@@ -729,7 +727,7 @@ mod tests {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to, tenor).backwards();
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).backwards();
         assert_eq!(make_schedule.rule, DateGenerationRule::Backward);
     }
 
@@ -738,7 +736,7 @@ mod tests {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to, tenor).end_of_month(true);
+        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).end_of_month(true);
         assert_eq!(make_schedule.end_of_month, true);
     }
 
@@ -748,7 +746,9 @@ mod tests {
         let to = Date::new(2023, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let first_date = Date::new(2022, 2, 1);
-        let make_schedule = MakeSchedule::new(from, to, tenor).with_first_date(first_date);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_first_date(first_date);
         assert_eq!(make_schedule.first_date, Date::new(2022, 2, 1));
     }
 
@@ -758,8 +758,9 @@ mod tests {
         let to = Date::new(2023, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let next_to_last_date = Date::new(2023, 2, 1);
-        let make_schedule =
-            MakeSchedule::new(from, to, tenor).with_next_to_last_date(next_to_last_date);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_next_to_last_date(next_to_last_date);
         assert_eq!(make_schedule.next_to_last_date, Date::new(2023, 2, 1));
     }
 
@@ -769,7 +770,7 @@ mod tests {
         let to = Date::new(2023, 3, 1);
         // monthly
         let tenor = Period::new(1, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to, tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -792,7 +793,7 @@ mod tests {
 
         // quarterly
         let tenor = Period::new(3, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to, tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -806,7 +807,7 @@ mod tests {
 
         // semiannual
         let tenor = Period::new(6, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to, tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -819,7 +820,7 @@ mod tests {
 
         // annual
         let tenor = Period::new(1, TimeUnit::Years);
-        let schedule = MakeSchedule::new(from, to, tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -832,11 +833,12 @@ mod tests {
 
     #[test]
     fn test_daily_schedule() {
-        let start_date = Date::new(2012, 1, 17);
-        let end_date = Date::new(2012, 1, 24);
-        let period = Period::new(1, TimeUnit::Days);
+        let from = Date::new(2012, 1, 17);
+        let to = Date::new(2012, 1, 24);
+        let tenor = Period::new(1, TimeUnit::Days);
 
-        let schedule = MakeSchedule::new(start_date, end_date, period)
+        let schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
             .with_calendar(Calendar::TARGET(TARGET::new()))
             .with_convention(BusinessDayConvention::Preceding)
             .build();
@@ -858,7 +860,9 @@ mod tests {
         let from = Date::new(2022, 1, 31);
         let to = Date::new(2022, 3, 31);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to, tenor).end_of_month(true);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .end_of_month(true);
         assert_eq!(make_schedule.end_of_month, true);
     }
 
@@ -871,7 +875,8 @@ mod tests {
         let convention = BusinessDayConvention::Unadjusted;
         let termination_date_convention = BusinessDayConvention::Unadjusted;
         let end_of_month = true;
-        let schedule = MakeSchedule::new(from, to, tenor)
+        let schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
             .with_calendar(calendar)
             .with_convention(convention)
             .with_termination_date_convention(termination_date_convention)
@@ -897,7 +902,8 @@ mod tests {
         let convention = BusinessDayConvention::Unadjusted;
         let termination_date_convention = BusinessDayConvention::Unadjusted;
         let end_of_month = true;
-        let schedule = MakeSchedule::new(from, to, tenor)
+        let schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
             .with_calendar(calendar)
             .with_convention(convention)
             .with_termination_date_convention(termination_date_convention)

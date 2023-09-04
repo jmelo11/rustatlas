@@ -22,6 +22,7 @@ pub enum Side {
 
 /// # Cashflow
 /// Enum that represents a cashflow.
+#[derive(Clone, Copy)]
 pub enum Cashflow {
     Redemption(SimpleCashflow),
     Disbursement(SimpleCashflow),

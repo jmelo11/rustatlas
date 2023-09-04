@@ -1,4 +1,3 @@
-
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
@@ -19,6 +18,7 @@ use crate::time::date::Date;
 /// * `payment_date` - The date on which the coupon is paid
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
+#[derive(Clone, Copy)]
 pub struct FixedRateCoupon {
     notional: f64,
     rate: InterestRate,
@@ -38,7 +38,7 @@ impl FixedRateCoupon {
         side: Side,
     ) -> FixedRateCoupon {
         let amount = notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
-        let cashflow = SimpleCashflow::new_with_amount(amount, payment_date, currency, side);
+        let cashflow = SimpleCashflow::new(payment_date, currency, side).with_amount(amount);
         FixedRateCoupon {
             notional,
             rate,
@@ -46,6 +46,11 @@ impl FixedRateCoupon {
             accrual_end_date,
             cashflow: cashflow,
         }
+    }
+
+    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> FixedRateCoupon {
+        self.cashflow = self.cashflow.with_discount_curve_id(discount_curve_id);
+        self
     }
 
     pub fn set_discount_curve_id(&mut self, id: usize) {
@@ -97,8 +102,6 @@ impl Expires for FixedRateCoupon {
         return self.cashflow.is_expired(date);
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
