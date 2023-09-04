@@ -1,6 +1,9 @@
 extern crate rustatlas;
+use std::rc::Rc;
+
 use rustatlas::{
     core::meta::MarketData,
+    instruments::makefloatingrateloan::MakeFloatingRateLoan,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::traits::HasReferenceDate,
     time::{
@@ -8,10 +11,11 @@ use rustatlas::{
         period::Period,
     },
     visitors::{
+        fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
-        traits::{ConstVisit, Visit, HasCashflows}, fixingvisitor::FixingVisitor,
-    }, instruments::makefloatingrateloan::MakeFloatingRateLoan,
+        traits::{ConstVisit, HasCashflows, Visit},
+    },
 };
 
 mod common;
@@ -46,12 +50,14 @@ fn starting_today_pricing() {
         .map(|req| model.gen_node(start_date, req))
         .collect();
 
-    let fixing_visitor = FixingVisitor::new(data.clone());
+    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
+
+    let fixing_visitor = FixingVisitor::new(ref_data.clone());
     fixing_visitor.visit(&mut instrument);
 
-    print_table(instrument.cashflows(), &data);
+    print_table(instrument.cashflows(), ref_data.clone());
 
-    let npv_visitor = NPVConstVisitor::new(data.clone());
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -87,12 +93,13 @@ fn already_started_pricing() {
         .map(|req| model.gen_node(ref_date, req))
         .collect();
 
-    let fixing_visitor = FixingVisitor::new(data.clone());
+    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
+    let fixing_visitor = FixingVisitor::new(ref_data.clone());
     fixing_visitor.visit(&mut instrument);
 
-    print_table(instrument.cashflows(), &data);
+    print_table(instrument.cashflows(), ref_data.clone());
 
-    let npv_visitor = NPVConstVisitor::new(data.clone());
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();

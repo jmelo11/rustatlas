@@ -5,7 +5,7 @@ A rust version of Atlas
 ## Herramientas de Mercado
 
 - [X] Indice Ibor/Overnight
-- [ ] Accrual Ibor/Overnight
+- [ ] Accrual Ibor/Overnight (cupones flotantes)
 - [ ] Curvas con base RF y spreads contantes/interpolados
 - [ ] Curvas con modelos (nss, vasicek, etc)
 - [X] Fixing en periodos distintos al indice
@@ -23,7 +23,7 @@ A rust version of Atlas
     - [X] Bullet
     - [ ] Amortizable
     - [ ] Cero
-    - [ ] Cuotas iguales
+    - [X] Cuotas iguales
     - [ ] Irregular
   - [ ] Flotantes
     - [X] Bullet
@@ -35,6 +35,18 @@ A rust version of Atlas
 - [ ] Swaps
 - [ ] Opciones
 - [ ] Forwards
+
+## Vistantes
+
+- [ ] Tasas par
+- [ ] NPV
+- [ ] Fixings
+- [ ] Accrual
+- [ ] Agrupación
+
+## Python
+
+- [ ] Revisar port a python / POC
 
 ## Simulación
 

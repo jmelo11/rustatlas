@@ -1,4 +1,6 @@
 extern crate rustatlas;
+use std::rc::Rc;
+
 use rustatlas::{
     cashflows::{
         cashflow::Side,
@@ -17,6 +19,7 @@ use rustatlas::{
     visitors::{
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
+        parvaluevisitor::ParValueConstVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },
 };
@@ -46,7 +49,7 @@ fn starting_today_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(0)
+        .with_discount_curve_id(2)
         .with_notional(notional)
         .build();
 
@@ -63,9 +66,11 @@ fn starting_today_pricing() {
         .map(|req| model.gen_node(ref_date, req))
         .collect();
 
-    print_table(instrument.cashflows(), &data);
+    let ref_data = Rc::new(data);
 
-    let npv_visitor = NPVConstVisitor::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
+
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -93,6 +98,10 @@ fn starting_today_pricing() {
         "Maturing Amount between {} and {}: {}",
         start_accrual, end_accrual, maturing_amount
     );
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument);
+    println!("Par Value: {}", par_value);
 }
 
 fn forward_starting_pricing() {
@@ -134,9 +143,11 @@ fn forward_starting_pricing() {
         .map(|req| model.gen_node(ref_date, req))
         .collect();
 
-    print_table(instrument.cashflows(), &data);
+    let ref_data = Rc::new(data);
 
-    let npv_visitor = NPVConstVisitor::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
+
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -176,7 +187,7 @@ fn already_started_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(0)
+        .with_discount_curve_id(2)
         .with_notional(notional)
         .build();
 
@@ -191,9 +202,11 @@ fn already_started_pricing() {
         .map(|req| model.gen_node(ref_date, req))
         .collect();
 
-    print_table(instrument.cashflows(), &data);
+    let ref_data = Rc::new(data);
 
-    let npv_visitor = NPVConstVisitor::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
+
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -208,6 +221,10 @@ fn already_started_pricing() {
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
     );
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument);
+    println!("Par Value: {}", par_value);
 }
 
 fn main() {
