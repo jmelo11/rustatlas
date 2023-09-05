@@ -6,7 +6,6 @@ use rustatlas::{
         cashflow::Side,
         traits::{InterestAccrual, Payable},
     },
-    core::meta::MarketData,
     instruments::makefixedrateloan::MakeFixedRateLoan,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
@@ -60,11 +59,7 @@ fn starting_today_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
     let ref_data = Rc::new(data);
 
@@ -110,7 +105,7 @@ fn forward_starting_pricing() {
     let market_store = create_store();
     let ref_date = market_store.reference_date();
 
-    let start_date = ref_date + Period::new(2, TimeUnit::Months);
+    let start_date = ref_date + Period::new(6, TimeUnit::Months);
     let end_date = start_date + Period::new(5, TimeUnit::Years);
 
     let notional = 100_000.0;
@@ -137,14 +132,8 @@ fn forward_starting_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
-
+    let data = model.gen_market_data(&indexer.request());
     let ref_data = Rc::new(data);
-
     print_table(instrument.cashflows(), ref_data.clone());
 
     let npv_visitor = NPVConstVisitor::new(ref_data.clone());
@@ -196,11 +185,7 @@ fn already_started_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
     let ref_data = Rc::new(data);
 
