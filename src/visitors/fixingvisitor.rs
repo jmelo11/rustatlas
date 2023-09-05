@@ -8,7 +8,7 @@ use crate::{
 use super::traits::{HasCashflows, Visit};
 
 /// # FixingVisitor
-/// FixingVisitor is a visitor that fixes the rate of a cashflow
+/// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
 pub struct FixingVisitor {
     market_data: Rc<Vec<MarketData>>,
 }

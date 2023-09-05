@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{ops::Deref, rc::Rc};
 
 use argmin::{
     core::{CostFunction, Error, Executor},
@@ -16,18 +16,30 @@ use super::{
     traits::{ConstVisit, HasCashflows},
 };
 
-struct FixedRateParValue {
-    instrument: Rc<FixedRateInstrument>,
+/// # ParValue
+/// ParValue is a cost function that calculates the NPV of a generic instrument.
+struct ParValue<T> {
+    instrument: Rc<T>,
     npv_visitor: Box<NPVConstVisitor>,
 }
 
-impl CostFunction for FixedRateParValue {
+impl<T> ParValue<T> {
+    pub fn new(instrument: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
+        let npv_visitor = NPVConstVisitor::new(market_data);
+        ParValue {
+            instrument: instrument,
+            npv_visitor: Box::new(npv_visitor),
+        }
+    }
+}
+
+impl CostFunction for ParValue<FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
         let rate = self.instrument.rate();
-        let builder: MakeFixedRateLoan = self.instrument.as_ref().clone().into();
+        let builder = MakeFixedRateLoan::from(self.instrument.deref());
         let new_rate = InterestRate::new(
             *param,
             rate.compounding(),
@@ -48,26 +60,8 @@ impl CostFunction for FixedRateParValue {
     }
 }
 
-// impl CostFunction for FloatingRateParValue {
-//     type Param = f64;
-//     type Output = f64;
-
-//     fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
-//         let builder: MakeFloatingRateLoan = self.instrument.as_ref().clone().into();
-//         let mut new_instrument = builder.with_spread(param).build();
-//         new_instrument
-//             .mut_cashflows()
-//             .iter_mut()
-//             .zip(self.instrument.cashflows().iter())
-//             .for_each(|(new_cf, old_cf)| {
-//                 let id = old_cf.registry_id().expect("Cashflow has no registry id");
-//                 new_cf.register_id(id);
-//             });
-
-//         Ok(self.npv_visitor.visit(&new_instrument))
-//     }
-// }
-
+/// # ParValueConstVisitor
+/// ParValueConstVisitor is a visitor that calculates the par rate/spread of.
 pub struct ParValueConstVisitor {
     market_data: Rc<Vec<MarketData>>,
 }
@@ -83,11 +77,7 @@ impl ParValueConstVisitor {
 impl ConstVisit<FixedRateInstrument, f64> for ParValueConstVisitor {
     type Output = f64;
     fn visit(&self, instrument: &FixedRateInstrument) -> f64 {
-        let npv_visitor = NPVConstVisitor::new(self.market_data.clone());
-        let cost = FixedRateParValue {
-            instrument: Rc::new(instrument.clone()),
-            npv_visitor: Box::new(npv_visitor),
-        };
+        let cost = ParValue::new(Rc::new(instrument.clone()), self.market_data.clone());
         let solver = BrentRoot::new(-1.0, 1.0, 1e-6);
         let init_param = 0.05;
         let res = Executor::new(cost, solver)
