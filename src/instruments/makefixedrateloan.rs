@@ -418,14 +418,11 @@ impl MakeFixedRateLoan {
                     .build();
 
                 let rate = self.rate.expect("Rate not set");
-
-                let redemptions =
-                    calculate_redemptions(schedule.dates().clone(), rate, self.notional, self.side);
-
-                let notionals = notionals_vector(schedule.dates().len() - 1, self.notional, Structure::EqualRedemptions);
-                
                 let first_date = vec![*schedule.dates().first().unwrap()];
+                let n = schedule.dates().len() - 1;
+                let notionals = notionals_vector(n, self.notional, Structure::EqualRedemptions);
                 let notional = vec![self.notional];
+                let redemptions = vec![self.notional / n as f64; n];
                 let inv_side = match self.side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -471,7 +468,7 @@ impl MakeFixedRateLoan {
                 };
                 instrument
             }
-            _ => panic!("Not implemented"),
+            //_ => panic!("Not implemented"),
         }
     }
 }
@@ -596,6 +593,13 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
         }
     }
 }
+
+impl From <&FixedRateInstrument> for MakeFixedRateLoan {
+    fn from(val: &FixedRateInstrument) -> Self{
+        val.clone().into()
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
