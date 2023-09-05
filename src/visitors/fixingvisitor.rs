@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     cashflows::{cashflow::Cashflow, traits::RequiresFixingRate},
     core::{meta::MarketData, traits::Registrable},
@@ -6,13 +8,13 @@ use crate::{
 use super::traits::{HasCashflows, Visit};
 
 /// # FixingVisitor
-/// FixingVisitor is a visitor that fixes the rate of a cashflow
+/// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
 pub struct FixingVisitor {
-    market_data: Vec<MarketData>,
+    market_data: Rc<Vec<MarketData>>,
 }
 
 impl FixingVisitor {
-    pub fn new(market_data: Vec<MarketData>) -> Self {
+    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
         FixingVisitor {
             market_data: market_data,
         }

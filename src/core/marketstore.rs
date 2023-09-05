@@ -23,7 +23,7 @@ impl MarketStore {
             reference_date,
             local_currency,
             exchange_rate_store: ExchangeRateStore::new(),
-            index_store: IndexStore::new(),
+            index_store: IndexStore::new(reference_date),
         }
     }
 

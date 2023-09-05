@@ -1,10 +1,11 @@
 extern crate rustatlas;
+use std::rc::Rc;
+
 use rustatlas::{
     cashflows::{
         cashflow::Side,
         traits::{InterestAccrual, Payable},
     },
-    core::meta::MarketData,
     instruments::makefixedrateloan::MakeFixedRateLoan,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
@@ -17,6 +18,7 @@ use rustatlas::{
     visitors::{
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
+        parvaluevisitor::ParValueConstVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },
 };
@@ -46,7 +48,7 @@ fn starting_today_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(0)
+        .with_discount_curve_id(2)
         .with_notional(notional)
         .build();
 
@@ -57,15 +59,13 @@ fn starting_today_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
-    print_table(instrument.cashflows(), &data);
+    let ref_data = Rc::new(data);
 
-    let npv_visitor = NPVConstVisitor::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
+
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -93,6 +93,10 @@ fn starting_today_pricing() {
         "Maturing Amount between {} and {}: {}",
         start_accrual, end_accrual, maturing_amount
     );
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument);
+    println!("Par Value: {}", par_value);
 }
 
 fn forward_starting_pricing() {
@@ -101,7 +105,7 @@ fn forward_starting_pricing() {
     let market_store = create_store();
     let ref_date = market_store.reference_date();
 
-    let start_date = ref_date + Period::new(2, TimeUnit::Months);
+    let start_date = ref_date + Period::new(6, TimeUnit::Months);
     let end_date = start_date + Period::new(5, TimeUnit::Years);
 
     let notional = 100_000.0;
@@ -128,15 +132,11 @@ fn forward_starting_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
+    let ref_data = Rc::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
 
-    print_table(instrument.cashflows(), &data);
-
-    let npv_visitor = NPVConstVisitor::new(data);
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -176,7 +176,7 @@ fn already_started_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(0)
+        .with_discount_curve_id(2)
         .with_notional(notional)
         .build();
 
@@ -185,15 +185,13 @@ fn already_started_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
-    print_table(instrument.cashflows(), &data);
+    let ref_data = Rc::new(data);
 
-    let npv_visitor = NPVConstVisitor::new(data);
+    print_table(instrument.cashflows(), ref_data.clone());
+
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -208,6 +206,10 @@ fn already_started_pricing() {
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
     );
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument);
+    println!("Par Value: {}", par_value);
 }
 
 fn main() {

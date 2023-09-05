@@ -1,20 +1,31 @@
-use super::interestrateindex::enums::InterestRateIndex;
+use crate::time::date::Date;
+
+use super::{interestrateindex::enums::InterestRateIndex, traits::HasReferenceDate};
 
 #[derive(Clone)]
 pub struct IndexStore {
+    reference_date: Date,
     indexes: Vec<InterestRateIndex>,
     names: Vec<String>,
 }
 
 impl IndexStore {
-    pub fn new() -> IndexStore {
+    pub fn new(reference_date: Date) -> IndexStore {
         IndexStore {
+            reference_date,
             indexes: Vec::new(),
             names: Vec::new(),
         }
     }
 
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
+    }
+
     pub fn add_index(&mut self, name: String, index: InterestRateIndex) {
+        if self.reference_date != index.reference_date() {
+            panic!("Index reference date does not match market store reference date");
+        }
         self.indexes.push(index);
         self.names.push(name);
     }

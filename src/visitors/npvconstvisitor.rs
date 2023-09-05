@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
@@ -5,12 +7,15 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
+/// # NPVConstVisitor
+/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVConstVisitor {
-    market_data: Vec<MarketData>,
+    market_data: Rc<Vec<MarketData>>,
 }
 
 impl NPVConstVisitor {
-    pub fn new(market_data: Vec<MarketData>) -> Self {
+    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
         NPVConstVisitor {
             market_data: market_data,
         }

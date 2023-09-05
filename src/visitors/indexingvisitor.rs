@@ -4,6 +4,9 @@ use crate::core::{meta::MarketRequest, traits::Registrable};
 
 use super::traits::{HasCashflows, Visit};
 
+/// # IndexingVisitor
+/// IndexingVisitor is a visitor that registers the cashflows of an instrument
+/// and generates a vector of market requests.
 pub struct IndexingVisitor {
     request: RefCell<Vec<MarketRequest>>,
 }
