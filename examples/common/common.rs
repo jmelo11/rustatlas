@@ -52,7 +52,7 @@ pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
         };
 
         let fwd = match md.fwd() {
-            Some(fwd) => format!("{:10.3}", fwd),
+            Some(fwd) => format!("{:9.3}", fwd),
             None => "None      ".to_string(), // 10 characters wide
         };
 
