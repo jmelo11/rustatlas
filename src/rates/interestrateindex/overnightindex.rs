@@ -24,6 +24,7 @@ pub struct OvernightIndex {
     term_structure: Option<YieldTermStructure>,
     rate_definition: RateDefinition,
     tenor: Period,
+    provider_id: Option<usize>,
 }
 
 impl OvernightIndex {
@@ -33,6 +34,7 @@ impl OvernightIndex {
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
+            provider_id: None,
         }
     }
 
@@ -41,11 +43,15 @@ impl OvernightIndex {
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        self.rate_definition.clone()
+        self.rate_definition
     }
 
     pub fn tenor(&self) -> Period {
         self.tenor
+    }
+
+    pub fn provider_id(&self) -> Option<usize> {
+        self.provider_id
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
@@ -60,6 +66,11 @@ impl OvernightIndex {
 
     pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
         self.term_structure = Some(term_structure);
+        self
+    }
+
+    pub fn with_provider_id(mut self, provider_id: usize) -> Self {
+        self.provider_id = Some(provider_id);
         self
     }
 
@@ -103,10 +114,10 @@ impl HasReferenceDate for OvernightIndex {
     fn reference_date(&self) -> Date {
         match self.fixings.keys().max() {
             Some(date) => *date,
-            None => match self.term_structure {
-                Some(term_structure) => term_structure.reference_date(),
-                None => panic!("No term structure for this OvernightIndex"),
-            },
+            None => self
+                .term_structure
+                .expect("No term structure for this OvernightIndex")
+                .reference_date(),
         }
     }
 }
@@ -116,10 +127,9 @@ impl YieldProvider for OvernightIndex {
         if date < self.reference_date() {
             panic!("Date must be greater than reference date");
         }
-        match self.term_structure {
-            Some(term_structure) => term_structure.discount_factor(date),
-            None => panic!("No term structure for this IborIndex"),
-        }
+        self.term_structure
+            .expect("No term structure for this OvernightIndex")
+            .discount_factor(date)
     }
 
     fn forward_rate(
@@ -131,9 +141,9 @@ impl YieldProvider for OvernightIndex {
     ) -> f64 {
         // mixed case - return w.a.
         if start_date < self.reference_date() && end_date > self.reference_date() {
-            let first_fixing = match self.fixing(start_date) {
+            let first_fixing = match self.fixing(self.reference_date()) {
                 Some(fixing) => fixing,
-                None => panic!("No fixing rate for date {}", self.reference_date()),
+                None => panic!("No fixing rate for date {}", start_date),
             };
             let second_fixing = match self.fixing(self.reference_date()) {
                 Some(fixing) => fixing,

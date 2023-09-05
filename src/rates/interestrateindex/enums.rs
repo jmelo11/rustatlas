@@ -2,8 +2,9 @@ use crate::{
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider},
+        yieldtermstructure::enums::YieldTermStructure,
     },
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
 };
 
 use super::{iborindex::IborIndex, overnightindex::OvernightIndex, traits::FixingProvider};
@@ -67,6 +68,29 @@ impl YieldProvider for InterestRateIndex {
             InterestRateIndex::OvernightIndex(overnight_index) => {
                 overnight_index.forward_rate(start_date, end_date, compounding, frequency)
             }
+        }
+    }
+}
+
+impl InterestRateIndex {
+    pub fn term_structure(&self) -> Option<YieldTermStructure> {
+        match self {
+            InterestRateIndex::IborIndex(ibor_index) => ibor_index.term_structure(),
+            InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.term_structure(),
+        }
+    }
+
+    pub fn tenor(&self) -> Period {
+        match self {
+            InterestRateIndex::IborIndex(ibor_index) => ibor_index.tenor(),
+            InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.tenor(),
+        }
+    }
+
+    pub fn provider_id(&self) -> Option<usize> {
+        match self {
+            InterestRateIndex::IborIndex(ibor_index) => ibor_index.provider_id(),
+            InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.provider_id(),
         }
     }
 }

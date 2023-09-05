@@ -32,6 +32,7 @@ pub struct IborIndex {
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
     term_structure: Option<YieldTermStructure>,
+    provider_id: Option<usize>,
 }
 
 impl IborIndex {
@@ -41,6 +42,7 @@ impl IborIndex {
             rate_definition: RateDefinition::default(),
             fixings: HashMap::new(),
             term_structure: None,
+            provider_id: None,
         }
     }
 
@@ -49,11 +51,15 @@ impl IborIndex {
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        self.rate_definition.clone()
+        self.rate_definition
     }
 
     pub fn term_structure(&self) -> Option<YieldTermStructure> {
         self.term_structure
+    }
+
+    pub fn provider_id(&self) -> Option<usize> {
+        self.provider_id
     }
 
     pub fn with_tenor(mut self, tenor: Period) -> Self {
@@ -62,11 +68,7 @@ impl IborIndex {
     }
 
     pub fn with_frequency(mut self, frequency: Frequency) -> Self {
-        let period = Period::from_frequency(frequency);
-        match period {
-            Ok(period) => self.tenor = period,
-            Err(_) => panic!("Invalid frequency"),
-        }
+        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
         self
     }
 
@@ -82,6 +84,11 @@ impl IborIndex {
 
     pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
         self.term_structure = Some(term_structure);
+        self
+    }
+
+    pub fn with_provider_id(mut self, provider_id: usize) -> Self {
+        self.provider_id = Some(provider_id);
         self
     }
 }
@@ -103,10 +110,10 @@ impl HasReferenceDate for IborIndex {
     fn reference_date(&self) -> Date {
         match self.fixings.keys().max() {
             Some(date) => *date,
-            None => match self.term_structure {
-                Some(term_structure) => term_structure.reference_date(),
-                None => panic!("No reference date for this IborIndex"),
-            },
+            None => self
+                .term_structure
+                .expect("No term structure for this IborIndex")
+                .reference_date(),
         }
     }
 }
@@ -116,10 +123,9 @@ impl YieldProvider for IborIndex {
         if date < self.reference_date() {
             panic!("Date must be greater than reference date");
         }
-        match self.term_structure {
-            Some(term_structure) => term_structure.discount_factor(date),
-            None => panic!("No term structure for this IborIndex"),
-        }
+        self.term_structure
+            .expect("No term structure for this IborIndex")
+            .discount_factor(date)
     }
 
     fn forward_rate(
@@ -133,15 +139,12 @@ impl YieldProvider for IborIndex {
             panic!("End date must be greater than start date");
         }
         if start_date < self.reference_date() {
-            let fixing = self.fixing(start_date);
-            match fixing {
-                Some(fixing) => return fixing,
-                None => panic!("No fixing found for date {} for this IborIndex", start_date),
-            }
-        }
-        match self.term_structure {
-            Some(ts) => ts.forward_rate(start_date, end_date, comp, freq),
-            None => panic!("No term structure for this IborIndex"),
+            self.fixing(start_date)
+                .expect("No fixing for this IborIndex")
+        } else {
+            self.term_structure
+                .expect("No term structure for this IborIndex")
+                .forward_rate(start_date, end_date, comp, freq)
         }
     }
 }
