@@ -5,14 +5,8 @@ use std::{
 
 use super::enums::Currency;
 
-pub struct FxRecepy {
-    currency: Currency,
-    risk_free_curve_id: usize,
-}
-
 #[derive(Clone)]
 pub struct ExchangeRateStore {
-    fx_recepies: HashMap<Currency, usize>,
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
     exchange_rate_cache: RefCell<HashMap<(Currency, Currency), f64>>,
 }
@@ -20,7 +14,6 @@ pub struct ExchangeRateStore {
 impl ExchangeRateStore {
     pub fn new() -> ExchangeRateStore {
         ExchangeRateStore {
-            fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
         }
@@ -31,12 +24,7 @@ impl ExchangeRateStore {
         exchange_rate_map: HashMap<(Currency, Currency), f64>,
     ) -> &mut Self {
         self.exchange_rate_map = exchange_rate_map;
-        return self;
-    }
-
-    pub fn add_fx_recepy(&mut self, fx_recepy: FxRecepy) {
-        self.fx_recepies
-            .insert(fx_recepy.currency, fx_recepy.risk_free_curve_id);
+        self
     }
 
     pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: f64) {
@@ -97,7 +85,6 @@ mod tests {
     #[test]
     fn test_same_currency() {
         let manager = ExchangeRateStore {
-            fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
         };
@@ -108,7 +95,6 @@ mod tests {
     #[test]
     fn test_cache() {
         let manager = ExchangeRateStore {
-            fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
                 map.insert((USD, EUR), 0.85);
@@ -131,7 +117,6 @@ mod tests {
     #[test]
     fn test_nonexistent_rate() {
         let manager = ExchangeRateStore {
-            fx_recepies: HashMap::new(),
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
         };
@@ -142,7 +127,6 @@ mod tests {
     #[test]
     fn test_complex_case() {
         let manager = ExchangeRateStore {
-            fx_recepies: HashMap::new(),
             exchange_rate_map: {
                 let mut map = HashMap::new();
                 map.insert((USD, EUR), 0.85);
