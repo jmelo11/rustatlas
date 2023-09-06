@@ -154,7 +154,7 @@ impl MakeFixedRateLoan {
     }
 
     pub fn build(self) -> FixedRateInstrument {
-        let mut cashflows = Vec::new();
+        let mut cashflows: Vec<Cashflow> = Vec::new();
         match self.structure {
             Structure::Bullet => {
                 let start_date = self.start_date.expect("Start date not set");
