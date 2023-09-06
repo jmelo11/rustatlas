@@ -31,7 +31,9 @@ fn starting_today_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new(start_date, end_date)
+    let mut instrument = MakeFloatingRateLoan::new()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
         .with_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
@@ -70,7 +72,9 @@ fn already_started_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new(start_date, end_date)
+    let mut instrument = MakeFloatingRateLoan::new()
+        .with_start_date(start_date)
+        .with_end_date(end_date)
         .with_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
