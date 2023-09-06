@@ -1,4 +1,7 @@
-use crate::time::date::Date;
+use crate::{
+    alm::traits::AdvanceInTime,
+    time::{date::Date, period::Period},
+};
 
 use super::{interestrateindex::enums::InterestRateIndex, traits::HasReferenceDate};
 
@@ -48,5 +51,18 @@ impl IndexStore {
 
     pub fn get_index_by_id(&self, id: usize) -> Option<&InterestRateIndex> {
         self.indexes.get(id)
+    }
+}
+
+impl AdvanceInTime for IndexStore {
+    type Output = IndexStore;
+    fn advance(&self, period: Period) -> Self {
+        let reference_date = self.reference_date + period;
+        let mut store = IndexStore::new(reference_date);
+        for (name, index) in self.names.iter().zip(self.indexes.iter()) {
+            let new_index = index.advance(period);
+            store.add_index(name.clone(), new_index);
+        }
+        store
     }
 }

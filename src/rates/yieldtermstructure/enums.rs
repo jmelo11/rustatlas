@@ -1,9 +1,10 @@
 use crate::{
+    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider},
     },
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
 };
 
 use super::flatforwardtermstructure::FlatForwardTermStructure;
@@ -49,6 +50,18 @@ impl YieldProvider for YieldTermStructure {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
             YieldTermStructure::Other => panic!("No forward rate for this term structure"),
+        }
+    }
+}
+
+impl AdvanceInTime for YieldTermStructure {
+    type Output = YieldTermStructure;
+    fn advance(&self, period: Period) -> YieldTermStructure {
+        match self {
+            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+                YieldTermStructure::FlatForwardTermStructure(term_structure.advance(period))
+            }
+            YieldTermStructure::Other => panic!("No advance in time for this term structure"),
         }
     }
 }

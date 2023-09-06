@@ -9,12 +9,13 @@ A rust version of Atlas
 - [ ] Curvas con base RF y spreads contantes/interpolados
 - [ ] Curvas con modelos (nss, vasicek, etc)
 - [X] Fixing en periodos distintos al indice
+- [ ] Shock de curvas
 
 ## Copones
 
 - [X] Cashflow simple
 - [X] Cupon tasa fija
-- [X] Cupon tasa flotante
+- [X] Cupon tasa flotante/ibor
 
 ## Productos
 
@@ -53,6 +54,7 @@ A rust version of Atlas
 - [ ] Motor de rollover
   - [ ] Balance constante
   - [ ] Balance dinamico
+- [ ] Avanzar MarketStore en T+1
 
 ## Datos mercado
 

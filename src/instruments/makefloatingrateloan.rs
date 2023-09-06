@@ -190,7 +190,6 @@ fn build_coupons_from_notionals(
             d1,
             d2,
             d2,
-            d1,
             rate_definition,
             currency,
             side,

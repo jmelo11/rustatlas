@@ -36,7 +36,6 @@ pub struct FloatingRateCoupon {
     fixing_rate: Option<f64>,
     accrual_start_date: Date,
     accrual_end_date: Date,
-    fixing_date: Date,
     rate_definition: RateDefinition,
     forecast_curve_id: Option<usize>,
     cashflow: SimpleCashflow,
@@ -49,7 +48,6 @@ impl FloatingRateCoupon {
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
-        fixing_date: Date,
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
@@ -60,7 +58,6 @@ impl FloatingRateCoupon {
             fixing_rate: None,
             accrual_start_date,
             accrual_end_date,
-            fixing_date,
             rate_definition,
             forecast_curve_id: None,
             cashflow: SimpleCashflow::new(payment_date, currency, side),
@@ -126,7 +123,7 @@ impl Payable for FloatingRateCoupon {
 
 impl Registrable for FloatingRateCoupon {
     fn registry_id(&self) -> Option<usize> {
-        return self.cashflow.registry_id();
+        self.cashflow.registry_id()
     }
 
     fn register_id(&mut self, id: usize) {
@@ -147,16 +144,15 @@ impl Registrable for FloatingRateCoupon {
             forecast_curve_id,
             self.accrual_start_date,
             self.accrual_end_date,
-            self.fixing_date,
             self.rate_definition.compounding(),
             self.rate_definition.frequency(),
         );
-        return MarketRequest::new(id, tmp.df(), Some(forecast), tmp.fx());
+        MarketRequest::new(id, tmp.df(), Some(forecast), tmp.fx())
     }
 }
 
 impl Expires for FloatingRateCoupon {
     fn is_expired(&self, date: Date) -> bool {
-        return self.cashflow.payment_date() < date;
+        self.cashflow.payment_date() < date
     }
 }

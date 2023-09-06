@@ -172,7 +172,7 @@ impl MakeFixedRateLoan {
         self
     }
 
-    fn with_structure(mut self, structure: Structure) -> MakeFixedRateLoan {
+    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateLoan {
         self.structure = structure;
         self
     }
@@ -477,6 +477,12 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
                 .with_notional(self.notional())
                 .with_structure(self.structure()),
         }
+    }
+}
+
+impl From<&FixedRateInstrument> for MakeFixedRateLoan {
+    fn from(val: &FixedRateInstrument) -> Self {
+        val.clone().into()
     }
 }
 

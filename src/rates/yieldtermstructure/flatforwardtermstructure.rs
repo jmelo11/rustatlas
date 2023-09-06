@@ -1,10 +1,11 @@
 use crate::{
+    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
         interestrate::InterestRate,
         traits::{HasReferenceDate, YieldProvider},
     },
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
 };
 
 /// # FlatForwardTermStructure
@@ -61,6 +62,16 @@ impl YieldProvider for FlatForwardTermStructure {
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
         return InterestRate::implied_rate(comp_factor, self.rate.day_counter(), comp, freq, t)
             .rate();
+    }
+}
+
+impl AdvanceInTime for FlatForwardTermStructure {
+    type Output = FlatForwardTermStructure;
+    fn advance(&self, period: Period) -> Self::Output {
+        let new_reference_date = self
+            .reference_date()
+            .advance(period.length(), period.units());
+        return FlatForwardTermStructure::new(new_reference_date, self.rate());
     }
 }
 
