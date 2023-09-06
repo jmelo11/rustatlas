@@ -40,10 +40,10 @@ A rust version of Atlas
 ## Vistantes
 
 - [ ] Tasas par
-- [ ] NPV
-- [ ] Fixings
-- [ ] Accrual
-- [ ] Agrupación
+- [X] NPV
+- [X] Fixings
+- [X] Accrual
+- [X] Agrupación
 
 ## Python
 

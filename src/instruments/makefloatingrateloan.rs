@@ -1,10 +1,11 @@
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
-       // traits::{InterestAccrual, Payable},
-        floatingratecoupon::FloatingRateCoupon, simplecashflow::SimpleCashflow, 
+        // traits::{InterestAccrual, Payable},
+        floatingratecoupon::FloatingRateCoupon,
+        simplecashflow::SimpleCashflow,
     },
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
@@ -13,7 +14,7 @@ use crate::{
 
 use super::{
     floatingrateinstrument::FloatingRateInstrument,
-    traits::{build_cashflows, notionals_vector, CashflowType, Structure, calculate_outstanding},
+    traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
 };
 
 pub struct MakeFloatingRateLoan {
@@ -80,7 +81,10 @@ impl MakeFloatingRateLoan {
         self
     }
 
-    pub fn with_additional_coupon_dates(mut self,additional_coupon_dates: HashSet<Date>,) -> MakeFloatingRateLoan {
+    pub fn with_additional_coupon_dates(
+        mut self,
+        additional_coupon_dates: HashSet<Date>,
+    ) -> MakeFloatingRateLoan {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
@@ -137,7 +141,7 @@ impl MakeFloatingRateLoan {
 
     pub fn other(mut self) -> MakeFloatingRateLoan {
         self.structure = Structure::Other;
-       // self.payment_frequency = Some(Frequency::OtherFrequency);
+        // self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
@@ -166,7 +170,7 @@ impl MakeFloatingRateLoan {
                         let tenor = self.tenor.expect("Tenor not set");
                         start_date + tenor
                     }
-                }; 
+                };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_tenor(self.period)
                     .build();
@@ -230,7 +234,6 @@ impl MakeFloatingRateLoan {
                     self.side,
                     cashflows,
                 )
-                
             }
             Structure::Zero => {
                 let mut cashflows = Vec::new();
@@ -241,8 +244,8 @@ impl MakeFloatingRateLoan {
                         let tenor = self.tenor.expect("Tenor not set");
                         start_date + tenor
                     }
-                }; 
-                
+                };
+
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(Frequency::Once)
                     .build();
@@ -306,7 +309,6 @@ impl MakeFloatingRateLoan {
                     self.side,
                     cashflows,
                 )
-                
             }
             Structure::EqualRedemptions => {
                 let mut cashflows = Vec::new();
@@ -317,8 +319,8 @@ impl MakeFloatingRateLoan {
                         let tenor = self.tenor.expect("Tenor not set");
                         start_date + tenor
                     }
-                }; 
-                
+                };
+
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_tenor(self.period)
                     .build();
@@ -328,10 +330,9 @@ impl MakeFloatingRateLoan {
                 let notional = vec![self.notional];
                 let redemptions = vec![self.notional / n as f64; n];
 
-
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 //let last_date = vec![*schedule.dates().last().unwrap()];
-                
+
                 let inv_side = match self.side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -389,7 +390,6 @@ impl MakeFloatingRateLoan {
                     self.side,
                     cashflows,
                 )
-                
             }
             Structure::Other => {
                 let mut cashflows = Vec::new();
@@ -411,7 +411,6 @@ impl MakeFloatingRateLoan {
                         SimpleCashflow::new(*date, self.currency, self.side).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
-
                 }
 
                 for (start_date, end_date, notional) in &timeline {
@@ -421,7 +420,6 @@ impl MakeFloatingRateLoan {
                         *start_date,
                         *end_date,
                         *end_date,
-                        *start_date,
                         self.rate_definition,
                         self.currency,
                         self.side,
@@ -456,7 +454,7 @@ impl MakeFloatingRateLoan {
                     }
                     None => {}
                 }
-                
+
                 let instrument = FloatingRateInstrument::new(
                     *start_date,
                     *end_date,
@@ -466,9 +464,7 @@ impl MakeFloatingRateLoan {
                     cashflows,
                 );
 
-
                 instrument
-
             }
             _ => panic!("Not implemented"),
         }
@@ -501,19 +497,14 @@ fn build_coupons_from_notionals(
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};
 
     use crate::{
-        cashflows::{
-            cashflow::Side,
-            traits::RequiresFixingRate,
-        },
+        cashflows::{cashflow::Side, traits::RequiresFixingRate},
         currencies::enums::Currency,
-        //instruments::makefloatingrateloan::MakeFloatingRateLoan,
-        rates::{enums::Compounding, interestrate:: RateDefinition},
+        rates::{enums::Compounding, interestrate::RateDefinition},
         time::{
             date::Date,
             daycounter::DayCounter,
@@ -524,7 +515,7 @@ mod tests {
     };
 
     #[test]
-    fn build_bullet(){
+    fn build_bullet() {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -545,21 +536,22 @@ mod tests {
             .bullet()
             .build();
 
-        
-        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        instrument
+            .mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_fixing_rate(0.002));
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-   
+        // instrument
+        //     .cashflows()
+        //     .iter()
+        //     .for_each(|cf| println!("{}", cf));
     }
 
     #[test]
-    fn build_zero(){
+    fn build_zero() {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -579,21 +571,22 @@ mod tests {
             .zero()
             .build();
 
-        
-        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        instrument
+            .mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_fixing_rate(0.002));
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-   
+        // instrument
+        //     .cashflows()
+        //     .iter()
+        //     .for_each(|cf| println!("{}", cf));
     }
 
     #[test]
-    fn build_equal_redemptions(){
+    fn build_equal_redemptions() {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -614,21 +607,22 @@ mod tests {
             .equal_redemptions()
             .build();
 
-        
-        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        instrument
+            .mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_fixing_rate(0.002));
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-   
+        // instrument
+        //     .cashflows()
+        //     .iter()
+        //     .for_each(|cf| println!("{}", cf));
     }
 
     #[test]
-    fn build_equal_redemptions_with_tenor(){
+    fn build_equal_redemptions_with_tenor() {
         let start_date = Date::new(2020, 1, 1);
         let rate_definition = RateDefinition::new(
             DayCounter::Actual360,
@@ -648,35 +642,35 @@ mod tests {
             .equal_redemptions()
             .build();
 
-        
-        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        instrument
+            .mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_fixing_rate(0.002));
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
-        
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-   
+
+        // instrument
+        //     .cashflows()
+        //     .iter()
+        //     .for_each(|cf| println!("{}", cf));
     }
 
     #[test]
-    fn build_other(){
-
+    fn build_other() {
         let start_date = Date::new(2020, 1, 1);
-        let end_date = start_date + Period::new(3, TimeUnit::Years); 
+        let end_date = start_date + Period::new(3, TimeUnit::Years);
 
-        let mut disbursements = HashMap::new();     
-        disbursements.insert(start_date, 100.0); 
+        let mut disbursements = HashMap::new();
+        disbursements.insert(start_date, 100.0);
 
-        let mut redemptions = HashMap::new();       
-        redemptions.insert(start_date + Period::new(1, TimeUnit::Years), 30.0);  
-        redemptions.insert(end_date, 70.0);  
+        let mut redemptions = HashMap::new();
+        redemptions.insert(start_date + Period::new(1, TimeUnit::Years), 30.0);
+        redemptions.insert(end_date, 70.0);
 
         let mut additional_coupon_dates = HashSet::new();
 
         additional_coupon_dates.insert(start_date + Period::new(1, TimeUnit::Years));
-        additional_coupon_dates.insert(start_date + Period::new(2, TimeUnit::Years)); 
+        additional_coupon_dates.insert(start_date + Period::new(2, TimeUnit::Years));
 
         let rate_definition = RateDefinition::new(
             DayCounter::Actual360,
@@ -697,18 +691,16 @@ mod tests {
             .other()
             .build();
 
-        
-        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        instrument
+            .mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_fixing_rate(0.002));
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
 
-
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-
-
-   }
-
+        // instrument
+        //     .cashflows()
+        //     .iter()
+        //     .for_each(|cf| println!("{}", cf));
+    }
 }

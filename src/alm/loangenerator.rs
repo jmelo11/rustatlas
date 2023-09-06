@@ -1,0 +1,231 @@
+use std::rc::Rc;
+
+use crate::{
+    cashflows::cashflow::Side,
+    core::marketstore::MarketStore,
+    currencies::enums::Currency,
+    instruments::{
+        fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
+        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
+        traits::Structure,
+    },
+    rates::{interestrate::RateDefinition, traits::HasReferenceDate},
+    time::{enums::Frequency, period::Period},
+};
+
+pub enum Instrument {
+    FixedRateInstrument(FixedRateInstrument),
+    FloatingRateInstrument(FloatingRateInstrument),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum RateType {
+    Fixed,
+    Floating,
+}
+
+pub struct LoanGenerator {
+    amount: f64,
+    configs: Rc<Vec<LoanConfiguration>>,
+    market_store: Rc<MarketStore>,
+}
+
+pub struct LoanConfiguration {
+    weight: f64,
+    structure: Structure,
+    payment_frequency: Frequency,
+    tenor: Period,
+    currency: Currency,
+    side: Side,
+    rate_type: RateType,
+    rate_definitino: RateDefinition,
+    discount_curve_id: usize,
+    forecast_curve_id: Option<usize>,
+}
+
+impl LoanConfiguration {
+    pub fn new(
+        weight: f64,
+        structure: Structure,
+        payment_frequency: Frequency,
+        tenor: Period,
+        currency: Currency,
+        side: Side,
+        rate_type: RateType,
+        rate_definitino: RateDefinition,
+        discount_curve_id: usize,
+        forecast_curve_id: Option<usize>,
+    ) -> LoanConfiguration {
+        LoanConfiguration {
+            weight,
+            structure,
+            payment_frequency,
+            tenor,
+            currency,
+            side,
+            rate_type,
+            rate_definitino,
+            discount_curve_id,
+            forecast_curve_id,
+        }
+    }
+
+    pub fn weight(&self) -> f64 {
+        self.weight
+    }
+
+    pub fn structure(&self) -> Structure {
+        self.structure
+    }
+
+    pub fn payment_frequency(&self) -> Frequency {
+        self.payment_frequency
+    }
+
+    pub fn tenor(&self) -> Period {
+        self.tenor
+    }
+
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
+
+    pub fn side(&self) -> Side {
+        self.side
+    }
+
+    pub fn rate_type(&self) -> RateType {
+        self.rate_type
+    }
+
+    pub fn rate_definition(&self) -> RateDefinition {
+        self.rate_definitino
+    }
+
+    pub fn discount_curve_id(&self) -> usize {
+        self.discount_curve_id
+    }
+
+    pub fn forecast_curve_id(&self) -> usize {
+        self.forecast_curve_id.expect("No forecast curve id")
+    }
+}
+
+impl LoanGenerator {
+    pub fn new(
+        amount: f64,
+        configs: Rc<Vec<LoanConfiguration>>,
+        market_store: Rc<MarketStore>,
+    ) -> LoanGenerator {
+        LoanGenerator {
+            amount,
+            configs,
+            market_store,
+        }
+    }
+
+    fn calculate_rate(&self, _builder: &MakeFixedRateLoan) -> f64 {
+        return 0.03;
+    }
+    fn calculate_spread(&self, _builder: &MakeFloatingRateLoan) -> f64 {
+        return 0.03;
+    }
+
+    pub fn generate_position(&self, config: &LoanConfiguration) -> Instrument {
+        let structure = config.structure();
+        let notional = self.amount * config.weight();
+        let start_date = self.market_store.reference_date();
+        match config.rate_type() {
+            RateType::Floating => {
+                let builder = MakeFloatingRateLoan::new()
+                    .with_start_date(start_date)
+                    .with_tenor(config.tenor())
+                    .with_notional(notional);
+                let spread = self.calculate_spread(&builder);
+                Instrument::FloatingRateInstrument(builder.with_spread(spread).build())
+            }
+            RateType::Fixed => {
+                let builder = MakeFixedRateLoan::new()
+                    .with_notional(notional)
+                    .with_start_date(start_date)
+                    .with_tenor(config.tenor())
+                    .with_payment_frequency(config.payment_frequency())
+                    .with_rate_definition(config.rate_definition())
+                    .with_structure(structure);
+
+                let rate = self.calculate_rate(&builder);
+                Instrument::FixedRateInstrument(builder.with_rate_value(rate).build())
+            }
+        }
+    }
+
+    pub fn generate(&self) -> Vec<Instrument> {
+        let positions = self
+            .configs
+            .iter()
+            .map(|config| self.generate_position(config))
+            .collect();
+        return positions;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        rates::{
+            enums::Compounding,
+            interestrate::{InterestRate, RateDefinition},
+            interestrateindex::{enums::InterestRateIndex, iborindex::IborIndex},
+            yieldtermstructure::{
+                enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
+            },
+        },
+        time::{date::Date, daycounter::DayCounter, enums::TimeUnit},
+    };
+
+    use super::*;
+
+    fn create_store() -> MarketStore {
+        let ref_date = Date::new(2021, 9, 1);
+        let local_currency = Currency::USD;
+        let mut market_store = MarketStore::new(ref_date, local_currency);
+
+        let discount_rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let discount_curve = YieldTermStructure::FlatForwardTermStructure(
+            FlatForwardTermStructure::new(ref_date, discount_rate),
+        );
+
+        let discount_index = IborIndex::new().with_term_structure(discount_curve);
+        market_store.mut_index_store().add_index(
+            "DiscountCurve".to_string(),
+            InterestRateIndex::IborIndex(discount_index),
+        );
+        return market_store;
+    }
+
+    #[test]
+    fn generator_tests() {
+        let market_store = Rc::new(create_store());
+        let configs = Rc::new(vec![LoanConfiguration::new(
+            1.0,
+            Structure::Bullet,
+            Frequency::Annual,
+            Period::new(1, TimeUnit::Years),
+            Currency::USD,
+            Side::Receive,
+            RateType::Fixed,
+            RateDefinition::default(),
+            0,
+            None,
+        )]);
+        let generator = LoanGenerator::new(100.0, configs, market_store);
+        let positions = generator.generate();
+        assert_eq!(positions.len(), 1);
+    }
+}

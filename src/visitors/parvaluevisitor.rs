@@ -8,7 +8,6 @@ use argmin::{
 use crate::{
     core::{meta::MarketData, traits::Registrable},
     instruments::{fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan},
-    rates::interestrate::InterestRate,
 };
 
 use super::{
@@ -19,15 +18,15 @@ use super::{
 /// # ParValue
 /// ParValue is a cost function that calculates the NPV of a generic instrument.
 struct ParValue<T> {
-    instrument: Rc<T>,
+    eval: Rc<T>,
     npv_visitor: Box<NPVConstVisitor>,
 }
 
 impl<T> ParValue<T> {
-    pub fn new(instrument: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
+    pub fn new(eval: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data);
         ParValue {
-            instrument: instrument,
+            eval,
             npv_visitor: Box::new(npv_visitor),
         }
     }
@@ -38,25 +37,17 @@ impl CostFunction for ParValue<FixedRateInstrument> {
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
-        let rate = self.instrument.rate();
-        let builder = MakeFixedRateLoan::from(self.instrument.deref());
-        let new_rate = InterestRate::new(
-            *param,
-            rate.compounding(),
-            rate.frequency(),
-            rate.day_counter(),
-        );
-        let mut new_instrument = builder.with_rate(new_rate).build();
-        new_instrument
-            .mut_cashflows()
+        let builder = MakeFixedRateLoan::from(self.eval.deref());
+        let mut inst = builder.with_rate_value(*param).build();
+        inst.mut_cashflows()
             .iter_mut()
-            .zip(self.instrument.cashflows().iter())
+            .zip(self.eval.cashflows().iter())
             .for_each(|(new_cf, old_cf)| {
                 let id = old_cf.registry_id().expect("Cashflow has no registry id");
                 new_cf.register_id(id);
             });
 
-        Ok(self.npv_visitor.visit(&new_instrument))
+        Ok(self.npv_visitor.visit(&inst))
     }
 }
 
@@ -68,9 +59,7 @@ pub struct ParValueConstVisitor {
 
 impl ParValueConstVisitor {
     pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
-        ParValueConstVisitor {
-            market_data: market_data,
-        }
+        ParValueConstVisitor { market_data }
     }
 }
 

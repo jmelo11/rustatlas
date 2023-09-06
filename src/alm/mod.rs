@@ -1,2 +1,2 @@
-pub mod positiongenerator;
+pub mod loangenerator;
 pub mod traits;
