@@ -18,7 +18,6 @@ pub struct MakeFloatingRateLoan {
     end_date: Date,
     period: Period,
     rate_definition: RateDefinition,
-
     notional: f64,
     currency: Currency,
     side: Side,
@@ -31,8 +30,8 @@ pub struct MakeFloatingRateLoan {
 impl MakeFloatingRateLoan {
     pub fn new(start_date: Date, end_date: Date) -> MakeFloatingRateLoan {
         MakeFloatingRateLoan {
-            start_date: start_date,
-            end_date: end_date,
+            start_date,
+            end_date,
             rate_definition: RateDefinition::default(),
             period: Period::empty(),
             notional: 1.0,
@@ -197,4 +196,67 @@ fn build_coupons_from_notionals(
         );
         cashflows.push(Cashflow::FloatingRateCoupon(coupon));
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    //use std::collections::HashMap;
+
+    use crate::{
+        cashflows::{
+            cashflow::{Cashflow, Side},
+            traits::{Payable, RequiresFixingRate},
+        },
+        currencies::enums::Currency,
+        instruments::makefloatingrateloan::MakeFloatingRateLoan,
+        rates::{enums::Compounding, interestrate::{InterestRate, RateDefinition}},
+        time::{
+            date::Date,
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+            period::Period,
+        },
+        visitors::traits::HasCashflows,
+    };
+
+    #[test]
+    fn build_bullet(){
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Compounded,
+            Frequency::Annual,
+        );
+
+        let mut instrument = super::MakeFloatingRateLoan::new(start_date, end_date)
+            .with_rate_definition(rate_definition)
+            .with_frequency(Frequency::Semiannual)
+            .with_spread(0.05)
+            .with_notional(100.0)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build();
+
+
+        
+        
+        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        //assert_eq!(instrument.notional(), 100.0);
+        //assert_eq!(instrument.rate(), rate);
+        //assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
+        //assert_eq!(instrument.start_date(), start_date);
+        //assert_eq!(instrument.end_date(), end_date);
+
+        //let x =instrument.cashflows().iter();
+
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+   
+    }
+
 }
