@@ -604,7 +604,7 @@ impl From <&FixedRateInstrument> for MakeFixedRateLoan {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
     use crate::{
         cashflows::{
             cashflow::{Cashflow, Side},
@@ -846,6 +846,54 @@ mod tests {
     }
 
     #[test]
+    fn build_other(){
+
+         let start_date = Date::new(2020, 1, 1);
+         let end_date = start_date + Period::new(3, TimeUnit::Years); 
+
+         let mut disbursements = HashMap::new();     
+         disbursements.insert(start_date, 100.0); 
+
+         let mut redemptions = HashMap::new();       
+         redemptions.insert(start_date + Period::new(1, TimeUnit::Years), 30.0);  
+         redemptions.insert(end_date, 70.0);  
+
+         let mut additional_coupon_dates = HashSet::new();
+
+         additional_coupon_dates.insert(start_date + Period::new(1, TimeUnit::Years));
+         additional_coupon_dates.insert(start_date + Period::new(2, TimeUnit::Years)); 
+
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let instrument = super::MakeFixedRateLoan::new()
+            .with_start_date(start_date)
+            .with_disbursements(disbursements)
+            .with_redemptions(redemptions)
+            .with_additional_coupon_dates(additional_coupon_dates)
+            .with_rate(rate)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .other()
+            .build();
+
+        assert_eq!(instrument.notional(), 100.0);   
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+
+
+    }
+
+    #[test]
     fn into_test() {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
@@ -880,6 +928,5 @@ mod tests {
             .iter()
             .for_each(|cf| println!("{}", cf));
     }
-
 
 }
