@@ -330,7 +330,7 @@ impl MakeFloatingRateLoan {
 
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                //let last_date = vec![*schedule.dates().last().unwrap()];
                 
                 let inv_side = match self.side {
                     Side::Pay => Side::Receive,
@@ -396,6 +396,9 @@ impl MakeFloatingRateLoan {
                 let disbursements = self.disbursements.expect("Disbursements not set");
                 let redemptions = self.redemptions.expect("Redemptions not set");
                 let notional = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                let redemtion = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                assert_eq!(notional, redemtion, "Notional must equal total redemption");
+
                 let additional_dates = self
                     .additional_coupon_dates
                     .expect("Additional coupon dates not set");
@@ -506,12 +509,12 @@ mod tests {
 
     use crate::{
         cashflows::{
-            cashflow::{Cashflow, Side},
-            traits::{Payable, RequiresFixingRate},
+            cashflow::Side,
+            traits::RequiresFixingRate,
         },
         currencies::enums::Currency,
-        instruments::makefloatingrateloan::MakeFloatingRateLoan,
-        rates::{enums::Compounding, interestrate::{InterestRate, RateDefinition}},
+        //instruments::makefloatingrateloan::MakeFloatingRateLoan,
+        rates::{enums::Compounding, interestrate:: RateDefinition},
         time::{
             date::Date,
             daycounter::DayCounter,
@@ -690,7 +693,6 @@ mod tests {
             .with_rate_definition(rate_definition)
             .with_frequency(Frequency::Semiannual)
             .with_spread(0.05)
-            .with_notional(100.0)
             .with_side(Side::Receive)
             .with_currency(Currency::USD)
             .other()

@@ -223,6 +223,10 @@ impl MakeFixedRateLoan {
                 let disbursements = self.disbursements.expect("Disbursements not set");
                 let redemptions = self.redemptions.expect("Redemptions not set");
                 let notional = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                let redemtion = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                assert_eq!(notional, redemtion, "Notional must equal total redemption");
+                
+                
                 let additional_dates = self
                     .additional_coupon_dates
                     .expect("Additional coupon dates not set");
