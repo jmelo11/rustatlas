@@ -599,7 +599,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
     }
 }
 
-impl From <&FixedRateInstrument> for MakeFixedRateLoan {
+impl From<&FixedRateInstrument> for MakeFixedRateLoan {
     fn from(val: &FixedRateInstrument) -> Self{
         val.clone().into()
     }
@@ -907,7 +907,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let notional = 1000.0;
+        let notional = 100.0;
         let instrument = super::MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
@@ -919,10 +919,11 @@ mod tests {
             .equal_payments()
             .build();
 
-        let builder: MakeFixedRateLoan = instrument.into();
+        let builder: MakeFixedRateLoan = instrument.clone().into();
         let instrument2 = builder.build();
-        assert_eq!(instrument2.notional(), notional);
-        assert_eq!(instrument2.rate(), rate);
+        assert_eq!(instrument2.notional(), instrument.notional());
+        assert_eq!(instrument2.rate(), instrument.rate());
+
         assert_eq!(instrument2.payment_frequency(), Frequency::Monthly);
         assert_eq!(instrument2.start_date(), start_date);
         assert_eq!(instrument2.end_date(), end_date);
@@ -932,5 +933,6 @@ mod tests {
             .iter()
             .for_each(|cf| println!("{}", cf));
     }
+
 
 }
