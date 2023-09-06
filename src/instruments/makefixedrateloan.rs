@@ -148,7 +148,7 @@ impl MakeFixedRateLoan {
         self
     }
 
-    fn with_structure(mut self, structure: Structure) -> MakeFixedRateLoan {
+    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateLoan {
         self.structure = structure;
         self
     }

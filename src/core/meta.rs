@@ -87,7 +87,6 @@ pub struct ForwardRateRequest {
     provider_id: usize,
     start_date: Date,
     end_date: Date,
-    fixing_date: Date,
     compounding: Compounding,
     frequency: Frequency,
 }
@@ -97,7 +96,6 @@ impl ForwardRateRequest {
         provider_id: usize,
         start_date: Date,
         end_date: Date,
-        fixing_date: Date,
         compounding: Compounding,
         frequency: Frequency,
     ) -> ForwardRateRequest {
@@ -105,7 +103,6 @@ impl ForwardRateRequest {
             provider_id,
             start_date,
             end_date,
-            fixing_date,
             compounding,
             frequency,
         }
@@ -121,10 +118,6 @@ impl ForwardRateRequest {
 
     pub fn end_date(&self) -> Date {
         self.end_date
-    }
-
-    pub fn fixing_date(&self) -> Date {
-        self.fixing_date
     }
 
     pub fn compounding(&self) -> Compounding {

@@ -44,11 +44,7 @@ fn starting_today_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(start_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
 
@@ -87,11 +83,7 @@ fn already_started_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data: Vec<MarketData> = indexer
-        .request()
-        .iter()
-        .map(|req| model.gen_node(ref_date, req))
-        .collect();
+    let data = model.gen_market_data(&indexer.request());
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
     let fixing_visitor = FixingVisitor::new(ref_data.clone());

@@ -9,10 +9,13 @@ edition = "2021"
 chrono = "0.4.26"
 rayon = "1.7.0"
 
-# -- OSX -- 
-# argmin = { version = "0.7" }
-# argmin-math = { version = "0.2", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
-
-# -- Windows -- 
 argmin = { version = "0.8" }
 argmin-math = { version = "0.2.1", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
+
+[dev-dependencies]
+criterion = { version = "0.4", features = ["html_reports"] }
+
+[[bench]]
+name = "fixedratepricing"
+harness = false
+

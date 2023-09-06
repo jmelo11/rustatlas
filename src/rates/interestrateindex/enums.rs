@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use crate::{
+    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider},
@@ -31,6 +34,13 @@ impl FixingProvider for InterestRateIndex {
             InterestRateIndex::OvernightIndex(overnight_index) => {
                 overnight_index.add_fixing(date, rate)
             }
+        }
+    }
+
+    fn fixings(&self) -> &HashMap<Date, f64> {
+        match self {
+            InterestRateIndex::IborIndex(ibor_index) => ibor_index.fixings(),
+            InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.fixings(),
         }
     }
 }
@@ -91,6 +101,20 @@ impl InterestRateIndex {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => ibor_index.provider_id(),
             InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.provider_id(),
+        }
+    }
+}
+
+impl AdvanceInTime for InterestRateIndex {
+    type Output = InterestRateIndex;
+    fn advance(&self, period: Period) -> Self::Output {
+        match self {
+            InterestRateIndex::IborIndex(ibor_index) => {
+                InterestRateIndex::IborIndex(ibor_index.advance(period))
+            }
+            InterestRateIndex::OvernightIndex(overnight_index) => {
+                InterestRateIndex::OvernightIndex(overnight_index.advance(period))
+            }
         }
     }
 }
