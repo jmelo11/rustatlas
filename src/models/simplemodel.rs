@@ -42,9 +42,7 @@ impl Model for SimpleModel {
             .expect(format!("No curve found for id {}", id).as_str());
 
         let curve = index.term_structure().expect("No term structure found");
-        let start_df = curve.discount_factor(ref_date);
-        let end_df = curve.discount_factor(date);
-        return end_df / start_df;
+        curve.discount_factor(date)
     }
 
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> f64 {
