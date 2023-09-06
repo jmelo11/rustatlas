@@ -17,6 +17,7 @@ pub struct MakeFloatingRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
     period: Period,
+    tenor: Option<Period>,
     rate_definition: RateDefinition,
     notional: f64,
     currency: Currency,
@@ -33,6 +34,7 @@ impl MakeFloatingRateLoan {
             start_date: None,
             end_date: None,
             rate_definition: RateDefinition::default(),
+            tenor: None,
             period: Period::empty(),
             notional: 1.0,
             spread: 0.0,
@@ -52,6 +54,11 @@ impl MakeFloatingRateLoan {
     pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateLoan {
         self.end_date = Some(end_date);
         self
+    }
+
+    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLoan {
+        self.tenor = Some(tenor);
+        return self;
     }
 
     pub fn with_forecast_curve_id(mut self, forecast_curve_id: usize) -> MakeFloatingRateLoan {
@@ -123,7 +130,13 @@ impl MakeFloatingRateLoan {
             Structure::Bullet => {
                 let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
-                let end_date = self.end_date.expect("End date not set");
+                let end_date = match self.end_date {
+                    Some(date) => date,
+                    None => {
+                        let tenor = self.tenor.expect("Tenor not set");
+                        start_date + tenor
+                    }
+                }; 
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_tenor(self.period)
                     .build();
@@ -192,7 +205,14 @@ impl MakeFloatingRateLoan {
             Structure::Zero => {
                 let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
-                let end_date = self.end_date.expect("End date not set");
+                let end_date = match self.end_date {
+                    Some(date) => date,
+                    None => {
+                        let tenor = self.tenor.expect("Tenor not set");
+                        start_date + tenor
+                    }
+                }; 
+                
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(Frequency::Once)
                     .build();
@@ -261,7 +281,14 @@ impl MakeFloatingRateLoan {
             Structure::EqualRedemptions => {
                 let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
-                let end_date = self.end_date.expect("End date not set");
+                let end_date = match self.end_date {
+                    Some(date) => date,
+                    None => {
+                        let tenor = self.tenor.expect("Tenor not set");
+                        start_date + tenor
+                    }
+                }; 
+                
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_tenor(self.period)
                     .build();
@@ -489,5 +516,39 @@ mod tests {
             .for_each(|cf| println!("{}", cf));
    
     }
+
+    #[test]
+    fn build_equal_redemptions_with_tenor(){
+        let start_date = Date::new(2020, 1, 1);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Compounded,
+            Frequency::Annual,
+        );
+
+        let mut instrument = super::MakeFloatingRateLoan::new()
+            .with_start_date(start_date)
+            .with_tenor(Period::new(23, TimeUnit::Months))
+            .with_rate_definition(rate_definition)
+            .with_frequency(Frequency::Semiannual)
+            .with_spread(0.05)
+            .with_notional(100.0)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .equal_redemptions()
+            .build();
+
+        
+        instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.002));
+        assert_eq!(instrument.notional(), 100.0);
+        assert_eq!(instrument.start_date(), start_date);
+        
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+   
+    }
+
 
 }

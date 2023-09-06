@@ -25,29 +25,8 @@ use super::{
 /// # MakeFixedRateLoan
 /// MakeFixedRateLoan is a builder for FixedRateInstrument. Uses the builder pattern.
 ///
-/// ## Example
-/// ```
-/// use rustatlas::prelude::*;
-///
-/// let start_date = Date::new(2020, 1, 1);
-/// let end_date = start_date + Period::new(5, TimeUnit::Years);
-/// let rate = InterestRate::new(
-///    0.05,
-///   Compounding::Compounded,
-///   Frequency::Annual,
-///  DayCounter::Actual360,
-/// );
-/// let instrument = MakeFixedRateLoan::new()
-/// .with_start_date(start_date)
-/// .with_end_date(end_date)
-/// .with_payment_frequency(Frequency::Semiannual)
-/// .with_rate(rate)
-/// .with_notional(100.0)
-/// .with_side(Side::Receive)
-/// .with_currency(Currency::USD)
-/// .bullet()
-/// .build();
-/// ```
+
+
 pub struct MakeFixedRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
