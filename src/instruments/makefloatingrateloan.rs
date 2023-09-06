@@ -435,7 +435,6 @@ mod tests {
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
-            .with_frequency(Frequency::Semiannual)
             .with_spread(0.05)
             .with_notional(100.0)
             .with_side(Side::Receive)
