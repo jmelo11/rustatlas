@@ -670,7 +670,7 @@ mod tests {
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateloan::{MakeFixedRateLoan, self},
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -981,4 +981,45 @@ mod tests {
             .iter()
             .for_each(|cf| println!("{}", cf));
     }
+
+    #[test]
+    // test the From traint 
+    fn from_test(){
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let notional = 100.0;
+        let instrument = super::MakeFixedRateLoan::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(notional)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .equal_payments()
+            .build();
+
+        let builder: MakeFixedRateLoan =  makefixedrateloan::MakeFixedRateLoan::from(&instrument);
+        let instrument2 = builder.build();
+        assert_eq!(instrument2.notional(), instrument.notional());
+        assert_eq!(instrument2.rate(), instrument.rate());
+
+        assert_eq!(instrument2.payment_frequency(), Frequency::Monthly);
+        assert_eq!(instrument2.start_date(), start_date);
+        assert_eq!(instrument2.end_date(), end_date);
+
+        instrument2
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+        
+    }
+
+
 }
