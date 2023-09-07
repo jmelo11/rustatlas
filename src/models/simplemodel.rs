@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::core::marketstore::MarketStore;
 
 use crate::core::meta::*;
@@ -14,11 +16,11 @@ use super::traits::Model;
 /// * `market_store` - The market store.
 #[derive(Clone)]
 pub struct SimpleModel {
-    market_store: MarketStore,
+    market_store: Rc<MarketStore>,
 }
 
 impl SimpleModel {
-    pub fn new(market_store: MarketStore) -> SimpleModel {
+    pub fn new(market_store: Rc<MarketStore>) -> SimpleModel {
         SimpleModel { market_store }
     }
 }

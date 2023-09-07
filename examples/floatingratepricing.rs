@@ -14,6 +14,7 @@ use rustatlas::{
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
+        parvaluevisitor::ParValueConstVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },
 };
@@ -34,11 +35,11 @@ fn starting_today_pricing() {
     let mut instrument = MakeFloatingRateLoan::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
-        .with_frequency(Frequency::Semiannual)
+        .with_payment_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
-        .with_forecast_curve_id(1)
-        .with_discount_curve_id(2)
+        .with_forecast_curve_id(Some(1))
+        .with_discount_curve_id(Some(2))
         .build();
 
     let indexer = IndexingVisitor::new();
@@ -60,6 +61,10 @@ fn starting_today_pricing() {
 
     print_separator();
     println!("NPV: {}", npv);
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument);
+    println!("Par Value: {}", par_value);
 }
 
 fn already_started_pricing() {
@@ -75,11 +80,11 @@ fn already_started_pricing() {
     let mut instrument = MakeFloatingRateLoan::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
-        .with_frequency(Frequency::Semiannual)
+        .with_payment_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
-        .with_forecast_curve_id(1)
-        .with_discount_curve_id(2)
+        .with_forecast_curve_id(Some(1))
+        .with_discount_curve_id(Some(2))
         .build();
 
     let indexer = IndexingVisitor::new();

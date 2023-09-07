@@ -9,8 +9,14 @@ use crate::{
         makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
         traits::Structure,
     },
+    models::{simplemodel::SimpleModel, traits::Model},
     rates::{interestrate::RateDefinition, traits::HasReferenceDate},
     time::{enums::Frequency, period::Period},
+    visitors::{
+        indexingvisitor::IndexingVisitor,
+        parvaluevisitor::ParValueConstVisitor,
+        traits::{ConstVisit, Visit},
+    },
 };
 
 pub enum Instrument {
@@ -124,11 +130,24 @@ impl LoanGenerator {
         }
     }
 
-    fn calculate_rate(&self, _builder: &MakeFixedRateLoan) -> f64 {
-        return 0.03;
+    fn calculate_par_spread(&self, builder: MakeFloatingRateLoan) -> f64 {
+        let mut instrument = builder.build();
+        let indexing_visitor = IndexingVisitor::new();
+        indexing_visitor.visit(&mut instrument);
+        let model = SimpleModel::new(self.market_store.clone());
+        let data = model.gen_market_data(&indexing_visitor.request());
+        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        par_visitor.visit(&mut instrument)
     }
-    fn calculate_spread(&self, _builder: &MakeFloatingRateLoan) -> f64 {
-        return 0.03;
+
+    fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> f64 {
+        let mut instrument = builder.build();
+        let indexing_visitor = IndexingVisitor::new();
+        indexing_visitor.visit(&mut instrument);
+        let model = SimpleModel::new(self.market_store.clone());
+        let data = model.gen_market_data(&indexing_visitor.request());
+        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        par_visitor.visit(&mut instrument)
     }
 
     pub fn generate_position(&self, config: &LoanConfiguration) -> Instrument {
@@ -141,7 +160,7 @@ impl LoanGenerator {
                     .with_start_date(start_date)
                     .with_tenor(config.tenor())
                     .with_notional(notional);
-                let spread = self.calculate_spread(&builder);
+                let spread = self.calculate_par_spread(builder.clone());
                 Instrument::FloatingRateInstrument(builder.with_spread(spread).build())
             }
             RateType::Fixed => {
@@ -153,7 +172,7 @@ impl LoanGenerator {
                     .with_rate_definition(config.rate_definition())
                     .with_structure(structure);
 
-                let rate = self.calculate_rate(&builder);
+                let rate = self.calculate_par_rate(builder.clone());
                 Instrument::FixedRateInstrument(builder.with_rate_value(rate).build())
             }
         }

@@ -1,8 +1,11 @@
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
-    time::date::Date,
+    rates::interestrate::RateDefinition,
+    time::{date::Date, enums::Frequency},
     visitors::traits::HasCashflows,
 };
+
+use super::traits::Structure;
 
 /// # FloatingRateInstrument
 /// A floating rate instrument.
@@ -14,6 +17,10 @@ use crate::{
 /// * `spread` - The spread.
 /// * `side` - The side.
 /// * `cashflows` - The cashflows.
+/// * `payment_frequency` - The payment frequency.
+/// * `rate_definition` - The rate definition.
+/// * `structure` - The structure.
+#[derive(Clone)]
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
@@ -21,6 +28,11 @@ pub struct FloatingRateInstrument {
     spread: f64,
     side: Side,
     cashflows: Vec<Cashflow>,
+    payment_frequency: Frequency,
+    rate_definition: RateDefinition,
+    structure: Structure,
+    discount_curve_id: Option<usize>,
+    forecast_curve_id: Option<usize>,
 }
 
 impl FloatingRateInstrument {
@@ -31,6 +43,11 @@ impl FloatingRateInstrument {
         spread: f64,
         side: Side,
         cashflows: Vec<Cashflow>,
+        payment_frequency: Frequency,
+        rate_definition: RateDefinition,
+        structure: Structure,
+        discount_curve_id: Option<usize>,
+        forecast_curve_id: Option<usize>,
     ) -> Self {
         FloatingRateInstrument {
             start_date: start_date,
@@ -39,6 +56,11 @@ impl FloatingRateInstrument {
             spread: spread,
             side: side,
             cashflows: cashflows,
+            payment_frequency: payment_frequency,
+            rate_definition: rate_definition,
+            structure: structure,
+            discount_curve_id: discount_curve_id,
+            forecast_curve_id: forecast_curve_id,
         }
     }
 
@@ -60,6 +82,26 @@ impl FloatingRateInstrument {
 
     pub fn side(&self) -> Side {
         self.side
+    }
+
+    pub fn payment_frequency(&self) -> Frequency {
+        self.payment_frequency
+    }
+
+    pub fn rate_definition(&self) -> RateDefinition {
+        self.rate_definition
+    }
+
+    pub fn structure(&self) -> Structure {
+        self.structure
+    }
+
+    pub fn discount_curve_id(&self) -> Option<usize> {
+        self.discount_curve_id
+    }
+
+    pub fn forecast_curve_id(&self) -> Option<usize> {
+        self.forecast_curve_id
     }
 }
 

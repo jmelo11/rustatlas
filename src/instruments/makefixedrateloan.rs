@@ -25,7 +25,7 @@ use super::{
 /// # MakeFixedRateLoan
 /// MakeFixedRateLoan is a builder for FixedRateInstrument. Uses the builder pattern.
 ///
-
+#[derive(Debug, Clone)]
 pub struct MakeFixedRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
@@ -150,8 +150,8 @@ impl MakeFixedRateLoan {
         self
     }
 
-    pub fn with_discount_curve_id(mut self, id: usize) -> MakeFixedRateLoan {
-        self.discount_curve_id = Some(id);
+    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
+        self.discount_curve_id = id;
         self
     }
 
@@ -213,7 +213,7 @@ impl MakeFixedRateLoan {
 
     pub fn build(self) -> FixedRateInstrument {
         let mut cashflows: Vec<Cashflow> = Vec::new();
-        
+
         match self.structure {
             Structure::Bullet => {
                 let start_date = self.start_date.expect("Start date not set");
@@ -263,7 +263,11 @@ impl MakeFixedRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
-                let mut instrument = FixedRateInstrument::new(
+                cashflows
+                    .iter_mut()
+                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                FixedRateInstrument::new(
                     start_date,
                     end_date,
                     self.notional,
@@ -271,12 +275,8 @@ impl MakeFixedRateLoan {
                     payment_frequency,
                     cashflows,
                     self.structure,
-                );
-                match self.discount_curve_id {
-                    Some(id) => instrument.set_discount_curve_id(id),
-                    None => (),
-                };
-                instrument
+                    self.discount_curve_id,
+                )
             }
             Structure::Other => {
                 let disbursements = self.disbursements.expect("Disbursements not set");
@@ -320,7 +320,12 @@ impl MakeFixedRateLoan {
                 let start_date = &timeline.first().expect("No start date").0;
                 let end_date = &timeline.last().expect("No end date").1;
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
-                let mut instrument = FixedRateInstrument::new(
+
+                cashflows
+                    .iter_mut()
+                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                FixedRateInstrument::new(
                     *start_date,
                     *end_date,
                     notional,
@@ -328,12 +333,8 @@ impl MakeFixedRateLoan {
                     payment_frequency,
                     cashflows,
                     self.structure,
-                );
-                match self.discount_curve_id {
-                    Some(id) => instrument.set_discount_curve_id(id),
-                    None => (),
-                };
-                instrument
+                    self.discount_curve_id,
+                )
             }
             Structure::EqualPayments => {
                 let start_date = self.start_date.expect("Start date not set");
@@ -389,7 +390,12 @@ impl MakeFixedRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
-                let mut instrument = FixedRateInstrument::new(
+
+                cashflows
+                    .iter_mut()
+                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                FixedRateInstrument::new(
                     start_date,
                     end_date,
                     self.notional,
@@ -397,12 +403,8 @@ impl MakeFixedRateLoan {
                     payment_frequency,
                     cashflows,
                     self.structure,
-                );
-                match self.discount_curve_id {
-                    Some(id) => instrument.set_discount_curve_id(id),
-                    None => (),
-                };
-                instrument
+                    self.discount_curve_id,
+                )
             }
             Structure::Zero => {
                 let start_date = self.start_date.expect("Start date not set");
@@ -451,7 +453,12 @@ impl MakeFixedRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
-                let mut instrument = FixedRateInstrument::new(
+
+                cashflows
+                    .iter_mut()
+                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                FixedRateInstrument::new(
                     start_date,
                     end_date,
                     self.notional,
@@ -459,12 +466,8 @@ impl MakeFixedRateLoan {
                     payment_frequency,
                     cashflows,
                     self.structure,
-                );
-                match self.discount_curve_id {
-                    Some(id) => instrument.set_discount_curve_id(id),
-                    None => (),
-                };
-                instrument
+                    self.discount_curve_id,
+                )
             }
             Structure::EqualRedemptions => {
                 let start_date = self.start_date.expect("Start date not set");
@@ -516,7 +519,12 @@ impl MakeFixedRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
-                let mut instrument = FixedRateInstrument::new(
+
+                cashflows
+                    .iter_mut()
+                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                FixedRateInstrument::new(
                     start_date,
                     end_date,
                     self.notional,
@@ -524,12 +532,8 @@ impl MakeFixedRateLoan {
                     payment_frequency,
                     cashflows,
                     self.structure,
-                );
-                match self.discount_curve_id {
-                    Some(id) => instrument.set_discount_curve_id(id),
-                    None => (),
-                };
-                instrument
+                    self.discount_curve_id,
+                )
             } //_ => panic!("Not implemented"),
         }
     }
@@ -643,6 +647,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
                     .with_additional_coupon_dates(additional_coupon_dates)
                     .with_rate(self.rate())
                     .with_notional(self.notional())
+                    .with_discount_curve_id(self.discount_curve_id())
                     .with_structure(self.structure())
             }
             _ => MakeFixedRateLoan::new()
@@ -651,6 +656,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
                 .with_payment_frequency(self.payment_frequency())
                 .with_rate(self.rate())
                 .with_notional(self.notional())
+                .with_discount_curve_id(self.discount_curve_id())
                 .with_structure(self.structure()),
         }
     }

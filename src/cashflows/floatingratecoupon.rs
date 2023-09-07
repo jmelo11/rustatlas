@@ -64,22 +64,22 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
+    pub fn with_discount_curve_id(self, id: Option<usize>) -> FloatingRateCoupon {
         self.cashflow.with_discount_curve_id(id);
         self
     }
 
-    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
-        self.forecast_curve_id = Some(id);
+    pub fn with_forecast_curve_id(mut self, id: Option<usize>) -> FloatingRateCoupon {
+        self.forecast_curve_id = id;
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
         self.cashflow.set_discount_curve_id(id);
     }
 
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
-        self.forecast_curve_id = Some(id);
+    pub fn set_forecast_curve_id(&mut self, id: Option<usize>) {
+        self.forecast_curve_id = id;
     }
 }
 

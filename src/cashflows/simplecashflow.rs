@@ -44,8 +44,8 @@ impl SimpleCashflow {
         self
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> SimpleCashflow {
-        self.discount_curve_id = Some(discount_curve_id);
+    pub fn with_discount_curve_id(mut self, discount_curve_id: Option<usize>) -> SimpleCashflow {
+        self.discount_curve_id = discount_curve_id;
         self
     }
 
@@ -54,8 +54,8 @@ impl SimpleCashflow {
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
-        self.discount_curve_id = Some(id);
+    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
+        self.discount_curve_id = id;
     }
 
     pub fn set_amount(&mut self, amount: f64) {

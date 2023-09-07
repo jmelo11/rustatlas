@@ -26,6 +26,7 @@ pub struct FixedRateInstrument {
     payment_frequency: Frequency,
     cashflows: Vec<Cashflow>,
     structure: Structure,
+    discount_curve_id: Option<usize>,
 }
 
 impl FixedRateInstrument {
@@ -37,6 +38,7 @@ impl FixedRateInstrument {
         payment_frequency: Frequency,
         cashflows: Vec<Cashflow>,
         structure: Structure,
+        discount_curve_id: Option<usize>,
     ) -> Self {
         FixedRateInstrument {
             start_date: start_date,
@@ -46,6 +48,7 @@ impl FixedRateInstrument {
             payment_frequency: payment_frequency,
             cashflows: cashflows,
             structure: structure,
+            discount_curve_id: discount_curve_id,
         }
     }
 
@@ -72,6 +75,12 @@ impl FixedRateInstrument {
     pub fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
+
+    pub fn discount_curve_id(&self) -> Option<usize> {
+        self.discount_curve_id
+    }
+
+    
 }
 
 impl HasCashflows for FixedRateInstrument {

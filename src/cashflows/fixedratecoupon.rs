@@ -48,12 +48,12 @@ impl FixedRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> FixedRateCoupon {
-        self.cashflow = self.cashflow.with_discount_curve_id(discount_curve_id);
+    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> FixedRateCoupon {
+        self.cashflow = self.cashflow.with_discount_curve_id(id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
         self.cashflow.set_discount_curve_id(id);
     }
 }
@@ -154,7 +154,7 @@ mod tests {
         let accrual_start_date = Date::new(2023, 1, 1);
         let accrual_end_date = Date::new(2023, 12, 31);
         let payment_date = Date::new(2024, 1, 1);
-        let discount_curve_id = 1;
+        let id = 1;
         let currency = Currency::USD;
 
         let mut coupon = FixedRateCoupon::new(
@@ -167,7 +167,7 @@ mod tests {
             Side::Pay,
         );
 
-        coupon.set_discount_curve_id(discount_curve_id);
+        coupon.set_discount_curve_id(Some(id));
 
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);

@@ -20,17 +20,17 @@ A rust version of Atlas
 ## Productos
 
 - [ ] Loans:
-  - [ ] Fijos
+  - [X] Fijos
     - [X] Bullet
-    - [ ] Amortizable
-    - [ ] Cero
+    - [X] Amortizable
+    - [X] Cero
     - [X] Cuotas iguales
-    - [ ] Irregular
-  - [ ] Flotantes
+    - [X] Irregular
+  - [X] Flotantes
     - [X] Bullet
-    - [ ] Amortizable
-    - [ ] Cero
-    - [ ] Irregular
+    - [X] Amortizable
+    - [X] Cero
+    - [X] Irregular
   - [ ] Mixtos
 - [ ] Cuentas corrientes
 - [ ] Swaps

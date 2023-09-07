@@ -6,21 +6,23 @@ use crate::{
         // traits::{InterestAccrual, Payable},
         floatingratecoupon::FloatingRateCoupon,
         simplecashflow::SimpleCashflow,
+        traits::{InterestAccrual, Payable},
     },
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    visitors::traits::HasCashflows,
 };
 
 use super::{
     floatingrateinstrument::FloatingRateInstrument,
     traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
 };
-
+#[derive(Debug, Clone)]
 pub struct MakeFloatingRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
-    period: Period,
+    payment_frequency: Option<Frequency>,
     tenor: Option<Period>,
     rate_definition: RateDefinition,
     notional: f64,
@@ -40,9 +42,9 @@ impl MakeFloatingRateLoan {
         MakeFloatingRateLoan {
             start_date: None,
             end_date: None,
-            rate_definition: RateDefinition::default(),
+            payment_frequency: None,
             tenor: None,
-            period: Period::empty(),
+            rate_definition: RateDefinition::default(),
             notional: 1.0,
             spread: 0.0,
             currency: Currency::USD,
@@ -89,23 +91,24 @@ impl MakeFloatingRateLoan {
         self
     }
 
-    pub fn with_forecast_curve_id(mut self, forecast_curve_id: usize) -> MakeFloatingRateLoan {
-        self.forecast_curve_id = Some(forecast_curve_id);
+    pub fn with_forecast_curve_id(
+        mut self,
+        forecast_curve_id: Option<usize>,
+    ) -> MakeFloatingRateLoan {
+        self.forecast_curve_id = forecast_curve_id;
         return self;
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> MakeFloatingRateLoan {
-        self.discount_curve_id = Some(discount_curve_id);
+    pub fn with_discount_curve_id(
+        mut self,
+        discount_curve_id: Option<usize>,
+    ) -> MakeFloatingRateLoan {
+        self.discount_curve_id = discount_curve_id;
         return self;
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLoan {
         self.rate_definition = rate_definition;
-        return self;
-    }
-
-    pub fn with_period(mut self, period: Period) -> MakeFloatingRateLoan {
-        self.period = period;
         return self;
     }
 
@@ -136,12 +139,13 @@ impl MakeFloatingRateLoan {
 
     pub fn zero(mut self) -> MakeFloatingRateLoan {
         self.structure = Structure::Zero;
+        self.payment_frequency = Some(Frequency::Once);
         self
     }
 
     pub fn other(mut self) -> MakeFloatingRateLoan {
         self.structure = Structure::Other;
-        // self.payment_frequency = Some(Frequency::OtherFrequency);
+        self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
@@ -150,19 +154,20 @@ impl MakeFloatingRateLoan {
         return self;
     }
 
-    pub fn with_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLoan {
-        let period = Period::from_frequency(frequency);
-        match period {
-            Ok(p) => self.period = p,
-            Err(e) => panic!("Error: {}", e),
-        }
+    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLoan {
+        self.payment_frequency = Some(frequency);
+        return self;
+    }
+
+    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLoan {
+        self.structure = structure;
         return self;
     }
 
     pub fn build(self) -> FloatingRateInstrument {
+        let mut cashflows = Vec::new();
         match self.structure {
             Structure::Bullet => {
-                let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
                 let end_date = match self.end_date {
                     Some(date) => date,
@@ -171,8 +176,9 @@ impl MakeFloatingRateLoan {
                         start_date + tenor
                     }
                 };
+                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
                 let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_tenor(self.period)
+                    .with_frequency(payment_frequency)
                     .build();
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, self.notional, Structure::Bullet);
@@ -209,23 +215,10 @@ impl MakeFloatingRateLoan {
                     CashflowType::Redemption,
                 );
 
-                match self.forecast_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_forecast_curve_id(id));
-                    }
-                    None => {}
-                }
-
-                match self.discount_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_discount_curve_id(id));
-                    }
-                    None => {}
-                }
+                cashflows.iter_mut().for_each(|cf| {
+                    cf.set_discount_curve_id(self.discount_curve_id);
+                    cf.set_forecast_curve_id(self.forecast_curve_id);
+                });
                 FloatingRateInstrument::new(
                     start_date,
                     end_date,
@@ -233,10 +226,14 @@ impl MakeFloatingRateLoan {
                     self.spread,
                     self.side,
                     cashflows,
+                    payment_frequency,
+                    self.rate_definition,
+                    self.structure,
+                    self.discount_curve_id,
+                    self.forecast_curve_id,
                 )
             }
             Structure::Zero => {
-                let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
                 let end_date = match self.end_date {
                     Some(date) => date,
@@ -245,9 +242,9 @@ impl MakeFloatingRateLoan {
                         start_date + tenor
                     }
                 };
-
+                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
                 let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(Frequency::Once)
+                    .with_frequency(payment_frequency)
                     .build();
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, self.notional, Structure::Zero);
@@ -284,23 +281,10 @@ impl MakeFloatingRateLoan {
                     CashflowType::Redemption,
                 );
 
-                match self.forecast_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_forecast_curve_id(id));
-                    }
-                    None => {}
-                }
-
-                match self.discount_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_discount_curve_id(id));
-                    }
-                    None => {}
-                }
+                cashflows.iter_mut().for_each(|cf| {
+                    cf.set_discount_curve_id(self.discount_curve_id);
+                    cf.set_forecast_curve_id(self.forecast_curve_id);
+                });
                 FloatingRateInstrument::new(
                     start_date,
                     end_date,
@@ -308,10 +292,14 @@ impl MakeFloatingRateLoan {
                     self.spread,
                     self.side,
                     cashflows,
+                    payment_frequency,
+                    self.rate_definition,
+                    self.structure,
+                    self.discount_curve_id,
+                    self.forecast_curve_id,
                 )
             }
             Structure::EqualRedemptions => {
-                let mut cashflows = Vec::new();
                 let start_date = self.start_date.expect("Start date not set");
                 let end_date = match self.end_date {
                     Some(date) => date,
@@ -320,9 +308,9 @@ impl MakeFloatingRateLoan {
                         start_date + tenor
                     }
                 };
-
+                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
                 let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_tenor(self.period)
+                    .with_frequency(payment_frequency)
                     .build();
 
                 let n = schedule.dates().len() - 1;
@@ -364,24 +352,11 @@ impl MakeFloatingRateLoan {
                     self.currency,
                     CashflowType::Redemption,
                 );
+                cashflows.iter_mut().for_each(|cf| {
+                    cf.set_discount_curve_id(self.discount_curve_id);
+                    cf.set_forecast_curve_id(self.forecast_curve_id);
+                });
 
-                match self.forecast_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_forecast_curve_id(id));
-                    }
-                    None => {}
-                }
-
-                match self.discount_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_discount_curve_id(id));
-                    }
-                    None => {}
-                }
                 FloatingRateInstrument::new(
                     start_date,
                     end_date,
@@ -389,10 +364,14 @@ impl MakeFloatingRateLoan {
                     self.spread,
                     self.side,
                     cashflows,
+                    payment_frequency,
+                    self.rate_definition,
+                    self.structure,
+                    self.discount_curve_id,
+                    self.forecast_curve_id,
                 )
             }
             Structure::Other => {
-                let mut cashflows = Vec::new();
                 let disbursements = self.disbursements.expect("Disbursements not set");
                 let redemptions = self.redemptions.expect("Redemptions not set");
                 let notional = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
@@ -435,36 +414,25 @@ impl MakeFloatingRateLoan {
                 }
                 let start_date = &timeline.first().expect("No start date").0;
                 let end_date = &timeline.last().expect("No end date").1;
-                //let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
+                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
-                match self.forecast_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_forecast_curve_id(id));
-                    }
-                    None => {}
-                }
-
-                match self.discount_curve_id {
-                    Some(id) => {
-                        cashflows
-                            .iter_mut()
-                            .for_each(|cf| cf.set_discount_curve_id(id));
-                    }
-                    None => {}
-                }
-
-                let instrument = FloatingRateInstrument::new(
+                cashflows.iter_mut().for_each(|cf| {
+                    cf.set_discount_curve_id(self.discount_curve_id);
+                    cf.set_forecast_curve_id(self.forecast_curve_id);
+                });
+                FloatingRateInstrument::new(
                     *start_date,
                     *end_date,
                     notional,
                     self.spread,
                     self.side,
                     cashflows,
-                );
-
-                instrument
+                    payment_frequency,
+                    self.rate_definition,
+                    self.structure,
+                    self.discount_curve_id,
+                    self.forecast_curve_id,
+                )
             }
             _ => panic!("Not implemented"),
         }
@@ -494,6 +462,63 @@ fn build_coupons_from_notionals(
             side,
         );
         cashflows.push(Cashflow::FloatingRateCoupon(coupon));
+    }
+}
+
+impl Into<MakeFloatingRateLoan> for FloatingRateInstrument {
+    fn into(self) -> MakeFloatingRateLoan {
+        match self.structure() {
+            Structure::Other => {
+                let mut disbursements = HashMap::new();
+                let mut redemptions = HashMap::new();
+                let mut additional_coupon_dates = HashSet::new();
+                for cashflow in self.cashflows() {
+                    match cashflow {
+                        Cashflow::Disbursement(c) => {
+                            disbursements.insert(c.payment_date(), c.amount());
+                        }
+                        Cashflow::Redemption(c) => {
+                            redemptions.insert(c.payment_date(), c.amount());
+                        }
+                        Cashflow::FloatingRateCoupon(c) => {
+                            additional_coupon_dates.insert(c.accrual_start_date());
+                            additional_coupon_dates.insert(c.accrual_end_date());
+                        }
+                        _ => (),
+                    }
+                }
+                MakeFloatingRateLoan::new()
+                    .with_start_date(self.start_date())
+                    .with_end_date(self.end_date())
+                    .with_notional(self.notional())
+                    .with_spread(self.spread())
+                    .with_side(self.side())
+                    .with_rate_definition(self.rate_definition())
+                    .with_disbursements(disbursements)
+                    .with_redemptions(redemptions)
+                    .with_additional_coupon_dates(additional_coupon_dates)
+                    .with_forecast_curve_id(self.forecast_curve_id())
+                    .with_discount_curve_id(self.discount_curve_id())
+                    .other()
+            }
+            _ => MakeFloatingRateLoan::new()
+                .with_start_date(self.start_date())
+                .with_end_date(self.end_date())
+                .with_notional(self.notional())
+                .with_spread(self.spread())
+                .with_side(self.side())
+                .with_payment_frequency(self.payment_frequency())
+                .with_rate_definition(self.rate_definition())
+                .with_forecast_curve_id(self.forecast_curve_id())
+                .with_discount_curve_id(self.discount_curve_id())
+                .with_structure(self.structure()),
+        }
+    }
+}
+
+impl From<&FloatingRateInstrument> for MakeFloatingRateLoan {
+    fn from(instrument: &FloatingRateInstrument) -> MakeFloatingRateLoan {
+        instrument.clone().into()
     }
 }
 
@@ -528,7 +553,7 @@ mod tests {
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
-            .with_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Semiannual)
             .with_spread(0.05)
             .with_notional(100.0)
             .with_side(Side::Receive)
@@ -599,7 +624,7 @@ mod tests {
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
-            .with_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Semiannual)
             .with_spread(0.05)
             .with_notional(100.0)
             .with_side(Side::Receive)
@@ -634,7 +659,7 @@ mod tests {
             .with_start_date(start_date)
             .with_tenor(Period::new(23, TimeUnit::Months))
             .with_rate_definition(rate_definition)
-            .with_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Semiannual)
             .with_spread(0.05)
             .with_notional(100.0)
             .with_side(Side::Receive)
@@ -684,7 +709,7 @@ mod tests {
             .with_redemptions(redemptions)
             .with_additional_coupon_dates(additional_coupon_dates)
             .with_rate_definition(rate_definition)
-            .with_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Semiannual)
             .with_spread(0.05)
             .with_side(Side::Receive)
             .with_currency(Currency::USD)

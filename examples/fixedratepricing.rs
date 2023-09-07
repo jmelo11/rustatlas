@@ -48,7 +48,7 @@ fn starting_today_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(2)
+        .with_discount_curve_id(Some(2))
         .with_notional(notional)
         .build();
 
@@ -123,7 +123,7 @@ fn forward_starting_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(0)
+        .with_discount_curve_id(Some(0))
         .with_notional(notional)
         .build();
 
@@ -176,7 +176,7 @@ fn already_started_pricing() {
         .with_payment_frequency(Frequency::Semiannual)
         .with_side(Side::Receive)
         .bullet()
-        .with_discount_curve_id(2)
+        .with_discount_curve_id(Some(2))
         .with_notional(notional)
         .build();
 
