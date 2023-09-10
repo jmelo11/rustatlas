@@ -1,7 +1,9 @@
+use thiserror::Error;
+
 use crate::{
     core::{
         meta::{ForwardRateRequest, MarketRequest},
-        traits::Registrable,
+        traits::{MarketRequestError, Registrable},
     },
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
@@ -39,6 +41,12 @@ pub struct FloatingRateCoupon {
     rate_definition: RateDefinition,
     forecast_curve_id: Option<usize>,
     cashflow: SimpleCashflow,
+}
+
+#[derive(Error, Debug)]
+pub enum FloatingRateCouponError {
+    #[error("FloatingRateCoupon does not have a fixing rate")]
+    NoFixingRate,
 }
 
 impl FloatingRateCoupon {
@@ -110,7 +118,7 @@ impl RequiresFixingRate for FloatingRateCoupon {
 }
 
 impl Payable for FloatingRateCoupon {
-    fn amount(&self) -> f64 {
+    fn amount(&self) -> Option<f64> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {
@@ -130,16 +138,11 @@ impl Registrable for FloatingRateCoupon {
         self.cashflow.register_id(id);
     }
 
-    fn market_request(&self) -> MarketRequest {
-        let id = match self.cashflow.registry_id() {
-            Some(id) => id,
-            None => panic!("FloatingRateCoupon has not been registered"),
-        };
-        let tmp = self.cashflow.market_request();
-        let forecast_curve_id = match self.forecast_curve_id {
-            Some(id) => id,
-            None => panic!("FloatingRateCoupon does not have a forecast curve id"),
-        };
+    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+        let tmp = self.cashflow.market_request()?;
+        let forecast_curve_id = self
+            .forecast_curve_id
+            .ok_or(MarketRequestError::NoForecastCurveId)?;
         let forecast = ForwardRateRequest::new(
             forecast_curve_id,
             self.accrual_start_date,
@@ -147,7 +150,12 @@ impl Registrable for FloatingRateCoupon {
             self.rate_definition.compounding(),
             self.rate_definition.frequency(),
         );
-        MarketRequest::new(id, tmp.df(), Some(forecast), tmp.fx())
+        Ok(MarketRequest::new(
+            tmp.id(),
+            tmp.df(),
+            Some(forecast),
+            tmp.fx(),
+        ))
     }
 }
 

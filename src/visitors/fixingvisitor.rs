@@ -21,7 +21,7 @@ impl FixingVisitor {
     }
 }
 
-impl<T: HasCashflows> Visit<T, ()> for FixingVisitor {
+impl<T: HasCashflows> Visit<T> for FixingVisitor {
     type Output = ();
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {
         has_cashflows

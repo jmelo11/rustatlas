@@ -1,6 +1,7 @@
 use super::enums::{Frequency, TimeUnit};
 use std::{
     cmp::Ordering,
+    fmt::Display,
     ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
@@ -20,22 +21,31 @@ pub struct Period {
     units: TimeUnit,
 }
 
+#[derive(Debug)]
+struct InvalidFrequencyError;
+
+impl Display for InvalidFrequencyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "`Frequency` is not a valid value for `Period`")
+    }
+}
+
 impl Period {
-    pub fn new(length: i32, units: TimeUnit) -> Self {
-        Self { length, units }
+    pub fn new(length: i32, units: TimeUnit) -> Period {
+        Period { length, units }
     }
 
-    pub fn from_frequency(freq: Frequency) -> Result<Self, String> {
+    pub fn from_frequency(freq: Frequency) -> Option<Period> {
         match freq {
-            Frequency::NoFrequency => Ok(Self {
+            Frequency::NoFrequency => Some(Self {
                 units: TimeUnit::Days,
                 length: 0,
             }),
-            Frequency::Once => Ok(Self {
+            Frequency::Once => Some(Self {
                 units: TimeUnit::Years,
                 length: 0,
             }),
-            Frequency::Annual => Ok(Self {
+            Frequency::Annual => Some(Self {
                 units: TimeUnit::Years,
                 length: 1,
             }),
@@ -43,21 +53,19 @@ impl Period {
             | Frequency::EveryFourthMonth
             | Frequency::Quarterly
             | Frequency::Bimonthly
-            | Frequency::Monthly => Ok(Self {
+            | Frequency::Monthly => Some(Self {
                 units: TimeUnit::Months,
                 length: 12 / (freq as i32),
             }),
-            Frequency::EveryFourthWeek | Frequency::Biweekly | Frequency::Weekly => Ok(Self {
+            Frequency::EveryFourthWeek | Frequency::Biweekly | Frequency::Weekly => Some(Self {
                 units: TimeUnit::Weeks,
                 length: 52 / (freq as i32),
             }),
-            Frequency::Daily => Ok(Self {
+            Frequency::Daily => Some(Self {
                 units: TimeUnit::Days,
                 length: 1,
             }),
-            Frequency::OtherFrequency => {
-                Err("OtherFrequency is not a valid value for Period".to_string())
-            }
+            Frequency::OtherFrequency => None,
         }
     }
 

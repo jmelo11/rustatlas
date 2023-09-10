@@ -1,7 +1,10 @@
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter};
 
 use crate::{
-    core::{meta::MarketRequest, traits::Registrable},
+    core::{
+        meta::MarketRequest,
+        traits::{MarketRequestError, Registrable},
+    },
     time::date::Date,
 };
 
@@ -49,7 +52,7 @@ impl Cashflow {
 }
 
 impl Payable for Cashflow {
-    fn amount(&self) -> f64 {
+    fn amount(&self) -> Option<f64> {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.amount(),
             Cashflow::Disbursement(cashflow) => cashflow.amount(),
@@ -96,7 +99,7 @@ impl Registrable for Cashflow {
         }
     }
 
-    fn market_request(&self) -> MarketRequest {
+    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.market_request(),
             Cashflow::Disbursement(cashflow) => cashflow.market_request(),
@@ -142,34 +145,35 @@ impl RequiresFixingRate for Cashflow {
 }
 
 impl Display for Cashflow {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let amount = self.amount().unwrap_or(0.0);
         match self {
             Cashflow::Redemption(cashflow) => write!(
                 f,
                 "date: {}, amount: {}, side: {:?}",
                 cashflow.payment_date(),
-                cashflow.amount(),
+                amount,
                 cashflow.side()
             ),
             Cashflow::Disbursement(cashflow) => write!(
                 f,
                 "date: {}, amount: {}, side: {:?}",
                 cashflow.payment_date(),
-                cashflow.amount(),
+                amount,
                 cashflow.side()
             ),
             Cashflow::FixedRateCoupon(coupon) => write!(
                 f,
                 "date: {}, amount: {}, side: {:?}",
                 coupon.payment_date(),
-                coupon.amount(),
+                amount,
                 coupon.side()
             ),
             Cashflow::FloatingRateCoupon(coupon) => write!(
                 f,
                 "date: {}, amount: {}, side: {:?}",
                 coupon.payment_date(),
-                coupon.amount(),
+                amount,
                 coupon.side()
             ),
         }

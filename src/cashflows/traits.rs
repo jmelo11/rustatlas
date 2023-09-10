@@ -45,7 +45,7 @@ pub trait RequiresFixingRate: InterestAccrual {
 /// # Payable
 /// A trait that defines the payment of an instrument.
 pub trait Payable {
-    fn amount(&self) -> f64;
+    fn amount(&self) -> Option<f64>;
     fn side(&self) -> Side;
     fn payment_date(&self) -> Date;
 }

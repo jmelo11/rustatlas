@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 
-use crate::core::{meta::MarketRequest, traits::Registrable};
+use crate::core::{
+    meta::MarketRequest,
+    traits::{MarketRequestError, Registrable},
+};
 
 use super::traits::{HasCashflows, Visit};
 
@@ -23,13 +26,15 @@ impl IndexingVisitor {
     }
 }
 
-impl<T: HasCashflows> Visit<T, ()> for IndexingVisitor {
-    type Output = ();
+impl<T: HasCashflows> Visit<T> for IndexingVisitor {
+    type Output = Result<(), MarketRequestError>;
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {
         let mut requests = self.request.borrow_mut();
-        has_cashflows.mut_cashflows().iter_mut().for_each(|cf| {
+        for cf in has_cashflows.mut_cashflows() {
             cf.register_id(requests.len());
-            requests.push(cf.market_request());
-        });
+            let request = cf.market_request()?;
+            requests.push(request);
+        }
+        Ok(())
     }
 }

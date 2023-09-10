@@ -1,11 +1,11 @@
 use crate::cashflows::cashflow::Cashflow;
 
-pub trait Visit<T, U> {
+pub trait Visit<T> {
     type Output;
     fn visit(&self, visitable: &mut T) -> Self::Output;
 }
 
-pub trait ConstVisit<T, U> {
+pub trait ConstVisit<T> {
     type Output;
     fn visit(&self, visitable: &T) -> Self::Output;
 }

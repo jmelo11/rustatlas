@@ -28,7 +28,7 @@ use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -50,10 +50,15 @@ fn starting_today_pricing() {
         .bullet()
         .with_discount_curve_id(Some(2))
         .with_notional(notional)
-        .build();
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let ref_date = market_store.reference_date();
 
@@ -69,7 +74,7 @@ fn starting_today_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
@@ -83,7 +88,7 @@ fn starting_today_pricing() {
 
     let maturing_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
         if cf.payment_date() == ref_date {
-            acc + cf.amount()
+            acc + cf.amount().unwrap()
         } else {
             acc
         }
@@ -95,14 +100,14 @@ fn starting_today_pricing() {
     );
 
     let par_visitor = ParValueConstVisitor::new(ref_data.clone());
-    let par_value = par_visitor.visit(&instrument);
+    let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
 
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -125,10 +130,11 @@ fn forward_starting_pricing() {
         .bullet()
         .with_discount_curve_id(Some(0))
         .with_notional(notional)
-        .build();
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let _ = indexer.visit(&mut instrument);
 
     let model = SimpleModel::new(market_store);
 
@@ -140,7 +146,7 @@ fn forward_starting_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
@@ -156,7 +162,7 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);
@@ -178,10 +184,15 @@ fn already_started_pricing() {
         .bullet()
         .with_discount_curve_id(Some(2))
         .with_notional(notional)
-        .build();
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let model = SimpleModel::new(market_store);
 
@@ -195,7 +206,7 @@ fn already_started_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
@@ -208,7 +219,7 @@ fn already_started_pricing() {
     );
 
     let par_visitor = ParValueConstVisitor::new(ref_data.clone());
-    let par_value = par_visitor.visit(&instrument);
+    let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
 

@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use crate::{
     currencies::enums::Currency,
     rates::enums::Compounding,
@@ -186,6 +188,18 @@ pub struct MarketData {
     df: Option<f64>,
     fwd: Option<f64>,
     fx: Option<f64>,
+}
+
+#[derive(Error, Debug)]
+pub enum MarketDataError {
+    #[error("No registry id")]
+    NoRegistryId,
+    #[error("No discount factor")]
+    NoDiscountFactor,
+    #[error("No forward rate")]
+    NoForwardRate,
+    #[error("No exchange rate")]
+    NoExchangeRate,
 }
 
 impl MarketData {

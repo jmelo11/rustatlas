@@ -1,7 +1,7 @@
+
 extern crate rustatlas;
 use rustatlas::{
-    cashflows::{cashflow::Cashflow, traits::Payable},
-    core::{marketstore::MarketStore, meta::MarketData},
+    core::marketstore::MarketStore,
     currencies::enums::Currency,
     rates::{
         enums::Compounding,
@@ -20,8 +20,9 @@ use rustatlas::{
         period::Period,
     },
 };
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::collections::HashMap;
 
+#[allow(dead_code)]
 fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
     let mut fixings = HashMap::new();
     let mut seed = start;
@@ -34,6 +35,7 @@ fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
     return fixings;
 }
 
+#[allow(dead_code)]
 pub fn create_store() -> MarketStore {
     let ref_date = Date::new(2021, 9, 1);
     let local_currency = Currency::USD;

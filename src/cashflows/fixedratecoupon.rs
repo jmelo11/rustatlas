@@ -2,7 +2,7 @@ use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
 use crate::core::meta::MarketRequest;
-use crate::core::traits::Registrable;
+use crate::core::traits::{MarketRequestError, Registrable};
 use crate::currencies::enums::Currency;
 use crate::rates::interestrate::InterestRate;
 use crate::time::date::Date;
@@ -67,7 +67,7 @@ impl Registrable for FixedRateCoupon {
         self.cashflow.register_id(id);
     }
 
-    fn market_request(&self) -> MarketRequest {
+    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
         return self.cashflow.market_request();
     }
 }
@@ -86,7 +86,7 @@ impl InterestAccrual for FixedRateCoupon {
 }
 
 impl Payable for FixedRateCoupon {
-    fn amount(&self) -> f64 {
+    fn amount(&self) -> Option<f64> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {

@@ -25,7 +25,7 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -40,10 +40,15 @@ fn starting_today_pricing() {
         .with_notional(notional)
         .with_forecast_curve_id(Some(1))
         .with_discount_curve_id(Some(2))
-        .build();
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let model = SimpleModel::new(market_store);
 
@@ -60,17 +65,17 @@ fn starting_today_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 
     let par_visitor = ParValueConstVisitor::new(ref_data.clone());
-    let par_value = par_visitor.visit(&instrument);
+    let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
 
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -85,10 +90,15 @@ fn already_started_pricing() {
         .with_notional(notional)
         .with_forecast_curve_id(Some(1))
         .with_discount_curve_id(Some(2))
-        .build();
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let model = SimpleModel::new(market_store);
 
@@ -104,7 +114,7 @@ fn already_started_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 }
 
 fn main() {

@@ -2,7 +2,10 @@ use std::rc::Rc;
 
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
-    core::{meta::MarketData, traits::Registrable},
+    core::{
+        meta::{MarketData, MarketDataError},
+        traits::Registrable,
+    },
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -22,30 +25,37 @@ impl NPVConstVisitor {
     }
 }
 
-impl<T: HasCashflows> ConstVisit<T, f64> for NPVConstVisitor {
-    type Output = f64;
+impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
+    type Output = Result<f64, MarketDataError>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let npv = visitable.cashflows().iter().fold(0.0, |acc, cf| {
-            let id = match cf.registry_id() {
-                Some(id) => id,
-                None => panic!("No id found for cashflow"),
-            };
-            let cf_market_data = self.market_data.get(id).unwrap();
-            let df = match cf_market_data.df() {
-                Some(df) => df,
-                None => panic!("No discount factor found for cashflow"),
-            };
-            let fx = match cf_market_data.fx() {
-                Some(fx) => fx,
-                None => panic!("No exchange rate found for cashflow"),
-            };
-            let flag = match cf.side() {
-                Side::Pay => -1.0,
-                Side::Receive => 1.0,
-            };
+        let npv = visitable
+            .cashflows()
+            .iter()
+            .fold(Ok(0.0), |acc_result, cf| {
+                let acc = match acc_result {
+                    Ok(value) => value,
+                    Err(_) => return acc_result,
+                };
 
-            acc + df * cf.amount() / fx * flag
-        });
+                let id = cf.registry_id().ok_or(MarketDataError::NoRegistryId)?;
+                let cf_market_data = self.market_data.get(id).unwrap();
+                let df = cf_market_data
+                    .df()
+                    .ok_or(MarketDataError::NoDiscountFactor)?;
+                let fx = cf_market_data
+                    .fx()
+                    .ok_or(MarketDataError::NoDiscountFactor)?;
+                let flag = match cf.side() {
+                    Side::Pay => -1.0,
+                    Side::Receive => 1.0,
+                };
+                let amount = match cf.amount() {
+                    Some(amount) => amount,
+                    None => panic!("No amount found for cashflow"),
+                };
+
+                Ok(acc + df * amount / fx * flag)
+            });
         return npv;
     }
 }

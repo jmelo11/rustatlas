@@ -1,5 +1,6 @@
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
+    currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
     visitors::traits::HasCashflows,
@@ -31,6 +32,7 @@ pub struct FloatingRateInstrument {
     payment_frequency: Frequency,
     rate_definition: RateDefinition,
     structure: Structure,
+    currency: Currency,
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
 }
@@ -46,21 +48,23 @@ impl FloatingRateInstrument {
         payment_frequency: Frequency,
         rate_definition: RateDefinition,
         structure: Structure,
+        currency: Currency,
         discount_curve_id: Option<usize>,
         forecast_curve_id: Option<usize>,
     ) -> Self {
         FloatingRateInstrument {
-            start_date: start_date,
-            end_date: end_date,
-            notional: notional,
-            spread: spread,
-            side: side,
-            cashflows: cashflows,
-            payment_frequency: payment_frequency,
-            rate_definition: rate_definition,
-            structure: structure,
-            discount_curve_id: discount_curve_id,
-            forecast_curve_id: forecast_curve_id,
+            start_date,
+            end_date,
+            notional,
+            spread,
+            side,
+            cashflows,
+            payment_frequency,
+            rate_definition,
+            structure,
+            currency,
+            discount_curve_id,
+            forecast_curve_id,
         }
     }
 
@@ -102,6 +106,10 @@ impl FloatingRateInstrument {
 
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
+    }
+
+    pub fn currency(&self) -> Currency {
+        self.currency
     }
 }
 

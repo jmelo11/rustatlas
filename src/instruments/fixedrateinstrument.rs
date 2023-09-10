@@ -1,4 +1,5 @@
-use crate::cashflows::cashflow::Cashflow;
+use crate::cashflows::cashflow::{Cashflow, Side};
+use crate::currencies::enums::Currency;
 use crate::rates::interestrate::InterestRate;
 use crate::time::date::Date;
 use crate::time::enums::Frequency;
@@ -26,6 +27,8 @@ pub struct FixedRateInstrument {
     payment_frequency: Frequency,
     cashflows: Vec<Cashflow>,
     structure: Structure,
+    side: Side,
+    currency: Currency,
     discount_curve_id: Option<usize>,
 }
 
@@ -38,17 +41,21 @@ impl FixedRateInstrument {
         payment_frequency: Frequency,
         cashflows: Vec<Cashflow>,
         structure: Structure,
+        side: Side,
+        currency: Currency,
         discount_curve_id: Option<usize>,
     ) -> Self {
         FixedRateInstrument {
-            start_date: start_date,
-            end_date: end_date,
-            notional: notional,
-            rate: rate,
-            payment_frequency: payment_frequency,
-            cashflows: cashflows,
-            structure: structure,
-            discount_curve_id: discount_curve_id,
+            start_date,
+            end_date,
+            notional,
+            rate,
+            payment_frequency,
+            cashflows,
+            structure,
+            side,
+            currency,
+            discount_curve_id,
         }
     }
 
@@ -80,7 +87,13 @@ impl FixedRateInstrument {
         self.discount_curve_id
     }
 
-    
+    pub fn side(&self) -> Side {
+        self.side
+    }
+
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
 }
 
 impl HasCashflows for FixedRateInstrument {
