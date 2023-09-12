@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 use super::cashflow::Side;
 use super::traits::{Expires, Payable};
 use crate::core::meta::*;
@@ -63,12 +61,6 @@ impl SimpleCashflow {
     pub fn set_amount(&mut self, amount: f64) {
         self.amount = Some(amount);
     }
-}
-
-#[derive(Error, Debug)]
-pub enum SimpleCashflowError {
-    #[error("SimpleCashflow does not have an amount")]
-    NoAmount,
 }
 
 impl Registrable for SimpleCashflow {

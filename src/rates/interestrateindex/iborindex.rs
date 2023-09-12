@@ -1,16 +1,11 @@
 use crate::{
-    alm::traits::AdvanceInTime,
     rates::yieldtermstructure::enums::YieldTermStructure,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{
-        date::Date,
-        enums::{Frequency, TimeUnit},
-        period::Period,
-    },
+    time::{date::Date, enums::Frequency, period::Period},
 };
 use std::collections::HashMap;
 
@@ -86,37 +81,11 @@ impl IborIndex {
 
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
-        let max_fixing_date = *self
-            .fixings
-            .keys()
-            .max()
-            .expect("Invalid fixings for this IborIndex");
-        match self.reference_date {
-            Some(date) => {
-                if max_fixing_date != date {
-                    panic!("Invalid fixings for this IborIndex");
-                }
-            }
-            None => {
-                self.reference_date = Some(max_fixing_date);
-            }
-        }
         self
     }
 
     pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
         self.term_structure = Some(term_structure);
-        let curve_ref_date = term_structure.reference_date();
-        match self.reference_date {
-            Some(date) => {
-                if curve_ref_date != date {
-                    panic!("Invalid term structure for this IborIndex");
-                }
-            }
-            None => {
-                self.reference_date = Some(curve_ref_date);
-            }
-        }
         self
     }
 
@@ -154,12 +123,9 @@ impl HasReferenceDate for IborIndex {
 }
 
 impl YieldProvider for IborIndex {
-    fn discount_factor(&self, date: Date) -> f64 {
-        if date < self.reference_date() {
-            panic!("Date must be greater than reference date");
-        }
+    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         self.term_structure
-            .expect("No term structure for this IborIndex")
+            .ok_or(YieldProviderError::NoTermStructure)?
             .discount_factor(date)
     }
 
@@ -169,60 +135,57 @@ impl YieldProvider for IborIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> f64 {
+    ) -> Result<f64, YieldProviderError> {
         if end_date < start_date {
-            panic!("End date must be greater than start date");
+            return Err(YieldProviderError::InvalidDate(format!(
+                "End date {} is before start date {}",
+                end_date, start_date
+            )));
         }
         if start_date < self.reference_date() {
             self.fixing(start_date)
-                .expect("No fixing for this IborIndex")
+                .ok_or(YieldProviderError::NoFixingRate(start_date))
         } else {
             self.term_structure
-                .expect("No term structure for this IborIndex")
+                .ok_or(YieldProviderError::NoTermStructure)?
                 .forward_rate(start_date, end_date, comp, freq)
         }
     }
 }
 
-impl AdvanceInTime for IborIndex {
-    type Output = IborIndex;
-    fn advance(&self, period: Period) -> Self::Output {
-        let curve = self
-            .term_structure
-            .expect("No term structure for this IborIndex");
+// impl AdvanceInTime for IborIndex {
+//     type Output = IborIndex;
+//     fn advance(&self, period: Period) -> Self::Output {
+//         let curve = self
+//             .term_structure
+//             .expect("No term structure for this IborIndex");
 
-        let mut fixings = self.fixings().clone();
-        let mut seed = self.reference_date();
-        let end_date = seed.advance(period.length(), period.units());
-        while seed <= end_date {
-            let rate = curve.forward_rate(
-                seed,
-                seed + self.tenor,
-                self.rate_definition.compounding(),
-                self.rate_definition.frequency(),
-            );
-            fixings.insert(seed, rate);
-            seed = seed.advance(1, TimeUnit::Days);
-        }
-        IborIndex::new()
-            .with_tenor(self.tenor)
-            .with_rate_definition(self.rate_definition)
-            .with_fixings(fixings)
-            .with_term_structure(curve.advance(period))
-            .with_provider_id(self.provider_id)
-    }
-}
+//         let mut fixings = self.fixings().clone();
+//         let mut seed = self.reference_date();
+//         let end_date = seed.advance(period.length(), period.units());
+//         while seed <= end_date {
+//             let rate = curve.forward_rate(
+//                 seed,
+//                 seed + self.tenor,
+//                 self.rate_definition.compounding(),
+//                 self.rate_definition.frequency(),
+//             );
+//             fixings.insert(seed, rate);
+//             seed = seed.advance(1, TimeUnit::Days);
+//         }
+//         IborIndex::new()
+//             .with_tenor(self.tenor)
+//             .with_rate_definition(self.rate_definition)
+//             .with_fixings(fixings)
+//             .with_term_structure(curve.advance(period))
+//             .with_provider_id(self.provider_id)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        rates::{
-            interestrate::InterestRate,
-            yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        },
-        time::{daycounter::DayCounter, enums::TimeUnit},
-    };
+    use crate::time::{daycounter::DayCounter, enums::TimeUnit};
 
     #[test]
     fn test_ibor_index() {
@@ -247,42 +210,42 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_ibor_advance() {
-        let ref_date = Date::new(2021, 1, 1);
-        let advance_period = Period::new(1, TimeUnit::Months);
-        let tenor = Period::new(1, TimeUnit::Months);
-        let rate_definition = RateDefinition::new(
-            DayCounter::Actual360,
-            Compounding::Simple,
-            Frequency::Annual,
-        );
-        let ibor_index = IborIndex::new()
-            .with_tenor(tenor)
-            .with_rate_definition(rate_definition);
-        let curve = FlatForwardTermStructure::new(
-            ref_date,
-            InterestRate::new(
-                0.05,
-                Compounding::Simple,
-                Frequency::Annual,
-                DayCounter::Actual360,
-            ),
-        );
-        let ibor_index =
-            ibor_index.with_term_structure(YieldTermStructure::FlatForwardTermStructure(curve));
-        let ibor_index_advance = ibor_index.advance(advance_period);
+    // #[test]
+    // fn test_ibor_advance() {
+    //     let ref_date = Date::new(2021, 1, 1);
+    //     let advance_period = Period::new(1, TimeUnit::Months);
+    //     let tenor = Period::new(1, TimeUnit::Months);
+    //     let rate_definition = RateDefinition::new(
+    //         DayCounter::Actual360,
+    //         Compounding::Simple,
+    //         Frequency::Annual,
+    //     );
+    //     let ibor_index = IborIndex::new()
+    //         .with_tenor(tenor)
+    //         .with_rate_definition(rate_definition);
+    //     let curve = FlatForwardTermStructure::new(
+    //         ref_date,
+    //         InterestRate::new(
+    //             0.05,
+    //             Compounding::Simple,
+    //             Frequency::Annual,
+    //             DayCounter::Actual360,
+    //         ),
+    //     );
+    //     let ibor_index =
+    //         ibor_index.with_term_structure(YieldTermStructure::FlatForwardTermStructure(curve));
+    //     let ibor_index_advance = ibor_index.advance(advance_period);
 
-        let mut seed = ref_date;
-        while seed < ref_date + advance_period {
-            let rate = curve.forward_rate(
-                seed,
-                seed + ibor_index.tenor(),
-                ibor_index.rate_definition().compounding(),
-                ibor_index.rate_definition().frequency(),
-            );
-            assert_eq!(ibor_index_advance.fixing(seed).unwrap(), rate);
-            seed = seed.advance(1, TimeUnit::Days);
-        }
-    }
+    //     let mut seed = ref_date;
+    //     while seed < ref_date + advance_period {
+    //         let rate = curve.forward_rate(
+    //             seed,
+    //             seed + ibor_index.tenor(),
+    //             ibor_index.rate_definition().compounding(),
+    //             ibor_index.rate_definition().frequency(),
+    //         );
+    //         assert_eq!(ibor_index_advance.fixing(seed).unwrap(), rate);
+    //         seed = seed.advance(1, TimeUnit::Days);
+    //     }
+    // }
 }

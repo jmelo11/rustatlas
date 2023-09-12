@@ -2,13 +2,10 @@ use std::rc::Rc;
 
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
-    core::{
-        meta::{MarketData, MarketDataError},
-        traits::Registrable,
-    },
+    core::{meta::MarketData, traits::Registrable},
 };
 
-use super::traits::{ConstVisit, HasCashflows};
+use super::traits::{ConstVisit, EvaluationError, HasCashflows};
 
 /// # NPVConstVisitor
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
@@ -26,36 +23,31 @@ impl NPVConstVisitor {
 }
 
 impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
-    type Output = Result<f64, MarketDataError>;
+    type Output = Result<f64, EvaluationError>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let npv = visitable
-            .cashflows()
-            .iter()
-            .fold(Ok(0.0), |acc_result, cf| {
-                let acc = match acc_result {
-                    Ok(value) => value,
-                    Err(_) => return acc_result,
-                };
+        let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
+            let id = cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
 
-                let id = cf.registry_id().ok_or(MarketDataError::NoRegistryId)?;
-                let cf_market_data = self.market_data.get(id).unwrap();
-                let df = cf_market_data
-                    .df()
-                    .ok_or(MarketDataError::NoDiscountFactor)?;
-                let fx = cf_market_data
-                    .fx()
-                    .ok_or(MarketDataError::NoDiscountFactor)?;
-                let flag = match cf.side() {
-                    Side::Pay => -1.0,
-                    Side::Receive => 1.0,
-                };
-                let amount = match cf.amount() {
-                    Some(amount) => amount,
-                    None => panic!("No amount found for cashflow"),
-                };
+            let cf_market_data = self
+                .market_data
+                .get(id)
+                .ok_or(EvaluationError::NoMarketData)?;
 
-                Ok(acc + df * amount / fx * flag)
-            });
+            let df = cf_market_data
+                .df()
+                .ok_or(EvaluationError::NoDiscountFactor)?;
+
+            let fx = cf_market_data.fx().ok_or(EvaluationError::NoExchangeRate)?;
+
+            let flag = match cf.side() {
+                Side::Pay => -1.0,
+                Side::Receive => 1.0,
+            };
+
+            let amount = cf.amount().ok_or(EvaluationError::NoAmount)?;
+
+            Ok(acc + df * amount / fx * flag)
+        });
         return npv;
     }
 }

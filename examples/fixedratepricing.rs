@@ -64,7 +64,7 @@ fn starting_today_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data = Rc::new(data);
 
@@ -138,7 +138,7 @@ fn forward_starting_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
     let ref_data = Rc::new(data);
     print_table(instrument.cashflows(), ref_data.clone());
 
@@ -196,7 +196,7 @@ fn already_started_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data = Rc::new(data);
 

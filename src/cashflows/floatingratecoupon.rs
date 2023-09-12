@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 use crate::{
     core::{
         meta::{ForwardRateRequest, MarketRequest},
@@ -41,12 +39,6 @@ pub struct FloatingRateCoupon {
     rate_definition: RateDefinition,
     forecast_curve_id: Option<usize>,
     cashflow: SimpleCashflow,
-}
-
-#[derive(Error, Debug)]
-pub enum FloatingRateCouponError {
-    #[error("FloatingRateCoupon does not have a fixing rate")]
-    NoFixingRate,
 }
 
 impl FloatingRateCoupon {

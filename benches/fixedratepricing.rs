@@ -9,7 +9,6 @@ use rustatlas::{
     cashflows::cashflow::Side,
     instruments::{fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan},
     models::{simplemodel::SimpleModel, traits::Model},
-    prelude::Currency,
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
     time::{
         daycounter::DayCounter,
@@ -20,7 +19,7 @@ use rustatlas::{
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
         traits::{ConstVisit, Visit},
-    },
+    }, currencies::enums::Currency,
 };
 
 mod common;
@@ -70,7 +69,7 @@ fn multiple() {
             .for_each(|inst| indexer.visit(inst).unwrap());
 
         let model = SimpleModel::new(store.clone());
-        let data = model.gen_market_data(&indexer.request());
+        let data = model.gen_market_data(&indexer.request()).unwrap();
 
         let ref_data = Rc::new(data);
         let npv_visitor = NPVConstVisitor::new(ref_data.clone());

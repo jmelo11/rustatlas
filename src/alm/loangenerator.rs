@@ -12,7 +12,10 @@ use crate::{
         makefloatingrateloan::{MakeFloatingRateLoan, MakeFloatingRateLoanError},
         traits::Structure,
     },
-    models::{simplemodel::SimpleModel, traits::Model},
+    models::{
+        simplemodel::SimpleModel,
+        traits::{Model, ModelError},
+    },
     rates::{interestrate::RateDefinition, traits::HasReferenceDate},
     time::{enums::Frequency, period::Period},
     visitors::{
@@ -42,12 +45,14 @@ pub struct LoanGenerator {
 pub enum LoanGeneratorError {
     #[error("Invalid configuration")]
     InvalidConfiguration,
-    #[error("Error fixed rate loan build error")]
+    #[error("Error fixed rate loan build error {0}")]
     FixedRateLoanBuildError(#[from] MakeFixedRateLoanError),
-    #[error("Error floating rate loan build error")]
+    #[error("Error floating rate loan build error {0}")]
     FloatingRateLoanBuildError(#[from] MakeFloatingRateLoanError),
     #[error("Error par value calculation")]
     ParValueError(#[from] Error),
+    #[error("Model error {0}")]
+    ModelError(#[from] ModelError),
 }
 
 /// # LoanConfiguration
@@ -154,7 +159,7 @@ impl LoanGenerator {
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
         let model = SimpleModel::new(self.market_store.clone());
-        let data = model.gen_market_data(&indexing_visitor.request());
+        let data = model.gen_market_data(&indexing_visitor.request())?;
         let par_visitor = ParValueConstVisitor::new(Rc::new(data));
         Ok(par_visitor.visit(&mut instrument)?)
     }
@@ -164,7 +169,7 @@ impl LoanGenerator {
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
         let model = SimpleModel::new(self.market_store.clone());
-        let data = model.gen_market_data(&indexing_visitor.request());
+        let data = model.gen_market_data(&indexing_visitor.request())?;
         let par_visitor = ParValueConstVisitor::new(Rc::new(data));
         Ok(par_visitor.visit(&mut instrument)?)
     }

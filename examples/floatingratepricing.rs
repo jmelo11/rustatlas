@@ -52,12 +52,12 @@ fn starting_today_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
 
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
-    fixing_visitor.visit(&mut instrument);
+    let _ = fixing_visitor.visit(&mut instrument);
 
     print_table(instrument.cashflows(), ref_data.clone());
 
@@ -102,11 +102,11 @@ fn already_started_pricing() {
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
-    fixing_visitor.visit(&mut instrument);
+    let _ = fixing_visitor.visit(&mut instrument);
 
     print_table(instrument.cashflows(), ref_data.clone());
 

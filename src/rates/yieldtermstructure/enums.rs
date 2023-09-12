@@ -1,10 +1,9 @@
 use crate::{
-    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency, period::Period},
+    time::{date::Date, enums::Frequency},
 };
 
 use super::flatforwardtermstructure::FlatForwardTermStructure;
@@ -29,7 +28,7 @@ impl HasReferenceDate for YieldTermStructure {
 }
 
 impl YieldProvider for YieldTermStructure {
-    fn discount_factor(&self, date: Date) -> f64 {
+    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         match self {
             YieldTermStructure::FlatForwardTermStructure(term_structure) => {
                 term_structure.discount_factor(date)
@@ -44,7 +43,7 @@ impl YieldProvider for YieldTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> f64 {
+    ) -> Result<f64, YieldProviderError> {
         match self {
             YieldTermStructure::FlatForwardTermStructure(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
@@ -54,14 +53,14 @@ impl YieldProvider for YieldTermStructure {
     }
 }
 
-impl AdvanceInTime for YieldTermStructure {
-    type Output = YieldTermStructure;
-    fn advance(&self, period: Period) -> YieldTermStructure {
-        match self {
-            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
-                YieldTermStructure::FlatForwardTermStructure(term_structure.advance(period))
-            }
-            YieldTermStructure::Other => panic!("No advance in time for this term structure"),
-        }
-    }
-}
+// impl AdvanceInTime for YieldTermStructure {
+//     type Output = YieldTermStructure;
+//     fn advance(&self, period: Period) -> YieldTermStructure {
+//         match self {
+//             YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+//                 YieldTermStructure::FlatForwardTermStructure(term_structure.advance(period))
+//             }
+//             YieldTermStructure::Other => panic!("No advance in time for this term structure"),
+//         }
+//     }
+// }

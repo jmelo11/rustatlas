@@ -6,10 +6,7 @@ use argmin::{
 };
 
 use crate::{
-    core::{
-        meta::MarketData,
-        traits::{MarketRequestError, Registrable},
-    },
+    core::{meta::MarketData, traits::Registrable},
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
         makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
@@ -19,7 +16,7 @@ use crate::{
 use super::{
     fixingvisitor::FixingVisitor,
     npvconstvisitor::NPVConstVisitor,
-    traits::{ConstVisit, HasCashflows, Visit},
+    traits::{ConstVisit, EvaluationError, HasCashflows, Visit},
 };
 
 /// # ParValue
@@ -52,18 +49,13 @@ impl CostFunction for ParValue<FixedRateInstrument> {
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<(), MarketRequestError> {
-                let id = old_cf
-                    .registry_id()
-                    .ok_or(MarketRequestError::NoRegistryId)?;
+            .try_for_each(|(cf, old_cf)| -> Result<(), EvaluationError> {
+                let id = old_cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
                 cf.register_id(id);
                 Ok(())
             })?;
 
-        match self.npv_visitor.visit(&inst) {
-            Ok(npv) => Ok(npv),
-            Err(e) => Err(Error::from(e)),
-        }
+        self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
     }
 }
 
@@ -78,19 +70,14 @@ impl CostFunction for ParValue<FloatingRateInstrument> {
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<(), MarketRequestError> {
-                let id = old_cf
-                    .registry_id()
-                    .ok_or(MarketRequestError::NoRegistryId)?;
+            .try_for_each(|(cf, old_cf)| -> Result<(), EvaluationError> {
+                let id = old_cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
                 cf.register_id(id);
                 Ok(())
             })?;
 
-        self.fixing_visitor.visit(&mut inst);
-        match self.npv_visitor.visit(&inst) {
-            Ok(npv) => Ok(npv),
-            Err(e) => Err(Error::from(e)),
-        }
+        let _ = self.fixing_visitor.visit(&mut inst);
+        self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
     }
 }
 

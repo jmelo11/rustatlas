@@ -21,9 +21,6 @@ name = "fixedratepricing"
 harness = false
 
 [[example]]
-name = "simulation"
-
-[[example]]
 name = "fixedratepricing"
 
 [[example]]
