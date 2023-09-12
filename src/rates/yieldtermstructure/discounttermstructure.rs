@@ -1,10 +1,7 @@
 use crate::{
-    rates::{
-        traits::{HasReferenceDate},
-    },
-    time::{date::Date, enums::Frequency, daycounter},
+    rates::traits::HasReferenceDate,
+    time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
-    math::interpolation,
     math::interpolation::traits::Interpolate,
 };
 
