@@ -105,7 +105,7 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
             return 1.0;
         }
 
-        let spread = self.spread.return_spread_to_date(date);
+        let spread = self.spread.return_spread_to_date(0.0);
 
         let year_fraction = self.day_counter().year_fraction(self.reference_date(), date);
         let rate = self.interpolator.interpolate(year_fraction) + spread;
@@ -123,8 +123,8 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
         let rate_to_star = self.interpolator.interpolate(delta_year_fraction_to_star);
         let rate_to_end = self.interpolator.interpolate(delta_year_fraction_to_end);
 
-        let spread_to_star = self.spread.return_spread_to_date(start_date);
-        let spread_to_end = self.spread.return_spread_to_date(end_date);
+        let spread_to_star = self.spread.return_spread_to_date(delta_year_fraction_to_star);
+        let spread_to_end = self.spread.return_spread_to_date(delta_year_fraction_to_end);
 
         let compound_to_star = self.calculate_compound(rate_to_star + spread_to_star, delta_year_fraction_to_star);
         let compound_to_end = self.calculate_compound(rate_to_end + spread_to_end, delta_year_fraction_to_end);
@@ -143,7 +143,7 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
 mod tests {
 
     use super::*;
-    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, time::daycounter::DayCounter, rates::spread::constantspread::ConstantSpread};
+    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, time::daycounter::DayCounter, rates::spread::{constantspread::ConstantSpread, curvespread::CurveSpread}};
 
     #[test]
     fn test_new() {
@@ -163,7 +163,7 @@ mod tests {
         assert_eq!(spreadtermstructure.year_fractions, vec![0.0, 1.0, 2.0]);
         assert_eq!(spreadtermstructure.rates, vec![0.0, 1.0, 4.0]);
         assert_eq!(spreadtermstructure.daycounter, daycounter);
-        assert_eq!(spreadtermstructure.spread.return_spread_to_date(reference_date), 0.1);
+        assert_eq!(spreadtermstructure.spread.return_spread_to_date(0.0), 0.1);
     }
 
     #[test]
@@ -218,6 +218,34 @@ mod tests {
         
         //assert_eq!(spreadtermstructure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), Compounding::Simple, Frequency::Annual), 0.1);
 
+    }
+
+    #[test]
+    fn test_discount_factors_spread_curve(){
+        
+        // *********************************************************************************************************************
+        // FALTA REVISAR DE MANERA EXAUSTIVA
+        // *********************************************************************************************************************
+
+
+        let reference_date = Date::new(2020, 1, 1);
+        let year_fractions = vec![0.0, 1.0, 2.0];
+        let rates = vec![0.0, 1.0, 4.0];
+        let interpolator = LinearInterpolator::initialize(year_fractions.clone(), rates.clone(), Some(true));
+        let daycounter = DayCounter::Actual365;
+        let compounding = Compounding::Simple;
+
+        // spread curve definition
+        let year_fractions_sprear = vec![0.0, 0.25, 0.5, 0.75, 1.0];
+        let spread = vec![0.0, 0.01, 0.02, 0.03, 0.04];
+        let interpolator_spread = LinearInterpolator::initialize(year_fractions_sprear.clone(),spread.clone(),Some(true));   
+        let curve_spread = CurveSpread::new(year_fractions_sprear.clone(), spread.clone(), interpolator_spread, daycounter.clone(), compounding.clone());
+        
+
+        let spreadtermstructure = SpreadTermStructure::new(reference_date, year_fractions, rates, interpolator, daycounter, compounding, curve_spread);
+    
+        println!("discount factor: {}", spreadtermstructure.discount_factor(Date::new(2020, 12, 31)));
+        
     }
 
 

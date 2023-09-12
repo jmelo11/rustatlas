@@ -5,7 +5,6 @@ use crate::{
 };
 
 
-
 pub struct ConstantSpread {
     spread: f64,
 }
@@ -24,7 +23,7 @@ impl ConstantSpread {
 }
 
 impl Spread<ConstantSpread> for ConstantSpread {
-    fn return_spread_to_date(&self, date: Date) -> f64 {
+    fn return_spread_to_date(&self, year_fraction: f64) -> f64 {
         return self.spread;
     }
 }

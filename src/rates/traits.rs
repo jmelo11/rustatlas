@@ -22,5 +22,5 @@ pub trait YieldProvider: HasReferenceDate {
 
 // pub trait YieldTermStructure<T> {
 pub trait Spread<T> {
-    fn return_spread_to_date(&self,date: Date) -> f64; 
+    fn return_spread_to_date(&self,year_fraction: f64) -> f64; 
 }
