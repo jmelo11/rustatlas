@@ -19,3 +19,8 @@ pub trait YieldProvider: HasReferenceDate {
         freq: Frequency,
     ) -> f64;
 }
+
+// pub trait YieldTermStructure<T> {
+pub trait Spread<T> {
+    fn return_spread_to_date(&self,date: Date) -> f64; 
+}

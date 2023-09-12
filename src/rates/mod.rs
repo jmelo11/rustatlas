@@ -4,3 +4,4 @@ pub mod interestrateindex;
 pub mod traits;
 pub mod yieldtermstructure;
 pub mod indexstore;
+mod spread; 
