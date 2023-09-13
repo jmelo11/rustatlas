@@ -1,2 +1,1 @@
-pub mod interpolator;
-mod interpolation;
+pub mod interpolation;

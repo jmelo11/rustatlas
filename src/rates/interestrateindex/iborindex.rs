@@ -17,10 +17,10 @@ use super::traits::FixingProvider;
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
-///
+/// let ref_date = Date::new(2021, 1, 1);
 /// let tenor = Period::new(1, TimeUnit::Months);
 /// let rate_definition = RateDefinition::new(DayCounter::Actual360, Compounding::Simple, Frequency::Annual);
-/// let ibor_index = IborIndex::new().with_tenor(tenor).with_rate_definition(rate_definition);
+/// let ibor_index = IborIndex::new(ref_date).with_tenor(tenor).with_rate_definition(rate_definition);
 /// assert_eq!(ibor_index.tenor(), tenor);
 /// assert_eq!(ibor_index.rate_definition().compounding(), Compounding::Simple);
 /// assert_eq!(ibor_index.rate_definition().frequency(), Frequency::Annual);
@@ -33,18 +33,18 @@ pub struct IborIndex {
     fixings: HashMap<Date, f64>,
     term_structure: Option<YieldTermStructure>,
     provider_id: Option<usize>,
-    reference_date: Option<Date>,
+    reference_date: Date,
 }
 
 impl IborIndex {
-    pub fn new() -> IborIndex {
+    pub fn new(reference_date: Date) -> IborIndex {
         IborIndex {
+            reference_date: reference_date,
             tenor: Period::empty(),
             rate_definition: RateDefinition::default(),
             fixings: HashMap::new(),
             term_structure: None,
             provider_id: None,
-            reference_date: None,
         }
     }
 
@@ -118,7 +118,6 @@ impl FixingProvider for IborIndex {
 impl HasReferenceDate for IborIndex {
     fn reference_date(&self) -> Date {
         self.reference_date
-            .expect("No reference date for this IborIndex")
     }
 }
 
@@ -189,13 +188,14 @@ mod tests {
 
     #[test]
     fn test_ibor_index() {
+        let ref_date = Date::new(2021, 1, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let rate_definition = RateDefinition::new(
             DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
         );
-        let ibor_index = IborIndex::new()
+        let ibor_index = IborIndex::new(ref_date)
             .with_tenor(tenor)
             .with_rate_definition(rate_definition);
         assert_eq!(ibor_index.tenor(), tenor);

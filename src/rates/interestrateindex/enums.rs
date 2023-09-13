@@ -117,3 +117,20 @@ impl InterestRateIndex {
 //         }
 //     }
 // }
+
+// trait Interpolator {
+//     fn init(x: Vec<f64>, y: Vec<f64>, allow_extrapolation: Option<bool>) -> Self;
+//     fn interpolate(&self, x: f64) -> f64;
+//     fn enable_extrapolation(&mut self, enable: bool);
+// }
+
+// struct Curve<T: Interpolator> {
+//     interpolator: T,
+// }
+
+// impl<T: Interpolator> Curve<T> {
+//     fn new(x: Vec<f64>, y: Vec<f64>) -> Curve<T> {
+//         let tmp = T::init(x, y, Some(true));
+//         Curve { interpolator: tmp }
+//     }
+// }

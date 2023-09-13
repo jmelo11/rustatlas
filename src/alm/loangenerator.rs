@@ -262,7 +262,8 @@ mod tests {
             FlatForwardTermStructure::new(ref_date, discount_rate),
         );
 
-        let discount_index = IborIndex::new().with_term_structure(discount_curve);
+
+        let discount_index = IborIndex::new(ref_date).with_term_structure(discount_curve);
         market_store.mut_index_store().add_index(
             "DiscountCurve".to_string(),
             InterestRateIndex::IborIndex(discount_index),

@@ -18,7 +18,7 @@ use rustatlas::{
         },
         yieldtermstructure::{
             enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
-        },
+        }, traits::HasReferenceDate,
     },
     time::{
         date::Date,
@@ -126,14 +126,14 @@ pub fn create_store() -> MarketStore {
     ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
     ibor_fixings.insert(Date::new(2021, 8, 31), 0.02); // yesterday
 
-    let ibor_index = IborIndex::new()
+    let ibor_index = IborIndex::new(forecast_curve_1.reference_date())
         .with_fixings(ibor_fixings)
         .with_term_structure(forecast_curve_1)
         .with_frequency(Frequency::Annual);
 
     let overnight_fixings =
         make_fixings(ref_date - Period::new(1, TimeUnit::Years), ref_date, 0.06);
-    let overnigth_index = OvernightIndex::new()
+    let overnigth_index = OvernightIndex::new(forecast_curve_2.reference_date())
         .with_term_structure(forecast_curve_2)
         .with_fixings(overnight_fixings);
 
@@ -147,7 +147,7 @@ pub fn create_store() -> MarketStore {
         InterestRateIndex::OvernightIndex(overnigth_index),
     );
 
-    let discount_index = IborIndex::new().with_term_structure(discount_curve);
+    let discount_index = IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store.mut_index_store().add_index(
         "DiscountCurve".to_string(),

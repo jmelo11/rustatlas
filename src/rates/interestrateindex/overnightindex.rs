@@ -25,18 +25,18 @@ pub struct OvernightIndex {
     rate_definition: RateDefinition,
     tenor: Period,
     provider_id: Option<usize>,
-    reference_date: Option<Date>,
+    reference_date: Date,
 }
 
 impl OvernightIndex {
-    pub fn new() -> OvernightIndex {
+    pub fn new(reference_date: Date) -> OvernightIndex {
         OvernightIndex {
             fixings: HashMap::new(),
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
             provider_id: None,
-            reference_date: None,
+            reference_date: reference_date,
         }
     }
 
@@ -63,37 +63,11 @@ impl OvernightIndex {
 
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
-        let max_fixing_date = *self
-            .fixings
-            .keys()
-            .max()
-            .expect("Invalid fixings for this OvernightIndex");
-        match self.reference_date {
-            Some(date) => {
-                if max_fixing_date != date {
-                    panic!("Invalid fixings for this OvernightIndex");
-                }
-            }
-            None => {
-                self.reference_date = Some(max_fixing_date);
-            }
-        }
         self
     }
 
     pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
         self.term_structure = Some(term_structure);
-        let curve_ref_date = term_structure.reference_date();
-        match self.reference_date {
-            Some(date) => {
-                if curve_ref_date != date {
-                    panic!("Invalid term structure for this OvernightIndex");
-                }
-            }
-            None => {
-                self.reference_date = Some(curve_ref_date);
-            }
-        }
         self
     }
 
@@ -146,7 +120,6 @@ impl FixingProvider for OvernightIndex {
 impl HasReferenceDate for OvernightIndex {
     fn reference_date(&self) -> Date {
         self.reference_date
-            .expect("No reference date for this OvernightIndex")
     }
 }
 
@@ -253,34 +226,39 @@ mod tests {
 
     #[test]
     fn test_new_overnight_index() {
-        let overnight_index = OvernightIndex::new();
+        let date = Date::new(2021, 1, 1);
+        let overnight_index = OvernightIndex::new(date);
         assert!(overnight_index.fixings.is_empty());
         assert!(overnight_index.term_structure.is_none());
     }
 
     #[test]
     fn test_with_rate_definition() {
-        let overnight_index = OvernightIndex::new().with_rate_definition(RateDefinition::default());
+        let date = Date::new(2021, 1, 1);
+        let overnight_index =
+            OvernightIndex::new(date).with_rate_definition(RateDefinition::default());
         assert_eq!(overnight_index.rate_definition, RateDefinition::default());
     }
 
     #[test]
     fn test_with_fixings() {
+        let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
-        let overnight_index = OvernightIndex::new().with_fixings(fixings.clone());
+        let overnight_index = OvernightIndex::new(date).with_fixings(fixings.clone());
         assert_eq!(overnight_index.fixings, fixings);
     }
 
     #[test]
     fn test_average_rate() {
+        let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         let start_date = Date::new(2021, 1, 1);
         let end_date = Date::new(2022, 1, 1);
 
         fixings.insert(start_date, 100.0);
         fixings.insert(end_date, 105.0);
-        let overnight_index = OvernightIndex::new()
+        let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings)
             .with_rate_definition(RateDefinition::default());
 
@@ -292,9 +270,10 @@ mod tests {
 
     #[test]
     fn test_fixing() {
+        let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
-        let overnight_index = OvernightIndex::new().with_fixings(fixings);
+        let overnight_index = OvernightIndex::new(date).with_fixings(fixings);
 
         assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1)), Some(0.02));
         assert_eq!(overnight_index.fixing(Date::new(2021, 1, 2)), None);
@@ -302,11 +281,12 @@ mod tests {
 
     #[test]
     fn test_reference_date() {
+        let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         let ref_date = Date::new(2021, 1, 1);
 
         fixings.insert(ref_date, 100.0);
-        let overnight_index = OvernightIndex::new()
+        let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings.clone())
             .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
                 FlatForwardTermStructure::new(
@@ -324,7 +304,7 @@ mod tests {
 
         let next_date_2 = Date::new(2021, 1, 3);
         fixings.insert(next_date_2, 100.0);
-        let overnight_index = OvernightIndex::new()
+        let overnight_index = OvernightIndex::new(next_date_2)
             .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
                 FlatForwardTermStructure::new(
                     next_date_2,
