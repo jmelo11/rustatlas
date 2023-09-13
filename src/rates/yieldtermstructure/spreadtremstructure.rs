@@ -143,7 +143,10 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
 mod tests {
 
     use super::*;
-    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, time::daycounter::DayCounter, rates::spread::{constantspread::ConstantSpread, curvespread::CurveSpread}};
+    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, 
+                time::daycounter::DayCounter, 
+                rates::spread::{constantspread::ConstantSpread, curvespread::CurveSpread}
+            };
 
     #[test]
     fn test_new() {

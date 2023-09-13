@@ -1,3 +1,10 @@
+use crate::{
+    rates::traits::{HasReferenceDate, Spread},
+    time::{date::Date, enums::Frequency},
+    prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
+    math::interpolation::traits::Interpolate,
+};
+
 
 pub struct ZeroRateCurve<T> {
     reference_date: Date,
@@ -9,20 +16,20 @@ pub struct ZeroRateCurve<T> {
 }
 
 impl<T> ZeroRateCurve<T> where T: Interpolate<T> {
-    pub fn new(reference_date: Date, dates: Vec<Date>, rates: Vec<f64>, interpolator: T, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<T> {
+    pub fn new(reference_date: Date, year_fractions: Vec<f64>, rates: Vec<f64>, interpolator: T, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<T> {
         // check if dates and rates have the same size
-        if year_fraction.len() != rates.len() {
+        if year_fractions.len() != rates.len() {
             panic!("dates and rates should have the same size.");
         }
 
         // year_fractions[0] needs to be 0.0
-        if dates[0] != 0.0 {
-            panic!("dates[0] needs to be 0.0");
+        if year_fractions[0] != 0.0 {
+            panic!("year_fractions[0] needs to be 0.0");
         }
 
         ZeroRateCurve {
             reference_date,
-            dates,
+            year_fractions,
             rates,
             interpolator,
             daycounter,
@@ -30,7 +37,7 @@ impl<T> ZeroRateCurve<T> where T: Interpolate<T> {
         }
     }
 
-    pub fn year_fraction(&self) -> &Vec<f64> {
+    pub fn year_fractions(&self) -> &Vec<f64> {
         return &self.year_fractions;
     }
 
@@ -47,7 +54,7 @@ impl<T> ZeroRateCurve<T> where T: Interpolate<T> {
     }   
 
     pub fn calculate_compound(&self,rate: f64, year_fraction: f64) -> f64 {
-        let compound : f64;
+        let compound: f64;
 
         match self.compounding() {
             Compounding::Simple => compound = 1.0 + rate * year_fraction,
@@ -68,6 +75,8 @@ impl<T> ZeroRateCurve<T> where T: Interpolate<T> {
                 }
             }
         }
+
+        return compound;
     }
 }
 
@@ -104,6 +113,8 @@ impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate<T> {
         let t = self.day_counter().year_fraction(start_date, end_date);
 
         let forward_rate = InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t).rate();
+
+        return forward_rate;
     }
 
 }
@@ -112,34 +123,46 @@ impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate<T> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, 
+                time::daycounter::DayCounter, 
+                rates::spread::{constantspread::ConstantSpread, curvespread::CurveSpread}
+            };
+
 
     #[test]
     fn test_zero_rate_curve() {
-        let reference_date = Date::from_ymd(2019, 1, 1);
-        let year_fraction = vec![0.0, 0.25, 0.5, 0.75, 1.0]; 
-        let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
+        let reference_date = Date::new(2020, 1, 1);
+        let year_fractions = vec![0.0, 0.25, 0.5, 0.75, 1.0]; 
+        let rates = vec![0.0, 0.01, 0.02, 0.03, 0.04];
+
         let daycounter = DayCounter::Actual365;
 
         let interpolator = LinearInterpolator::initialize(
-            year_fractions.clone(),
-            discount_factors.clone(),
+            year_fractions.clone(), 
+            rates.clone(), 
             Some(true)
         );
+       
+        let daycounter = DayCounter::Actual365;
 
         let compounding = Compounding::Simple;
 
         let zero_rate_curve = ZeroRateCurve::new(
             reference_date, 
-            dates, rates, 
+            year_fractions,
+            rates,
             interpolator, 
             daycounter, 
             compounding
         );
 
         assert_eq!(zero_rate_curve.reference_date(), reference_date);
-        assert_eq!(zero_rate_curve.dates(), &dates);
-        assert_eq!(zero_rate_curve.rates(), &rates);
-        assert_eq!(zero_rate_curve.day_counter(), daycounter);
+        assert_eq!(zero_rate_curve.year_fractions(), &vec![0.0, 0.25, 0.5, 0.75, 1.0]);
+        assert_eq!(zero_rate_curve.rates(), &vec![0.0, 0.01, 0.02, 0.03, 0.04]);
+        assert_eq!(zero_rate_curve.day_counter(), DayCounter::Actual365);
+        
+
     }
 }
 
