@@ -1178,7 +1178,7 @@ mod tests {
 
     #[test]
     // test the From traint 
-    fn from_test(){
+    fn from_test()-> Result<(), MakeFixedRateLoanError>{
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -1197,10 +1197,11 @@ mod tests {
             .with_side(Side::Receive)
             .with_currency(Currency::USD)
             .equal_payments()
-            .build();
+            .build()?;
 
         let builder: MakeFixedRateLoan =  makefixedrateloan::MakeFixedRateLoan::from(&instrument);
-        let instrument2 = builder.build();
+        let instrument2 = builder.build()?;
+        
         assert_eq!(instrument2.notional(), instrument.notional());
         assert_eq!(instrument2.rate(), instrument.rate());
 
@@ -1213,6 +1214,7 @@ mod tests {
             .iter()
             .for_each(|cf| println!("{}", cf));
         
+        Ok(())
     }
 
 
