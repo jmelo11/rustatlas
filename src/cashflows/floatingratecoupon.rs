@@ -1,7 +1,7 @@
 use crate::{
     core::{
         meta::{ForwardRateRequest, MarketRequest},
-        traits::Registrable,
+        traits::{MarketRequestError, Registrable},
     },
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
@@ -64,22 +64,22 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
+    pub fn with_discount_curve_id(self, id: Option<usize>) -> FloatingRateCoupon {
         self.cashflow.with_discount_curve_id(id);
         self
     }
 
-    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
-        self.forecast_curve_id = Some(id);
+    pub fn with_forecast_curve_id(mut self, id: Option<usize>) -> FloatingRateCoupon {
+        self.forecast_curve_id = id;
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
         self.cashflow.set_discount_curve_id(id);
     }
 
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
-        self.forecast_curve_id = Some(id);
+    pub fn set_forecast_curve_id(&mut self, id: Option<usize>) {
+        self.forecast_curve_id = id;
     }
 }
 
@@ -110,7 +110,7 @@ impl RequiresFixingRate for FloatingRateCoupon {
 }
 
 impl Payable for FloatingRateCoupon {
-    fn amount(&self) -> f64 {
+    fn amount(&self) -> Option<f64> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {
@@ -130,16 +130,11 @@ impl Registrable for FloatingRateCoupon {
         self.cashflow.register_id(id);
     }
 
-    fn market_request(&self) -> MarketRequest {
-        let id = match self.cashflow.registry_id() {
-            Some(id) => id,
-            None => panic!("FloatingRateCoupon has not been registered"),
-        };
-        let tmp = self.cashflow.market_request();
-        let forecast_curve_id = match self.forecast_curve_id {
-            Some(id) => id,
-            None => panic!("FloatingRateCoupon does not have a forecast curve id"),
-        };
+    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+        let tmp = self.cashflow.market_request()?;
+        let forecast_curve_id = self
+            .forecast_curve_id
+            .ok_or(MarketRequestError::NoForecastCurveId)?;
         let forecast = ForwardRateRequest::new(
             forecast_curve_id,
             self.accrual_start_date,
@@ -147,7 +142,12 @@ impl Registrable for FloatingRateCoupon {
             self.rate_definition.compounding(),
             self.rate_definition.frequency(),
         );
-        MarketRequest::new(id, tmp.df(), Some(forecast), tmp.fx())
+        Ok(MarketRequest::new(
+            tmp.id(),
+            tmp.df(),
+            Some(forecast),
+            tmp.fx(),
+        ))
     }
 }
 

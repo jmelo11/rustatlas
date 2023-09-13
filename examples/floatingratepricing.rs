@@ -14,6 +14,7 @@ use rustatlas::{
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
+        parvaluevisitor::ParValueConstVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },
 };
@@ -24,7 +25,7 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -34,24 +35,29 @@ fn starting_today_pricing() {
     let mut instrument = MakeFloatingRateLoan::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
-        .with_frequency(Frequency::Semiannual)
+        .with_payment_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
-        .with_forecast_curve_id(1)
-        .with_discount_curve_id(2)
-        .build();
+        .with_forecast_curve_id(Some(1))
+        .with_discount_curve_id(Some(2))
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
 
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
-    fixing_visitor.visit(&mut instrument);
+    let _ = fixing_visitor.visit(&mut instrument);
 
     print_table(instrument.cashflows(), ref_data.clone());
 
@@ -59,13 +65,17 @@ fn starting_today_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
+
+    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_value = par_visitor.visit(&instrument).unwrap();
+    println!("Par Value: {}", par_value);
 }
 
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = create_store();
+    let market_store = Rc::new(create_store());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -75,23 +85,28 @@ fn already_started_pricing() {
     let mut instrument = MakeFloatingRateLoan::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
-        .with_frequency(Frequency::Semiannual)
+        .with_payment_frequency(Frequency::Semiannual)
         .bullet()
         .with_notional(notional)
-        .with_forecast_curve_id(1)
-        .with_discount_curve_id(2)
-        .build();
+        .with_forecast_curve_id(Some(1))
+        .with_discount_curve_id(Some(2))
+        .build()
+        .unwrap();
 
     let indexer = IndexingVisitor::new();
-    indexer.visit(&mut instrument);
+    let result = indexer.visit(&mut instrument);
+    match result {
+        Ok(_) => (),
+        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+    }
 
     let model = SimpleModel::new(market_store);
 
-    let data = model.gen_market_data(&indexer.request());
+    let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
-    fixing_visitor.visit(&mut instrument);
+    let _ = fixing_visitor.visit(&mut instrument);
 
     print_table(instrument.cashflows(), ref_data.clone());
 
@@ -99,7 +114,7 @@ fn already_started_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv);
+    println!("NPV: {}", npv.unwrap());
 }
 
 fn main() {

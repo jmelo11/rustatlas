@@ -1,22 +1,31 @@
 use std::rc::Rc;
 
+use argmin::core::Error;
+use thiserror::Error;
+
 use crate::{
     cashflows::cashflow::Side,
     core::marketstore::MarketStore,
     currencies::enums::Currency,
     instruments::{
-        fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
-        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
+        makefixedrateloan::{MakeFixedRateLoan, MakeFixedRateLoanError},
+        makefloatingrateloan::{MakeFloatingRateLoan, MakeFloatingRateLoanError},
         traits::Structure,
+    },
+    models::{
+        simplemodel::SimpleModel,
+        traits::{Model, ModelError},
     },
     rates::{interestrate::RateDefinition, traits::HasReferenceDate},
     time::{enums::Frequency, period::Period},
+    visitors::{
+        indexingvisitor::IndexingVisitor,
+        parvaluevisitor::ParValueConstVisitor,
+        traits::{ConstVisit, Visit},
+    },
 };
 
-pub enum Instrument {
-    FixedRateInstrument(FixedRateInstrument),
-    FloatingRateInstrument(FloatingRateInstrument),
-}
+use super::enums::Instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub enum RateType {
@@ -24,12 +33,30 @@ pub enum RateType {
     Floating,
 }
 
+/// # LoanGenerator
+/// Generates a loan based on a configuration and a market store.
 pub struct LoanGenerator {
     amount: f64,
     configs: Rc<Vec<LoanConfiguration>>,
     market_store: Rc<MarketStore>,
 }
 
+#[derive(Error, Debug)]
+pub enum LoanGeneratorError {
+    #[error("Invalid configuration")]
+    InvalidConfiguration,
+    #[error("Error fixed rate loan build error {0}")]
+    FixedRateLoanBuildError(#[from] MakeFixedRateLoanError),
+    #[error("Error floating rate loan build error {0}")]
+    FloatingRateLoanBuildError(#[from] MakeFloatingRateLoanError),
+    #[error("Error par value calculation")]
+    ParValueError(#[from] Error),
+    #[error("Model error {0}")]
+    ModelError(#[from] ModelError),
+}
+
+/// # LoanConfiguration
+/// Configuration for a loan. Represents the meta data required to generate a loan.
 pub struct LoanConfiguration {
     weight: f64,
     structure: Structure,
@@ -38,7 +65,7 @@ pub struct LoanConfiguration {
     currency: Currency,
     side: Side,
     rate_type: RateType,
-    rate_definitino: RateDefinition,
+    rate_definition: RateDefinition,
     discount_curve_id: usize,
     forecast_curve_id: Option<usize>,
 }
@@ -52,7 +79,7 @@ impl LoanConfiguration {
         currency: Currency,
         side: Side,
         rate_type: RateType,
-        rate_definitino: RateDefinition,
+        rate_definition: RateDefinition,
         discount_curve_id: usize,
         forecast_curve_id: Option<usize>,
     ) -> LoanConfiguration {
@@ -64,7 +91,7 @@ impl LoanConfiguration {
             currency,
             side,
             rate_type,
-            rate_definitino,
+            rate_definition,
             discount_curve_id,
             forecast_curve_id,
         }
@@ -99,7 +126,7 @@ impl LoanConfiguration {
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        self.rate_definitino
+        self.rate_definition
     }
 
     pub fn discount_curve_id(&self) -> usize {
@@ -124,14 +151,33 @@ impl LoanGenerator {
         }
     }
 
-    fn calculate_rate(&self, _builder: &MakeFixedRateLoan) -> f64 {
-        return 0.03;
-    }
-    fn calculate_spread(&self, _builder: &MakeFloatingRateLoan) -> f64 {
-        return 0.03;
+    fn calculate_par_spread(
+        &self,
+        builder: MakeFloatingRateLoan,
+    ) -> Result<f64, LoanGeneratorError> {
+        let mut instrument = builder.with_spread(0.01).build()?;
+        let indexing_visitor = IndexingVisitor::new();
+        let _ = indexing_visitor.visit(&mut instrument);
+        let model = SimpleModel::new(self.market_store.clone());
+        let data = model.gen_market_data(&indexing_visitor.request())?;
+        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    pub fn generate_position(&self, config: &LoanConfiguration) -> Instrument {
+    fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> Result<f64, LoanGeneratorError> {
+        let mut instrument = builder.with_rate_value(0.03).build()?;
+        let indexing_visitor = IndexingVisitor::new();
+        let _ = indexing_visitor.visit(&mut instrument);
+        let model = SimpleModel::new(self.market_store.clone());
+        let data = model.gen_market_data(&indexing_visitor.request())?;
+        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        Ok(par_visitor.visit(&mut instrument)?)
+    }
+
+    pub fn generate_position(
+        &self,
+        config: &LoanConfiguration,
+    ) -> Result<Instrument, LoanGeneratorError> {
         let structure = config.structure();
         let notional = self.amount * config.weight();
         let start_date = self.market_store.reference_date();
@@ -140,9 +186,18 @@ impl LoanGenerator {
                 let builder = MakeFloatingRateLoan::new()
                     .with_start_date(start_date)
                     .with_tenor(config.tenor())
+                    .with_payment_frequency(config.payment_frequency())
+                    .with_structure(structure)
+                    .with_side(config.side())
+                    .with_forecast_curve_id(Some(config.forecast_curve_id()))
+                    .with_discount_curve_id(Some(config.discount_curve_id()))
+                    .with_currency(config.currency())
+                    .with_rate_definition(config.rate_definition())
                     .with_notional(notional);
-                let spread = self.calculate_spread(&builder);
-                Instrument::FloatingRateInstrument(builder.with_spread(spread).build())
+                let spread = self.calculate_par_spread(builder.clone())?;
+                Ok(Instrument::FloatingRateInstrument(
+                    builder.with_spread(spread).build()?,
+                ))
             }
             RateType::Fixed => {
                 let builder = MakeFixedRateLoan::new()
@@ -151,10 +206,15 @@ impl LoanGenerator {
                     .with_tenor(config.tenor())
                     .with_payment_frequency(config.payment_frequency())
                     .with_rate_definition(config.rate_definition())
+                    .with_side(config.side())
+                    .with_currency(config.currency())
+                    .with_discount_curve_id(Some(config.discount_curve_id()))
                     .with_structure(structure);
 
-                let rate = self.calculate_rate(&builder);
-                Instrument::FixedRateInstrument(builder.with_rate_value(rate).build())
+                let rate = self.calculate_par_rate(builder.clone())?;
+                Ok(Instrument::FixedRateInstrument(
+                    builder.with_rate_value(rate).build()?,
+                ))
             }
         }
     }
@@ -163,9 +223,10 @@ impl LoanGenerator {
         let positions = self
             .configs
             .iter()
-            .map(|config| self.generate_position(config))
+            .map(|c| self.generate_position(c).unwrap())
             .collect();
-        return positions;
+
+        positions
     }
 }
 
@@ -201,7 +262,8 @@ mod tests {
             FlatForwardTermStructure::new(ref_date, discount_rate),
         );
 
-        let discount_index = IborIndex::new().with_term_structure(discount_curve);
+
+        let discount_index = IborIndex::new(ref_date).with_term_structure(discount_curve);
         market_store.mut_index_store().add_index(
             "DiscountCurve".to_string(),
             InterestRateIndex::IborIndex(discount_index),

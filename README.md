@@ -5,7 +5,7 @@ A rust version of Atlas
 ## Herramientas de Mercado
 
 - [X] Indice Ibor/Overnight
-- [ ] Accrual Ibor/Overnight (cupones flotantes)
+- [X] Accrual Ibor/Overnight (cupones flotantes)
 - [ ] Curvas con base RF y spreads contantes/interpolados
 - [ ] Curvas con modelos (nss, vasicek, etc)
 - [X] Fixing en periodos distintos al indice
@@ -20,17 +20,17 @@ A rust version of Atlas
 ## Productos
 
 - [ ] Loans:
-  - [ ] Fijos
+  - [X] Fijos
     - [X] Bullet
-    - [ ] Amortizable
-    - [ ] Cero
+    - [X] Amortizable
+    - [X] Cero
     - [X] Cuotas iguales
-    - [ ] Irregular
-  - [ ] Flotantes
+    - [X] Irregular
+  - [X] Flotantes
     - [X] Bullet
-    - [ ] Amortizable
-    - [ ] Cero
-    - [ ] Irregular
+    - [X] Amortizable
+    - [X] Cero
+    - [X] Irregular
   - [ ] Mixtos
 - [ ] Cuentas corrientes
 - [ ] Swaps
@@ -39,11 +39,12 @@ A rust version of Atlas
 
 ## Vistantes
 
-- [ ] Tasas par
+- [X] Tasas par
 - [X] NPV
 - [X] Fixings
 - [X] Accrual
 - [X] Agrupación
+- [ ] MaturingAmount con transformacion de monedas
 
 ## Python
 
@@ -73,7 +74,8 @@ A rust version of Atlas
 - [X] Crear fechas
 - [X] Crear schedule
 
-## Software
+## Rust
 
 - [ ] Revisar metodologia paralelismo
 - [ ] Revisar performance DB
+- [ ] Corregir panics/remplazar por errores

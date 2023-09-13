@@ -1,11 +1,10 @@
 use crate::{
-    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
         interestrate::InterestRate,
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency, period::Period},
+    time::{date::Date, enums::Frequency},
 };
 
 /// # FlatForwardTermStructure
@@ -45,11 +44,14 @@ impl HasReferenceDate for FlatForwardTermStructure {
 }
 
 impl YieldProvider for FlatForwardTermStructure {
-    fn discount_factor(&self, date: Date) -> f64 {
+    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         if date < self.reference_date() {
-            panic!("date must be greater than reference date");
+            Err(YieldProviderError::InvalidDate(format!(
+                "Invalid date: {}",
+                date
+            )))?;
         }
-        return self.rate.discount_factor(self.reference_date(), date);
+        return Ok(self.rate.discount_factor(self.reference_date(), date));
     }
     fn forward_rate(
         &self,
@@ -57,23 +59,29 @@ impl YieldProvider for FlatForwardTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> f64 {
-        let comp_factor = self.discount_factor(start_date) / self.discount_factor(end_date);
+    ) -> Result<f64, YieldProviderError> {
+        let comp_factor = self.discount_factor(start_date)? / self.discount_factor(end_date)?;
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
-        return InterestRate::implied_rate(comp_factor, self.rate.day_counter(), comp, freq, t)
-            .rate();
+        return Ok(InterestRate::implied_rate(
+            comp_factor,
+            self.rate.day_counter(),
+            comp,
+            freq,
+            t,
+        )?
+        .rate());
     }
 }
 
-impl AdvanceInTime for FlatForwardTermStructure {
-    type Output = FlatForwardTermStructure;
-    fn advance(&self, period: Period) -> Self::Output {
-        let new_reference_date = self
-            .reference_date()
-            .advance(period.length(), period.units());
-        return FlatForwardTermStructure::new(new_reference_date, self.rate());
-    }
-}
+// impl AdvanceInTime for FlatForwardTermStructure {
+//     type Output = FlatForwardTermStructure;
+//     fn advance(&self, period: Period) -> Self::Output {
+//         let new_reference_date = self
+//             .reference_date()
+//             .advance(period.length(), period.units());
+//         return FlatForwardTermStructure::new(new_reference_date, self.rate());
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -96,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn test_discount() {
+    fn test_discount() -> Result<(), YieldProviderError> {
         let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,
@@ -109,13 +117,14 @@ mod tests {
         let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
 
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
-        let actual_discount = term_structure.discount_factor(target_date);
+        let actual_discount = term_structure.discount_factor(target_date)?;
 
         assert_eq!(actual_discount, expected_discount);
+        Ok(())
     }
 
     #[test]
-    fn test_forward_rate() {
+    fn test_forward_rate() -> Result<(), YieldProviderError> {
         let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,
@@ -130,17 +139,19 @@ mod tests {
 
         let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
 
-        let comp_factor =
-            term_structure.discount_factor(start_date) / term_structure.discount_factor(end_date);
+        let comp_factor = term_structure.discount_factor(start_date)?
+            / term_structure.discount_factor(end_date)?;
         let t = interest_rate
             .day_counter()
             .year_fraction(start_date, end_date);
 
         let expected_forward_rate =
-            InterestRate::implied_rate(comp_factor, interest_rate.day_counter(), comp, freq, t)
+            InterestRate::implied_rate(comp_factor, interest_rate.day_counter(), comp, freq, t)?
                 .rate();
-        let actual_forward_rate = term_structure.forward_rate(start_date, end_date, comp, freq);
+        let actual_forward_rate = term_structure.forward_rate(start_date, end_date, comp, freq)?;
 
         assert_eq!(actual_forward_rate, expected_forward_rate);
+
+        Ok(())
     }
 }

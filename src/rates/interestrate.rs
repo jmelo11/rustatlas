@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use crate::rates::enums::Compounding;
 use crate::time::date::Date;
 use crate::time::daycounter::DayCounter;
@@ -71,6 +73,18 @@ pub struct InterestRate {
     rate_definition: RateDefinition,
 }
 
+#[derive(Error, Debug)]
+pub enum InterestRateError {
+    #[error("negative compound factor not allowed")]
+    NegativeCompoundFactor,
+    #[error("non-negative time required")]
+    NonNegativeTime,
+    #[error("positive time required")]
+    PositiveTime,
+    #[error("positive compound factor required")]
+    PositiveCompoundFactor,
+}
+
 impl InterestRate {
     pub fn new(
         rate: f64,
@@ -117,15 +131,24 @@ impl InterestRate {
         comp: Compounding,
         freq: Frequency,
         t: f64,
-    ) -> InterestRate {
-        assert!(compound > 0.0, "positive compound factor required");
+    ) -> Result<InterestRate, InterestRateError> {
+        //assert!(compound > 0.0, "positive compound factor required");
+        if compound <= 0.0 {
+            return Err(InterestRateError::PositiveCompoundFactor);
+        }
         let r: f64;
         let f = freq as i64 as f64;
         if compound == 1.0 {
-            assert!(t >= 0.0, "non-negative time required");
+            //assert!(t >= 0.0, "non-negative time required");
+            if t < 0.0 {
+                return Err(InterestRateError::NonNegativeTime);
+            }
             r = 0.0;
         } else {
-            assert!(t > 0.0, "positive time required");
+            //assert!(t > 0.0, "positive time required");
+            if t <= 0.0 {
+                return Err(InterestRateError::PositiveTime);
+            }
             match comp {
                 Compounding::Simple => r = (compound - 1.0) / t,
                 Compounding::Compounded => r = (compound.powf(1.0 / (f * t)) - 1.0) * f,
@@ -146,7 +169,7 @@ impl InterestRate {
                 }
             }
         }
-        return InterestRate::new(r, comp, freq, result_dc);
+        return Ok(InterestRate::new(r, comp, freq, result_dc));
     }
 
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
@@ -260,20 +283,21 @@ mod tests {
             Compounding::Simple,
             Frequency::Annual,
             1.0,
-        );
+        )
+        .unwrap();
         let expected_rate = 0.05;
         assert!((ir.rate() - expected_rate).abs() < EPSILON);
     }
 
     #[test]
-    #[should_panic(expected = "positive compound factor required")]
     fn test_implied_rate_panic() {
-        InterestRate::implied_rate(
+        let err = InterestRate::implied_rate(
             0.0,
             DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
             1.0,
         );
+        assert!(err.is_err());
     }
 }

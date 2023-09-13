@@ -5,7 +5,7 @@ use crate::{
     core::{meta::MarketData, traits::Registrable},
 };
 
-use super::traits::{HasCashflows, Visit};
+use super::traits::{EvaluationError, HasCashflows, Visit};
 
 /// # FixingVisitor
 /// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
@@ -21,29 +21,23 @@ impl FixingVisitor {
     }
 }
 
-impl<T: HasCashflows> Visit<T, ()> for FixingVisitor {
-    type Output = ();
+impl<T: HasCashflows> Visit<T> for FixingVisitor {
+    type Output = Result<(), EvaluationError>;
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {
-        has_cashflows
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| match cf {
-                Cashflow::FloatingRateCoupon(c) => {
-                    let id = match c.registry_id() {
-                        Some(id) => id,
-                        None => panic!("No id for cashflow"),
-                    };
-                    let data = match self.market_data.get(id) {
-                        Some(data) => data,
-                        None => panic!("No market data for id {}", id),
-                    };
-                    let fixing = match data.fwd() {
-                        Some(fwd) => fwd,
-                        None => panic!("No forward for id {}", id),
-                    };
-                    cf.set_fixing_rate(fixing);
+        has_cashflows.mut_cashflows().iter_mut().try_for_each(
+            |cf| -> Result<(), EvaluationError> {
+                if let Cashflow::FloatingRateCoupon(frcf) = cf {
+                    let id = frcf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
+                    let cf_market_data = self
+                        .market_data
+                        .get(id)
+                        .ok_or(EvaluationError::NoMarketData)?;
+                    let fixing_rate = cf_market_data.fwd().ok_or(EvaluationError::NoFixingRate)?;
+                    frcf.set_fixing_rate(fixing_rate);
                 }
-                _ => (),
-            });
+                Ok(())
+            },
+        )?;
+        Ok(())
     }
 }

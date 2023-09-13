@@ -1,7 +1,7 @@
 use super::cashflow::Side;
 use super::traits::{Expires, Payable};
 use crate::core::meta::*;
-use crate::core::traits::Registrable;
+use crate::core::traits::{MarketRequestError, Registrable};
 use crate::currencies::enums::Currency;
 use crate::time::date::Date;
 
@@ -13,7 +13,7 @@ use crate::time::date::Date;
 /// use rustatlas::prelude::*;
 /// let payment_date = Date::new(2020, 1, 1);
 /// let cashflow = SimpleCashflow::new(payment_date, Currency::USD, Side::Receive).with_amount(100.0);
-/// assert_eq!(cashflow.amount(), 100.0);
+/// assert_eq!(cashflow.amount().unwrap(), 100.0);
 /// assert_eq!(cashflow.side(), Side::Receive);
 /// assert_eq!(cashflow.payment_date(), payment_date);
 /// ```
@@ -44,8 +44,8 @@ impl SimpleCashflow {
         self
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> SimpleCashflow {
-        self.discount_curve_id = Some(discount_curve_id);
+    pub fn with_discount_curve_id(mut self, discount_curve_id: Option<usize>) -> SimpleCashflow {
+        self.discount_curve_id = discount_curve_id;
         self
     }
 
@@ -54,8 +54,8 @@ impl SimpleCashflow {
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
-        self.discount_curve_id = Some(id);
+    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
+        self.discount_curve_id = id;
     }
 
     pub fn set_amount(&mut self, amount: f64) {
@@ -72,24 +72,20 @@ impl Registrable for SimpleCashflow {
         self.registry_id = Some(id);
     }
 
-    fn market_request(&self) -> MarketRequest {
-        let id = self
-            .registry_id
-            .expect("SimpleCashflow does not have a registry id");
+    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+        let id = self.registry_id.ok_or(MarketRequestError::NoRegistryId)?;
         let discount_curve_id = self
             .discount_curve_id
-            .expect("SimpleCashflow does not have a discount curve id");
+            .ok_or(MarketRequestError::NoDiscountCurveId)?;
         let discount = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
         let currency = ExchangeRateRequest::new(self.currency, None, None);
-        return MarketRequest::new(id, Some(discount), None, Some(currency));
+        return Ok(MarketRequest::new(id, Some(discount), None, Some(currency)));
     }
 }
 
 impl Payable for SimpleCashflow {
-    fn amount(&self) -> f64 {
-        return self
-            .amount
-            .expect("SimpleCashflow does not have an defined amount");
+    fn amount(&self) -> Option<f64> {
+        return self.amount;
     }
     fn side(&self) -> Side {
         return self.side;

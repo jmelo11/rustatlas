@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    alm::traits::AdvanceInTime,
     rates::{
         enums::Compounding,
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
         yieldtermstructure::enums::YieldTermStructure,
     },
     time::{date::Date, enums::Frequency, period::Period},
@@ -55,7 +54,7 @@ impl HasReferenceDate for InterestRateIndex {
 }
 
 impl YieldProvider for InterestRateIndex {
-    fn discount_factor(&self, date: Date) -> f64 {
+    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => ibor_index.discount_factor(date),
             InterestRateIndex::OvernightIndex(overnight_index) => {
@@ -70,7 +69,7 @@ impl YieldProvider for InterestRateIndex {
         end_date: Date,
         compounding: Compounding,
         frequency: Frequency,
-    ) -> f64 {
+    ) -> Result<f64, YieldProviderError> {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => {
                 ibor_index.forward_rate(start_date, end_date, compounding, frequency)
@@ -105,16 +104,33 @@ impl InterestRateIndex {
     }
 }
 
-impl AdvanceInTime for InterestRateIndex {
-    type Output = InterestRateIndex;
-    fn advance(&self, period: Period) -> Self::Output {
-        match self {
-            InterestRateIndex::IborIndex(ibor_index) => {
-                InterestRateIndex::IborIndex(ibor_index.advance(period))
-            }
-            InterestRateIndex::OvernightIndex(overnight_index) => {
-                InterestRateIndex::OvernightIndex(overnight_index.advance(period))
-            }
-        }
-    }
-}
+// impl AdvanceInTime for InterestRateIndex {
+//     type Output = InterestRateIndex;
+//     fn advance(&self, period: Period) -> Self::Output {
+//         match self {
+//             InterestRateIndex::IborIndex(ibor_index) => {
+//                 InterestRateIndex::IborIndex(ibor_index.advance(period))
+//             }
+//             InterestRateIndex::OvernightIndex(overnight_index) => {
+//                 InterestRateIndex::OvernightIndex(overnight_index.advance(period))
+//             }
+//         }
+//     }
+// }
+
+// trait Interpolator {
+//     fn init(x: Vec<f64>, y: Vec<f64>, allow_extrapolation: Option<bool>) -> Self;
+//     fn interpolate(&self, x: f64) -> f64;
+//     fn enable_extrapolation(&mut self, enable: bool);
+// }
+
+// struct Curve<T: Interpolator> {
+//     interpolator: T,
+// }
+
+// impl<T: Interpolator> Curve<T> {
+//     fn new(x: Vec<f64>, y: Vec<f64>) -> Curve<T> {
+//         let tmp = T::init(x, y, Some(true));
+//         Curve { interpolator: tmp }
+//     }
+// }

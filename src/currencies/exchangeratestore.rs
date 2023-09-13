@@ -9,6 +9,7 @@ use super::enums::Currency;
 pub struct ExchangeRateStore {
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
     exchange_rate_cache: RefCell<HashMap<(Currency, Currency), f64>>,
+    currency_curve: HashMap<Currency, usize>,
 }
 
 impl ExchangeRateStore {
@@ -16,6 +17,7 @@ impl ExchangeRateStore {
         ExchangeRateStore {
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
+            currency_curve: HashMap::new(),
         }
     }
 
@@ -27,8 +29,16 @@ impl ExchangeRateStore {
         self
     }
 
+    pub fn add_currency_curve(&mut self, currency: Currency, fx_curve: usize) {
+        self.currency_curve.insert(currency, fx_curve);
+    }
+
     pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: f64) {
         self.exchange_rate_map.insert((currency1, currency2), rate);
+    }
+
+    pub fn get_currency_curve(&self, currency: Currency) -> Option<usize> {
+        self.currency_curve.get(&currency).cloned()
     }
 
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Option<f64> {
@@ -84,11 +94,7 @@ mod tests {
 
     #[test]
     fn test_same_currency() {
-        let manager = ExchangeRateStore {
-            exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: RefCell::new(HashMap::new()),
-        };
-
+        let manager = ExchangeRateStore::new();
         assert_eq!(manager.get_exchange_rate(USD, USD).unwrap(), 1.0);
     }
 
@@ -101,6 +107,7 @@ mod tests {
                 map
             },
             exchange_rate_cache: RefCell::new(HashMap::new()),
+            currency_curve: HashMap::new(),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
@@ -119,6 +126,7 @@ mod tests {
         let manager = ExchangeRateStore {
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
+            currency_curve: HashMap::new(),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR), None);
@@ -134,6 +142,7 @@ mod tests {
                 map
             },
             exchange_rate_cache: RefCell::new(HashMap::new()),
+            currency_curve: HashMap::new(),
         };
 
         assert_eq!(manager.get_exchange_rate(EUR, USD).unwrap(), 1.0 / 0.85);

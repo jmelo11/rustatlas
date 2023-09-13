@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use super::calendar::*;
 use super::calendars::nullcalendar::NullCalendar;
 use super::calendars::traits::*;
@@ -48,6 +50,7 @@ fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
 /// A schedule is a sequence of dates. It is defined by an effective date, a termination date and
 /// a tenor. It is also defined by a calendar, a convention, a termination date convention, a rule
 /// and end of month flag.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Schedule {
     tenor: Period,
     calendar: Calendar,
@@ -75,16 +78,31 @@ impl Schedule {
         is_regular: Vec<bool>,
     ) -> Schedule {
         Schedule {
-            tenor: tenor,
-            calendar: calendar,
-            convention: convention,
-            termination_date_convention: termination_date_convention,
-            rule: rule,
-            end_of_month: end_of_month,
-            first_date: first_date,
-            next_to_last_date: next_to_last_date,
-            dates: dates,
-            is_regular: is_regular,
+            tenor,
+            calendar,
+            convention,
+            termination_date_convention,
+            rule,
+            end_of_month,
+            first_date,
+            next_to_last_date,
+            dates,
+            is_regular,
+        }
+    }
+
+    pub fn empty() -> Schedule {
+        Schedule {
+            tenor: Period::empty(),
+            calendar: Calendar::NullCalendar(NullCalendar::new()),
+            convention: BusinessDayConvention::Unadjusted,
+            termination_date_convention: BusinessDayConvention::Unadjusted,
+            rule: DateGenerationRule::Backward,
+            end_of_month: false,
+            first_date: Date::empty(),
+            next_to_last_date: Date::empty(),
+            dates: Vec::new(),
+            is_regular: Vec::new(),
         }
     }
 
@@ -146,7 +164,39 @@ pub struct MakeSchedule {
     dates: Vec<Date>,
 }
 
+/// # MakeScheduleError
+/// This enum represents the errors which can occur when building a schedule.
+#[derive(Error, Debug)]
+pub enum MakeScheduleError {
+    /// The tenor is not positive.
+    #[error("NonPositiveTenor: {0}")]
+    NonPositiveTenor(String),
+    /// The first date is out of the effective-termination date range.
+    #[error("FirstDateOutOfRange: {0}")]
+    FirstDateOutOfRange(String),
+    /// The first date is not an IMM date.
+    #[error("FirstDateNotIMM: {0}")]
+    FirstDateNotIMM(String),
+    /// The next to last date is out of the effective-termination date range.
+    #[error("NextToLastDateOutOfRange: {0}")]
+    NextToLastDateOutOfRange(String),
+    /// The next to last date is not an IMM date.
+    #[error("NextToLastDateNotIMM: {0}")]
+    NextToLastDateNotIMM(String),
+    /// The first date is incompatible with the date generation rule.
+    #[error("FirstDateIncompatible: {0}")]
+    FirstDateIncompatible(String),
+    /// The next to last date is incompatible with the date generation rule.
+    #[error("NextToLastDateIncompatible: {0}")]
+    NextToLastDateIncompatible(String),
+    /// The rule is unknown.
+    #[error("UnknownRule: {0}")]
+    UnknownRule(String),
+}
+
+/// Constructor, setters and getters
 impl MakeSchedule {
+    /// Returns a new instance of MakeSchedule.
     pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
@@ -164,26 +214,31 @@ impl MakeSchedule {
         }
     }
 
+    /// Sets the tenor.
     pub fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
         self.tenor = tenor;
         self
     }
 
+    /// Sets the frequency.
     pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
         self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
         self
     }
 
+    /// Sets the calendar.
     pub fn with_calendar(mut self, calendar: Calendar) -> MakeSchedule {
         self.calendar = calendar;
         self
     }
 
+    /// Sets the convention.
     pub fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
         self
     }
 
+    /// Sets the termination date convention.
     pub fn with_termination_date_convention(
         mut self,
         termination_date_convention: BusinessDayConvention,
@@ -192,39 +247,51 @@ impl MakeSchedule {
         return self;
     }
 
+    /// Sets the rule.
     pub fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
         self.rule = rule;
         return self;
     }
 
+    /// Sets the end of month flag.
     pub fn forwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Forward;
         return self;
     }
 
+    /// Sets the date generation rule to backward.
     pub fn backwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Backward;
         return self;
     }
 
+    /// Sets the end of month flag.
     pub fn end_of_month(mut self, flag: bool) -> MakeSchedule {
         self.end_of_month = flag;
         return self;
     }
 
+    /// Sets the first date.
     pub fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
         self.first_date = first_date;
         return self;
     }
 
+    /// Sets the next to last date.
     pub fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
         self.next_to_last_date = next_to_last_date;
         return self;
     }
+}
 
-    pub fn build(&mut self) -> Schedule {
+/// Build method
+impl MakeSchedule {
+    pub fn build(&mut self) -> Result<Schedule, MakeScheduleError> {
         if self.tenor.length() < 0 {
-            panic!("non positive tenor ({})", self.tenor.length());
+            return Err(MakeScheduleError::NonPositiveTenor(format!(
+                "non positive tenor ({})",
+                self.tenor.length()
+            )));
         }
         if self.tenor.length() == 0 {
             self.rule = DateGenerationRule::Zero;
@@ -236,12 +303,18 @@ impl MakeSchedule {
                     if self.first_date <= self.effective_date
                         || self.first_date > self.termination_date
                     {
-                        panic!("first date out of effective-termination date range");
+                        //panic!("first date out of effective-termination date range");
+                        return Err(MakeScheduleError::FirstDateOutOfRange(
+                            "first date out of effective-termination date range".to_string(),
+                        ));
                     }
                 }
                 DateGenerationRule::ThirdWednesday => {
                     if !IMM::is_imm_date(self.first_date, false) {
-                        panic!("first date is not an IMM date");
+                        //panic!("first date is not an IMM date");
+                        return Err(MakeScheduleError::FirstDateNotIMM(
+                            "first date is not an IMM date".to_string(),
+                        ));
                     }
                 }
                 DateGenerationRule::Zero
@@ -250,10 +323,14 @@ impl MakeSchedule {
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
                 | DateGenerationRule::CDS2015 => {
-                    panic!("first date incompatible with date generation rule");
+                    //panic!("first date incompatible with date generation rule");
+                    return Err(MakeScheduleError::FirstDateIncompatible(
+                        "first date incompatible with date generation rule".to_string(),
+                    ));
                 }
                 _ => {
-                    panic!("unknown rule");
+                    //panic!("unknown rule");
+                    return Err(MakeScheduleError::UnknownRule("unknown rule".to_string()));
                 }
             }
         }
@@ -264,12 +341,18 @@ impl MakeSchedule {
                     if self.next_to_last_date <= self.effective_date
                         || self.next_to_last_date >= self.termination_date
                     {
-                        panic!("next to last date out of effective-termination date range");
+                        //panic!("next to last date out of effective-termination date range");
+                        return Err(MakeScheduleError::NextToLastDateOutOfRange(
+                            "next to last date out of effective-termination date range".to_string(),
+                        ));
                     }
                 }
                 DateGenerationRule::ThirdWednesday => {
                     if !IMM::is_imm_date(self.next_to_last_date, false) {
-                        panic!("next to last date is not an IMM date");
+                        //panic!("next to last date is not an IMM date");
+                        return Err(MakeScheduleError::NextToLastDateNotIMM(
+                            "next to last date is not an IMM date".to_string(),
+                        ));
                     }
                 }
                 DateGenerationRule::Zero
@@ -278,10 +361,14 @@ impl MakeSchedule {
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
                 | DateGenerationRule::CDS2015 => {
-                    panic!("next to last date incompatible with date generation rule");
+                    //panic!("next to last date incompatible with date generation rule");
+                    return Err(MakeScheduleError::NextToLastDateIncompatible(
+                        "next to last date incompatible with date generation rule".to_string(),
+                    ));
                 }
                 _ => {
-                    panic!("unknown rule");
+                    //panic!("unknown rule");
+                    return Err(MakeScheduleError::UnknownRule("unknown rule".to_string()));
                 }
             }
         }
@@ -369,11 +456,18 @@ impl MakeSchedule {
             | DateGenerationRule::CDS2015
             | DateGenerationRule::Forward => {
                 if self.rule != DateGenerationRule::Forward {
-                    assert!(
-                        self.end_of_month == false,
-                        "endOfMonth convention incompatible with {:?} date generation rule",
-                        self.rule
-                    );
+                    // assert!(
+                    //     self.end_of_month == false,
+                    //     "endOfMonth convention incompatible with {:?} date generation rule",
+                    //     self.rule
+                    // );
+                    if self.end_of_month == true {
+                        //panic!("endOfMonth convention incompatible with {:?} date generation rule", self.rule);
+                        return Err(MakeScheduleError::UnknownRule(
+                            "endOfMonth convention incompatible with date generation rule"
+                                .to_string(),
+                        ));
+                    }
                 }
 
                 if self.rule == DateGenerationRule::CDS || self.rule == DateGenerationRule::CDS2015
@@ -562,18 +656,18 @@ impl MakeSchedule {
             self.is_regular.remove(0);
         }
 
-        return Schedule {
-            tenor: self.tenor,
-            calendar: self.calendar.clone(),
-            convention: self.convention,
-            termination_date_convention: self.termination_date_convention,
-            rule: self.rule,
-            end_of_month: self.end_of_month,
-            first_date: self.first_date,
-            next_to_last_date: self.next_to_last_date,
-            dates: self.dates.clone(),
-            is_regular: self.is_regular.clone(),
-        };
+        return Ok(Schedule::new(
+            self.tenor,
+            self.calendar.clone(),
+            self.convention,
+            self.termination_date_convention,
+            self.rule,
+            self.end_of_month,
+            self.first_date,
+            self.next_to_last_date,
+            self.dates.clone(),
+            self.is_regular.clone(),
+        ));
     }
 }
 
@@ -662,7 +756,9 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let frequency = Frequency::Semiannual;
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_frequency(frequency);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_frequency(frequency);
         assert_eq!(make_schedule.tenor, Period::new(6, TimeUnit::Months));
     }
 
@@ -672,7 +768,9 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let calendar = Calendar::NullCalendar(NullCalendar::new());
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_calendar(calendar);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_calendar(calendar);
         assert_eq!(
             make_schedule.calendar,
             Calendar::NullCalendar(NullCalendar::new())
@@ -685,7 +783,9 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let convention = BusinessDayConvention::Unadjusted;
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_convention(convention);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_convention(convention);
         assert_eq!(make_schedule.convention, BusinessDayConvention::Unadjusted);
     }
 
@@ -695,7 +795,8 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let termination_date_convention = BusinessDayConvention::Unadjusted;
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor)
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
             .with_termination_date_convention(termination_date_convention);
         assert_eq!(
             make_schedule.termination_date_convention,
@@ -709,7 +810,9 @@ mod tests {
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
         let rule = DateGenerationRule::Backward;
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).with_rule(rule);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_rule(rule);
         assert_eq!(make_schedule.rule, DateGenerationRule::Backward);
     }
 
@@ -736,7 +839,9 @@ mod tests {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2022, 3, 1);
         let tenor = Period::new(1, TimeUnit::Months);
-        let make_schedule = MakeSchedule::new(from, to).with_tenor(tenor).end_of_month(true);
+        let make_schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .end_of_month(true);
         assert_eq!(make_schedule.end_of_month, true);
     }
 
@@ -765,12 +870,12 @@ mod tests {
     }
 
     #[test]
-    fn test_make_simple_schedule_build() {
+    fn test_make_simple_schedule_build() -> Result<(), MakeScheduleError> {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2023, 3, 1);
         // monthly
         let tenor = Period::new(1, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build()?;
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -793,7 +898,7 @@ mod tests {
 
         // quarterly
         let tenor = Period::new(3, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build()?;
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -807,7 +912,7 @@ mod tests {
 
         // semiannual
         let tenor = Period::new(6, TimeUnit::Months);
-        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build()?;
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -820,7 +925,7 @@ mod tests {
 
         // annual
         let tenor = Period::new(1, TimeUnit::Years);
-        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build();
+        let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build()?;
 
         let dates = vec![
             Date::new(2022, 1, 1),
@@ -829,10 +934,12 @@ mod tests {
         ];
 
         assert_eq!(schedule.dates, dates);
+
+        Ok(())
     }
 
     #[test]
-    fn test_daily_schedule() {
+    fn test_daily_schedule() -> Result<(), MakeScheduleError> {
         let from = Date::new(2012, 1, 17);
         let to = Date::new(2012, 1, 24);
         let tenor = Period::new(1, TimeUnit::Days);
@@ -841,7 +948,7 @@ mod tests {
             .with_tenor(tenor)
             .with_calendar(Calendar::TARGET(TARGET::new()))
             .with_convention(BusinessDayConvention::Preceding)
-            .build();
+            .build()?;
 
         let expected = vec![
             Date::new(2012, 1, 17),
@@ -853,6 +960,8 @@ mod tests {
         ];
 
         assert_eq!(schedule.dates, expected);
+
+        Ok(())
     }
 
     #[test]
@@ -867,7 +976,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dates_past_end_date_with_eom_adjustment() {
+    fn test_dates_past_end_date_with_eom_adjustment() -> Result<(), MakeScheduleError> {
         let from = Date::new(2013, 3, 28);
         let to = Date::new(2015, 3, 30);
         let tenor = Period::new(1, TimeUnit::Years);
@@ -882,7 +991,7 @@ mod tests {
             .with_termination_date_convention(termination_date_convention)
             .forwards()
             .end_of_month(end_of_month)
-            .build();
+            .build()?;
 
         let expected = vec![
             Date::new(2013, 3, 28),
@@ -891,10 +1000,12 @@ mod tests {
         ];
 
         assert_eq!(schedule.dates, expected);
+
+        Ok(())
     }
 
     #[test]
-    fn test_dates_same_as_end_date_with_eom_adjustment() {
+    fn test_dates_same_as_end_date_with_eom_adjustment() -> Result<(), MakeScheduleError> {
         let from = Date::new(2013, 3, 28);
         let to = Date::new(2015, 3, 31);
         let tenor = Period::new(1, TimeUnit::Years);
@@ -909,7 +1020,7 @@ mod tests {
             .with_termination_date_convention(termination_date_convention)
             .forwards()
             .end_of_month(end_of_month)
-            .build();
+            .build()?;
 
         let expected = vec![
             Date::new(2013, 3, 28),
@@ -918,5 +1029,7 @@ mod tests {
         ];
 
         assert_eq!(schedule.dates, expected);
+
+        Ok(())
     }
 }
