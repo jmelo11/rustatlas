@@ -10,10 +10,10 @@ chrono = "0.4.26"
 rayon = "1.7.0"
 
 argmin = { version = "0.8" }
-argmin-math = { version = "0.2.1", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
+argmin-math = { version = "0.3.0", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
 
 [dev-dependencies]
-criterion = { version = "0.4", features = ["html_reports"] }
+criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [[bench]]
 name = "fixedratepricing"
