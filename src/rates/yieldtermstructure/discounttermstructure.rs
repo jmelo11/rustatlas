@@ -1,6 +1,6 @@
 use crate::{
     rates::traits::{HasReferenceDate, YieldProviderError},
-    time::{date::Date, enums::Frequency, daycounters},
+    time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
     math::interpolation::{traits::Interpolate, linear::LinearInterpolator, loglinear::LogLinearInterpolator},
 };
@@ -16,7 +16,6 @@ pub struct DiscountTermStructure<T> {
 pub trait MakeNew<T> {
     fn new(reference_date: Date, dates: Vec<Date>, discount_factors: Vec<f64>, daycounter: DayCounter) -> DiscountTermStructure<T>;
 }
-
 
 impl MakeNew<LinearInterpolator>  for DiscountTermStructure<LinearInterpolator> {
     fn new(reference_date: Date, dates: Vec<Date>, discount_factors: Vec<f64>, daycounter: DayCounter) -> DiscountTermStructure<LinearInterpolator> {
@@ -138,7 +137,7 @@ impl<T> HasReferenceDate for DiscountTermStructure<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{math::interpolation::{linear::LinearInterpolator, traits::Interpolate}, time::{daycounter::DayCounter, date}};
+    use crate::{time::{daycounter::DayCounter}};
 
     #[test]
     fn test_year_fractions() {
@@ -194,29 +193,23 @@ mod tests {
 
     }
 
-    // #[test]
+    #[test]
 
-    // fn test_forward_rate() {
-    //     let reference_date = Date::new(2020, 1, 1); 
-    //     let year_fractions = vec![0.0, 0.25, 0.5, 0.75, 1.0];
-    //     let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
-    //     let interpolator = LinearInterpolator::initialize(year_fractions.clone(), discount_factors.clone(), Some(true));
-    //     let daycounter = DayCounter::Actual365;
-    //     let comp = Compounding::Simple;
-    //     let freq = Frequency::Annual;
+    fn test_forward_rate() {
+        let reference_date = Date::new(2020, 1, 1); 
+        let dates = vec![Date::new(2020, 1, 1), Date::new(2020, 4, 1), Date::new(2020, 7, 1), Date::new(2020, 10, 1), Date::new(2021, 1, 1)];
+        let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
+        let daycounter = DayCounter::Actual360;
 
-
-    //     let discount_term_structure = DiscountTermStructure::new(reference_date, year_fractions, discount_factors, interpolator, daycounter);
-
-    //     //assert!((discount_term_structure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)-0.04040404040404041).abs() < 1e-8);
+        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
 
 
-    //     //println!("forward_rate: {}", discount_term_structure.forward_rate(Date::new(2020, 1, 1), Date::new(2021, 12, 31), comp, freq));
-    //     //println!("discount_factor: {}", discount_term_structure.discount_factor(Date::new(2020, 12, 31)));
-    //     //let delta_year_fraction = daycounter.year_fraction(reference_date, Date::new(2020, 12, 31));      
-    //     //println!("delta_year_fraction: {}", delta_year_fraction);
-    // }
+        let comp = Compounding::Simple;
+        let freq = Frequency::Annual;
 
 
+        assert!((discount_term_structure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq).unwrap()-0.04097957689796514).abs() < 1e-8);
+        println!("forward_rate: {}", discount_term_structure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq).unwrap());
+    }
 
 }
