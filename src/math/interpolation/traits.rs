@@ -1,4 +1,4 @@
-pub trait Interpolate<T> {
+pub trait Interpolate {
     type Output;
 
     fn initialize(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> Self::Output;

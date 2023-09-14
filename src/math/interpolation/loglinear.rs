@@ -8,7 +8,7 @@ pub struct LogLinearInterpolator {
     enable_extrapolation: bool,
 }
 
-impl Interpolate<LogLinearInterpolator> for LogLinearInterpolator {
+impl Interpolate for LogLinearInterpolator {
     type Output = LogLinearInterpolator;
 
     fn initialize(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> Self::Output {

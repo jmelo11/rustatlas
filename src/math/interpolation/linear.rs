@@ -8,7 +8,7 @@ pub struct LinearInterpolator {
     enable_extrapolation: bool,
 }
 
-impl Interpolate<LinearInterpolator> for LinearInterpolator {
+impl Interpolate for LinearInterpolator {
     type Output = LinearInterpolator;
 
     fn initialize(
