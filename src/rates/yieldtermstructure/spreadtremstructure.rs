@@ -1,5 +1,5 @@
 use crate::{
-    rates::traits::{HasReferenceDate, Spread},
+    rates::traits::{HasReferenceDate, Spread, YieldProviderError},
     time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
     math::interpolation::traits::Interpolate,
@@ -97,12 +97,12 @@ impl<T,U> HasReferenceDate for SpreadTermStructure<T,U> {
 }
 
 impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U: Spread<U> {
-    fn discount_factor(&self, date: Date ) -> f64 {
+    fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError>  {
         if date < self.reference_date() {
             panic!("date must be greater than reference date");
         }
         if date == self.reference_date() {
-            return 1.0;
+            return Ok(1.0)
         }
 
         let spread = self.spread.return_spread_to_date(0.0);
@@ -112,10 +112,10 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
 
         let discount_factor = 1.0/self.calculate_compound(rate, year_fraction);
 
-        return discount_factor;
+        return Ok(discount_factor)
     }
 
-    fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> f64 {
+    fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> Result<f64, YieldProviderError>  {
 
         let delta_year_fraction_to_star = self.day_counter().year_fraction(self.reference_date(), start_date);
         let delta_year_fraction_to_end = self.day_counter().year_fraction(self.reference_date(), end_date);
@@ -133,9 +133,9 @@ impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U:
 
         let t = self.day_counter().year_fraction(start_date, end_date);
 
-        let forward_rate = InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t).rate();
+        let forward_rate = InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t)?.rate();
 
-        return forward_rate;
+        return Ok(forward_rate)
     }
 }
 
@@ -198,7 +198,7 @@ mod tests {
        
         //println!("discount factor: {}", spreadtermstructure.discount_factor(Date::new(2020, 12, 31)));
         
-        assert_eq!( spreadtermstructure.discount_factor(Date::new(2020, 12, 31)) , 1.0/2.1);
+        assert_eq!( spreadtermstructure.discount_factor(Date::new(2020, 12, 31)).unwrap() , 1.0/2.1);
         //assert_eq!(spreadtermstructure.discount_factor(Date::new(2021, 1, 1)), 0.9090909090909091);
         //assert_eq!(spreadtermstructure.discount_factor(Date::new(2022, 1, 1)), 0.8264462809917356);
     }
@@ -216,7 +216,7 @@ mod tests {
         let spreadtermstructure = SpreadTermStructure::new(reference_date, year_fractions, rates, interpolator, daycounter, compounding, spread);
        
 
-        println!("forward rate: {}", spreadtermstructure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), Compounding::Simple, Frequency::Annual));
+        println!("forward rate: {}", spreadtermstructure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), Compounding::Simple, Frequency::Annual).unwrap());
         
         
         //assert_eq!(spreadtermstructure.forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), Compounding::Simple, Frequency::Annual), 0.1);
@@ -247,7 +247,7 @@ mod tests {
 
         let spreadtermstructure = SpreadTermStructure::new(reference_date, year_fractions, rates, interpolator, daycounter, compounding, curve_spread);
     
-        println!("discount factor: {}", spreadtermstructure.discount_factor(Date::new(2020, 12, 31)));
+        println!("discount factor: {}", spreadtermstructure.discount_factor(Date::new(2020, 12, 31)).unwrap());
         
     }
 

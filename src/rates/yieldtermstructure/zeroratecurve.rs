@@ -1,5 +1,5 @@
 use crate::{
-    rates::traits::{HasReferenceDate, Spread},
+    rates::traits::{HasReferenceDate, Spread, YieldProviderError},
     time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
     math::interpolation::traits::Interpolate,
@@ -89,16 +89,16 @@ impl<T> HasReferenceDate for ZeroRateCurve<T> where T: Interpolate<T> {
 
 impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate<T> {
  
-    fn discount_factor(&self, date: Date ) -> f64 {
+    fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
         let year_fraction = self.day_counter().year_fraction(self.reference_date(), date);
         let rate = self.interpolator.interpolate(year_fraction);
          
         let compound = self.calculate_compound(rate, year_fraction);
 
-        return 1.0 / compound;
+        return Ok(1.0 / compound);
     }
 
-    fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> f64 {
+    fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> Result<f64, YieldProviderError> {
         let delta_year_fraction_to_star = self.day_counter().year_fraction(self.reference_date(), start_date);
         let delta_year_fraction_to_end = self.day_counter().year_fraction(self.reference_date(), end_date);
 
@@ -112,9 +112,9 @@ impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate<T> {
 
         let t = self.day_counter().year_fraction(start_date, end_date);
 
-        let forward_rate = InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t).rate();
+        let forward_rate = (InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t)?).rate();
 
-        return forward_rate;
+        return Ok(forward_rate);
     }
 
 }
