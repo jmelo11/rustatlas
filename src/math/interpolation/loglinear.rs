@@ -114,4 +114,7 @@ mod tests {
         assert_eq!(interpolator.lower_bound(), 1.0);
         assert_eq!(interpolator.upper_bound(), 3.0);
     }
+
+
+    // prueba
 }

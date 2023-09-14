@@ -14,7 +14,7 @@ pub struct DiscountTermStructure<T> {
     daycounter: DayCounter,
 }
 
-impl<T> DiscountTermStructure<T> where T: Interpolate<T> {
+impl<T> DiscountTermStructure<T> where T: Interpolate {
     pub fn new(reference_date: Date, year_fractions: Vec<f64>,discount_factors: Vec<f64>, interpolator: T, daycounter: DayCounter) -> DiscountTermStructure<T> {
         // check if year_fractions and discount_factors have the same size
         if year_fractions.len() != discount_factors.len() {
@@ -60,7 +60,7 @@ impl<T> HasReferenceDate for DiscountTermStructure<T> {
     }
 }
     
- impl<T> YieldProvider for DiscountTermStructure<T> where T: Interpolate<T> {
+ impl<T> YieldProvider for DiscountTermStructure<T> where T: Interpolate {
   
      fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
          if date < self.reference_date() {

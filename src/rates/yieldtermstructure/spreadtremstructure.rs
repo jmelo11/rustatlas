@@ -16,7 +16,7 @@ pub struct SpreadTermStructure<T,U> {
     spread: U,
 }
 
-impl<T,U>   SpreadTermStructure<T,U> where T: Interpolate<T>, U: Spread<U> {
+impl<T,U>   SpreadTermStructure<T,U> where T: Interpolate, U: Spread<U> {
     pub fn new(reference_date: Date, year_fractions: Vec<f64>, rates: Vec<f64>, interpolator: T, daycounter: DayCounter, compounding: Compounding, spread: U) -> SpreadTermStructure<T,U> {
         // check if year_fractions and rates have the same size
         if year_fractions.len() != rates.len() {
@@ -96,7 +96,7 @@ impl<T,U> HasReferenceDate for SpreadTermStructure<T,U> {
     }
 }
 
-impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate<T>, U: Spread<U> {
+impl<T,U> YieldProvider for SpreadTermStructure<T,U> where T: Interpolate, U: Spread<U> {
     fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError>  {
         if date < self.reference_date() {
             panic!("date must be greater than reference date");

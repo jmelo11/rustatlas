@@ -12,7 +12,7 @@ pub struct CurveSpread<T> {
     compounding: Compounding,
 }
 
-impl<T> CurveSpread<T> where T: Interpolate<T> {
+impl<T> CurveSpread<T> where T: Interpolate {
     pub fn new(year_fractions: Vec<f64>, spread: Vec<f64>, interpolator: T, daycounter: DayCounter, compounding: Compounding) -> CurveSpread<T> {
         // check if year_fractions and rates have the same size
         if year_fractions.len() != spread.len() {
@@ -52,7 +52,7 @@ impl<T> CurveSpread<T> where T: Interpolate<T> {
     
 }
 
-impl<T> Spread<CurveSpread<T>> for CurveSpread<T> where T: Interpolate<T> {
+impl<T> Spread<CurveSpread<T>> for CurveSpread<T> where T: Interpolate {
     fn return_spread_to_date(&self, year_fraction: f64) -> f64 {
         self.interpolator.interpolate(year_fraction)
     }
