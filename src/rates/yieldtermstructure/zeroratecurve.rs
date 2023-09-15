@@ -2,11 +2,10 @@ use crate::{
     rates::traits::{HasReferenceDate, YieldProviderError},
     time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
-    math::interpolation::{traits::Interpolate, linear::LinearInterpolator, loglinear::LogLinearInterpolator},
+    math::interpolation::{traits::Interpolate},
 };
 
-
-pub struct ZeroRateCurve<T> {
+pub struct ZeroRateCurve<T: Interpolate> {
     reference_date: Date,
     dates: Vec<Date>,
     rates: Vec<f64>,
@@ -15,12 +14,8 @@ pub struct ZeroRateCurve<T> {
     compounding: Compounding,
 }
 
-pub trait MakeNew<T> {
-    fn new(reference_date: Date, dates: Vec<Date>, rates: Vec<f64>, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<T>;
-}
-
-impl MakeNew<LinearInterpolator> for ZeroRateCurve<LinearInterpolator> {
-    fn new(reference_date: Date, dates: Vec<Date> , rates: Vec<f64>, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<LinearInterpolator> {
+impl<T: Interpolate> ZeroRateCurve<T> {
+    pub fn new(reference_date: Date, dates: Vec<Date> , rates: Vec<f64>, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<T> {
         // check if dates and rates have the same size
         if dates.len() != rates.len() {
             panic!("Dates and rates should have the same size.");
@@ -32,7 +27,7 @@ impl MakeNew<LinearInterpolator> for ZeroRateCurve<LinearInterpolator> {
         }
 
         let year_fractions: Vec<f64>  = dates.iter().map(|x| daycounter.year_fraction(reference_date, *x)).collect();
-        let interpolator: LinearInterpolator = LinearInterpolator::initialize(year_fractions.clone(), rates.clone(), Some(true));
+        let interpolator: T = T::initialize(year_fractions.clone(), rates.clone(), Some(true));
 
         ZeroRateCurve {
             reference_date,
@@ -43,37 +38,7 @@ impl MakeNew<LinearInterpolator> for ZeroRateCurve<LinearInterpolator> {
             compounding,
         }
     }
-
-
-}
-
-impl MakeNew<LogLinearInterpolator> for ZeroRateCurve<LogLinearInterpolator> {
-    fn new(reference_date: Date, dates: Vec<Date> , rates: Vec<f64>, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<LogLinearInterpolator> {
-        // check if dates and rates have the same size
-        if dates.len() != rates.len() {
-            panic!("Dates and rates should have the same size.");
-        }
-
-        // year_fractions[0] needs to be 0.0
-        if dates[0] != reference_date {
-            panic!("Dates[0] needs to be reference_date");
-        }
-
-        let year_fractions: Vec<f64>  = dates.iter().map(|x| daycounter.year_fraction(reference_date, *x)).collect();
-        let interpolator: LogLinearInterpolator = LogLinearInterpolator::initialize(year_fractions.clone(), rates.clone(), Some(true));
-
-        ZeroRateCurve {
-            reference_date,
-            dates,
-            rates,
-            interpolator,
-            daycounter,
-            compounding,
-        }
-    }
-}
-
-impl<T> ZeroRateCurve<T> {
+    
     pub fn dates(&self) -> &Vec<Date> {
         return &self.dates;
     }
@@ -117,13 +82,13 @@ impl<T> ZeroRateCurve<T> {
     }
 }
 
-impl<T> HasReferenceDate for ZeroRateCurve<T> where T: Interpolate {
+impl<T: Interpolate> HasReferenceDate for ZeroRateCurve<T> {
     fn reference_date(&self) -> Date {
         return self.reference_date;
     }
 }
     
-impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate {
+impl<T: Interpolate> YieldProvider for ZeroRateCurve<T> {
  
     fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
         let year_fraction = self.day_counter().year_fraction(self.reference_date(), date);
@@ -158,7 +123,7 @@ impl<T> YieldProvider for ZeroRateCurve<T> where T: Interpolate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{time::daycounter::DayCounter};
+    use crate::{time::daycounter::DayCounter, math::interpolation::linear::LinearInterpolator};
 
     #[test]
     fn test_zero_rate_curve() {
