@@ -14,7 +14,7 @@ use crate::{
     daycounter: DayCounter,
 }
 
-impl<T: Interpolate> DiscountTermStructure<T> {
+impl<T: Interpolate<Output = T>> DiscountTermStructure<T> {
     pub fn new(reference_date: Date, dates: Vec<Date>, discount_factors: Vec<f64>, daycounter: DayCounter) -> DiscountTermStructure<T> {
         // check if year_fractions and discount_factors have the same size
         if dates.len() != discount_factors.len() {
@@ -62,7 +62,7 @@ impl<T: Interpolate> HasReferenceDate for DiscountTermStructure<T> {
     }
 }
 
- impl<T: Interpolate> YieldProvider for DiscountTermStructure<T>{
+ impl<T: Interpolate<Output = T>> YieldProvider for DiscountTermStructure<T>{
      fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
          if date < self.reference_date() {
              panic!("date must be greater than reference date");
@@ -77,6 +77,7 @@ impl<T: Interpolate> HasReferenceDate for DiscountTermStructure<T> {
          return Ok(discount_factor)
 
      }
+     
      fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> Result<f64, YieldProviderError> {
         
         let delta_year_fraction_to_star = self.day_counter().year_fraction(self.reference_date(), start_date);
