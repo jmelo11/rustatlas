@@ -14,7 +14,7 @@ pub struct ZeroRateCurve<T: Interpolate> {
     compounding: Compounding,
 }
 
-impl<T: Interpolate<Output = T>> ZeroRateCurve<T> {
+impl<T: Interpolate> ZeroRateCurve<T> {
     pub fn new(reference_date: Date, dates: Vec<Date> , rates: Vec<f64>, daycounter: DayCounter, compounding: Compounding) -> ZeroRateCurve<T> {
         // check if dates and rates have the same size
         if dates.len() != rates.len() {
@@ -88,7 +88,7 @@ impl<T: Interpolate> HasReferenceDate for ZeroRateCurve<T> {
     }
 }
     
-impl<T: Interpolate<Output = T>> YieldProvider for ZeroRateCurve<T> {
+impl<T: Interpolate> YieldProvider for ZeroRateCurve<T> {
  
     fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
         let year_fraction = self.day_counter().year_fraction(self.reference_date(), date);

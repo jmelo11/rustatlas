@@ -9,7 +9,6 @@ pub struct LinearInterpolator {
 }
 
 impl Interpolate for LinearInterpolator {
-    type Output = LinearInterpolator;
 
     fn initialize(
         x: Vec<f64>,
