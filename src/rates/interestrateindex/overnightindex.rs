@@ -41,7 +41,7 @@ impl OvernightIndex {
     }
 
     pub fn term_structure(&self) -> Option<YieldTermStructure> {
-        self.term_structure
+        self.term_structure.clone()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {

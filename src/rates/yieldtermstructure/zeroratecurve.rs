@@ -5,6 +5,7 @@ use crate::{
     math::interpolation::{traits::Interpolate},
 };
 
+#[derive(Clone)]
 pub struct ZeroRateCurve<T: Interpolate> {
     reference_date: Date,
     dates: Vec<Date>,

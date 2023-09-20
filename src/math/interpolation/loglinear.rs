@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
+#[derive(Clone)]
 pub struct LogLinearInterpolator {
     x: Vec<f64>,
     y: Vec<f64>,

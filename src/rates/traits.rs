@@ -43,7 +43,3 @@ pub trait AdvanceInTime<E> {
     // fn advance_date(&self, date: Date) -> Result<Self::Output, E>;
 }
 
-// pub trait YieldTermStructure<T> {
-pub trait Spread<T> {
-    fn return_spread_to_date(&self,year_fraction: f64) -> f64; 
-}
