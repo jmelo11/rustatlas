@@ -3,6 +3,7 @@ use crate::{
     time::{date::Date, enums::Frequency},
     prelude::{YieldProvider, Compounding, DayCounter, InterestRate},
     math::interpolation::{traits::Interpolate},
+    rates::yieldtermstructure::errortermstructure::TermStructureConstructorError,
 };
 
 #[derive(Clone)]
@@ -14,26 +15,28 @@ use crate::{
     daycounter: DayCounter,
 }
 
+
 impl<T: Interpolate> DiscountTermStructure<T> {
-    pub fn new(reference_date: Date, dates: Vec<Date>, discount_factors: Vec<f64>, daycounter: DayCounter) -> DiscountTermStructure<T> {
+    pub fn new(reference_date: Date, dates: Vec<Date>, discount_factors: Vec<f64>, daycounter: DayCounter) -> Result<DiscountTermStructure<T>, TermStructureConstructorError> {
         // check if year_fractions and discount_factors have the same size
         if dates.len() != discount_factors.len() {
-            panic!("Dates and discount_factors should have the same size.");
+            return Err(TermStructureConstructorError::DatesAndDiscountFactorsSize);
         }
 
         // dates[0] needs to be equal to reference date
         if dates[0] != reference_date {
-            panic!("year_fractions[0] needs to be 0.0");
+            return Err(TermStructureConstructorError::Dates0NeedsToBeReferenceDate);
         }
 
         // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
-            panic!("discount_factors[0] needs to be 1.0");
+            return Err(TermStructureConstructorError::DiscountFactors0NeedsToBeOne);
         }
 
         let year_fractions: Vec<f64>  = dates.iter().map(|x| daycounter.year_fraction(reference_date, *x)).collect();
         let interpolator: T = T::initialize(year_fractions.clone(), discount_factors.clone(), Some(true));
 
+       Ok(
         DiscountTermStructure {
             reference_date,
             dates,
@@ -41,6 +44,7 @@ impl<T: Interpolate> DiscountTermStructure<T> {
             interpolator,
             daycounter,
         }
+        )
     }
 
     pub fn dates(&self) -> &Vec<Date> {
@@ -65,7 +69,7 @@ impl<T: Interpolate> HasReferenceDate for DiscountTermStructure<T> {
  impl<T: Interpolate> YieldProvider for DiscountTermStructure<T>{
      fn discount_factor(&self, date: Date ) -> Result<f64, YieldProviderError> {
          if date < self.reference_date() {
-             panic!("date must be greater than reference date");
+            return Err(YieldProviderError::DateMustBeGreaterThanReferenceDate);
          }
          if date == self.reference_date() {
              return Ok(1.0)
@@ -79,12 +83,9 @@ impl<T: Interpolate> HasReferenceDate for DiscountTermStructure<T> {
      }
      
      fn forward_rate( &self, start_date: Date, end_date: Date, comp: Compounding, freq: Frequency) -> Result<f64, YieldProviderError> {
-        
-        let delta_year_fraction_to_star = self.day_counter().year_fraction(self.reference_date(), start_date);
-        let delta_year_fraction_to_end = self.day_counter().year_fraction(self.reference_date(), end_date);
-
-        let discount_factor_to_star = self.interpolator.interpolate(delta_year_fraction_to_star);
-        let discount_factor_to_end = self.interpolator.interpolate(delta_year_fraction_to_end);
+       
+        let discount_factor_to_star = self.discount_factor(start_date)?;
+        let discount_factor_to_end = self.discount_factor(end_date)?;
 
         let comp_factor =  discount_factor_to_star / discount_factor_to_end;
         let t = self.day_counter().year_fraction(start_date, end_date);
@@ -106,7 +107,7 @@ mod tests {
         let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
         let daycounter = DayCounter::Actual360;
         
-        let discount_term_structure: DiscountTermStructure<LogLinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
+        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter).unwrap();
 
         assert_eq!(discount_term_structure.dates(), &vec![Date::new(2020, 1, 1), Date::new(2020, 4, 1), Date::new(2020, 7, 1), Date::new(2020, 10, 1), Date::new(2021, 1, 1)]);
     }
@@ -119,13 +120,12 @@ mod tests {
         let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
         let daycounter = DayCounter::Actual360;
 
-        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
+        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter).unwrap(); 
 
         assert_eq!(discount_term_structure.discount_factors(), &vec![1.0, 0.99, 0.98, 0.97, 0.96]);
 
     }
         
-
     #[test]
     fn test_reference_date(){
         let reference_date = Date::new(2020, 1, 1); 
@@ -133,7 +133,7 @@ mod tests {
         let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
         let daycounter = DayCounter::Actual360;
         
-        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
+        let discount_term_structure: DiscountTermStructure<LogLinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter).unwrap(); 
 
         assert_eq!(discount_term_structure.reference_date(), Date::new(2020, 1, 1));
 
@@ -146,7 +146,7 @@ mod tests {
         let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
         let daycounter = DayCounter::Actual360;
            
-        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
+        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter).unwrap(); 
 
         assert!((discount_term_structure.discount_factor(Date::new(2020, 6, 1)).unwrap()-0.9832967032967033).abs() < 1e-8);
         //println!("discount_factor: {}", discount_term_structure.discount_factor(Date::new(2020, 6, 1)).unwrap());
@@ -161,7 +161,7 @@ mod tests {
         let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
         let daycounter = DayCounter::Actual360;
 
-        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter); 
+        let discount_term_structure: DiscountTermStructure<LinearInterpolator> = DiscountTermStructure::new(reference_date, dates, discount_factors, daycounter).unwrap(); 
 
 
         let comp = Compounding::Simple;

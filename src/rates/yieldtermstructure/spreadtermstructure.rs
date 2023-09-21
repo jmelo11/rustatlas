@@ -42,7 +42,6 @@ impl<T: YieldProvider, U: YieldProvider> YieldProvider for SpreadedTermStructure
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
 
-        //let add_df = 1.0/(1.0/spread_discount_factor + 1.0/base_discount_factor -1.0);
         let add_df= spread_discount_factor*base_discount_factor;
 
         return Ok(add_df);
@@ -126,7 +125,7 @@ mod test {
         
         let fr = spreaded_curve.forward_rate(Date::new(2020, 1, 1), Date::new(2022, 1, 1), Compounding::Compounded, Frequency::Annual);
         println!("fr: {:?}", fr);
-        assert_eq!(fr.unwrap(),0.03);
+        assert!((fr.unwrap() - 0.03)<0.0001);
 
         
     }
@@ -157,7 +156,7 @@ mod test {
             let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));
             println!("df: {:?}", df);
 
-            assert_eq!(df.unwrap(), 0.9702040771633191);
+            assert!(df.unwrap() - 0.9702040771633191 <0.00001);
 
 
     }

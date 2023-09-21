@@ -19,6 +19,8 @@ pub enum YieldProviderError {
     InterestRateError(#[from] InterestRateError),
     #[error("No fixing rate for date {0}")]
     NoFixingRate(Date),
+    #[error("Date must be greater than reference date")]
+    DateMustBeGreaterThanReferenceDate,
 }
 /// # YieldProvider
 /// Implement this trait for a struct that provides yield information.
