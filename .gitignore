@@ -2,3 +2,5 @@
 Cargo.lock
 .env
 test.ipynb
+/.vscode
+.vscode

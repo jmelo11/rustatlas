@@ -19,6 +19,8 @@ pub enum YieldProviderError {
     InterestRateError(#[from] InterestRateError),
     #[error("No fixing rate for date {0}")]
     NoFixingRate(Date),
+    #[error("Date must be greater than reference date")]
+    DateMustBeGreaterThanReferenceDate,
 }
 /// # YieldProvider
 /// Implement this trait for a struct that provides yield information.
@@ -42,3 +44,4 @@ pub trait AdvanceInTime<E> {
     // fn advance_period(&self, period: Period) -> Result<Self::Output, E>;
     // fn advance_date(&self, date: Date) -> Result<Self::Output, E>;
 }
+

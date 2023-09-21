@@ -41,7 +41,7 @@ impl OvernightIndex {
     }
 
     pub fn term_structure(&self) -> Option<YieldTermStructure> {
-        self.term_structure
+        self.term_structure.clone()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -125,7 +125,7 @@ impl HasReferenceDate for OvernightIndex {
 
 impl YieldProvider for OvernightIndex {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure
+        self.term_structure.clone()
             .ok_or(YieldProviderError::NoTermStructure)?
             .discount_factor(date)
     }
@@ -147,7 +147,7 @@ impl YieldProvider for OvernightIndex {
                 .ok_or(YieldProviderError::NoFixingRate(self.reference_date()))?;
 
             let df = self
-                .term_structure
+                .term_structure.clone()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .discount_factor(end_date)?;
 
@@ -172,7 +172,7 @@ impl YieldProvider for OvernightIndex {
 
         // forecast case
         if start_date >= self.reference_date() && end_date > self.reference_date() {
-            self.term_structure
+            self.term_structure.clone()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .forward_rate(start_date, end_date, comp, freq)
         } else {

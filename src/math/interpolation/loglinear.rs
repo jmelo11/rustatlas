@@ -2,16 +2,16 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
+#[derive(Clone)]
 pub struct LogLinearInterpolator {
     x: Vec<f64>,
     y: Vec<f64>,
     enable_extrapolation: bool,
 }
 
-impl Interpolate<LogLinearInterpolator> for LogLinearInterpolator {
-    type Output = LogLinearInterpolator;
+impl Interpolate for LogLinearInterpolator {
 
-    fn initialize(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> Self::Output {
+    fn initialize(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> LogLinearInterpolator {
         let extrapolation = allow_extrapolation.unwrap_or(false);
         LogLinearInterpolator {
             x: x_,
@@ -114,4 +114,7 @@ mod tests {
         assert_eq!(interpolator.lower_bound(), 1.0);
         assert_eq!(interpolator.upper_bound(), 3.0);
     }
+
+
+    // prueba
 }

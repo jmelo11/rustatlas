@@ -2,14 +2,14 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
+#[derive(Clone)]
 pub struct LinearInterpolator {
     x: Vec<f64>,
     y: Vec<f64>,
     enable_extrapolation: bool,
 }
 
-impl Interpolate<LinearInterpolator> for LinearInterpolator {
-    type Output = LinearInterpolator;
+impl Interpolate for LinearInterpolator {
 
     fn initialize(
         x: Vec<f64>,

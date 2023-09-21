@@ -57,7 +57,7 @@ impl IborIndex {
     }
 
     pub fn term_structure(&self) -> Option<YieldTermStructure> {
-        self.term_structure
+        self.term_structure.clone()
     }
 
     pub fn provider_id(&self) -> Option<usize> {
@@ -123,7 +123,7 @@ impl HasReferenceDate for IborIndex {
 
 impl YieldProvider for IborIndex {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure
+        self.term_structure.clone()
             .ok_or(YieldProviderError::NoTermStructure)?
             .discount_factor(date)
     }
@@ -145,7 +145,7 @@ impl YieldProvider for IborIndex {
             self.fixing(start_date)
                 .ok_or(YieldProviderError::NoFixingRate(start_date))
         } else {
-            self.term_structure
+            self.term_structure.clone()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .forward_rate(start_date, end_date, comp, freq)
         }

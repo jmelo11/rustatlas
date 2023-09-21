@@ -173,10 +173,15 @@ impl InterestRate {
     }
 
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
-        let rate = self.rate();
-        let compounding = self.compounding();
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
+        return  self.compound_factor_from_yf(year_fraction)
+    }
+
+    pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
+        let rate = self.rate();
+        let compounding = self.compounding();
+
         match compounding {
             Compounding::Simple => 1.0 + rate * year_fraction,
             Compounding::Compounded => (1.0 + rate).powf(year_fraction),
