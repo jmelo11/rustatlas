@@ -56,8 +56,8 @@ impl IborIndex {
         self.rate_definition
     }
 
-    pub fn term_structure(&self) -> Option<YieldTermStructure> {
-        self.term_structure.clone()
+    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
+        self.term_structure.as_ref()
     }
 
     pub fn provider_id(&self) -> Option<usize> {
@@ -123,7 +123,7 @@ impl HasReferenceDate for IborIndex {
 
 impl YieldProvider for IborIndex {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure.clone()
+        self.term_structure()
             .ok_or(YieldProviderError::NoTermStructure)?
             .discount_factor(date)
     }
@@ -145,19 +145,21 @@ impl YieldProvider for IborIndex {
             self.fixing(start_date)
                 .ok_or(YieldProviderError::NoFixingRate(start_date))
         } else {
-            self.term_structure.clone()
+            self.term_structure()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .forward_rate(start_date, end_date, comp, freq)
         }
     }
 }
 
+// impl InterestRateIndexTrait for IborIndex {}
+
 // impl AdvanceInTime for IborIndex {
 //     type Output = IborIndex;
-//     fn advance(&self, period: Period) -> Self::Output {
+//     fn advance_to_period(&self, period: Period) -> Result<Self::Output, E> {
+//     {
 //         let curve = self
-//             .term_structure
-//             .expect("No term structure for this IborIndex");
+//             .term_structure().ok_or(YieldProviderError::NoTermStructure)?;
 
 //         let mut fixings = self.fixings().clone();
 //         let mut seed = self.reference_date();
@@ -172,12 +174,12 @@ impl YieldProvider for IborIndex {
 //             fixings.insert(seed, rate);
 //             seed = seed.advance(1, TimeUnit::Days);
 //         }
-//         IborIndex::new()
-//             .with_tenor(self.tenor)
-//             .with_rate_definition(self.rate_definition)
-//             .with_fixings(fixings)
-//             .with_term_structure(curve.advance(period))
-//             .with_provider_id(self.provider_id)
+//         Ok(IborIndex::new()
+//                     .with_tenor(self.tenor)
+//                     .with_rate_definition(self.rate_definition)
+//                     .with_fixings(fixings)
+//                     .with_term_structure(curve.advance(period))
+//                     .with_provider_id(self.provider_id))
 //     }
 // }
 

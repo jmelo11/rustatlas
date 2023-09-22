@@ -1,52 +1,68 @@
 use crate::{
+    math::interpolation::{linear::LinearInterpolator, loglinear::LogLinearInterpolator},
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency}, math::interpolation::{linear::LinearInterpolator, loglinear::LogLinearInterpolator},
+    time::{date::Date, enums::Frequency},
 };
 
 use super::flatforwardtermstructure::FlatForwardTermStructure;
-use super::discounttermstructure::DiscountTermStructure;
-use super::zeroratecurve::ZeroRateCurve;
-//use super::spreadtremstructure::SpreadedTermStructure;
+use super::zeroratetermstructure::ZeroRateTermStructure;
+use super::{
+    discounttermstructure::DiscountTermStructure, spreadtermstructure::SpreadedTermStructure,
+};
 
 /// # YieldTermStructure
 /// Enum for YieldTermStructure
-
 #[derive(Clone)]
 pub enum YieldTermStructure {
-    FlatForwardTermStructure(FlatForwardTermStructure),
-    DiscountStructureLinearInterpolation(DiscountTermStructure<LinearInterpolator>),
-    DiscountStructureLogLinearInterpolation(DiscountTermStructure<LogLinearInterpolator>),
-    ZeroRateCurveLinearInterpolation(ZeroRateCurve<LinearInterpolator>),
-    ZeroRateCurveLogLinearInterpolation(ZeroRateCurve<LogLinearInterpolator>),
-    //SpreadTermStructure(SpreadedTermStructure<YieldProvider,YieldProvider>),
-    Other,
+    FlatForward(FlatForwardTermStructure),
+    DiscountLinear(DiscountTermStructure<LinearInterpolator>),
+    DiscountLogLinear(DiscountTermStructure<LogLinearInterpolator>),
+    ZeroRateLinear(ZeroRateTermStructure<LinearInterpolator>),
+    ZeroRateLogLinear(ZeroRateTermStructure<LogLinearInterpolator>),
+    ConstantSpreadedDiscount(
+        SpreadedTermStructure<
+            FlatForwardTermStructure,
+            DiscountTermStructure<LogLinearInterpolator>,
+        >,
+    ),
+    CurveSpreadedDiscount(
+        SpreadedTermStructure<
+            ZeroRateTermStructure<LinearInterpolator>,
+            DiscountTermStructure<LogLinearInterpolator>,
+        >,
+    ),
+    CurveSpreadedZero(
+        SpreadedTermStructure<
+            ZeroRateTermStructure<LinearInterpolator>,
+            ZeroRateTermStructure<LinearInterpolator>,
+        >,
+    ),
 }
 
 impl HasReferenceDate for YieldTermStructure {
     fn reference_date(&self) -> Date {
         match self {
-            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+            YieldTermStructure::FlatForward(term_structure) => term_structure.reference_date(),
+            YieldTermStructure::DiscountLinear(term_structure) => term_structure.reference_date(),
+            YieldTermStructure::DiscountLogLinear(term_structure) => {
                 term_structure.reference_date()
             }
-            YieldTermStructure::DiscountStructureLinearInterpolation(term_structure) => {
+            YieldTermStructure::ZeroRateLinear(term_structure) => term_structure.reference_date(),
+            YieldTermStructure::ZeroRateLogLinear(term_structure) => {
                 term_structure.reference_date()
             }
-            YieldTermStructure::DiscountStructureLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::ConstantSpreadedDiscount(term_structure) => {
                 term_structure.reference_date()
             }
-            YieldTermStructure::ZeroRateCurveLinearInterpolation(term_structure) => {
+            YieldTermStructure::CurveSpreadedDiscount(term_structure) => {
                 term_structure.reference_date()
             }
-            YieldTermStructure::ZeroRateCurveLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::CurveSpreadedZero(term_structure) => {
                 term_structure.reference_date()
             }
-            // YieldTermStructure::SpreadTermStructure(term_structure) => {
-            //     term_structure.reference_date()
-            // }
-            YieldTermStructure::Other => panic!("No reference date for this term structure"),
         }
     }
 }
@@ -54,25 +70,28 @@ impl HasReferenceDate for YieldTermStructure {
 impl YieldProvider for YieldTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         match self {
-            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+            YieldTermStructure::FlatForward(term_structure) => term_structure.discount_factor(date),
+            YieldTermStructure::DiscountLinear(term_structure) => {
                 term_structure.discount_factor(date)
             }
-            YieldTermStructure::DiscountStructureLinearInterpolation(term_structure) => {
+            YieldTermStructure::DiscountLogLinear(term_structure) => {
                 term_structure.discount_factor(date)
             }
-            YieldTermStructure::DiscountStructureLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::ZeroRateLinear(term_structure) => {
                 term_structure.discount_factor(date)
             }
-            YieldTermStructure::ZeroRateCurveLinearInterpolation(term_structure) => {
+            YieldTermStructure::ZeroRateLogLinear(term_structure) => {
                 term_structure.discount_factor(date)
             }
-            YieldTermStructure::ZeroRateCurveLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::ConstantSpreadedDiscount(term_structure) => {
                 term_structure.discount_factor(date)
             }
-            // YieldTermStructure::SpreadTermStructure(term_structure) => {
-            //     term_structure.discount_factor(date)
-            // }
-            YieldTermStructure::Other => panic!("No discount for this term structure"),
+            YieldTermStructure::CurveSpreadedDiscount(term_structure) => {
+                term_structure.discount_factor(date)
+            }
+            YieldTermStructure::CurveSpreadedZero(term_structure) => {
+                term_structure.discount_factor(date)
+            }
         }
     }
 
@@ -84,25 +103,30 @@ impl YieldProvider for YieldTermStructure {
         freq: Frequency,
     ) -> Result<f64, YieldProviderError> {
         match self {
-            YieldTermStructure::FlatForwardTermStructure(term_structure) => {
+            YieldTermStructure::FlatForward(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
-            YieldTermStructure::DiscountStructureLinearInterpolation(term_structure) => {
+            YieldTermStructure::DiscountLinear(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
-            YieldTermStructure::DiscountStructureLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::DiscountLogLinear(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
-            YieldTermStructure::ZeroRateCurveLinearInterpolation(term_structure) => {
+            YieldTermStructure::ZeroRateLinear(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
-            YieldTermStructure::ZeroRateCurveLogLinearInterpolation(term_structure) => {
+            YieldTermStructure::ZeroRateLogLinear(term_structure) => {
                 term_structure.forward_rate(start_date, end_date, comp, freq)
             }
-            // YieldTermStructure::SpreadTermStructure(term_structure) => {
-            //     term_structure.forward_rate(start_date, end_date, comp, freq)
-            // }
-            YieldTermStructure::Other => panic!("No forward rate for this term structure"),
+            YieldTermStructure::ConstantSpreadedDiscount(term_structure) => {
+                term_structure.forward_rate(start_date, end_date, comp, freq)
+            }
+            YieldTermStructure::CurveSpreadedDiscount(term_structure) => {
+                term_structure.forward_rate(start_date, end_date, comp, freq)
+            }
+            YieldTermStructure::CurveSpreadedZero(term_structure) => {
+                term_structure.forward_rate(start_date, end_date, comp, freq)
+            }
         }
     }
 }

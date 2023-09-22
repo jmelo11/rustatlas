@@ -11,7 +11,7 @@ pub struct LogLinearInterpolator {
 
 impl Interpolate for LogLinearInterpolator {
 
-    fn initialize(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> LogLinearInterpolator {
+    fn new(x_: Vec<f64>, y_: Vec<f64>, allow_extrapolation: Option<bool>) -> LogLinearInterpolator {
         let extrapolation = allow_extrapolation.unwrap_or(false);
         LogLinearInterpolator {
             x: x_,
@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_initialize() {
-        let interpolator = LogLinearInterpolator::initialize(
+        let interpolator = LogLinearInterpolator::new(
             vec![1.0, 2.0, 3.0],
             vec![2.0, 4.0, 8.0],
             Some(false),
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_interpolation() {
         let interpolator =
-            LogLinearInterpolator::initialize(vec![1.0, 2.0, 3.0], vec![2.0, 4.0, 8.0], Some(true));
+            LogLinearInterpolator::new(vec![1.0, 2.0, 3.0], vec![2.0, 4.0, 8.0], Some(true));
         assert!((interpolator.interpolate(1.5) - 2.8284).abs() < 1e-4);
         assert!((interpolator.interpolate(2.5) - 5.6568).abs() < 1e-4);
     }
@@ -99,7 +99,7 @@ mod tests {
         expected = "Extrapolation is not enabled, and the provided value is outside the range."
     )]
     fn test_interpolation_no_extrapolation() {
-        let interpolator = LogLinearInterpolator::initialize(
+        let interpolator = LogLinearInterpolator::new(
             vec![1.0, 2.0, 3.0],
             vec![2.0, 4.0, 8.0],
             Some(false),
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn test_bounds() {
         let interpolator =
-            LogLinearInterpolator::initialize(vec![1.0, 2.0, 3.0], vec![2.0, 4.0, 8.0], Some(true));
+            LogLinearInterpolator::new(vec![1.0, 2.0, 3.0], vec![2.0, 4.0, 8.0], Some(true));
         assert_eq!(interpolator.lower_bound(), 1.0);
         assert_eq!(interpolator.upper_bound(), 3.0);
     }

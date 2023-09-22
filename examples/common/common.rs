@@ -110,15 +110,15 @@ pub fn create_store() -> MarketStore {
         DayCounter::Actual360,
     );
 
-    let forecast_curve_1 = YieldTermStructure::FlatForwardTermStructure(
+    let forecast_curve_1 = YieldTermStructure::FlatForward(
         FlatForwardTermStructure::new(ref_date, forecast_rate_1),
     );
 
-    let forecast_curve_2 = YieldTermStructure::FlatForwardTermStructure(
+    let forecast_curve_2 = YieldTermStructure::FlatForward(
         FlatForwardTermStructure::new(ref_date, forecast_rate_2),
     );
 
-    let discount_curve = YieldTermStructure::FlatForwardTermStructure(
+    let discount_curve = YieldTermStructure::FlatForward(
         FlatForwardTermStructure::new(ref_date, discount_rate),
     );
 

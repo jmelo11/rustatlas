@@ -10,12 +10,7 @@ pub struct LinearInterpolator {
 }
 
 impl Interpolate for LinearInterpolator {
-
-    fn initialize(
-        x: Vec<f64>,
-        y: Vec<f64>,
-        allow_extrapolation: Option<bool>,
-    ) -> LinearInterpolator {
+    fn new(x: Vec<f64>, y: Vec<f64>, allow_extrapolation: Option<bool>) -> LinearInterpolator {
         let enable_extrapolation = allow_extrapolation.unwrap_or(false);
         if x.len() != y.len() {
             panic!("x and y should have the same size.");
@@ -80,7 +75,7 @@ mod tests {
     #[test]
     fn test_initialize() {
         let interpolator =
-            LinearInterpolator::initialize(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(true));
+            LinearInterpolator::new(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(true));
         assert_eq!(interpolator.x, vec![0.0, 1.0, 2.0]);
         assert_eq!(interpolator.y, vec![0.0, 1.0, 4.0]);
         assert_eq!(interpolator.enable_extrapolation, true);
@@ -89,7 +84,7 @@ mod tests {
     #[test]
     fn test_interpolation() {
         let interpolator =
-            LinearInterpolator::initialize(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(true));
+            LinearInterpolator::new(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(true));
         assert_eq!(interpolator.interpolate(0.0), 0.0);
         assert_eq!(interpolator.interpolate(1.0), 1.0);
         assert_eq!(interpolator.interpolate(2.0), 4.0);
@@ -103,7 +98,7 @@ mod tests {
     )]
     fn test_interpolation_no_extrapolation() {
         let interpolator =
-            LinearInterpolator::initialize(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(false));
+            LinearInterpolator::new(vec![0.0, 1.0, 2.0], vec![0.0, 1.0, 4.0], Some(false));
         interpolator.interpolate(3.0);
     }
 }

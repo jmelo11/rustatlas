@@ -35,13 +35,4 @@ pub trait YieldProvider: HasReferenceDate {
     ) -> Result<f64, YieldProviderError>;
 }
 
-/// # AdvanceInTime
-/// Trait for advancing in time a given object. Returns a represation of the object
-/// as it would be after the given period.
-pub trait AdvanceInTime<E> {
-    type Output;
-    fn advance(&self, period: Period) -> Result<Self::Output, E>;
-    // fn advance_period(&self, period: Period) -> Result<Self::Output, E>;
-    // fn advance_date(&self, date: Date) -> Result<Self::Output, E>;
-}
 

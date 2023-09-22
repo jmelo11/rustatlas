@@ -7,6 +7,8 @@ use crate::{
     time::{date::Date, enums::Frequency},
 };
 
+use super::traits::YieldTermStructureTrait;
+
 /// # FlatForwardTermStructure
 /// Struct that defines a flat forward term structure.
 /// # Example
@@ -73,15 +75,9 @@ impl YieldProvider for FlatForwardTermStructure {
     }
 }
 
-// impl AdvanceInTime for FlatForwardTermStructure {
-//     type Output = FlatForwardTermStructure;
-//     fn advance(&self, period: Period) -> Self::Output {
-//         let new_reference_date = self
-//             .reference_date()
-//             .advance(period.length(), period.units());
-//         return FlatForwardTermStructure::new(new_reference_date, self.rate());
-//     }
-// }
+impl YieldTermStructureTrait for FlatForwardTermStructure {}
+
+
 
 #[cfg(test)]
 mod tests {

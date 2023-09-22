@@ -82,7 +82,7 @@ impl YieldProvider for InterestRateIndex {
 }
 
 impl InterestRateIndex {
-    pub fn term_structure(&self) -> Option<YieldTermStructure> {
+    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => ibor_index.term_structure(),
             InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.term_structure(),

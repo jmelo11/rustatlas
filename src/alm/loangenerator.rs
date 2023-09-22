@@ -258,10 +258,8 @@ mod tests {
             DayCounter::Actual360,
         );
 
-        let discount_curve = YieldTermStructure::FlatForwardTermStructure(
-            FlatForwardTermStructure::new(ref_date, discount_rate),
-        );
-
+        let discount_curve =
+            YieldTermStructure::FlatForward(FlatForwardTermStructure::new(ref_date, discount_rate));
 
         let discount_index = IborIndex::new(ref_date).with_term_structure(discount_curve);
         market_store.mut_index_store().add_index(

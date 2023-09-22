@@ -6,8 +6,8 @@ pub enum TermStructureConstructorError {
     DatesAndDiscountFactorsSize,
     #[error("Dates and rates should have the same size.")]
     DatesAndRatesSize,
-    #[error("Dates[0] needs to be reference_date")]
-    Dates0NeedsToBeReferenceDate,
-    #[error("Discount factors[0] needs to be 1.0")]
-    DiscountFactors0NeedsToBeOne,
+    #[error("First date needs to be reference_date")]
+    FirstDateNeedsToBeReferenceDate,
+    #[error("First discount factor needs to be 1.0")]
+    FirstDiscountFactorsNeedsToBeOne,
 }

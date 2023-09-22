@@ -40,8 +40,8 @@ impl OvernightIndex {
         }
     }
 
-    pub fn term_structure(&self) -> Option<YieldTermStructure> {
-        self.term_structure.clone()
+    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
+        self.term_structure.as_ref()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -125,7 +125,7 @@ impl HasReferenceDate for OvernightIndex {
 
 impl YieldProvider for OvernightIndex {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure.clone()
+        self.term_structure()
             .ok_or(YieldProviderError::NoTermStructure)?
             .discount_factor(date)
     }
@@ -147,7 +147,7 @@ impl YieldProvider for OvernightIndex {
                 .ok_or(YieldProviderError::NoFixingRate(self.reference_date()))?;
 
             let df = self
-                .term_structure.clone()
+                .term_structure()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .discount_factor(end_date)?;
 
@@ -172,7 +172,7 @@ impl YieldProvider for OvernightIndex {
 
         // forecast case
         if start_date >= self.reference_date() && end_date > self.reference_date() {
-            self.term_structure.clone()
+            self.term_structure()
                 .ok_or(YieldProviderError::NoTermStructure)?
                 .forward_rate(start_date, end_date, comp, freq)
         } else {
@@ -183,6 +183,10 @@ impl YieldProvider for OvernightIndex {
         }
     }
 }
+
+// impl InterestRateIndexTrait for OvernightIndex {
+
+// }
 
 // impl AdvanceInTime for OvernightIndex {
 //     type Output = OvernightIndex;
@@ -288,7 +292,7 @@ mod tests {
         fixings.insert(ref_date, 100.0);
         let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings.clone())
-            .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
+            .with_term_structure(YieldTermStructure::FlatForward(
                 FlatForwardTermStructure::new(
                     ref_date,
                     InterestRate::new(
@@ -305,7 +309,7 @@ mod tests {
         let next_date_2 = Date::new(2021, 1, 3);
         fixings.insert(next_date_2, 100.0);
         let overnight_index = OvernightIndex::new(next_date_2)
-            .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
+            .with_term_structure(YieldTermStructure::FlatForward(
                 FlatForwardTermStructure::new(
                     next_date_2,
                     InterestRate::new(
@@ -329,7 +333,7 @@ mod tests {
     //     fixings.insert(ref_date, 100.0);
     //     let overnight_index = OvernightIndex::new()
     //         .with_fixings(fixings)
-    //         .with_term_structure(YieldTermStructure::FlatForwardTermStructure(
+    //         .with_term_structure(YieldTermStructure::FlatForward(
     //             FlatForwardTermStructure::new(
     //                 ref_date,
     //                 InterestRate::new(
