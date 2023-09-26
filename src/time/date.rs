@@ -172,6 +172,11 @@ impl Date {
         Date { base_date }
     }
 
+    pub fn from_str_date(date: &str) -> Date {
+        let base_date = NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+        Date::from_base_date(base_date)
+    }
+
     pub fn base_date(&self) -> NaiveDate {
         self.base_date
     }
