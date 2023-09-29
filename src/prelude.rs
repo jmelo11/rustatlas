@@ -1,5 +1,5 @@
 pub use crate::{
-    alm::enums::Instrument,
+    alm::{traits::*,enums::Instrument},
     cashflows::cashflow::Side,
     cashflows::{
         cashflow::Cashflow,

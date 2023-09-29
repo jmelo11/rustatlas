@@ -84,7 +84,7 @@ impl<T: Interpolate> AdvanceInTime for DiscountTermStructure<T> {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError> {
-        let days = (self.reference_date() - date) as i32;
+        let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AdvanceInTimeError::InvalidDate);
         }
@@ -125,7 +125,7 @@ impl<T: Interpolate> AdvanceInTime for ZeroRateTermStructure<T> {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError> {
-        let days = (self.reference_date() - date) as i32;
+        let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AdvanceInTimeError::InvalidDate);
         }
