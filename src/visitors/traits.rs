@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::{cashflows::cashflow::Cashflow, core::traits::MarketRequestError};
+use crate::{cashflows::cashflow::Cashflow, core::traits::MarketRequestError, rates::interestrate::InterestRateError};
 
 pub trait Visit<T> {
     type Output;
@@ -48,4 +48,6 @@ pub enum EvaluationError {
     MarketDataError(#[from] MarketRequestError),
     #[error("No market data found")]
     NoMarketData,
+    #[error("Interest Rate error: {0}")]
+    InterestRateError(#[from] InterestRateError),
 }
