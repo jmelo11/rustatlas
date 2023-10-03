@@ -2,7 +2,7 @@ use thiserror::Error;
 
 use crate::{
     core::{meta::*, traits::MarketRequestError},
-    rates::traits::YieldProviderError,
+    rates::traits::YieldProviderError, time::date::Date,
 };
 
 #[derive(Error, Debug)]
@@ -22,6 +22,7 @@ pub enum ModelError {
 /// # Model
 /// A model that provides market data based in the current market state.
 pub trait Model {
+    fn reference_date(&self) -> Date;
     fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<f64, ModelError>;
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64, ModelError>;
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64, ModelError>;
@@ -41,7 +42,7 @@ pub trait Model {
             Some(fx) => Some(self.gen_fx_data(fx)?),
             None => None,
         };
-        return Ok(MarketData::new(id, df, fwd, fx));
+        return Ok(MarketData::new(id, self.reference_date(), df, fwd, fx));
     }
 
     fn gen_market_data(

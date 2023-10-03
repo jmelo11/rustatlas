@@ -183,14 +183,27 @@ impl MarketRequest {
 #[derive(Debug, Clone, Copy)]
 pub struct MarketData {
     id: usize,
+    reference_date: Date,
     df: Option<f64>,
     fwd: Option<f64>,
     fx: Option<f64>,
 }
 
 impl MarketData {
-    pub fn new(id: usize, df: Option<f64>, fwd: Option<f64>, fx: Option<f64>) -> MarketData {
-        MarketData { id, df, fwd, fx }
+    pub fn new(
+        id: usize,
+        reference_date: Date,
+        df: Option<f64>,
+        fwd: Option<f64>,
+        fx: Option<f64>,
+    ) -> MarketData {
+        MarketData {
+            id,
+            reference_date,
+            df,
+            fwd,
+            fx,
+        }
     }
 
     pub fn id(&self) -> usize {
@@ -207,5 +220,9 @@ impl MarketData {
 
     pub fn fx(&self) -> Option<f64> {
         self.fx
+    }
+
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
     }
 }

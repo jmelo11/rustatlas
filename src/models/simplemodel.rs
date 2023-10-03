@@ -5,6 +5,7 @@ use crate::core::marketstore::MarketStore;
 use crate::core::meta::*;
 use crate::currencies::traits::CurrencyDetails;
 use crate::rates::traits::{HasReferenceDate, YieldProvider, YieldProviderError};
+use crate::time::date::Date;
 
 use super::traits::{Model, ModelError};
 
@@ -27,6 +28,9 @@ impl SimpleModel {
 }
 
 impl Model for SimpleModel {
+    fn reference_date(&self) -> Date {
+        self.market_store.reference_date()
+    }
     fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<f64, ModelError> {
         let date = df.date();
         let ref_date = self.market_store.reference_date();
