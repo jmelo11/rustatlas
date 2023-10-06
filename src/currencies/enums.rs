@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
+
 use super::structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR};
 use super::traits::CurrencyDetails;
 
 /// # Currency
 /// Enum for currencies supported by the library
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Currency {
     USD,
     EUR,

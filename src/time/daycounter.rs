@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::daycounters::actual360::Actual360;
 use super::daycounters::actual365::Actual365;
 use super::daycounters::thirty360::Thirty360;
@@ -6,7 +8,7 @@ use crate::time::date::Date;
 
 /// # DayCounter
 /// Day count convention enum.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DayCounter {
     Actual360,
     Actual365,
@@ -31,7 +33,6 @@ impl DayCounter {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -39,8 +40,7 @@ mod tests {
     #[test]
     fn test_day_count() {
         let start = Date::new(2020, 1, 1);
-        let end = Date::new(2020, 1, 2);  
-        
+        let end = Date::new(2020, 1, 2);
 
         let day_count = DayCounter::Actual360.day_count(start, end);
         assert_eq!(day_count, 1);
@@ -53,16 +53,13 @@ mod tests {
     #[test]
     fn test_year_fraction() {
         let start = Date::new(2020, 1, 1);
-        let end = Date::new(2020, 1, 2);   
+        let end = Date::new(2020, 1, 2);
 
         let year_fraction = DayCounter::Actual360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0/360.0);
+        assert_eq!(year_fraction, 1.0 / 360.0);
         let year_fraction = DayCounter::Actual365.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0/365.0);
+        assert_eq!(year_fraction, 1.0 / 365.0);
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0/360.0);
-
+        assert_eq!(year_fraction, 1.0 / 360.0);
     }
-
-
 }

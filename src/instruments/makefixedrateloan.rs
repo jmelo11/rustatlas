@@ -110,35 +110,6 @@ impl From<MakeScheduleError> for MakeFixedRateLoanError {
     }
 }
 
-// impl Display for MakeFixedRateLoanError {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             MakeFixedRateLoanError::StartDateNotSet => write!(f, "Start date not set"),
-//             MakeFixedRateLoanError::EndDateNotSet => write!(f, "End date not set"),
-//             MakeFixedRateLoanError::PaymentFrequencyNotSet => {
-//                 write!(f, "Payment frequency not set")
-//             }
-//             MakeFixedRateLoanError::TenorNotSet => write!(f, "Tenor not set"),
-//             MakeFixedRateLoanError::RateNotSet => write!(f, "Rate not set"),
-//             MakeFixedRateLoanError::RateDefinitionNotSet => write!(f, "Rate definition not set"),
-//             MakeFixedRateLoanError::RateValueNotSet => write!(f, "Rate value not set"),
-//             MakeFixedRateLoanError::DisbursementsNotSet => write!(f, "Disbursements not set"),
-//             MakeFixedRateLoanError::RedemptionsNotSet => write!(f, "Redemptions not set"),
-//             MakeFixedRateLoanError::AdditionalCouponDatesNotSet => {
-//                 write!(f, "Additional coupon dates not set")
-//             }
-//             MakeFixedRateLoanError::ScheduleBuildError(e) => write!(f, "{}", e),
-//             MakeFixedRateLoanError::CurrencyNotSet => write!(f, "Currency not set"),
-//             MakeFixedRateLoanError::SideNotSet => write!(f, "Side not set"),
-//             MakeFixedRateLoanError::NotionalNotSet => write!(f, "Notional not set"),
-//             MakeFixedRateLoanError::RedemptionsAndDisbursementsDoNotMatch => {
-//                 write!(f, "Redemptions and disbursements do not match")
-//             }
-//             MakeFixedRateLoanError::StructureNotSet => write!(f, "Structure not set"),
-//         }
-//     }
-// }
-
 /// New, setters and getters
 impl MakeFixedRateLoan {
     pub fn new() -> MakeFixedRateLoan {
@@ -846,7 +817,7 @@ mod tests {
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::makefixedrateloan::{MakeFixedRateLoan, self},
+        instruments::makefixedrateloan::{self, MakeFixedRateLoan},
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -932,14 +903,20 @@ mod tests {
         instrument.cashflows().iter().for_each(|cf| match cf {
             Cashflow::FixedRateCoupon(c) => {
                 if payments.contains_key(&c.payment_date()) {
-                    payments.insert(c.payment_date(), payments[&c.payment_date()] + c.amount().unwrap());
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
                 } else {
                     payments.insert(c.payment_date(), c.amount().unwrap());
                 }
             }
             Cashflow::Redemption(c) => {
                 if payments.contains_key(&c.payment_date()) {
-                    payments.insert(c.payment_date(), payments[&c.payment_date()] + c.amount().unwrap());
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
                 } else {
                     payments.insert(c.payment_date(), c.amount().unwrap());
                 }
@@ -1177,8 +1154,8 @@ mod tests {
     }
 
     #[test]
-    // test the From traint 
-    fn from_test()-> Result<(), MakeFixedRateLoanError>{
+    // test the From traint
+    fn from_test() -> Result<(), MakeFixedRateLoanError> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -1199,9 +1176,9 @@ mod tests {
             .equal_payments()
             .build()?;
 
-        let builder: MakeFixedRateLoan =  makefixedrateloan::MakeFixedRateLoan::from(&instrument);
+        let builder: MakeFixedRateLoan = makefixedrateloan::MakeFixedRateLoan::from(&instrument);
         let instrument2 = builder.build()?;
-        
+
         assert_eq!(instrument2.notional(), instrument.notional());
         assert_eq!(instrument2.rate(), instrument.rate());
 
@@ -1213,9 +1190,7 @@ mod tests {
             .cashflows()
             .iter()
             .for_each(|cf| println!("{}", cf));
-        
+
         Ok(())
     }
-
-
 }

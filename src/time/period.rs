@@ -1,9 +1,15 @@
 use super::enums::{Frequency, TimeUnit};
+use serde::{
+    de::{self, Visitor},
+    Deserializer, Serialize,
+};
+use std::fmt;
 use std::{
     cmp::Ordering,
-    fmt::Display,
+    num::ParseIntError,
     ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
 };
+use thiserror::Error;
 
 /// # Period
 /// Struct representing a financial period.
@@ -21,13 +27,14 @@ pub struct Period {
     units: TimeUnit,
 }
 
-#[derive(Debug)]
-struct InvalidFrequencyError;
-
-impl Display for InvalidFrequencyError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "`Frequency` is not a valid value for `Period`")
-    }
+#[derive(Debug, Error)]
+pub enum PeriodParseError {
+    #[error("Invalid length")]
+    InvalidLength,
+    #[error("Invalid unit")]
+    InvalidTimeUnit,
+    #[error("Parse error")]
+    ParseIntError(#[from] ParseIntError),
 }
 
 impl Period {
@@ -153,6 +160,92 @@ impl Period {
         Self {
             length: 0,
             units: TimeUnit::Days,
+        }
+    }
+
+    pub fn from_str(tenor: &str) -> Result<Period, PeriodParseError> {
+        // parse multiple periods and add them
+        let mut chars = tenor.chars();
+        let mut periods = Vec::new();
+        let mut current_period = String::new();
+        while let Some(c) = chars.next() {
+            if c.is_numeric() {
+                current_period.push(c);
+            } else {
+                current_period.push(c);
+                periods.push(current_period);
+                current_period = String::new();
+            }
+        }
+        let mut result = Period::empty();
+        for period in periods {
+            result += Period::parse_single_period(&period)?;
+        }
+        Ok(result)
+    }
+
+    fn parse_single_period(tenor: &str) -> Result<Period, PeriodParseError> {
+        let mut chars = tenor.chars();
+        let mut length = String::new();
+        let mut units = String::new();
+        while let Some(c) = chars.next() {
+            if c.is_numeric() {
+                length.push(c);
+            } else {
+                units.push(c);
+            }
+        }
+        let length = length.parse::<i32>()?;
+        let units = match units.as_str() {
+            "Y" => TimeUnit::Years,
+            "M" => TimeUnit::Months,
+            "W" => TimeUnit::Weeks,
+            "D" => TimeUnit::Days,
+            _ => return Err(PeriodParseError::InvalidTimeUnit),
+        };
+        Ok(Period::new(length, units))
+    }
+}
+
+/// Deserializes a string in the format like 1Y or 1Y6M to a Period.
+impl<'de> serde::Deserialize<'de> for Period {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct PeriodVisitor;
+
+        impl<'de> Visitor<'de> for PeriodVisitor {
+            type Value = Period;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string in the format like 1Y or 1Y6M")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Period, E>
+            where
+                E: de::Error,
+            {
+                // Parse the string to create a Period
+                Period::from_str(v).map_err(de::Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(PeriodVisitor)
+    }
+}
+
+/// Serializes a Period to a string in the format like 1Y or 1Y6M.
+impl Serialize for Period {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self.units {
+            TimeUnit::Years => serializer.serialize_str(&format!("{}Y", self.length)),
+            TimeUnit::Months => serializer.serialize_str(&format!("{}M", self.length)),
+            TimeUnit::Weeks => serializer.serialize_str(&format!("{}W", self.length)),
+            TimeUnit::Days => serializer.serialize_str(&format!("{}D", self.length)),
         }
     }
 }
@@ -652,5 +745,20 @@ mod tests {
             units: TimeUnit::Years,
         };
         p1 += p2;
+    }
+
+    #[test]
+    fn test_period_parsing() {
+        let p = Period::from_str("1Y").unwrap();
+        assert_eq!(p.length(), 1);
+        assert_eq!(p.units(), TimeUnit::Years);
+
+        let p = Period::from_str("1M").unwrap();
+        assert_eq!(p.length(), 1);
+        assert_eq!(p.units(), TimeUnit::Months);
+
+        let p = Period::from_str("1Y1M").unwrap();
+        assert_eq!(p.length(), 13);
+        assert_eq!(p.units(), TimeUnit::Months);
     }
 }

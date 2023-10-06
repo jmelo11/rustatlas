@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -9,7 +11,7 @@ use crate::{
     time::date::Date,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 pub enum Structure {
     Bullet,
     EqualRedemptions,
