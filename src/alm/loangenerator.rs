@@ -22,7 +22,7 @@ use crate::{
         indexingvisitor::IndexingVisitor,
         parvaluevisitor::ParValueConstVisitor,
         traits::{ConstVisit, Visit},
-    },
+    }, prelude::Date,
 };
 
 use super::enums::Instrument;
@@ -37,6 +37,7 @@ pub enum RateType {
 /// Generates a loan based on a configuration and a market store.
 pub struct LoanGenerator {
     amount: f64,
+    date: Date,
     configs: Rc<Vec<LoanConfiguration>>,
     market_store: Rc<MarketStore>,
 }
@@ -141,11 +142,13 @@ impl LoanConfiguration {
 impl LoanGenerator {
     pub fn new(
         amount: f64,
+        date: Date,
         configs: Rc<Vec<LoanConfiguration>>,
         market_store: Rc<MarketStore>,
     ) -> LoanGenerator {
         LoanGenerator {
             amount,
+            date,
             configs,
             market_store,
         }
@@ -166,7 +169,7 @@ impl LoanGenerator {
 
     fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> Result<f64, LoanGeneratorError> {
         let mut instrument = builder.with_rate_value(0.03).build()?;
-        let indexing_visitor = IndexingVisitor::new();
+        let indexing_visitor = IndexingVisitor::new();              
         let _ = indexing_visitor.visit(&mut instrument);
         let model = SimpleModel::new(self.market_store.clone());
         let data = model.gen_market_data(&indexing_visitor.request())?;
@@ -180,7 +183,7 @@ impl LoanGenerator {
     ) -> Result<Instrument, LoanGeneratorError> {
         let structure = config.structure();
         let notional = self.amount * config.weight();
-        let start_date = self.market_store.reference_date();
+        let start_date = self.date;
         match config.rate_type() {
             RateType::Floating => {
                 let builder = MakeFloatingRateLoan::new()
@@ -212,6 +215,7 @@ impl LoanGenerator {
                     .with_structure(structure);
 
                 let rate = self.calculate_par_rate(builder.clone())?;
+                let x = 10;
                 Ok(Instrument::FixedRateInstrument(
                     builder.with_rate_value(rate).build()?,
                 ))
@@ -284,7 +288,8 @@ mod tests {
             0,
             None,
         )]);
-        let generator = LoanGenerator::new(100.0, configs, market_store);
+        date = Date::new(2023, 9, 1);
+        let generator = LoanGenerator::new(100.0,date ,configs, market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
     }
