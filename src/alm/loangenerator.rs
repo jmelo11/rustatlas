@@ -289,7 +289,7 @@ mod tests {
             0,
             None,
         )]);
-        date = Date::new(2023, 9, 1);
+        let date = Date::new(2023, 9, 1);
         let generator = LoanGenerator::new(100.0,date ,configs, market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);

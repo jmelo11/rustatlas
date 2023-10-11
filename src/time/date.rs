@@ -207,6 +207,11 @@ impl Date {
         Ok(Date::from_base_date(base_date))
     }
 
+    pub fn from_str_date(date: &str) -> Result<Date, DateParseError> {
+        let base_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")?;
+        Ok(Date::from_base_date(base_date))
+    }
+
     pub fn base_date(&self) -> NaiveDate {
         self.base_date
     }
