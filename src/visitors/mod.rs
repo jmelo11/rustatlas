@@ -3,4 +3,4 @@ pub mod indexingvisitor;
 pub mod npvconstvisitor;
 pub mod traits;
 pub mod parvaluevisitor;
-pub mod zspreadconstvisitor;
+//pub mod zspreadconstvisitor;
