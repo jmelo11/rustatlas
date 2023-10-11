@@ -1,3 +1,4 @@
+use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
 use crate::rates::enums::Compounding;
@@ -15,7 +16,7 @@ use crate::time::enums::Frequency;
 /// assert_eq!(rate_definition.frequency(), Frequency::Annual);
 /// assert_eq!(rate_definition.day_counter(), DayCounter::Actual360);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RateDefinition {
     day_counter: DayCounter,
     compounding: Compounding,
@@ -175,7 +176,7 @@ impl InterestRate {
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
-        return  self.compound_factor_from_yf(year_fraction)
+        return self.compound_factor_from_yf(year_fraction);
     }
 
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {

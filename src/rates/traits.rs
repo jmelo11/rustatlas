@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use super::{enums::Compounding, interestrate::InterestRateError};
-use crate::time::{date::Date, enums::Frequency, period::Period};
+use crate::time::{date::Date, enums::Frequency};
 
 /// # HasReferenceDate
 /// Implement this trait for a struct that has a reference date.
@@ -34,5 +34,3 @@ pub trait YieldProvider: HasReferenceDate {
         freq: Frequency,
     ) -> Result<f64, YieldProviderError>;
 }
-
-

@@ -1,8 +1,10 @@
 use std::ops::{Add, Sub};
 
+use serde::{Deserialize, Serialize};
+
 /// # Frequency
 /// Enum representing a financial frequency.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Frequency {
     NoFrequency = -1,
     Once = 0,
@@ -21,7 +23,7 @@ pub enum Frequency {
 
 /// # TimeUnit
 /// Enum representing a time unit.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum TimeUnit {
     Days,
     Weeks,
@@ -31,7 +33,7 @@ pub enum TimeUnit {
 
 /// # Month
 /// Enum representing a month.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Month {
     January = 1,
     February,
@@ -49,7 +51,7 @@ pub enum Month {
 
 /// # IMMMonth
 /// Enum representing an IMM month.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum IMMMonth {
     F = 1,
     G = 2,
@@ -67,7 +69,7 @@ pub enum IMMMonth {
 
 /// # DateGenerationRule
 /// Enum representing a date generation rule.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum DateGenerationRule {
     Backward,
     Forward,

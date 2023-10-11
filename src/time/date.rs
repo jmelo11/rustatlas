@@ -1,8 +1,10 @@
 use super::enums::*;
 use super::period::Period;
-use chrono::{Datelike, Duration, Months, NaiveDate};
+use chrono::{Datelike, Duration, Months, NaiveDate, ParseError};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use thiserror::Error;
 
 /// # NaiveDateExt
 /// Extends the NaiveDate struct from the chrono rustatlas.
@@ -159,6 +161,34 @@ pub struct Date {
     base_date: NaiveDate,
 }
 
+impl Serialize for Date {
+    fn serialize<S>(
+        &self,
+        serializer: S,
+    ) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for Date {
+    fn deserialize<D>(deserializer: D) -> Result<Self, <D as serde::Deserializer<'de>>::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Date::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum DateParseError {
+    #[error("Invalid date: {0}")]
+    InvalidDate(#[from] ParseError),
+}
+
 impl Date {
     pub fn new(year: i32, month: u32, day: u32) -> Date {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
@@ -172,9 +202,9 @@ impl Date {
         Date { base_date }
     }
 
-    pub fn from_str_date(date: &str) -> Date {
-        let base_date = NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
-        Date::from_base_date(base_date)
+    pub fn from_str(date: &str, fmt: &str) -> Result<Date, DateParseError> {
+        let base_date = NaiveDate::parse_from_str(date, fmt)?;
+        Ok(Date::from_base_date(base_date))
     }
 
     pub fn base_date(&self) -> NaiveDate {

@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use argmin::core::Error;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
@@ -27,7 +28,7 @@ use crate::{
 
 use super::enums::Instrument;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum RateType {
     Fixed,
     Floating,
