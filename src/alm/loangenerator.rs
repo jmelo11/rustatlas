@@ -216,7 +216,6 @@ impl LoanGenerator {
                     .with_structure(structure);
 
                 let rate = self.calculate_par_rate(builder.clone())?;
-                let x = 10;
                 Ok(Instrument::FixedRateInstrument(
                     builder.with_rate_value(rate).build()?,
                 ))
