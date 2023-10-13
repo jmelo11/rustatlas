@@ -1,9 +1,9 @@
 use crate::{
-    rates::yieldtermstructure::enums::YieldTermStructure,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::Frequency, period::Period},
 };
@@ -31,7 +31,7 @@ pub struct IborIndex {
     tenor: Period,
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
-    term_structure: Option<YieldTermStructure>,
+    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     provider_id: Option<usize>,
     reference_date: Date,
 }
@@ -56,8 +56,8 @@ impl IborIndex {
         self.rate_definition
     }
 
-    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
-        self.term_structure.as_ref()
+    pub fn term_structure(&self) -> Option<&dyn YieldTermStructureTrait> {
+        self.term_structure.as_deref()
     }
 
     pub fn provider_id(&self) -> Option<usize> {
@@ -84,7 +84,7 @@ impl IborIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }

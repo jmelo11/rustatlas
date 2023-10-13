@@ -4,7 +4,7 @@ use crate::{
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::enums::YieldTermStructure,
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::Frequency, period::Period},
 };
@@ -82,7 +82,7 @@ impl YieldProvider for InterestRateIndex {
 }
 
 impl InterestRateIndex {
-    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
+    pub fn term_structure(&self) -> Option<&dyn YieldTermStructureTrait> {
         match self {
             InterestRateIndex::IborIndex(ibor_index) => ibor_index.term_structure(),
             InterestRateIndex::OvernightIndex(overnight_index) => overnight_index.term_structure(),
@@ -115,22 +115,5 @@ impl InterestRateIndex {
 //                 InterestRateIndex::OvernightIndex(overnight_index.advance(period))
 //             }
 //         }
-//     }
-// }
-
-// trait Interpolator {
-//     fn init(x: Vec<f64>, y: Vec<f64>, allow_extrapolation: Option<bool>) -> Self;
-//     fn interpolate(&self, x: f64) -> f64;
-//     fn enable_extrapolation(&mut self, enable: bool);
-// }
-
-// struct Curve<T: Interpolator> {
-//     interpolator: T,
-// }
-
-// impl<T: Interpolator> Curve<T> {
-//     fn new(x: Vec<f64>, y: Vec<f64>) -> Curve<T> {
-//         let tmp = T::init(x, y, Some(true));
-//         Curve { interpolator: tmp }
 //     }
 // }

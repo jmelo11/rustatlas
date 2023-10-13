@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    rates::traits::{HasReferenceDate, YieldProvider},
+    rates::{traits::{HasReferenceDate, YieldProvider}, yieldtermstructure::traits::ObjectSafeClone},
     time::date::Date,
 };
 
@@ -13,4 +13,4 @@ pub trait FixingProvider {
     fn add_fixing(&mut self, date: Date, rate: f64);
 }
 
-pub trait InterestRateIndexTrait: FixingProvider + YieldProvider + HasReferenceDate {}
+pub trait InterestRateIndexTrait: FixingProvider + YieldProvider + HasReferenceDate + ObjectSafeClone {}

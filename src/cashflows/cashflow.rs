@@ -1,5 +1,7 @@
 use std::fmt::{Display, Formatter};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     core::{
         meta::MarketRequest,
@@ -17,7 +19,7 @@ use super::{
 
 /// # Side
 /// Enum that represents the side of a cashflow.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
 pub enum Side {
     Pay,
     Receive,

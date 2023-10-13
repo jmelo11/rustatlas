@@ -1,27 +1,31 @@
 use thiserror::Error;
 
 use crate::{
-    math::interpolation::traits::Interpolate,
     rates::{
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
         yieldtermstructure::{
             discounttermstructure::DiscountTermStructure,
             errortermstructure::TermStructureConstructorError,
             flatforwardtermstructure::FlatForwardTermStructure,
+            spreadtermstructure::SpreadedTermStructure, traits::YieldTermStructureTrait,
             zeroratetermstructure::ZeroRateTermStructure,
         },
     },
     time::{date::Date, enums::TimeUnit, period::Period},
 };
 
-/// # AdvanceInTime
+/// # AdvanceTermStructureInTime
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period.
-pub trait AdvanceInTime {
-    type Output;
-
-    fn advance_to_period(&self, period: Period) -> Result<Self::Output, AdvanceInTimeError>;
-    fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError>;
+pub trait AdvanceTermStructureInTime {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError>;
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError>;
 }
 
 #[derive(Error, Debug)]
@@ -34,28 +38,35 @@ pub enum AdvanceInTimeError {
     TermStructureConstructorError(#[from] TermStructureConstructorError),
 }
 
-/// # AdvanceInTime for FlatForwardTermStructure
-impl AdvanceInTime for FlatForwardTermStructure {
-    type Output = FlatForwardTermStructure;
-    fn advance_to_period(&self, period: Period) -> Result<Self::Output, AdvanceInTimeError> {
+/// # AdvanceTermStructureInTime for FlatForwardTermStructure
+impl AdvanceTermStructureInTime for FlatForwardTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
-        return Ok(FlatForwardTermStructure::new(
+        return Ok(Box::new(FlatForwardTermStructure::new(
             new_reference_date,
             self.rate(),
-        ));
+        )));
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError> {
-        return Ok(FlatForwardTermStructure::new(date, self.rate()));
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        return Ok(Box::new(FlatForwardTermStructure::new(date, self.rate())));
     }
 }
 
-/// # AdvanceInTime for DiscountTermStructure
-impl<T: Interpolate> AdvanceInTime for DiscountTermStructure<T> {
-    type Output = DiscountTermStructure<T>;
-    fn advance_to_period(&self, period: Period) -> Result<Self::Output, AdvanceInTimeError> {
+/// # AdvanceTermStructureInTime for DiscountTermStructure
+impl AdvanceTermStructureInTime for DiscountTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -75,15 +86,20 @@ impl<T: Interpolate> AdvanceInTime for DiscountTermStructure<T> {
             })
             .collect();
 
-        Ok(DiscountTermStructure::new(
+        Ok(Box::new(DiscountTermStructure::new(
             new_reference_date,
             new_dates,
             shifted_dfs?,
             self.day_counter(),
-        )?)
+            self.interpolator(),
+            self.enable_extrapolation(),
+        )?))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError> {
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AdvanceInTimeError::InvalidDate);
@@ -93,10 +109,12 @@ impl<T: Interpolate> AdvanceInTime for DiscountTermStructure<T> {
     }
 }
 
-/// # AdvanceInTime for ZeroRateTermStructure
-impl<T: Interpolate> AdvanceInTime for ZeroRateTermStructure<T> {
-    type Output = ZeroRateTermStructure<T>;
-    fn advance_to_period(&self, period: Period) -> Result<Self::Output, AdvanceInTimeError> {
+/// # AdvanceTermStructureInTime for ZeroRateTermStructure
+impl AdvanceTermStructureInTime for ZeroRateTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -116,15 +134,20 @@ impl<T: Interpolate> AdvanceInTime for ZeroRateTermStructure<T> {
             })
             .collect();
 
-        Ok(ZeroRateTermStructure::new(
+        Ok(Box::new(ZeroRateTermStructure::new(
             new_reference_date,
             new_dates,
             shifted_dfs?,
             self.rate_definition(),
-        )?)
+            self.interpolator(),
+            self.enable_extrapolation(),
+        )?))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Self::Output, AdvanceInTimeError> {
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AdvanceInTimeError::InvalidDate);
@@ -134,4 +157,23 @@ impl<T: Interpolate> AdvanceInTime for ZeroRateTermStructure<T> {
     }
 }
 
+/// # AdvanceTermStructureInTime for SpreadedTermStructure
+impl AdvanceTermStructureInTime for SpreadedTermStructure {
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let base = self.base_curve().advance_to_date(date)?;
+        let spread = self.spread_curve().advance_to_date(date)?;
+        Ok(Box::new(SpreadedTermStructure::new(spread, base)))
+    }
 
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let base = self.base_curve().advance_to_period(period)?;
+        let spread = self.spread_curve().advance_to_period(period)?;
+        Ok(Box::new(SpreadedTermStructure::new(spread, base)))
+    }
+}

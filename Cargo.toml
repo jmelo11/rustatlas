@@ -9,16 +9,12 @@ edition = "2021"
 chrono = "0.4.26"
 rayon = "1.7.0"
 rand = "0.8.0"
-argmin = { version = "0.8" }
 thiserror = "1.0"
 serde = "1.0.136"
 
-#argmin-math 0.3.0   -- Non stable version on Windows --
-#argmin-math = { version = "0.3.0", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
 
-#argmin-math from develop git
+argmin = { git = "https://github.com/argmin-rs/argmin" }
 argmin-math = { git = "https://github.com/argmin-rs/argmin", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
-
 
 
 [dev-dependencies]

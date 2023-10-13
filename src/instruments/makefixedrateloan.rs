@@ -841,7 +841,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -877,7 +877,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 1000.0;
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -941,7 +941,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -976,7 +976,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_tenor(Period::new(5, TimeUnit::Years))
             .with_payment_frequency(Frequency::Semiannual)
@@ -1011,7 +1011,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate(rate)
@@ -1045,7 +1045,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_tenor(tenor)
             .with_rate(rate)
@@ -1091,7 +1091,7 @@ mod tests {
             DayCounter::Actual360,
         );
 
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
@@ -1125,7 +1125,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 100.0;
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Monthly)
@@ -1165,7 +1165,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 100.0;
-        let instrument = super::MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Monthly)

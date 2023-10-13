@@ -5,7 +5,7 @@ use crate::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::enums::YieldTermStructure,
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
         date::Date,
@@ -21,7 +21,7 @@ use super::traits::FixingProvider;
 #[derive(Clone)]
 pub struct OvernightIndex {
     fixings: HashMap<Date, f64>,
-    term_structure: Option<YieldTermStructure>,
+    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     rate_definition: RateDefinition,
     tenor: Period,
     provider_id: Option<usize>,
@@ -40,8 +40,8 @@ impl OvernightIndex {
         }
     }
 
-    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
-        self.term_structure.as_ref()
+    pub fn term_structure(&self) -> Option<&dyn YieldTermStructureTrait> {
+        self.term_structure.as_deref()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -66,7 +66,7 @@ impl OvernightIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
@@ -184,40 +184,6 @@ impl YieldProvider for OvernightIndex {
     }
 }
 
-// impl InterestRateIndexTrait for OvernightIndex {
-
-// }
-
-// impl AdvanceInTime for OvernightIndex {
-//     type Output = OvernightIndex;
-//     fn advance(&self, period: Period) -> Result<OvernightIndex, YieldProviderError> {
-//         let mut fixings = self.fixings().clone();
-//         let mut seed = self.reference_date();
-//         let end_date = seed.advance(period.length(), period.units());
-//         let curve = self
-//             .term_structure
-//             .expect("No term structure for this OvernightIndex");
-//         while seed < end_date {
-//             println!("{:?}", seed);
-//             let first_df = curve.discount_factor(seed);
-//             let last_fixing = fixings
-//                 .get(&seed)
-//                 .expect("No fixing for this OvernightIndex");
-//             seed = seed.advance(1, TimeUnit::Days);
-//             let second_df = curve.discount_factor(seed);
-//             let comp = last_fixing * first_df / second_df;
-//             fixings.insert(seed, comp);
-//         }
-//         let advance_curve = curve.advance(period);
-//         println!("{:?}", &advance_curve.reference_date());
-//         OvernightIndex::new()
-//             .with_rate_definition(self.rate_definition)
-//             .with_fixings(fixings)
-//             .with_term_structure(advance_curve)
-//             .with_provider_id(self.provider_id)
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -292,64 +258,32 @@ mod tests {
         fixings.insert(ref_date, 100.0);
         let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings.clone())
-            .with_term_structure(YieldTermStructure::FlatForward(
-                FlatForwardTermStructure::new(
-                    ref_date,
-                    InterestRate::new(
-                        0.02,
-                        Compounding::Simple,
-                        Frequency::Annual,
-                        DayCounter::Actual360,
-                    ),
+            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+                ref_date,
+                InterestRate::new(
+                    0.02,
+                    Compounding::Simple,
+                    Frequency::Annual,
+                    DayCounter::Actual360,
                 ),
-            ));
+            )));
 
         assert_eq!(overnight_index.reference_date(), ref_date);
 
         let next_date_2 = Date::new(2021, 1, 3);
         fixings.insert(next_date_2, 100.0);
         let overnight_index = OvernightIndex::new(next_date_2)
-            .with_term_structure(YieldTermStructure::FlatForward(
-                FlatForwardTermStructure::new(
-                    next_date_2,
-                    InterestRate::new(
-                        0.02,
-                        Compounding::Simple,
-                        Frequency::Annual,
-                        DayCounter::Actual360,
-                    ),
+            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+                next_date_2,
+                InterestRate::new(
+                    0.02,
+                    Compounding::Simple,
+                    Frequency::Annual,
+                    DayCounter::Actual360,
                 ),
-            ))
+            )))
             .with_fixings(fixings);
 
         assert_eq!(overnight_index.reference_date(), next_date_2);
     }
-
-    // #[test]
-    // fn test_advance() {
-    //     let mut fixings = HashMap::new();
-    //     let ref_date = Date::new(2021, 1, 1);
-
-    //     fixings.insert(ref_date, 100.0);
-    //     let overnight_index = OvernightIndex::new()
-    //         .with_fixings(fixings)
-    //         .with_term_structure(YieldTermStructure::FlatForward(
-    //             FlatForwardTermStructure::new(
-    //                 ref_date,
-    //                 InterestRate::new(
-    //                     0.02,
-    //                     Compounding::Simple,
-    //                     Frequency::Annual,
-    //                     DayCounter::Actual360,
-    //                 ),
-    //             ),
-    //         ));
-
-    //     let overnight_index = overnight_index.advance(Period::new(1, TimeUnit::Days));
-
-    //     assert_eq!(
-    //         overnight_index.reference_date(),
-    //         ref_date.advance(1, TimeUnit::Days)
-    //     );
-    // }
 }

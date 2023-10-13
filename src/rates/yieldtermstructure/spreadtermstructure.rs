@@ -6,6 +6,8 @@ use crate::{
     time::{date::Date, enums::Frequency},
 };
 
+use super::traits::YieldTermStructureTrait;
+
 /// # SpreadedTermStructure
 /// Struct that defines a spreaded term structure. The spreaded term structure is defined as:
 /// $$
@@ -41,14 +43,17 @@ use crate::{
 /// assert_eq!(spreaded_curve.reference_date(), ref_date);
 /// ```
 #[derive(Clone)]
-pub struct SpreadedTermStructure<T: YieldProvider, U: YieldProvider> {
+pub struct SpreadedTermStructure {
     date_reference: Date, // reference_date
-    spread_curve: T,
-    base_curve: U,
+    spread_curve: Box<dyn YieldTermStructureTrait>,
+    base_curve: Box<dyn YieldTermStructureTrait>,
 }
 
-impl<T: YieldProvider, U: YieldProvider> SpreadedTermStructure<T, U> {
-    pub fn new(spread_curve: T, base_curve: U) -> SpreadedTermStructure<T, U> {
+impl SpreadedTermStructure {
+    pub fn new(
+        spread_curve: Box<dyn YieldTermStructureTrait>,
+        base_curve: Box<dyn YieldTermStructureTrait>,
+    ) -> SpreadedTermStructure {
         SpreadedTermStructure {
             date_reference: base_curve.reference_date(),
             spread_curve,
@@ -56,22 +61,22 @@ impl<T: YieldProvider, U: YieldProvider> SpreadedTermStructure<T, U> {
         }
     }
 
-    pub fn spread_curve(&self) -> &T {
-        return &self.spread_curve;
+    pub fn spread_curve(&self) -> &dyn YieldTermStructureTrait {
+        return self.spread_curve.as_ref();
     }
 
-    pub fn base_curve(&self) -> &U {
-        return &self.base_curve;
+    pub fn base_curve(&self) -> &dyn YieldTermStructureTrait {
+        return self.base_curve.as_ref();
     }
 }
 
-impl<T: YieldProvider, U: YieldProvider> HasReferenceDate for SpreadedTermStructure<T, U> {
+impl HasReferenceDate for SpreadedTermStructure {
     fn reference_date(&self) -> Date {
         return self.date_reference;
     }
 }
 
-impl<T: YieldProvider, U: YieldProvider> YieldProvider for SpreadedTermStructure<T, U> {
+impl YieldProvider for SpreadedTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
@@ -98,6 +103,8 @@ impl<T: YieldProvider, U: YieldProvider> YieldProvider for SpreadedTermStructure
     }
 }
 
+impl YieldTermStructureTrait for SpreadedTermStructure {}
+
 #[cfg(test)]
 mod test {
     use crate::{
@@ -115,7 +122,7 @@ mod test {
 
     #[test]
     fn test_reference_date() {
-        let spread_curve = FlatForwardTermStructure::new(
+        let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.01,
@@ -123,9 +130,9 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
 
-        let base_curve = FlatForwardTermStructure::new(
+        let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.02,
@@ -133,14 +140,14 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
         let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
         assert!(spreaded_curve.reference_date() == Date::new(2020, 1, 1));
     }
 
     #[test]
     fn test_forward_rate() {
-        let spread_curve = FlatForwardTermStructure::new(
+        let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.01,
@@ -148,9 +155,9 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
 
-        let base_curve = FlatForwardTermStructure::new(
+        let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.02,
@@ -158,7 +165,7 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
         let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
 
         let fr = spreaded_curve.forward_rate(
@@ -173,7 +180,7 @@ mod test {
 
     #[test]
     fn test_discount_factor() {
-        let spread_curve = FlatForwardTermStructure::new(
+        let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.01,
@@ -181,9 +188,9 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
 
-        let base_curve = FlatForwardTermStructure::new(
+        let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             InterestRate::new(
                 0.02,
@@ -191,7 +198,8 @@ mod test {
                 Frequency::Annual,
                 DayCounter::Actual360,
             ),
-        );
+        ));
+
         let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
 
         let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));

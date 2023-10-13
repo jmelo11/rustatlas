@@ -1,4 +1,3 @@
-
 extern crate rustatlas;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
@@ -16,9 +15,8 @@ use rustatlas::{
         interestrateindex::{
             enums::InterestRateIndex, iborindex::IborIndex, overnightindex::OvernightIndex,
         },
-        yieldtermstructure::{
-            enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
-        }, traits::HasReferenceDate,
+        traits::HasReferenceDate,
+        yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
     time::{
         date::Date,
@@ -110,17 +108,11 @@ pub fn create_store() -> MarketStore {
         DayCounter::Actual360,
     );
 
-    let forecast_curve_1 = YieldTermStructure::FlatForward(
-        FlatForwardTermStructure::new(ref_date, forecast_rate_1),
-    );
+    let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(ref_date, forecast_rate_1));
 
-    let forecast_curve_2 = YieldTermStructure::FlatForward(
-        FlatForwardTermStructure::new(ref_date, forecast_rate_2),
-    );
+    let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(ref_date, forecast_rate_2));
 
-    let discount_curve = YieldTermStructure::FlatForward(
-        FlatForwardTermStructure::new(ref_date, discount_rate),
-    );
+    let discount_curve = Box::new(FlatForwardTermStructure::new(ref_date, discount_rate));
 
     let mut ibor_fixings = HashMap::new();
     ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
@@ -147,7 +139,8 @@ pub fn create_store() -> MarketStore {
         InterestRateIndex::OvernightIndex(overnigth_index),
     );
 
-    let discount_index = IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
+    let discount_index =
+        IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store.mut_index_store().add_index(
         "DiscountCurve".to_string(),

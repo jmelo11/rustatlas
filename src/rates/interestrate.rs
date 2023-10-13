@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::rates::enums::Compounding;
@@ -68,7 +68,7 @@ impl RateDefinition {
 /// assert_eq!(rate.frequency(), Frequency::Annual);
 /// assert_eq!(rate.day_counter(), DayCounter::Actual360);
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct InterestRate {
     rate: f64,
     rate_definition: RateDefinition,

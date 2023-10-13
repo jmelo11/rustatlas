@@ -1,4 +1,4 @@
-use crate::prelude::{Cashflow, HasCashflows};
+use crate::{cashflows::cashflow::Cashflow, visitors::traits::HasCashflows};
 
 pub struct Swap {
     cashflows: Vec<Cashflow>,
@@ -32,5 +32,3 @@ impl HasCashflows for Swap {
         self.cashflows.as_mut_slice()
     }
 }
-
-
