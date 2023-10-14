@@ -1,5 +1,5 @@
 use crate::{
-    alm::traits::AdvanceInTime,
+    alm::traits::AdvanceTermStructureInTime,
     rates::traits::{HasReferenceDate, YieldProvider},
 };
 

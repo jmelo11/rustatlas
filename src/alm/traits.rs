@@ -7,7 +7,7 @@ use crate::{
             discounttermstructure::DiscountTermStructure,
             errortermstructure::TermStructureConstructorError,
             flatforwardtermstructure::FlatForwardTermStructure,
-            spreadtermstructure::SpreadedTermStructure, traits::YieldTermStructureTrait,
+            mixedtermstructure::MixedTermStructure, traits::YieldTermStructureTrait,
             zeroratetermstructure::ZeroRateTermStructure,
         },
     },
@@ -157,15 +157,15 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for SpreadedTermStructure
-impl AdvanceTermStructureInTime for SpreadedTermStructure {
+/// # AdvanceTermStructureInTime for MixedTermStructure
+impl AdvanceTermStructureInTime for MixedTermStructure {
     fn advance_to_date(
         &self,
         date: Date,
     ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
-        Ok(Box::new(SpreadedTermStructure::new(spread, base)))
+        Ok(Box::new(MixedTermStructure::new(spread, base)))
     }
 
     fn advance_to_period(
@@ -174,6 +174,6 @@ impl AdvanceTermStructureInTime for SpreadedTermStructure {
     ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
-        Ok(Box::new(SpreadedTermStructure::new(spread, base)))
+        Ok(Box::new(MixedTermStructure::new(spread, base)))
     }
 }

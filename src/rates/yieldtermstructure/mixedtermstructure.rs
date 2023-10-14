@@ -8,7 +8,7 @@ use crate::{
 
 use super::traits::YieldTermStructureTrait;
 
-/// # SpreadedTermStructure
+/// # MixedTermStructure
 /// Struct that defines a spreaded term structure. The spreaded term structure is defined as:
 /// $$
 ///    df_{spreaded}(t) = df_{spread}(t) * df_{base}(t)
@@ -39,22 +39,22 @@ use super::traits::YieldTermStructureTrait;
 ///     ),
 /// );
 ///
-/// let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
+/// let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
 /// assert_eq!(spreaded_curve.reference_date(), ref_date);
 /// ```
 #[derive(Clone)]
-pub struct SpreadedTermStructure {
+pub struct MixedTermStructure {
     date_reference: Date, // reference_date
     spread_curve: Box<dyn YieldTermStructureTrait>,
     base_curve: Box<dyn YieldTermStructureTrait>,
 }
 
-impl SpreadedTermStructure {
+impl MixedTermStructure {
     pub fn new(
         spread_curve: Box<dyn YieldTermStructureTrait>,
         base_curve: Box<dyn YieldTermStructureTrait>,
-    ) -> SpreadedTermStructure {
-        SpreadedTermStructure {
+    ) -> MixedTermStructure {
+        MixedTermStructure {
             date_reference: base_curve.reference_date(),
             spread_curve,
             base_curve,
@@ -70,13 +70,13 @@ impl SpreadedTermStructure {
     }
 }
 
-impl HasReferenceDate for SpreadedTermStructure {
+impl HasReferenceDate for MixedTermStructure {
     fn reference_date(&self) -> Date {
         return self.date_reference;
     }
 }
 
-impl YieldProvider for SpreadedTermStructure {
+impl YieldProvider for MixedTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
@@ -103,7 +103,7 @@ impl YieldProvider for SpreadedTermStructure {
     }
 }
 
-impl YieldTermStructureTrait for SpreadedTermStructure {}
+impl YieldTermStructureTrait for MixedTermStructure {}
 
 #[cfg(test)]
 mod test {
@@ -114,7 +114,7 @@ mod test {
             traits::{HasReferenceDate, YieldProvider},
             yieldtermstructure::{
                 flatforwardtermstructure::FlatForwardTermStructure,
-                spreadtermstructure::SpreadedTermStructure,
+                mixedtermstructure::MixedTermStructure,
             },
         },
         time::{date::Date, daycounter::DayCounter, enums::Frequency},
@@ -141,7 +141,7 @@ mod test {
                 DayCounter::Actual360,
             ),
         ));
-        let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
         assert!(spreaded_curve.reference_date() == Date::new(2020, 1, 1));
     }
 
@@ -166,7 +166,7 @@ mod test {
                 DayCounter::Actual360,
             ),
         ));
-        let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
 
         let fr = spreaded_curve.forward_rate(
             Date::new(2020, 1, 1),
@@ -200,7 +200,7 @@ mod test {
             ),
         ));
 
-        let spreaded_curve = SpreadedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
 
         let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));
         println!("df: {:?}", df);
