@@ -6,10 +6,14 @@ use crate::{
         interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency},
+    time::{
+        date::Date,
+        enums::{Frequency, TimeUnit},
+        period::Period,
+    },
 };
 
-use super::traits::YieldTermStructureTrait;
+use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # ZeroRateTermStructure
 /// Struct that defines a zero rate term structure.
@@ -28,8 +32,9 @@ use super::traits::YieldTermStructureTrait;
 ///
 /// let rates = vec![0.0, 0.01, 0.02, 0.03, 0.04];
 /// let rate_definition = RateDefinition::default();
-///
-/// let zero_rate_curve: ZeroRateTermStructure<LinearInterpolator> = ZeroRateTermStructure::new(ref_date, dates, rates, rate_definition).unwrap();
+/// let interpolator = Interpolator::Linear;
+/// let enable_extrapolation = true;
+/// let zero_rate_curve = ZeroRateTermStructure::new(ref_date, dates, rates, rate_definition, interpolator, enable_extrapolation).unwrap();
 /// assert_eq!(zero_rate_curve.reference_date(), ref_date);
 /// assert_eq!(zero_rate_curve.rate_definition().day_counter(), DayCounter::Actual360);
 /// ```
@@ -158,6 +163,54 @@ impl YieldProvider for ZeroRateTermStructure {
         .rate();
 
         return Ok(forward_rate);
+    }
+}
+
+/// # AdvanceTermStructureInTime for ZeroRateTermStructure
+impl AdvanceTermStructureInTime for ZeroRateTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let new_reference_date = self
+            .reference_date()
+            .advance(period.length(), period.units());
+
+        let new_dates: Vec<Date> = self
+            .dates()
+            .iter()
+            .map(|x| x.advance(period.length(), period.units()))
+            .collect();
+
+        let start_df = self.discount_factor(new_dates[0])?;
+        let shifted_dfs: Result<Vec<f64>, AdvanceInTimeError> = new_dates
+            .iter()
+            .map(|x| {
+                let df = self.discount_factor(*x)?;
+                Ok(df / start_df)
+            })
+            .collect();
+
+        Ok(Box::new(ZeroRateTermStructure::new(
+            new_reference_date,
+            new_dates,
+            shifted_dfs?,
+            self.rate_definition(),
+            self.interpolator(),
+            self.enable_extrapolation(),
+        )?))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let days = (date - self.reference_date()) as i32;
+        if days < 0 {
+            return Err(AdvanceInTimeError::InvalidDate);
+        }
+        let period = Period::new(days, TimeUnit::Days);
+        return self.advance_to_period(period);
     }
 }
 

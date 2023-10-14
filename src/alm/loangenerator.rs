@@ -237,7 +237,7 @@ mod tests {
         rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
-            interestrateindex::{enums::InterestRateIndex, iborindex::IborIndex},
+            interestrateindex::iborindex::IborIndex,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
         },
         time::{date::Date, daycounter::DayCounter, enums::TimeUnit},
@@ -259,11 +259,10 @@ mod tests {
 
         let discount_curve = Box::new(FlatForwardTermStructure::new(ref_date, discount_rate));
 
-        let discount_index = IborIndex::new(ref_date).with_term_structure(discount_curve);
-        market_store.mut_index_store().add_index(
-            "DiscountCurve".to_string(),
-            InterestRateIndex::IborIndex(discount_index),
-        );
+        let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
+        market_store
+            .mut_index_store()
+            .add_index("DiscountCurve".to_string(), discount_index);
         return market_store;
     }
 

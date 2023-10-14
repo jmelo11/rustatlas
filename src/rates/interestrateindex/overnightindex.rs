@@ -5,7 +5,7 @@ use crate::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::traits::YieldTermStructureTrait,
+        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
     },
     time::{
         date::Date,
@@ -14,7 +14,9 @@ use crate::{
     },
 };
 
-use super::traits::FixingProvider;
+use super::traits::{
+    AdvanceInterestRateIndexInTime, FixingProvider, HasTermStructure, InterestRateIndexTrait,
+};
 
 /// # OvernightIndex
 /// Overnight index.
@@ -24,7 +26,6 @@ pub struct OvernightIndex {
     term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     rate_definition: RateDefinition,
     tenor: Period,
-    provider_id: Option<usize>,
     reference_date: Date,
 }
 
@@ -35,13 +36,8 @@ impl OvernightIndex {
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
-            provider_id: None,
             reference_date: reference_date,
         }
-    }
-
-    pub fn term_structure(&self) -> Option<&dyn YieldTermStructureTrait> {
-        self.term_structure.as_deref()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -50,10 +46,6 @@ impl OvernightIndex {
 
     pub fn tenor(&self) -> Period {
         self.tenor
-    }
-
-    pub fn provider_id(&self) -> Option<usize> {
-        self.provider_id
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
@@ -68,11 +60,6 @@ impl OvernightIndex {
 
     pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
-        self
-    }
-
-    pub fn with_provider_id(mut self, provider_id: Option<usize>) -> Self {
-        self.provider_id = provider_id;
         self
     }
 
@@ -183,6 +170,57 @@ impl YieldProvider for OvernightIndex {
         }
     }
 }
+
+impl AdvanceInterestRateIndexInTime for OvernightIndex {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let mut fixings = self.fixings().clone();
+        let mut seed = self.reference_date();
+        let end_date = seed.advance(period.length(), period.units());
+        let curve = self
+            .term_structure()
+            .ok_or(YieldProviderError::NoTermStructure)?;
+
+        while seed < end_date {
+            println!("{:?}", seed);
+            let first_df = curve.discount_factor(seed)?;
+            let last_fixing = fixings
+                .get(&seed)
+                .expect("No fixing for this OvernightIndex");
+            seed = seed.advance(1, TimeUnit::Days);
+            let second_df = curve.discount_factor(seed)?;
+            let comp = last_fixing * first_df / second_df;
+            fixings.insert(seed, comp);
+        }
+        let new_curve = curve.advance_to_period(period)?;
+
+        Ok(Box::new(
+            OvernightIndex::new(new_curve.reference_date())
+                .with_rate_definition(self.rate_definition)
+                .with_fixings(fixings)
+                .with_term_structure(new_curve),
+        ))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let days = (date - self.reference_date()) as i32;
+        let period = Period::new(days, TimeUnit::Days);
+        self.advance_to_period(period)
+    }
+}
+
+impl HasTermStructure for OvernightIndex {
+    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>> {
+        self.term_structure.as_ref()
+    }
+}
+
+impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
 mod tests {

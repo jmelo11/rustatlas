@@ -3,13 +3,13 @@ use crate::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
 };
 
-use super::traits::YieldTermStructureTrait;
+use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # MixedTermStructure
-/// Struct that defines a spreaded term structure. The spreaded term structure is defined as:
+/// Struct that defines a term structure made with a combination of two curves. It's defined as:
 /// $$
 ///    df_{spreaded}(t) = df_{spread}(t) * df_{base}(t)
 /// $$
@@ -39,7 +39,7 @@ use super::traits::YieldTermStructureTrait;
 ///     ),
 /// );
 ///
-/// let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
+/// let spreaded_curve = MixedTermStructure::new(Box::new(spread_curve), Box::new(base_curve));
 /// assert_eq!(spreaded_curve.reference_date(), ref_date);
 /// ```
 #[derive(Clone)]
@@ -100,6 +100,27 @@ impl YieldProvider for MixedTermStructure {
             .base_curve
             .forward_rate(start_date, end_date, comp, freq)?;
         return Ok(spread_forward_rate + base_forward_rate);
+    }
+}
+
+/// # AdvanceTermStructureInTime for MixedTermStructure
+impl AdvanceTermStructureInTime for MixedTermStructure {
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let base = self.base_curve().advance_to_date(date)?;
+        let spread = self.spread_curve().advance_to_date(date)?;
+        Ok(Box::new(MixedTermStructure::new(spread, base)))
+    }
+
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let base = self.base_curve().advance_to_period(period)?;
+        let spread = self.spread_curve().advance_to_period(period)?;
+        Ok(Box::new(MixedTermStructure::new(spread, base)))
     }
 }
 

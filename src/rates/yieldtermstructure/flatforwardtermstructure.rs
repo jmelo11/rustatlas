@@ -4,10 +4,10 @@ use crate::{
         interestrate::InterestRate,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
 };
 
-use super::traits::YieldTermStructureTrait;
+use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # FlatForwardTermStructure
 /// Struct that defines a flat forward term structure.
@@ -75,9 +75,30 @@ impl YieldProvider for FlatForwardTermStructure {
     }
 }
 
+/// # AdvanceTermStructureInTime for FlatForwardTermStructure
+impl AdvanceTermStructureInTime for FlatForwardTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let new_reference_date = self
+            .reference_date()
+            .advance(period.length(), period.units());
+        return Ok(Box::new(FlatForwardTermStructure::new(
+            new_reference_date,
+            self.rate(),
+        )));
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        return Ok(Box::new(FlatForwardTermStructure::new(date, self.rate())));
+    }
+}
+
 impl YieldTermStructureTrait for FlatForwardTermStructure {}
-
-
 
 #[cfg(test)]
 mod tests {

@@ -5,10 +5,10 @@ use crate::{
         enums::Compounding, interestrate::InterestRate, traits::YieldProvider,
         yieldtermstructure::errortermstructure::TermStructureConstructorError,
     },
-    time::{date::Date, daycounter::DayCounter, enums::Frequency},
+    time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}, period::Period},
 };
 
-use super::traits::YieldTermStructureTrait;
+use super::traits::{YieldTermStructureTrait, AdvanceTermStructureInTime, AdvanceInTimeError};
 
 #[derive(Clone)]
 pub struct DiscountTermStructure {
@@ -126,6 +126,54 @@ impl YieldProvider for DiscountTermStructure {
         return Ok(
             InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t)?.rate(),
         );
+    }
+}
+
+/// # AdvanceTermStructureInTime for DiscountTermStructure
+impl AdvanceTermStructureInTime for DiscountTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let new_reference_date = self
+            .reference_date()
+            .advance(period.length(), period.units());
+
+        let new_dates: Vec<Date> = self
+            .dates()
+            .iter()
+            .map(|x| x.advance(period.length(), period.units()))
+            .collect();
+
+        let start_df = self.discount_factor(new_dates[0])?;
+        let shifted_dfs: Result<Vec<f64>, AdvanceInTimeError> = new_dates
+            .iter()
+            .map(|x| {
+                let df = self.discount_factor(*x)?;
+                Ok(df / start_df)
+            })
+            .collect();
+
+        Ok(Box::new(DiscountTermStructure::new(
+            new_reference_date,
+            new_dates,
+            shifted_dfs?,
+            self.day_counter(),
+            self.interpolator(),
+            self.enable_extrapolation(),
+        )?))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let days = (date - self.reference_date()) as i32;
+        if days < 0 {
+            return Err(AdvanceInTimeError::InvalidDate);
+        }
+        let period = Period::new(days, TimeUnit::Days);
+        return self.advance_to_period(period);
     }
 }
 

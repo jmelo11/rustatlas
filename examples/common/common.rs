@@ -12,9 +12,7 @@ use rustatlas::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        interestrateindex::{
-            enums::InterestRateIndex, iborindex::IborIndex, overnightindex::OvernightIndex,
-        },
+        interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
         traits::HasReferenceDate,
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
@@ -129,23 +127,20 @@ pub fn create_store() -> MarketStore {
         .with_term_structure(forecast_curve_2)
         .with_fixings(overnight_fixings);
 
-    market_store.mut_index_store().add_index(
-        "ForecastCurve 1".to_string(),
-        InterestRateIndex::IborIndex(ibor_index),
-    );
+    market_store
+        .mut_index_store()
+        .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index));
 
-    market_store.mut_index_store().add_index(
-        "ForecastCurve 2".to_string(),
-        InterestRateIndex::OvernightIndex(overnigth_index),
-    );
+    market_store
+        .mut_index_store()
+        .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index));
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
-    market_store.mut_index_store().add_index(
-        "DiscountCurve".to_string(),
-        InterestRateIndex::IborIndex(discount_index),
-    );
+    market_store
+        .mut_index_store()
+        .add_index("DiscountCurve".to_string(), Box::new(discount_index));
     return market_store;
 }
 
