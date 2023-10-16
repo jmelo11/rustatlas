@@ -1,15 +1,21 @@
 use crate::{
-    rates::yieldtermstructure::enums::YieldTermStructure,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
     },
-    time::{date::Date, enums::Frequency, period::Period},
+    time::{
+        date::Date,
+        enums::{Frequency, TimeUnit},
+        period::Period,
+    },
 };
 use std::collections::HashMap;
 
-use super::traits::FixingProvider;
+use super::traits::{
+    AdvanceInterestRateIndexInTime, FixingProvider, HasTermStructure, InterestRateIndexTrait,
+};
 
 /// # IborIndex
 /// Struct that defines an Ibor index.
@@ -31,8 +37,7 @@ pub struct IborIndex {
     tenor: Period,
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
-    term_structure: Option<YieldTermStructure>,
-    provider_id: Option<usize>,
+    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     reference_date: Date,
 }
 
@@ -44,7 +49,6 @@ impl IborIndex {
             rate_definition: RateDefinition::default(),
             fixings: HashMap::new(),
             term_structure: None,
-            provider_id: None,
         }
     }
 
@@ -54,14 +58,6 @@ impl IborIndex {
 
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
-    }
-
-    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
-        self.term_structure.as_ref()
-    }
-
-    pub fn provider_id(&self) -> Option<usize> {
-        self.provider_id
     }
 
     pub fn with_tenor(mut self, tenor: Period) -> Self {
@@ -84,13 +80,8 @@ impl IborIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
-        self
-    }
-
-    pub fn with_provider_id(mut self, provider_id: Option<usize>) -> Self {
-        self.provider_id = provider_id;
         self
     }
 }
@@ -152,36 +143,76 @@ impl YieldProvider for IborIndex {
     }
 }
 
-// impl InterestRateIndexTrait for IborIndex {}
+impl HasTermStructure for IborIndex {
+    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>> {
+        self.term_structure.as_ref()
+    }
+}
 
-// impl AdvanceInTime for IborIndex {
-//     type Output = IborIndex;
-//     fn advance_to_period(&self, period: Period) -> Result<Self::Output, E> {
-//     {
-//         let curve = self
-//             .term_structure().ok_or(YieldProviderError::NoTermStructure)?;
+impl InterestRateIndexTrait for IborIndex {}
 
-//         let mut fixings = self.fixings().clone();
-//         let mut seed = self.reference_date();
-//         let end_date = seed.advance(period.length(), period.units());
-//         while seed <= end_date {
-//             let rate = curve.forward_rate(
-//                 seed,
-//                 seed + self.tenor,
-//                 self.rate_definition.compounding(),
-//                 self.rate_definition.frequency(),
-//             );
-//             fixings.insert(seed, rate);
-//             seed = seed.advance(1, TimeUnit::Days);
-//         }
-//         Ok(IborIndex::new()
-//                     .with_tenor(self.tenor)
-//                     .with_rate_definition(self.rate_definition)
-//                     .with_fixings(fixings)
-//                     .with_term_structure(curve.advance(period))
-//                     .with_provider_id(self.provider_id))
-//     }
-// }
+impl AdvanceInterestRateIndexInTime for IborIndex {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let curve = self
+            .term_structure()
+            .ok_or(YieldProviderError::NoTermStructure)?;
+
+        let mut fixings = self.fixings().clone();
+        let mut seed = self.reference_date();
+        let end_date = seed.advance(period.length(), period.units());
+        while seed <= end_date {
+            let rate = curve.forward_rate(
+                seed,
+                seed + self.tenor,
+                self.rate_definition.compounding(),
+                self.rate_definition.frequency(),
+            )?;
+            fixings.insert(seed, rate);
+            seed = seed.advance(1, TimeUnit::Days);
+        }
+        let new_curve = curve.advance_to_period(period)?;
+        Ok(Box::new(
+            IborIndex::new(new_curve.reference_date())
+                .with_tenor(self.tenor)
+                .with_rate_definition(self.rate_definition)
+                .with_fixings(fixings)
+                .with_term_structure(new_curve),
+        ))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let curve = self
+            .term_structure()
+            .ok_or(YieldProviderError::NoTermStructure)?;
+
+        let mut fixings = self.fixings().clone();
+        let mut seed = self.reference_date();
+        while seed <= date {
+            let rate = curve.forward_rate(
+                seed,
+                seed + self.tenor,
+                self.rate_definition.compounding(),
+                self.rate_definition.frequency(),
+            )?;
+            fixings.insert(seed, rate);
+            seed = seed.advance(1, TimeUnit::Days);
+        }
+        let new_curve = curve.advance_to_date(date)?;
+        Ok(Box::new(
+            IborIndex::new(new_curve.reference_date())
+                .with_tenor(self.tenor)
+                .with_rate_definition(self.rate_definition)
+                .with_fixings(fixings)
+                .with_term_structure(new_curve),
+        ))
+    }
+}
 
 #[cfg(test)]
 mod tests {

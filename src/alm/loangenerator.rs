@@ -26,13 +26,7 @@ use crate::{
     }, prelude::Date,
 };
 
-use super::enums::Instrument;
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub enum RateType {
-    Fixed,
-    Floating,
-}
+use super::enums::{Instrument, RateType};
 
 /// # LoanGenerator
 /// Generates a loan based on a configuration and a market store.
@@ -59,6 +53,7 @@ pub enum LoanGeneratorError {
 
 /// # LoanConfiguration
 /// Configuration for a loan. Represents the meta data required to generate a loan.
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LoanConfiguration {
     weight: f64,
     structure: Structure,
@@ -240,10 +235,8 @@ mod tests {
         rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
-            interestrateindex::{enums::InterestRateIndex, iborindex::IborIndex},
-            yieldtermstructure::{
-                enums::YieldTermStructure, flatforwardtermstructure::FlatForwardTermStructure,
-            },
+            interestrateindex::iborindex::IborIndex,
+            yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
         },
         time::{date::Date, daycounter::DayCounter, enums::TimeUnit},
     };
@@ -262,14 +255,12 @@ mod tests {
             DayCounter::Actual360,
         );
 
-        let discount_curve =
-            YieldTermStructure::FlatForward(FlatForwardTermStructure::new(ref_date, discount_rate));
+        let discount_curve = Box::new(FlatForwardTermStructure::new(ref_date, discount_rate));
 
-        let discount_index = IborIndex::new(ref_date).with_term_structure(discount_curve);
-        market_store.mut_index_store().add_index(
-            "DiscountCurve".to_string(),
-            InterestRateIndex::IborIndex(discount_index),
-        );
+        let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
+        market_store
+            .mut_index_store()
+            .add_index("DiscountCurve".to_string(), discount_index);
         return market_store;
     }
 

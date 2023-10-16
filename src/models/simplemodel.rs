@@ -4,7 +4,7 @@ use crate::core::marketstore::MarketStore;
 
 use crate::core::meta::*;
 use crate::currencies::traits::CurrencyDetails;
-use crate::rates::traits::{HasReferenceDate, YieldProvider, YieldProviderError};
+use crate::rates::traits::{HasReferenceDate, YieldProviderError};
 use crate::time::date::Date;
 
 use super::traits::{Model, ModelError};

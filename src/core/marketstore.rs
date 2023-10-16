@@ -1,7 +1,7 @@
 use crate::{
     currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
     rates::{
-        indexstore::IndexStore, interestrateindex::enums::InterestRateIndex,
+        indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
         traits::HasReferenceDate,
     },
     time::date::Date,
@@ -61,7 +61,7 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_index_by_id(&self, id: usize) -> Option<&InterestRateIndex> {
+    pub fn get_index_by_id(&self, id: usize) -> Option<&Box<dyn InterestRateIndexTrait>> {
         return self.index_store.get_index_by_id(id);
     }
 }

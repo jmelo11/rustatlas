@@ -5,7 +5,7 @@ use crate::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::enums::YieldTermStructure,
+        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
     },
     time::{
         date::Date,
@@ -14,17 +14,18 @@ use crate::{
     },
 };
 
-use super::traits::FixingProvider;
+use super::traits::{
+    AdvanceInterestRateIndexInTime, FixingProvider, HasTermStructure, InterestRateIndexTrait,
+};
 
 /// # OvernightIndex
 /// Overnight index.
 #[derive(Clone)]
 pub struct OvernightIndex {
     fixings: HashMap<Date, f64>,
-    term_structure: Option<YieldTermStructure>,
+    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     rate_definition: RateDefinition,
     tenor: Period,
-    provider_id: Option<usize>,
     reference_date: Date,
 }
 
@@ -35,13 +36,8 @@ impl OvernightIndex {
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
-            provider_id: None,
             reference_date: reference_date,
         }
-    }
-
-    pub fn term_structure(&self) -> Option<&YieldTermStructure> {
-        self.term_structure.as_ref()
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -50,10 +46,6 @@ impl OvernightIndex {
 
     pub fn tenor(&self) -> Period {
         self.tenor
-    }
-
-    pub fn provider_id(&self) -> Option<usize> {
-        self.provider_id
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
@@ -66,13 +58,8 @@ impl OvernightIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: YieldTermStructure) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
-        self
-    }
-
-    pub fn with_provider_id(mut self, provider_id: Option<usize>) -> Self {
-        self.provider_id = provider_id;
         self
     }
 
@@ -184,39 +171,56 @@ impl YieldProvider for OvernightIndex {
     }
 }
 
-// impl InterestRateIndexTrait for OvernightIndex {
+impl AdvanceInterestRateIndexInTime for OvernightIndex {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let mut fixings = self.fixings().clone();
+        let mut seed = self.reference_date();
+        let end_date = seed.advance(period.length(), period.units());
+        let curve = self
+            .term_structure()
+            .ok_or(YieldProviderError::NoTermStructure)?;
 
-// }
+        while seed < end_date {
+            println!("{:?}", seed);
+            let first_df = curve.discount_factor(seed)?;
+            let last_fixing = fixings
+                .get(&seed)
+                .expect("No fixing for this OvernightIndex");
+            seed = seed.advance(1, TimeUnit::Days);
+            let second_df = curve.discount_factor(seed)?;
+            let comp = last_fixing * first_df / second_df;
+            fixings.insert(seed, comp);
+        }
+        let new_curve = curve.advance_to_period(period)?;
 
-// impl AdvanceInTime for OvernightIndex {
-//     type Output = OvernightIndex;
-//     fn advance(&self, period: Period) -> Result<OvernightIndex, YieldProviderError> {
-//         let mut fixings = self.fixings().clone();
-//         let mut seed = self.reference_date();
-//         let end_date = seed.advance(period.length(), period.units());
-//         let curve = self
-//             .term_structure
-//             .expect("No term structure for this OvernightIndex");
-//         while seed < end_date {
-//             println!("{:?}", seed);
-//             let first_df = curve.discount_factor(seed);
-//             let last_fixing = fixings
-//                 .get(&seed)
-//                 .expect("No fixing for this OvernightIndex");
-//             seed = seed.advance(1, TimeUnit::Days);
-//             let second_df = curve.discount_factor(seed);
-//             let comp = last_fixing * first_df / second_df;
-//             fixings.insert(seed, comp);
-//         }
-//         let advance_curve = curve.advance(period);
-//         println!("{:?}", &advance_curve.reference_date());
-//         OvernightIndex::new()
-//             .with_rate_definition(self.rate_definition)
-//             .with_fixings(fixings)
-//             .with_term_structure(advance_curve)
-//             .with_provider_id(self.provider_id)
-//     }
-// }
+        Ok(Box::new(
+            OvernightIndex::new(new_curve.reference_date())
+                .with_rate_definition(self.rate_definition)
+                .with_fixings(fixings)
+                .with_term_structure(new_curve),
+        ))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+        let days = (date - self.reference_date()) as i32;
+        let period = Period::new(days, TimeUnit::Days);
+        self.advance_to_period(period)
+    }
+}
+
+impl HasTermStructure for OvernightIndex {
+    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>> {
+        self.term_structure.as_ref()
+    }
+}
+
+impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
 mod tests {
@@ -292,64 +296,32 @@ mod tests {
         fixings.insert(ref_date, 100.0);
         let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings.clone())
-            .with_term_structure(YieldTermStructure::FlatForward(
-                FlatForwardTermStructure::new(
-                    ref_date,
-                    InterestRate::new(
-                        0.02,
-                        Compounding::Simple,
-                        Frequency::Annual,
-                        DayCounter::Actual360,
-                    ),
+            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+                ref_date,
+                InterestRate::new(
+                    0.02,
+                    Compounding::Simple,
+                    Frequency::Annual,
+                    DayCounter::Actual360,
                 ),
-            ));
+            )));
 
         assert_eq!(overnight_index.reference_date(), ref_date);
 
         let next_date_2 = Date::new(2021, 1, 3);
         fixings.insert(next_date_2, 100.0);
         let overnight_index = OvernightIndex::new(next_date_2)
-            .with_term_structure(YieldTermStructure::FlatForward(
-                FlatForwardTermStructure::new(
-                    next_date_2,
-                    InterestRate::new(
-                        0.02,
-                        Compounding::Simple,
-                        Frequency::Annual,
-                        DayCounter::Actual360,
-                    ),
+            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+                next_date_2,
+                InterestRate::new(
+                    0.02,
+                    Compounding::Simple,
+                    Frequency::Annual,
+                    DayCounter::Actual360,
                 ),
-            ))
+            )))
             .with_fixings(fixings);
 
         assert_eq!(overnight_index.reference_date(), next_date_2);
     }
-
-    // #[test]
-    // fn test_advance() {
-    //     let mut fixings = HashMap::new();
-    //     let ref_date = Date::new(2021, 1, 1);
-
-    //     fixings.insert(ref_date, 100.0);
-    //     let overnight_index = OvernightIndex::new()
-    //         .with_fixings(fixings)
-    //         .with_term_structure(YieldTermStructure::FlatForward(
-    //             FlatForwardTermStructure::new(
-    //                 ref_date,
-    //                 InterestRate::new(
-    //                     0.02,
-    //                     Compounding::Simple,
-    //                     Frequency::Annual,
-    //                     DayCounter::Actual360,
-    //                 ),
-    //             ),
-    //         ));
-
-    //     let overnight_index = overnight_index.advance(Period::new(1, TimeUnit::Days));
-
-    //     assert_eq!(
-    //         overnight_index.reference_date(),
-    //         ref_date.advance(1, TimeUnit::Days)
-    //     );
-    // }
 }

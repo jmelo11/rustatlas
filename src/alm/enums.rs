@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     cashflows::cashflow::Cashflow,
     instruments::{
@@ -36,4 +38,8 @@ impl Instrument {
     }
 }
 
-
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub enum RateType {
+    Fixed,
+    Floating,
+}
