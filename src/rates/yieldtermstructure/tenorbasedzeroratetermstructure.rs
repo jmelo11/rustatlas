@@ -8,6 +8,8 @@ use crate::{
     time::{date::Date, daycounter::DayCounter, enums::Frequency, period::Period},
 };
 
+use super::traits::TermStructureConstructorError;
+
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
     tenors: Vec<Period>,
@@ -30,7 +32,7 @@ impl TenorBasedZeroRateTermStructure {
         frequency: Frequency,
         interpolation: Interpolator,
         enable_extrapolation: bool,
-    ) -> TenorBasedZeroRateTermStructure {
+    ) -> Result<TenorBasedZeroRateTermStructure, TermStructureConstructorError> {
         let year_fractions = tenors
             .iter()
             .map(|x| {
@@ -39,7 +41,7 @@ impl TenorBasedZeroRateTermStructure {
             })
             .collect();
 
-        TenorBasedZeroRateTermStructure {
+        Ok(TenorBasedZeroRateTermStructure {
             reference_date,
             tenors,
             spreads,
@@ -49,7 +51,7 @@ impl TenorBasedZeroRateTermStructure {
             year_fractions,
             interpolation,
             enable_extrapolation,
-        }
+        })
     }
 
     pub fn tenors(&self) -> &Vec<Period> {
@@ -105,8 +107,11 @@ mod tests {
     use crate::{
         math::interpolation::enums::Interpolator,
         rates::{
-            enums::Compounding, traits::YieldProvider,
-            yieldtermstructure::tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
+            enums::Compounding,
+            yieldtermstructure::{
+                tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
+                traits::TermStructureConstructorError,
+            }, traits::YieldProvider,
         },
         time::{
             date::Date,
@@ -117,7 +122,7 @@ mod tests {
     };
 
     #[test]
-    fn test_zero_rate() {
+    fn test_zero_rate() -> Result<(), TermStructureConstructorError> {
         let reference_date = Date::new(2021, 12, 1);
         let day_counter = DayCounter::Thirty360;
         let compounding = Compounding::Compounded;
@@ -141,7 +146,7 @@ mod tests {
             frequency,
             interpolation,
             enable_extrapolation,
-        );
+        )?;
 
         let df = zero_rate_term_structure
             .discount_factor(Date::new(2022, 6, 1))
@@ -157,5 +162,6 @@ mod tests {
             )
             .unwrap();
         assert!(forward_rate - 0.01 < 1e-10);
+        Ok(())
     }
 }
