@@ -394,11 +394,16 @@ impl MakeFixedRateLoan {
                 let redemptions = self
                     .redemptions
                     .ok_or(MakeFixedRateLoanError::RedemptionsNotSet)?;
-                let notional = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
                 if notional != redemption {
                     return Err(MakeFixedRateLoanError::RedemptionsAndDisbursementsDoNotMatch);
                 }
+
+                let inv_side = match side {
+                    Side::Pay => Side::Receive,
+                    Side::Receive => Side::Pay,
+                };
 
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
@@ -407,7 +412,7 @@ impl MakeFixedRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
@@ -857,11 +862,6 @@ mod tests {
         assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
-
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
 
         Ok(())
     }

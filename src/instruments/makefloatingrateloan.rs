@@ -486,11 +486,16 @@ impl MakeFloatingRateLoan {
                 let redemptions = self
                     .redemptions
                     .ok_or(MakeFloatingRateLoanError::RedemptionsNotSet)?;
-                let notional = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
+                let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
                 if redemption != notional {
                     Err(MakeFloatingRateLoanError::RedemptionsAndDisbursementsDoNotMatch)?;
                 }
+
+                let inv_side = match side {
+                    Side::Pay => Side::Receive,
+                    Side::Receive => Side::Pay,
+                };
 
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
@@ -499,7 +504,7 @@ impl MakeFloatingRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
