@@ -33,6 +33,10 @@ impl IndexStore {
         self.names.push(name);
     }
 
+    pub fn get_index_pos_by_name(&self, name: &String) -> Option<usize> {
+        self.names.iter().position(|s| s == name)
+    }
+
     pub fn get_index_by_name(&self, name: String) -> Option<&Box<dyn InterestRateIndexTrait>> {
         let item = self.names.iter().enumerate().find_map(
             |(n, s)| {

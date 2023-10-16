@@ -1,14 +1,19 @@
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::traits::{HasReferenceDate, YieldProviderError},
-    rates::{
-        enums::Compounding, interestrate::InterestRate, traits::YieldProvider,
-        yieldtermstructure::errortermstructure::TermStructureConstructorError,
+    rates::{enums::Compounding, interestrate::InterestRate, traits::YieldProvider},
+    time::{
+        date::Date,
+        daycounter::DayCounter,
+        enums::{Frequency, TimeUnit},
+        period::Period,
     },
-    time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}, period::Period},
 };
 
-use super::traits::{YieldTermStructureTrait, AdvanceTermStructureInTime, AdvanceInTimeError};
+use super::traits::{
+    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
+    YieldTermStructureTrait,
+};
 
 #[derive(Clone)]
 pub struct DiscountTermStructure {

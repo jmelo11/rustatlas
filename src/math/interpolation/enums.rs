@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits::Interpolate};
 
-#[derive(Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum Interpolator {
     Linear,
     LogLinear,

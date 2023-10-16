@@ -1,5 +1,5 @@
 pub use crate::{
-    alm::{enums::Instrument, traits::*},
+    alm::enums::*,
     cashflows::cashflow::Side,
     cashflows::{
         cashflow::Cashflow,
@@ -12,8 +12,8 @@ pub use crate::{
     core::{marketstore::MarketStore, traits::Registrable},
     currencies::{enums::*, structs::*, traits::CurrencyDetails},
     instruments::{
-        fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
-        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
+        fixedrateinstrument::*, floatingrateinstrument::*, makefixedrateloan::*,
+        makefloatingrateloan::*, traits::*,
     },
     math::interpolation::{
         enums::Interpolator, linear::LinearInterpolator, loglinear::LogLinearInterpolator,
@@ -25,15 +25,12 @@ pub use crate::{
         indexstore::IndexStore,
         interestrate::{InterestRate, RateDefinition},
         interestrateindex::{
-            iborindex::IborIndex, overnightindex::OvernightIndex, traits::FixingProvider,
+            iborindex::IborIndex, overnightindex::OvernightIndex, traits::FixingProvider, traits::*,
         },
         traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::{
-            discounttermstructure::DiscountTermStructure,
-            flatforwardtermstructure::FlatForwardTermStructure,
-            mixedtermstructure::MixedTermStructure,
-            tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
-            zeroratetermstructure::ZeroRateTermStructure,
+            discounttermstructure::*, flatforwardtermstructure::*, mixedtermstructure::*,
+            tenorbasedzeroratetermstructure::*, traits::*, zeroratetermstructure::*,
         },
     },
     time::{

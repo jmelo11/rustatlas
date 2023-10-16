@@ -26,13 +26,7 @@ use crate::{
     },
 };
 
-use super::enums::Instrument;
-
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub enum RateType {
-    Fixed,
-    Floating,
-}
+use super::enums::{Instrument, RateType};
 
 /// # LoanGenerator
 /// Generates a loan based on a configuration and a market store.
@@ -58,6 +52,7 @@ pub enum LoanGeneratorError {
 
 /// # LoanConfiguration
 /// Configuration for a loan. Represents the meta data required to generate a loan.
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LoanConfiguration {
     weight: f64,
     structure: Structure,

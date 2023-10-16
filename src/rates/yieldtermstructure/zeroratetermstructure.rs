@@ -1,6 +1,5 @@
 use crate::{
     math::interpolation::enums::Interpolator,
-    rates::yieldtermstructure::errortermstructure::TermStructureConstructorError,
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
@@ -13,7 +12,10 @@ use crate::{
     },
 };
 
-use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
+use super::traits::{
+    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
+    YieldTermStructureTrait,
+};
 
 /// # ZeroRateTermStructure
 /// Struct that defines a zero rate term structure.
