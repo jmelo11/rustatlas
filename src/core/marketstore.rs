@@ -2,9 +2,9 @@ use crate::{
     currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
     rates::{
         indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
-        traits::HasReferenceDate,
+        traits::HasReferenceDate, yieldtermstructure::traits::AdvanceInTimeError,
     },
-    time::date::Date,
+    time::{date::Date, enums::TimeUnit, period::Period},
 };
 
 /// # MarketStore
@@ -63,6 +63,29 @@ impl MarketStore {
 
     pub fn get_index_by_id(&self, id: usize) -> Option<&Box<dyn InterestRateIndexTrait>> {
         return self.index_store.get_index_by_id(id);
+    }
+
+    pub fn advance_to_period(&self, period: Period) -> Result<MarketStore, AdvanceInTimeError> {
+        if period.length() < 1 {
+            return Err(AdvanceInTimeError::InvalidPeriod);
+        }
+        let new_reference_date = self.reference_date + period;
+        let new_index_store = self.index_store.advance_to_period(period)?;
+        Ok(MarketStore {
+            reference_date: new_reference_date,
+            local_currency: self.local_currency,
+            exchange_rate_store: self.exchange_rate_store.clone(),
+            index_store: new_index_store,
+        })
+    }
+
+    pub fn advance_to_date(&self, date: Date) -> Result<MarketStore, AdvanceInTimeError> {
+        if date < self.reference_date {
+            return Err(AdvanceInTimeError::InvalidDate);
+        }
+        let days = (date - self.reference_date) as i32;
+        let period = Period::new(days, TimeUnit::Days);
+        self.advance_to_period(period)
     }
 }
 

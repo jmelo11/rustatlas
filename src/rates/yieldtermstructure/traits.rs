@@ -44,6 +44,8 @@ pub trait AdvanceTermStructureInTime {
 pub enum AdvanceInTimeError {
     #[error("Invalid date")]
     InvalidDate,
+    #[error("Invalid period")]
+    InvalidPeriod,
     #[error("YieldProviderError: {0}")]
     YieldProviderError(#[from] YieldProviderError),
     #[error("TermStructureConstructorError: {0}")]
