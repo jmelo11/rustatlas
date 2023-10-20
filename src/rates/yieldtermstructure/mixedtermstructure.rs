@@ -162,7 +162,7 @@ mod test {
     fn test_forward_rate() {
         let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            0.1,
+            0.01,
             RateDefinition::new(
                 DayCounter::Actual360,
                 Compounding::Compounded,
@@ -172,7 +172,7 @@ mod test {
 
         let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            0.2,
+            0.02,
             RateDefinition::new(
                 DayCounter::Actual360,
                 Compounding::Compounded,
@@ -187,7 +187,6 @@ mod test {
             Compounding::Compounded,
             Frequency::Annual,
         );
-        println!("fr: {:?}", fr);
         assert!((fr.unwrap() - 0.03) < 0.0001);
     }
 

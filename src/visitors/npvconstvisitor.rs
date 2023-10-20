@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
-    cashflows::{cashflow::{Side, self}, traits::Payable},
+    cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
 };
 
@@ -12,18 +12,18 @@ use super::traits::{ConstVisit, EvaluationError, HasCashflows};
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVConstVisitor {
     market_data: Rc<Vec<MarketData>>,
-    take_today:  bool,
+    include_today_cashflows: bool,
 }
 
 impl NPVConstVisitor {
     pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
         NPVConstVisitor {
             market_data: market_data,
-            take_today:  true,
+            include_today_cashflows: true,
         }
     }
-    pub fn set_take_today(&mut self, take_today: bool) {
-        self.take_today = take_today;
+    pub fn set_take_today(&mut self, include_today_cashflows: bool) {
+        self.include_today_cashflows = include_today_cashflows;
     }
 }
 
@@ -31,7 +31,6 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
     type Output = Result<f64, EvaluationError>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
-
             let id = cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
 
             let cf_market_data = self
@@ -39,10 +38,9 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
                 .get(id)
                 .ok_or(EvaluationError::NoMarketData)?;
 
-
             let mut aux = 1.0;
             let market_data_date = cf_market_data.reference_date();
-            if market_data_date == cf.payment_date() && !self.take_today {
+            if market_data_date == cf.payment_date() && !self.include_today_cashflows {
                 aux = 0.0;
             }
 

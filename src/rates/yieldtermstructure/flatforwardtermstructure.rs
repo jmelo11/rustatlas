@@ -136,16 +136,11 @@ mod tests {
     #[test]
     fn test_discount() -> Result<(), YieldProviderError> {
         let reference_date = Date::new(2023, 8, 19);
-        let interest_rate: InterestRate = InterestRate::new(
-            0.05,
-            Compounding::Simple,
-            Frequency::Annual,
-            DayCounter::Actual360,
-        );
         let target_date = Date::new(2024, 8, 19);
+        let interest_rate = InterestRate::from_rate_definition(0.05, RateDefinition::default());
 
         let term_structure =
-            FlatForwardTermStructure::new(reference_date, 0.5, RateDefinition::default());
+            FlatForwardTermStructure::new(reference_date, 0.05, RateDefinition::default());
 
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;

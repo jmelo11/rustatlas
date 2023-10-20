@@ -10,15 +10,13 @@ use rustatlas::{
     currencies::enums::Currency,
     instruments::makefixedrateloan::MakeFixedRateLoan,
     rates::{
-        enums::Compounding,
-        interestrate::{InterestRate, RateDefinition},
+        interestrate::{RateDefinition},
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
         traits::HasReferenceDate,
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
     time::{
         date::Date,
-        daycounter::DayCounter,
         enums::{Frequency, TimeUnit},
         period::Period,
     },
