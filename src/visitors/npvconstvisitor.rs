@@ -22,7 +22,7 @@ impl NPVConstVisitor {
             include_today_cashflows: true,
         }
     }
-    pub fn set_take_today(&mut self, include_today_cashflows: bool) {
+    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 }
@@ -38,10 +38,9 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
                 .get(id)
                 .ok_or(EvaluationError::NoMarketData)?;
 
-            let mut aux = 1.0;
-            let market_data_date = cf_market_data.reference_date();
-            if market_data_date == cf.payment_date() && !self.include_today_cashflows {
-                aux = 0.0;
+            if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
+            {
+                return Ok(acc);
             }
 
             let df = cf_market_data
@@ -56,8 +55,7 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
             };
 
             let amount = cf.amount().ok_or(EvaluationError::NoAmount)?;
-
-            Ok(acc + aux * df * amount / fx * flag)
+            Ok(acc + df * amount / fx * flag)
         });
         return npv;
     }
