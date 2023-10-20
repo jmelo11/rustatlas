@@ -11,8 +11,8 @@ rayon = "1.7.0"
 rand = "0.8.0"
 thiserror = "1.0"
 serde = "1.0.136"
-argmin = { git = "https://github.com/argmin-rs/argmin" }
-argmin-math = { git = "https://github.com/argmin-rs/argmin", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
+argmin = { version = "0.8.1" }
+#argmin-math = { git = "https://github.com/argmin-rs/argmin", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }
