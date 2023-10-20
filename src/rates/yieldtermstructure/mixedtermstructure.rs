@@ -21,22 +21,14 @@ use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStr
 ///
 /// let spread_curve = FlatForwardTermStructure::new(
 ///   ref_date,
-///   InterestRate::new(
-///       0.01,
-///     Compounding::Compounded,
-///     Frequency::Annual,
-///     DayCounter::Actual360,
-///     ),
+///     0.01,
+///     RateDefinition::default()
 /// );
 ///
 /// let base_curve = FlatForwardTermStructure::new(
-///   ref_date,
-///  InterestRate::new(
+///     ref_date,
 ///     0.02,
-///     Compounding::Compounded,
-///     Frequency::Annual,
-///     DayCounter::Actual360,
-///     ),
+///     RateDefinition::default()
 /// );
 ///
 /// let spreaded_curve = MixedTermStructure::new(Box::new(spread_curve), Box::new(base_curve));
@@ -129,9 +121,9 @@ impl YieldTermStructureTrait for MixedTermStructure {}
 #[cfg(test)]
 mod test {
     use crate::{
+        prelude::RateDefinition,
         rates::{
             enums::Compounding,
-            interestrate::InterestRate,
             traits::{HasReferenceDate, YieldProvider},
             yieldtermstructure::{
                 flatforwardtermstructure::FlatForwardTermStructure,
@@ -145,21 +137,21 @@ mod test {
     fn test_reference_date() {
         let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.01,
+            0.1,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
 
         let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.02,
+            0.2,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
         let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
@@ -170,21 +162,21 @@ mod test {
     fn test_forward_rate() {
         let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.01,
+            0.1,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
 
         let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.02,
+            0.2,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
         let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
@@ -203,21 +195,21 @@ mod test {
     fn test_discount_factor() {
         let spread_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.01,
+            0.1,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
 
         let base_curve = Box::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
-            InterestRate::new(
-                0.02,
+            0.2,
+            RateDefinition::new(
+                DayCounter::Actual360,
                 Compounding::Compounded,
                 Frequency::Annual,
-                DayCounter::Actual360,
             ),
         ));
 

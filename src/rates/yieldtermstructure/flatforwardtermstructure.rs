@@ -1,4 +1,5 @@
 use crate::{
+    prelude::RateDefinition,
     rates::{
         enums::Compounding,
         interestrate::InterestRate,
@@ -16,8 +17,7 @@ use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStr
 /// use rustatlas::prelude::*;
 ///
 /// let reference_date = Date::new(2023, 8, 19);
-/// let interest_rate: InterestRate = InterestRate::new(0.05, Compounding::Simple, Frequency::Annual, DayCounter::Actual360);
-/// let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
+/// let term_structure = FlatForwardTermStructure::new(reference_date, 0.5, RateDefinition::default());
 /// assert_eq!(term_structure.reference_date(), reference_date);
 /// ```
 #[derive(Clone, Copy)]
@@ -27,7 +27,12 @@ pub struct FlatForwardTermStructure {
 }
 
 impl FlatForwardTermStructure {
-    pub fn new(reference_date: Date, rate: InterestRate) -> FlatForwardTermStructure {
+    pub fn new(
+        reference_date: Date,
+        rate: f64,
+        rate_definition: RateDefinition,
+    ) -> FlatForwardTermStructure {
+        let rate = InterestRate::from_rate_definition(rate, rate_definition);
         FlatForwardTermStructure {
             reference_date,
             rate,
@@ -36,6 +41,14 @@ impl FlatForwardTermStructure {
 
     pub fn rate(&self) -> InterestRate {
         return self.rate;
+    }
+
+    pub fn value(&self) -> f64 {
+        self.rate.rate()
+    }
+
+    pub fn rate_definition(&self) -> RateDefinition {
+        *self.rate.rate_definition()
     }
 }
 
@@ -86,7 +99,8 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
             .advance(period.length(), period.units());
         return Ok(Box::new(FlatForwardTermStructure::new(
             new_reference_date,
-            self.rate(),
+            self.value(),
+            self.rate_definition(),
         )));
     }
 
@@ -94,7 +108,11 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
         &self,
         date: Date,
     ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
-        return Ok(Box::new(FlatForwardTermStructure::new(date, self.rate())));
+        return Ok(Box::new(FlatForwardTermStructure::new(
+            date,
+            self.value(),
+            self.rate_definition(),
+        )));
     }
 }
 
@@ -109,14 +127,9 @@ mod tests {
     #[test]
     fn test_reference_date() {
         let reference_date = Date::new(2023, 8, 19);
-        let interest_rate: InterestRate = InterestRate::new(
-            0.05,
-            Compounding::Simple,
-            Frequency::Annual,
-            DayCounter::Actual360,
-        );
 
-        let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
+        let term_structure =
+            FlatForwardTermStructure::new(reference_date, 0.5, RateDefinition::default());
         assert_eq!(term_structure.reference_date(), reference_date);
     }
 
@@ -131,7 +144,8 @@ mod tests {
         );
         let target_date = Date::new(2024, 8, 19);
 
-        let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
+        let term_structure =
+            FlatForwardTermStructure::new(reference_date, 0.5, RateDefinition::default());
 
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
@@ -154,7 +168,8 @@ mod tests {
         let comp = Compounding::Simple;
         let freq = Frequency::Annual;
 
-        let term_structure = FlatForwardTermStructure::new(reference_date, interest_rate);
+        let term_structure =
+            FlatForwardTermStructure::new(reference_date, 0.5, RateDefinition::default());
 
         let comp_factor = term_structure.discount_factor(start_date)?
             / term_structure.discount_factor(end_date)?;

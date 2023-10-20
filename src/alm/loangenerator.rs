@@ -230,12 +230,10 @@ impl LoanGenerator {
 mod tests {
     use crate::{
         rates::{
-            enums::Compounding,
-            interestrate::{InterestRate, RateDefinition},
-            interestrateindex::iborindex::IborIndex,
+            interestrate::RateDefinition, interestrateindex::iborindex::IborIndex,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
         },
-        time::{date::Date, daycounter::DayCounter, enums::TimeUnit},
+        time::{date::Date, enums::TimeUnit},
     };
 
     use super::*;
@@ -245,14 +243,11 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let discount_rate = InterestRate::new(
-            0.05,
-            Compounding::Simple,
-            Frequency::Annual,
-            DayCounter::Actual360,
-        );
-
-        let discount_curve = Box::new(FlatForwardTermStructure::new(ref_date, discount_rate));
+        let discount_curve = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.5,
+            RateDefinition::default(),
+        ));
 
         let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
         market_store

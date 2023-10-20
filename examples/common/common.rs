@@ -85,32 +85,23 @@ pub fn create_store() -> MarketStore {
     let local_currency = Currency::USD;
     let mut market_store = MarketStore::new(ref_date, local_currency);
 
-    let forecast_rate_1 = InterestRate::new(
+    let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
+        ref_date,
         0.02,
-        Compounding::Simple,
-        Frequency::Annual,
-        DayCounter::Actual360,
-    );
+        RateDefinition::default(),
+    ));
 
-    let forecast_rate_2 = InterestRate::new(
+    let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
+        ref_date,
         0.03,
-        Compounding::Simple,
-        Frequency::Annual,
-        DayCounter::Actual360,
-    );
+        RateDefinition::default(),
+    ));
 
-    let discount_rate = InterestRate::new(
+    let discount_curve = Box::new(FlatForwardTermStructure::new(
+        ref_date,
         0.05,
-        Compounding::Simple,
-        Frequency::Annual,
-        DayCounter::Actual360,
-    );
-
-    let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(ref_date, forecast_rate_1));
-
-    let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(ref_date, forecast_rate_2));
-
-    let discount_curve = Box::new(FlatForwardTermStructure::new(ref_date, discount_rate));
+        RateDefinition::default(),
+    ));
 
     let mut ibor_fixings = HashMap::new();
     ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today

@@ -224,10 +224,7 @@ impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        time::daycounter::DayCounter,
-    };
+    use crate::rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure;
 
     use super::*;
     use std::collections::HashMap;
@@ -298,12 +295,8 @@ mod tests {
             .with_fixings(fixings.clone())
             .with_term_structure(Box::new(FlatForwardTermStructure::new(
                 ref_date,
-                InterestRate::new(
-                    0.02,
-                    Compounding::Simple,
-                    Frequency::Annual,
-                    DayCounter::Actual360,
-                ),
+                0.2,
+                RateDefinition::default(),
             )));
 
         assert_eq!(overnight_index.reference_date(), ref_date);
@@ -313,12 +306,8 @@ mod tests {
         let overnight_index = OvernightIndex::new(next_date_2)
             .with_term_structure(Box::new(FlatForwardTermStructure::new(
                 next_date_2,
-                InterestRate::new(
-                    0.02,
-                    Compounding::Simple,
-                    Frequency::Annual,
-                    DayCounter::Actual360,
-                ),
+                0.2,
+                RateDefinition::default(),
             )))
             .with_fixings(fixings);
 
