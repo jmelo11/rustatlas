@@ -2,17 +2,14 @@ extern crate rustatlas;
 use rustatlas::{
     core::marketstore::MarketStore,
     currencies::enums::Currency,
-    prelude::RateDefinition,
     rates::{
-        enums::Compounding,
-        interestrate::InterestRate,
+        interestrate::RateDefinition,
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
         traits::HasReferenceDate,
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
     },
     time::{
         date::Date,
-        daycounter::DayCounter,
         enums::{Frequency, TimeUnit},
         period::Period,
     },

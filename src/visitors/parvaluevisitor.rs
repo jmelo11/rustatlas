@@ -29,7 +29,7 @@ struct ParValue<T> {
 
 impl<T> ParValue<T> {
     pub fn new(eval: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
-        let npv_visitor = NPVConstVisitor::new(market_data.clone());
+        let npv_visitor = NPVConstVisitor::new(market_data.clone(), true);
         let fixing_visitor = FixingVisitor::new(market_data.clone());
         ParValue {
             eval,

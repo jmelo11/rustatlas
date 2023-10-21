@@ -70,7 +70,7 @@ fn starting_today_pricing() {
 
     print_table(instrument.cashflows(), ref_data.clone());
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -142,7 +142,7 @@ fn forward_starting_pricing() {
     let ref_data = Rc::new(data);
     print_table(instrument.cashflows(), ref_data.clone());
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -202,7 +202,7 @@ fn already_started_pricing() {
 
     print_table(instrument.cashflows(), ref_data.clone());
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone());
+    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();

@@ -7,6 +7,7 @@ use rayon::{
 };
 use rustatlas::{
     cashflows::cashflow::Side,
+    currencies::enums::Currency,
     instruments::{fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan},
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
@@ -19,7 +20,7 @@ use rustatlas::{
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
         traits::{ConstVisit, Visit},
-    }, currencies::enums::Currency,
+    },
 };
 
 mod common;
@@ -72,7 +73,7 @@ fn multiple() {
         let data = model.gen_market_data(&indexer.request()).unwrap();
 
         let ref_data = Rc::new(data);
-        let npv_visitor = NPVConstVisitor::new(ref_data.clone());
+        let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
         instruments
             .iter()
             .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());

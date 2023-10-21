@@ -16,10 +16,10 @@ pub struct NPVConstVisitor {
 }
 
 impl NPVConstVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
+    pub fn new(market_data: Rc<Vec<MarketData>>, include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data: market_data,
-            include_today_cashflows: true,
+            include_today_cashflows,
         }
     }
     pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
