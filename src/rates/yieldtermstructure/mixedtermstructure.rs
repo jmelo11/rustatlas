@@ -121,9 +121,9 @@ impl YieldTermStructureTrait for MixedTermStructure {}
 #[cfg(test)]
 mod test {
     use crate::{
-        prelude::RateDefinition,
         rates::{
             enums::Compounding,
+            interestrate::RateDefinition,
             traits::{HasReferenceDate, YieldProvider},
             yieldtermstructure::{
                 flatforwardtermstructure::FlatForwardTermStructure,

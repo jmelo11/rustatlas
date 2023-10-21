@@ -8,6 +8,7 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
+#[derive(Clone)]
 pub enum Instrument {
     FixedRateInstrument(FixedRateInstrument),
     FloatingRateInstrument(FloatingRateInstrument),

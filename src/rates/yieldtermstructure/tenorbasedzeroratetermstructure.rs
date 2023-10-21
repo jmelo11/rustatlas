@@ -2,21 +2,27 @@ use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
         enums::Compounding,
-        interestrate::InterestRate,
+        interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
-    time::{date::Date, daycounter::DayCounter, enums::Frequency, period::Period},
+    time::{
+        date::Date,
+        enums::{Frequency, TimeUnit},
+        period::Period,
+    },
 };
 
-use super::traits::TermStructureConstructorError;
+use super::traits::{
+    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
+    YieldTermStructureTrait,
+};
 
+#[derive(Clone)]
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
     tenors: Vec<Period>,
     spreads: Vec<f64>,
-    day_counter: DayCounter,
-    compounding: Compounding,
-    frequency: Frequency,
+    rate_definition: RateDefinition,
     year_fractions: Vec<f64>,
     interpolation: Interpolator,
     enable_extrapolation: bool,
@@ -27,9 +33,7 @@ impl TenorBasedZeroRateTermStructure {
         reference_date: Date,
         tenors: Vec<Period>,
         spreads: Vec<f64>,
-        day_counter: DayCounter,
-        compounding: Compounding,
-        frequency: Frequency,
+        rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
     ) -> Result<TenorBasedZeroRateTermStructure, TermStructureConstructorError> {
@@ -37,7 +41,9 @@ impl TenorBasedZeroRateTermStructure {
             .iter()
             .map(|x| {
                 let date = reference_date + *x;
-                day_counter.year_fraction(reference_date, date)
+                rate_definition
+                    .day_counter()
+                    .year_fraction(reference_date, date)
             })
             .collect();
 
@@ -45,9 +51,7 @@ impl TenorBasedZeroRateTermStructure {
             reference_date,
             tenors,
             spreads,
-            day_counter,
-            compounding,
-            frequency,
+            rate_definition,
             year_fractions,
             interpolation,
             enable_extrapolation,
@@ -71,7 +75,10 @@ impl HasReferenceDate for TenorBasedZeroRateTermStructure {
 
 impl YieldProvider for TenorBasedZeroRateTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        let year_fraction = self.day_counter.year_fraction(self.reference_date(), date);
+        let year_fraction = self
+            .rate_definition
+            .day_counter()
+            .year_fraction(self.reference_date(), date);
 
         let spread = self.interpolation.interpolate(
             year_fraction,
@@ -79,7 +86,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
             &self.spreads,
             self.enable_extrapolation,
         );
-        let rate = InterestRate::new(spread, self.compounding, self.frequency, self.day_counter);
+        let rate = InterestRate::from_rate_definition(spread, self.rate_definition);
         Ok(1.0 / rate.compound_factor(self.reference_date, date))
     }
 
@@ -95,12 +102,47 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
 
         let compound = start_df / end_df;
         let t = self
-            .day_counter
+            .rate_definition
+            .day_counter()
             .year_fraction(self.reference_date, end_date);
-        let rate = InterestRate::implied_rate(compound, self.day_counter, comp, freq, t)?;
+        let rate = InterestRate::implied_rate(
+            compound,
+            self.rate_definition.day_counter(),
+            comp,
+            freq,
+            t,
+        )?;
         Ok(rate.rate())
     }
 }
+
+impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
+    fn advance_to_period(
+        &self,
+        period: Period,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let new_reference_date = self.reference_date + period;
+        Ok(Box::new(TenorBasedZeroRateTermStructure::new(
+            new_reference_date,
+            self.tenors.clone(),
+            self.spreads.clone(),
+            self.rate_definition.clone(),
+            self.interpolation,
+            self.enable_extrapolation,
+        )?))
+    }
+
+    fn advance_to_date(
+        &self,
+        date: Date,
+    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+        let days = (date - self.reference_date) as i32;
+        let period = Period::new(days, TimeUnit::Days);
+        self.advance_to_period(period)
+    }
+}
+
+impl YieldTermStructureTrait for TenorBasedZeroRateTermStructure {}
 
 #[cfg(test)]
 mod tests {
@@ -108,14 +150,15 @@ mod tests {
         math::interpolation::enums::Interpolator,
         rates::{
             enums::Compounding,
+            interestrate::RateDefinition,
+            traits::YieldProvider,
             yieldtermstructure::{
                 tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
                 traits::TermStructureConstructorError,
-            }, traits::YieldProvider,
+            },
         },
         time::{
             date::Date,
-            daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
         },
@@ -124,9 +167,7 @@ mod tests {
     #[test]
     fn test_zero_rate() -> Result<(), TermStructureConstructorError> {
         let reference_date = Date::new(2021, 12, 1);
-        let day_counter = DayCounter::Thirty360;
-        let compounding = Compounding::Compounded;
-        let frequency = Frequency::Semiannual;
+        let rate_definition = RateDefinition::default();
 
         let interpolation = Interpolator::Linear;
         let enable_extrapolation = true;
@@ -137,13 +178,12 @@ mod tests {
             .iter()
             .map(|x| Period::new(*x, TimeUnit::Years))
             .collect();
+
         let zero_rate_term_structure = TenorBasedZeroRateTermStructure::new(
             reference_date,
             tenors,
             spreads,
-            day_counter,
-            compounding,
-            frequency,
+            rate_definition,
             interpolation,
             enable_extrapolation,
         )?;

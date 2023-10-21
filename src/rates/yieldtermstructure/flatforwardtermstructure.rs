@@ -1,8 +1,7 @@
 use crate::{
-    prelude::RateDefinition,
     rates::{
         enums::Compounding,
-        interestrate::InterestRate,
+        interestrate::{InterestRate, RateDefinition},
         traits::{HasReferenceDate, YieldProvider, YieldProviderError},
     },
     time::{date::Date, enums::Frequency, period::Period},
