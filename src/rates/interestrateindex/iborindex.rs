@@ -2,14 +2,15 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
+        traits::{HasReferenceDate, YieldProvider},
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
         date::Date,
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::{AtlasError, Result},
 };
 use std::collections::HashMap;
 
@@ -87,11 +88,14 @@ impl IborIndex {
 }
 
 impl FixingProvider for IborIndex {
-    fn fixing(&self, date: Date) -> Option<f64> {
-        match self.fixings.get(&date) {
-            Some(rate) => Some(*rate),
-            None => None,
-        }
+    fn fixing(&self, date: Date) -> Result<f64> {
+        self.fixings
+            .get(&date)
+            .cloned()
+            .ok_or(AtlasError::NotFoundErr(format!(
+                "No fixing found for date {:?}",
+                date
+            )))
     }
 
     fn fixings(&self) -> &HashMap<Date, f64> {
@@ -113,10 +117,8 @@ impl HasReferenceDate for IborIndex {
 }
 
 impl YieldProvider for IborIndex {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure()
-            .ok_or(YieldProviderError::NoTermStructure)?
-            .discount_factor(date)
+    fn discount_factor(&self, date: Date) -> Result<f64> {
+        self.term_structure()?.discount_factor(date)
     }
 
     fn forward_rate(
@@ -125,40 +127,38 @@ impl YieldProvider for IborIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         if end_date < start_date {
-            return Err(YieldProviderError::InvalidDate(format!(
-                "End date {} is before start date {}",
+            return Err(AtlasError::InvalidValueErr(format!(
+                "End date {:?} is before start date {:?}",
                 end_date, start_date
             )));
         }
         if start_date < self.reference_date() {
-            self.fixing(start_date)
-                .ok_or(YieldProviderError::NoFixingRate(start_date))
+            return self.fixing(start_date);
         } else {
-            self.term_structure()
-                .ok_or(YieldProviderError::NoTermStructure)?
-                .forward_rate(start_date, end_date, comp, freq)
+            return self
+                .term_structure()?
+                .forward_rate(start_date, end_date, comp, freq);
         }
     }
 }
 
 impl HasTermStructure for IborIndex {
-    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>> {
-        self.term_structure.as_ref()
+    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>> {
+        self.term_structure
+            .as_ref()
+            .ok_or(AtlasError::ValueNotSetErr(
+                "Term structure not set".to_string(),
+            ))
     }
 }
 
 impl InterestRateIndexTrait for IborIndex {}
 
 impl AdvanceInterestRateIndexInTime for IborIndex {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
-        let curve = self
-            .term_structure()
-            .ok_or(YieldProviderError::NoTermStructure)?;
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>> {
+        let curve = self.term_structure()?;
 
         let mut fixings = self.fixings().clone();
         let mut seed = self.reference_date();
@@ -183,14 +183,8 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
         ))
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
-        let curve = self
-            .term_structure()
-            .ok_or(YieldProviderError::NoTermStructure)?;
-
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
+        let curve = self.term_structure()?;
         let mut fixings = self.fixings().clone();
         let mut seed = self.reference_date();
         while seed <= date {

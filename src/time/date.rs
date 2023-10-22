@@ -1,10 +1,10 @@
 use super::enums::*;
 use super::period::Period;
-use chrono::{Datelike, Duration, Months, NaiveDate, ParseError};
+use crate::utils::errors::Result;
+use chrono::{Datelike, Duration, Months, NaiveDate};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
-use thiserror::Error;
 
 /// # NaiveDateExt
 /// Extends the NaiveDate struct from the chrono rustatlas.
@@ -162,10 +162,7 @@ pub struct Date {
 }
 
 impl Serialize for Date {
-    fn serialize<S>(
-        &self,
-        serializer: S,
-    ) -> Result<<S as serde::Serializer>::Ok, <S as serde::Serializer>::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -174,19 +171,13 @@ impl Serialize for Date {
 }
 
 impl<'de> Deserialize<'de> for Date {
-    fn deserialize<D>(deserializer: D) -> Result<Self, <D as serde::Deserializer<'de>>::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Date, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Date::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
+        Date::parse_from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
     }
-}
-
-#[derive(Debug, Error)]
-pub enum DateParseError {
-    #[error("Invalid date: {0}")]
-    InvalidDate(#[from] ParseError),
 }
 
 impl Date {
@@ -202,13 +193,8 @@ impl Date {
         Date { base_date }
     }
 
-    pub fn from_str(date: &str, fmt: &str) -> Result<Date, DateParseError> {
+    pub fn parse_from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
-        Ok(Date::from_base_date(base_date))
-    }
-
-    pub fn from_str_date(date: &str) -> Result<Date, DateParseError> {
-        let base_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")?;
         Ok(Date::from_base_date(base_date))
     }
 
@@ -539,5 +525,11 @@ mod tests {
     fn test_empty() {
         let date = Date::empty();
         assert_eq!(date, Date::from_base_date(NaiveDate::MIN));
+    }
+
+    #[test]
+    fn test_deserialize() {
+        let date = Date::parse_from_str("2020-01-15", "%Y-%m-%d").unwrap();
+        assert_eq!(date, Date::new(2020, 1, 15));
     }
 }

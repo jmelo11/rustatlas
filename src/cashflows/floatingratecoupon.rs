@@ -1,11 +1,12 @@
 use crate::{
     core::{
         meta::{ForwardRateRequest, MarketRequest},
-        traits::{MarketRequestError, Registrable},
+        traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
     },
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
     time::date::Date,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::{
@@ -33,12 +34,12 @@ use super::{
 pub struct FloatingRateCoupon {
     notional: f64,
     spread: f64,
-    fixing_rate: Option<f64>,
     accrual_start_date: Date,
     accrual_end_date: Date,
     rate_definition: RateDefinition,
-    forecast_curve_id: Option<usize>,
     cashflow: SimpleCashflow,
+    fixing_rate: Option<f64>,
+    forecast_curve_id: Option<usize>,
 }
 
 impl FloatingRateCoupon {
@@ -64,22 +65,22 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(self, id: Option<usize>) -> FloatingRateCoupon {
+    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
         self.cashflow.with_discount_curve_id(id);
         self
     }
 
-    pub fn with_forecast_curve_id(mut self, id: Option<usize>) -> FloatingRateCoupon {
-        self.forecast_curve_id = id;
+    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
+        self.forecast_curve_id = Some(id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
+    pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
-    pub fn set_forecast_curve_id(&mut self, id: Option<usize>) {
-        self.forecast_curve_id = id;
+    pub fn set_forecast_curve_id(&mut self, id: usize) {
+        self.forecast_curve_id = Some(id);
     }
 }
 
@@ -110,7 +111,7 @@ impl RequiresFixingRate for FloatingRateCoupon {
 }
 
 impl Payable for FloatingRateCoupon {
-    fn amount(&self) -> Option<f64> {
+    fn amount(&self) -> Result<f64> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {
@@ -121,20 +122,37 @@ impl Payable for FloatingRateCoupon {
     }
 }
 
+impl HasCurrency for FloatingRateCoupon {
+    fn currency(&self) -> Result<Currency> {
+        self.cashflow.currency()
+    }
+}
+
+impl HasDiscountCurveId for FloatingRateCoupon {
+    fn discount_curve_id(&self) -> Result<usize> {
+        self.cashflow.discount_curve_id()
+    }
+}
+
+impl HasForecastCurveId for FloatingRateCoupon {
+    fn forecast_curve_id(&self) -> Result<usize> {
+        self.forecast_curve_id
+            .ok_or(AtlasError::ValueNotSetErr("Forecast curve id".to_string()))
+    }
+}
+
 impl Registrable for FloatingRateCoupon {
-    fn registry_id(&self) -> Option<usize> {
-        self.cashflow.registry_id()
+    fn id(&self) -> Result<usize> {
+        self.cashflow.id()
     }
 
-    fn register_id(&mut self, id: usize) {
-        self.cashflow.register_id(id);
+    fn set_id(&mut self, id: usize) {
+        self.cashflow.set_id(id);
     }
 
-    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+    fn market_request(&self) -> Result<MarketRequest> {
         let tmp = self.cashflow.market_request()?;
-        let forecast_curve_id = self
-            .forecast_curve_id
-            .ok_or(MarketRequestError::NoForecastCurveId)?;
+        let forecast_curve_id = self.forecast_curve_id()?;
         let forecast = ForwardRateRequest::new(
             forecast_curve_id,
             self.accrual_start_date,

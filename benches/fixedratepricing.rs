@@ -29,7 +29,7 @@ use crate::common::common::*;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 fn multiple() {
-    let market_store = create_store();
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -62,7 +62,7 @@ fn multiple() {
         .collect(); // Collect the results into a Vec<_>
 
     fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-        let store = Rc::new(create_store());
+        let store = Rc::new(create_store().unwrap());
         let mut npv = 0.0;
         let indexer = IndexingVisitor::new();
         instruments

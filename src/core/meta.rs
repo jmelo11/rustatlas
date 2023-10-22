@@ -2,6 +2,7 @@ use crate::{
     currencies::enums::Currency,
     rates::enums::Compounding,
     time::{date::Date, enums::Frequency},
+    utils::errors::{AtlasError, Result},
 };
 
 /// # ExchangeRateRequest
@@ -210,19 +211,20 @@ impl MarketData {
         self.id
     }
 
-    pub fn df(&self) -> Option<f64> {
-        self.df
-    }
-
-    pub fn fwd(&self) -> Option<f64> {
-        self.fwd
-    }
-
-    pub fn fx(&self) -> Option<f64> {
-        self.fx
-    }
-
     pub fn reference_date(&self) -> Date {
         self.reference_date
+    }
+
+    pub fn df(&self) -> Result<f64> {
+        self.df.ok_or(AtlasError::ValueNotSetErr("df".to_string()))
+    }
+
+    pub fn fwd(&self) -> Result<f64> {
+        self.fwd
+            .ok_or(AtlasError::ValueNotSetErr("fwd".to_string()))
+    }
+
+    pub fn fx(&self) -> Result<f64> {
+        self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_string()))
     }
 }

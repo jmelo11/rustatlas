@@ -1,12 +1,13 @@
 use crate::{
     rates::{
         enums::Compounding,
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        traits::{HasReferenceDate, YieldProvider},
     },
     time::{date::Date, enums::Frequency, period::Period},
+    utils::errors::Result,
 };
 
-use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
+use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # MixedTermStructure
 /// Struct that defines a term structure made with a combination of two curves. It's defined as:
@@ -69,7 +70,7 @@ impl HasReferenceDate for MixedTermStructure {
 }
 
 impl YieldProvider for MixedTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
+    fn discount_factor(&self, date: Date) -> Result<f64> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
 
@@ -84,7 +85,7 @@ impl YieldProvider for MixedTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         let spread_forward_rate = self
             .spread_curve
             .forward_rate(start_date, end_date, comp, freq)?;
@@ -97,19 +98,13 @@ impl YieldProvider for MixedTermStructure {
 
 /// # AdvanceTermStructureInTime for MixedTermStructure
 impl AdvanceTermStructureInTime for MixedTermStructure {
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
         Ok(Box::new(MixedTermStructure::new(spread, base)))
     }
 
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
         Ok(Box::new(MixedTermStructure::new(spread, base)))

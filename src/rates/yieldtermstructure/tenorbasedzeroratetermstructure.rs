@@ -3,19 +3,17 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        traits::{HasReferenceDate, YieldProvider},
     },
     time::{
         date::Date,
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::Result,
 };
 
-use super::traits::{
-    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
-    YieldTermStructureTrait,
-};
+use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 #[derive(Clone)]
 pub struct TenorBasedZeroRateTermStructure {
@@ -36,7 +34,7 @@ impl TenorBasedZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<TenorBasedZeroRateTermStructure, TermStructureConstructorError> {
+    ) -> Result<TenorBasedZeroRateTermStructure> {
         let year_fractions = tenors
             .iter()
             .map(|x| {
@@ -74,7 +72,7 @@ impl HasReferenceDate for TenorBasedZeroRateTermStructure {
 }
 
 impl YieldProvider for TenorBasedZeroRateTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
+    fn discount_factor(&self, date: Date) -> Result<f64> {
         let year_fraction = self
             .rate_definition
             .day_counter()
@@ -96,7 +94,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         let start_df = self.discount_factor(start_date)?;
         let end_df = self.discount_factor(end_date)?;
 
@@ -117,10 +115,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
 }
 
 impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let new_reference_date = self.reference_date + period;
         Ok(Box::new(TenorBasedZeroRateTermStructure::new(
             new_reference_date,
@@ -132,10 +127,7 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
         )?))
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date) as i32;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
@@ -149,23 +141,19 @@ mod tests {
     use crate::{
         math::interpolation::enums::Interpolator,
         rates::{
-            enums::Compounding,
-            interestrate::RateDefinition,
-            traits::YieldProvider,
-            yieldtermstructure::{
-                tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
-                traits::TermStructureConstructorError,
-            },
+            enums::Compounding, interestrate::RateDefinition, traits::YieldProvider,
+            yieldtermstructure::tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
         },
         time::{
             date::Date,
             enums::{Frequency, TimeUnit},
             period::Period,
         },
+        utils::errors::Result,
     };
 
     #[test]
-    fn test_zero_rate() -> Result<(), TermStructureConstructorError> {
+    fn test_zero_rate() -> Result<()> {
         let reference_date = Date::new(2021, 12, 1);
         let rate_definition = RateDefinition::default();
 

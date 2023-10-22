@@ -3,19 +3,17 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        traits::{HasReferenceDate, YieldProvider},
     },
     time::{
         date::Date,
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::{AtlasError, Result},
 };
 
-use super::traits::{
-    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
-    YieldTermStructureTrait,
-};
+use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # ZeroRateTermStructure
 /// Struct that defines a zero rate term structure.
@@ -59,15 +57,19 @@ impl ZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<ZeroRateTermStructure, TermStructureConstructorError> {
+    ) -> Result<ZeroRateTermStructure> {
         // check if dates and rates have the same size
         if dates.len() != rates.len() {
-            return Err(TermStructureConstructorError::DatesAndRatesSize);
+            return Err(AtlasError::InvalidValueErr(
+                "Dates and rates need to have the same size".to_string(),
+            ));
         }
 
         // year_fractions[0] needs to be 0.0
         if dates[0] != reference_date {
-            return Err(TermStructureConstructorError::FirstDateNeedsToBeReferenceDate);
+            return Err(AtlasError::InvalidValueErr(
+                "First date needs to be equal to reference date".to_string(),
+            ));
         }
 
         let year_fractions: Vec<f64> = dates
@@ -118,7 +120,7 @@ impl HasReferenceDate for ZeroRateTermStructure {
 }
 
 impl YieldProvider for ZeroRateTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
+    fn discount_factor(&self, date: Date) -> Result<f64> {
         let year_fraction = self
             .rate_definition()
             .day_counter()
@@ -130,11 +132,8 @@ impl YieldProvider for ZeroRateTermStructure {
             &self.rates,
             self.enable_extrapolation,
         );
-
         let rt = InterestRate::from_rate_definition(rate, self.rate_definition());
-
         let compound = rt.compound_factor_from_yf(year_fraction);
-
         return Ok(1.0 / compound);
     }
 
@@ -144,7 +143,7 @@ impl YieldProvider for ZeroRateTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         let df_to_star = self.discount_factor(start_date)?;
         let df_to_end = self.discount_factor(end_date)?;
 
@@ -170,10 +169,7 @@ impl YieldProvider for ZeroRateTermStructure {
 
 /// # AdvanceTermStructureInTime for ZeroRateTermStructure
 impl AdvanceTermStructureInTime for ZeroRateTermStructure {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -185,7 +181,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             .collect();
 
         let start_df = self.discount_factor(new_dates[0])?;
-        let shifted_dfs: Result<Vec<f64>, AdvanceInTimeError> = new_dates
+        let shifted_dfs: Result<Vec<f64>> = new_dates
             .iter()
             .map(|x| {
                 let df = self.discount_factor(*x)?;
@@ -203,13 +199,14 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
         )?))
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
-            return Err(AdvanceInTimeError::InvalidDate);
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Date {:?} is before reference date {:?}",
+                date,
+                self.reference_date()
+            )));
         }
         let period = Period::new(days, TimeUnit::Days);
         return self.advance_to_period(period);

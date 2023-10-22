@@ -2,12 +2,13 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
+        traits::{HasReferenceDate, YieldProvider},
     },
     time::{date::Date, enums::Frequency, period::Period},
+    utils::errors::{AtlasError, Result},
 };
 
-use super::traits::{AdvanceInTimeError, AdvanceTermStructureInTime, YieldTermStructureTrait};
+use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 /// # FlatForwardTermStructure
 /// Struct that defines a flat forward term structure.
@@ -58,12 +59,13 @@ impl HasReferenceDate for FlatForwardTermStructure {
 }
 
 impl YieldProvider for FlatForwardTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
+    fn discount_factor(&self, date: Date) -> Result<f64> {
         if date < self.reference_date() {
-            Err(YieldProviderError::InvalidDate(format!(
-                "Invalid date: {}",
-                date
-            )))?;
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Date {:?} is before reference date {:?}",
+                date,
+                self.reference_date()
+            )));
         }
         return Ok(self.rate.discount_factor(self.reference_date(), date));
     }
@@ -73,7 +75,7 @@ impl YieldProvider for FlatForwardTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         let comp_factor = self.discount_factor(start_date)? / self.discount_factor(end_date)?;
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
         return Ok(InterestRate::implied_rate(
@@ -89,10 +91,7 @@ impl YieldProvider for FlatForwardTermStructure {
 
 /// # AdvanceTermStructureInTime for FlatForwardTermStructure
 impl AdvanceTermStructureInTime for FlatForwardTermStructure {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -103,10 +102,7 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
         )));
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         return Ok(Box::new(FlatForwardTermStructure::new(
             date,
             self.value(),
@@ -133,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn test_discount() -> Result<(), YieldProviderError> {
+    fn test_discount() -> Result<()> {
         let reference_date = Date::new(2023, 8, 19);
         let target_date = Date::new(2024, 8, 19);
         let interest_rate = InterestRate::from_rate_definition(0.05, RateDefinition::default());
@@ -149,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_forward_rate() -> Result<(), YieldProviderError> {
+    fn test_forward_rate() -> Result<()> {
         let reference_date = Date::new(2023, 8, 19);
         let interest_rate: InterestRate = InterestRate::new(
             0.05,

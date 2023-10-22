@@ -1,9 +1,9 @@
-use crate::time::{date::Date, enums::TimeUnit, period::Period};
-
-use super::{
-    interestrateindex::traits::InterestRateIndexTrait,
-    yieldtermstructure::traits::AdvanceInTimeError,
+use crate::{
+    time::{date::Date, enums::TimeUnit, period::Period},
+    utils::errors::{AtlasError, Result},
 };
+
+use super::interestrateindex::traits::InterestRateIndexTrait;
 
 #[derive(Clone)]
 pub struct IndexStore {
@@ -25,24 +25,36 @@ impl IndexStore {
         self.reference_date
     }
 
-    pub fn add_index(&mut self, name: String, index: Box<dyn InterestRateIndexTrait>) {
+    pub fn add_index(
+        &mut self,
+        name: String,
+        index: Box<dyn InterestRateIndexTrait>,
+    ) -> Result<()> {
         if self.reference_date != index.reference_date() {
-            panic!("Index reference date does not match market store reference date");
+            return Err(AtlasError::InvalidValueErr(
+                "Index reference date does not match store reference date".to_string(),
+            ));
         }
         // check if name already exists
         if self.names.iter().any(|s| s == &name) {
-            panic!("Index name already exists");
+            return Err(AtlasError::InvalidValueErr(
+                "Index name already exists".to_string(),
+            ));
         }
 
         self.indexes.push(index);
         self.names.push(name);
+        Ok(())
     }
 
-    pub fn get_index_pos_by_name(&self, name: &String) -> Option<usize> {
-        self.names.iter().position(|s| s == name)
+    pub fn get_index_pos_by_name(&self, name: &String) -> Result<usize> {
+        self.names
+            .iter()
+            .position(|s| s == name)
+            .ok_or(AtlasError::NotFoundErr(format!("Index {} not found", name)))
     }
 
-    pub fn get_index_by_name(&self, name: String) -> Option<&Box<dyn InterestRateIndexTrait>> {
+    pub fn get_index_by_name(&self, name: String) -> Result<&Box<dyn InterestRateIndexTrait>> {
         let item = self.names.iter().enumerate().find_map(
             |(n, s)| {
                 if s == &name {
@@ -53,26 +65,29 @@ impl IndexStore {
             },
         );
         match item {
-            Some(id) => self.indexes.get(id),
-            None => None,
+            Some(id) => self.get_index_by_id(id),
+            None => Err(AtlasError::NotFoundErr(format!("Index {} not found", name))),
         }
     }
 
-    pub fn get_index_by_id(&self, id: usize) -> Option<&Box<dyn InterestRateIndexTrait>> {
-        self.indexes.get(id)
+    pub fn get_index_by_id(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
+        self.indexes.get(id).ok_or(AtlasError::NotFoundErr(format!(
+            "Index with id {} not found",
+            id
+        )))
     }
 
-    pub fn advance_to_period(&self, period: Period) -> Result<IndexStore, AdvanceInTimeError> {
+    pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
         let reference_date = self.reference_date + period;
         let mut store = IndexStore::new(reference_date);
         for (name, index) in self.names.iter().zip(self.indexes.iter()) {
             let new_index = index.advance_to_period(period)?;
-            store.add_index(name.clone(), new_index);
+            store.add_index(name.clone(), new_index)?;
         }
         Ok(store)
     }
 
-    pub fn advance_to_date(&self, date: Date) -> Result<IndexStore, AdvanceInTimeError> {
+    pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
         let days = (date - self.reference_date) as i32;
         self.advance_to_period(Period::new(days, TimeUnit::Days))
     }

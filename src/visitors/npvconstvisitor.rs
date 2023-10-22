@@ -3,9 +3,10 @@ use std::rc::Rc;
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
+    utils::errors::{AtlasError, Result},
 };
 
-use super::traits::{ConstVisit, EvaluationError, HasCashflows};
+use super::traits::{ConstVisit, HasCashflows};
 
 /// # NPVConstVisitor
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
@@ -28,33 +29,34 @@ impl NPVConstVisitor {
 }
 
 impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
-    type Output = Result<f64, EvaluationError>;
+    type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
-            let id = cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
+            let id = cf.id()?;
 
-            let cf_market_data = self
-                .market_data
-                .get(id)
-                .ok_or(EvaluationError::NoMarketData)?;
+            let cf_market_data =
+                self.market_data
+                    .get(id)
+                    .ok_or(AtlasError::NotFoundErr(format!(
+                        "Market data for cashflow with id {}",
+                        id
+                    )))?;
 
             if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
             {
                 return Ok(acc);
             }
 
-            let df = cf_market_data
-                .df()
-                .ok_or(EvaluationError::NoDiscountFactor)?;
+            let df = cf_market_data.df()?;
 
-            let fx = cf_market_data.fx().ok_or(EvaluationError::NoExchangeRate)?;
+            let fx = cf_market_data.fx()?;
 
             let flag = match cf.side() {
                 Side::Pay => -1.0,
                 Side::Receive => 1.0,
             };
 
-            let amount = cf.amount().ok_or(EvaluationError::NoAmount)?;
+            let amount = cf.amount()?;
             Ok(acc + df * amount / fx * flag)
         });
         return npv;

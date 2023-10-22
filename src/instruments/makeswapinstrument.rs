@@ -1,5 +1,3 @@
-use thiserror::Error;
-
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -9,42 +7,11 @@ use crate::{
     },
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
-    time::{
-        date::Date,
-        enums::Frequency,
-        schedule::{MakeSchedule, MakeScheduleError},
-    },
+    time::{date::Date, enums::Frequency, schedule::MakeSchedule},
+    utils::errors::{AtlasError, Result},
 };
 
 use super::swap::Swap;
-
-#[derive(Error, Debug)]
-pub enum MakeFixFloatSwapError {
-    #[error("Missing fixed rate")]
-    MissingFixedRate,
-    #[error("Missing currency")]
-    MissingCurrency,
-    #[error("Missing notional")]
-    MissingNotional,
-    #[error("Missing start date")]
-    MissingStartDate,
-    #[error("Missing end date")]
-    MissingEndDate,
-    #[error("Missing fixed leg frequency")]
-    MissingFixedLegFrequency,
-    #[error("Missing floating leg frequency")]
-    MissingFloatingLegFrequency,
-    #[error("Missing side")]
-    MissingSide,
-    #[error("Missing forecast curve")]
-    MissingForecastCurve,
-    #[error("Missing discount curve")]
-    MissingDiscountCurve,
-    #[error("Missing rate definition")]
-    MissingRateDefinition,
-    #[error("MakeScheduleError {0}")]
-    MakeScheduleError(#[from] MakeScheduleError),
-}
 
 pub struct MakeFixFloatSwap {
     fixed_rate: Option<InterestRate>,
@@ -139,30 +106,32 @@ impl MakeFixFloatSwap {
         self
     }
 
-    pub fn build(self) -> Result<Swap, MakeFixFloatSwapError> {
+    pub fn build(self) -> Result<Swap> {
         let fixed_rate = self
             .fixed_rate
-            .ok_or(MakeFixFloatSwapError::MissingFixedRate)?;
+            .ok_or(AtlasError::ValueNotSetErr("Fixed rate".into()))?;
         let currency = self
             .currency
-            .ok_or(MakeFixFloatSwapError::MissingCurrency)?;
+            .ok_or(AtlasError::ValueNotSetErr("Currency".into()))?;
         let notional = self
             .notional
-            .ok_or(MakeFixFloatSwapError::MissingNotional)?;
+            .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
         let start_date = self
             .start_date
-            .ok_or(MakeFixFloatSwapError::MissingStartDate)?;
-        let side = self.side.ok_or(MakeFixFloatSwapError::MissingSide)?;
+            .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
+        let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
         let fix_leg_frequency = self
             .fix_leg_frequency
-            .ok_or(MakeFixFloatSwapError::MissingFixedLegFrequency)?;
+            .ok_or(AtlasError::ValueNotSetErr("Fixed leg frequency".into()))?;
 
         let floating_leg_frequency = self
             .floating_leg_frequency
-            .ok_or(MakeFixFloatSwapError::MissingFloatingLegFrequency)?;
+            .ok_or(AtlasError::ValueNotSetErr("Floating leg frequency".into()))?;
 
-        let end_date = self.end_date.ok_or(MakeFixFloatSwapError::MissingEndDate)?;
+        let end_date = self
+            .end_date
+            .ok_or(AtlasError::ValueNotSetErr("End date".into()))?;
 
         let fix_leg_schedule = MakeSchedule::new(start_date, end_date)
             .with_frequency(fix_leg_frequency)
@@ -176,7 +145,7 @@ impl MakeFixFloatSwap {
 
         let rate_definition = self
             .rate_definition
-            .ok_or(MakeFixFloatSwapError::MissingRateDefinition)?;
+            .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
 
         let mut fix_cashflows = Vec::new();
 
@@ -205,9 +174,12 @@ impl MakeFixFloatSwap {
             Side::Receive => Side::Pay,
         };
 
-        fix_cashflows.iter_mut().for_each(|cf| {
-            cf.set_discount_curve_id(self.discount_curve);
-        });
+        match self.discount_curve {
+            Some(id) => fix_cashflows.iter_mut().for_each(|cf| {
+                cf.set_discount_curve_id(id);
+            }),
+            None => (),
+        }
 
         for date_pair in floating_leg_schedule.dates().windows(2) {
             let accrual_start_date = date_pair[0];
@@ -225,13 +197,15 @@ impl MakeFixFloatSwap {
             float_cashflows.push(Cashflow::FloatingRateCoupon(coupon));
         }
 
+        match self.forecast_curve {
+            Some(id) => float_cashflows.iter_mut().for_each(|cf| {
+                cf.set_forecast_curve_id(id);
+            }),
+            None => (),
+        }
+
         let redemption = SimpleCashflow::new(end_date, currency, side).with_amount(notional);
         float_cashflows.push(Cashflow::Redemption(redemption));
-
-        float_cashflows.iter_mut().for_each(|cf| {
-            cf.set_discount_curve_id(self.discount_curve);
-            cf.set_forecast_curve_id(self.forecast_curve);
-        });
 
         Ok(Swap::new(fix_cashflows, float_cashflows))
     }
@@ -247,7 +221,7 @@ mod tests {
     };
 
     #[test]
-    fn test_make_fix_float_swap() -> Result<(), MakeFixFloatSwapError> {
+    fn test_make_fix_float_swap() -> Result<()> {
         let start_date = Date::new(2021, 1, 1);
         let end_date = Date::new(2025, 1, 1);
         let notional = 100.0;

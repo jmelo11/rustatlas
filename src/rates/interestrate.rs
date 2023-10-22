@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-use crate::rates::enums::Compounding;
-use crate::time::date::Date;
-use crate::time::daycounter::DayCounter;
-use crate::time::enums::Frequency;
+use crate::{
+    time::{date::Date, daycounter::DayCounter, enums::Frequency},
+    utils::errors::{AtlasError, Result},
+};
+
+use super::enums::Compounding;
 
 /// # RateDefinition
 /// Struct that defines a rate.
@@ -74,18 +75,6 @@ pub struct InterestRate {
     rate_definition: RateDefinition,
 }
 
-#[derive(Error, Debug)]
-pub enum InterestRateError {
-    #[error("negative compound factor not allowed")]
-    NegativeCompoundFactor,
-    #[error("non-negative time required")]
-    NonNegativeTime,
-    #[error("positive time required")]
-    PositiveTime,
-    #[error("positive compound factor required")]
-    PositiveCompoundFactor,
-}
-
 impl InterestRate {
     pub fn new(
         rate: f64,
@@ -132,23 +121,26 @@ impl InterestRate {
         comp: Compounding,
         freq: Frequency,
         t: f64,
-    ) -> Result<InterestRate, InterestRateError> {
-        //assert!(compound > 0.0, "positive compound factor required");
+    ) -> Result<InterestRate> {
         if compound <= 0.0 {
-            return Err(InterestRateError::PositiveCompoundFactor);
+            return Err(AtlasError::InvalidValueErr(
+                "Positive compound factor required".to_string(),
+            ));
         }
         let r: f64;
         let f = freq as i64 as f64;
         if compound == 1.0 {
-            //assert!(t >= 0.0, "non-negative time required");
             if t < 0.0 {
-                return Err(InterestRateError::NonNegativeTime);
+                return Err(AtlasError::InvalidValueErr(
+                    "Non-negative time required".to_string(),
+                ));
             }
             r = 0.0;
         } else {
-            //assert!(t > 0.0, "positive time required");
             if t <= 0.0 {
-                return Err(InterestRateError::PositiveTime);
+                return Err(AtlasError::InvalidValueErr(
+                    "Positive time required".to_string(),
+                ));
             }
             match comp {
                 Compounding::Simple => r = (compound - 1.0) / t,
