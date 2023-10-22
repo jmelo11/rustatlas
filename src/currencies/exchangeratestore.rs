@@ -133,15 +133,15 @@ mod tests {
     }
 
     #[test]
-    fn test_nonexistent_rate() -> Result<()> {
+    fn test_nonexistent_rate() {
         let manager = ExchangeRateStore {
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: RefCell::new(HashMap::new()),
             currency_curve: HashMap::new(),
         };
 
-        let _: f64 = manager.get_exchange_rate(USD, EUR)?;
-        Ok(())
+        let result = manager.get_exchange_rate(USD, EUR);
+        assert!(result.is_err());
     }
 
     #[test]
