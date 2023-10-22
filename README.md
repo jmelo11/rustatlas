@@ -9,7 +9,7 @@ A rust version of Atlas
 - [ ] Curvas con base RF y spreads contantes/interpolados
 - [ ] Curvas con modelos (nss, vasicek, etc)
 - [X] Fixing en periodos distintos al indice
-- [ ] Shock de curvas
+- [X] Shock de curvas
 
 ## Copones
 
@@ -45,22 +45,17 @@ A rust version of Atlas
 - [X] Accrual
 - [X] Agrupación
 - [ ] MaturingAmount con transformacion de monedas
-
-## Python
-
-- [ ] Revisar port a python / POC
+- [ ] Zspread
 
 ## Simulación
 
-- [ ] Motor de rollover
-  - [ ] Balance constante
-  - [ ] Balance dinamico
-- [ ] Avanzar MarketStore en T+1
+- [X] Motor de rollover
+- [X] Avanzar MarketStore en T+1
 
 ## Datos mercado
 
-- [ ] Cargar fixings de indices
-- [ ] Cargar monedas
+- [X] Cargar fixings de indices
+- [X] Cargar monedas
 - [ ] Curvas de tasas UF/Colateral CLP
 
 ## Time
@@ -76,6 +71,5 @@ A rust version of Atlas
 
 ## Rust
 
-- [ ] Revisar metodologia paralelismo
-- [ ] Revisar performance DB
-- [ ] Corregir panics/remplazar por errores
+- [X] Corregir panics/remplazar por errores
+- [ ] Unificar errores
