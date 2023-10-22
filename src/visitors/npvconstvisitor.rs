@@ -48,14 +48,11 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
             }
 
             let df = cf_market_data.df()?;
-
             let fx = cf_market_data.fx()?;
-
             let flag = match cf.side() {
                 Side::Pay => -1.0,
                 Side::Receive => 1.0,
             };
-
             let amount = cf.amount()?;
             Ok(acc + df * amount / fx * flag)
         });
