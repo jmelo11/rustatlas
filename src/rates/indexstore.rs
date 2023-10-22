@@ -29,6 +29,11 @@ impl IndexStore {
         if self.reference_date != index.reference_date() {
             panic!("Index reference date does not match market store reference date");
         }
+        // check if name already exists
+        if self.names.iter().any(|s| s == &name) {
+            panic!("Index name already exists");
+        }
+
         self.indexes.push(index);
         self.names.push(name);
     }

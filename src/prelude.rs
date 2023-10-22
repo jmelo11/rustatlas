@@ -27,7 +27,7 @@ pub use crate::{
         interestrateindex::{
             iborindex::IborIndex, overnightindex::OvernightIndex, traits::FixingProvider, traits::*,
         },
-        traits::{HasReferenceDate, YieldProvider},
+        traits::*,
         yieldtermstructure::{
             discounttermstructure::*, flatforwardtermstructure::*, mixedtermstructure::*,
             tenorbasedzeroratetermstructure::*, traits::*, zeroratetermstructure::*,
