@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use thiserror::Error;
-
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -11,12 +9,8 @@ use crate::{
     },
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
-    time::{
-        date::Date,
-        enums::Frequency,
-        period::Period,
-        schedule::{MakeSchedule, MakeScheduleError},
-    },
+    time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
 
@@ -44,66 +38,6 @@ pub struct MakeFloatingRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
-}
-
-/// # MakeFloatingRateLoanError
-/// Describes the errors that can occur when building a floating rate loan.
-#[derive(Error, Debug, Clone, PartialEq, Eq)]
-pub enum MakeFloatingRateLoanError {
-    /// Start date not set.
-    #[error("Start date not set")]
-    StartDateNotSet,
-    /// End date not set.
-    #[error("End date not set")]
-    EndDateNotSet,
-    /// Tenor not set.
-    #[error("Tenor not set")]
-    TenorNotSet,
-    /// Payment frequency not set.
-    #[error("Payment frequency not set")]
-    PaymentFrequencyNotSet,
-    /// Disbursements not set.
-    #[error("Disbursements not set")]
-    DisbursementsNotSet,
-    /// Redemptions not set.
-    #[error("Redemptions not set")]
-    RedemptionsNotSet,
-    /// Additional coupon dates not set.
-    #[error("Additional coupon dates not set")]
-    AdditionalCouponDatesNotSet,
-    /// Notional not set.
-    #[error("Notional not set")]
-    NotionalNotSet,
-    /// Spread not set.
-    #[error("Spread not set")]
-    SpreadNotSet,
-    /// Currency not set.
-    #[error("Currency not set")]
-    CurrencyNotSet,
-    /// Structure not set.
-    #[error("Structure not set")]
-    StructureNotSet,
-    /// Rate definition not set.
-    #[error("Rate definition not set")]
-    RateDefinitionNotSet,
-    /// Side not set.
-    #[error("Side not set")]
-    SideNotSet,
-    /// Redemptions and disbursements do not match.
-    #[error("Redemptions and disbursements do not match")]
-    RedemptionsAndDisbursementsDoNotMatch,
-    /// Invalid Structure.
-    #[error("Invalid structure")]
-    InvalidStructure,
-    /// Schedule build error.
-    #[error("Schedule build error: {0}")]
-    ScheduleBuildError(String),
-}
-
-impl From<MakeScheduleError> for MakeFloatingRateLoanError {
-    fn from(e: MakeScheduleError) -> Self {
-        MakeFloatingRateLoanError::ScheduleBuildError(format!("{}", e))
-    }
 }
 
 /// Constructor, setters and getters.
@@ -237,32 +171,36 @@ impl MakeFloatingRateLoan {
 
 /// Build
 impl MakeFloatingRateLoan {
-    pub fn build(self) -> Result<FloatingRateInstrument, MakeFloatingRateLoanError> {
+    pub fn build(self) -> Result<FloatingRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
             .structure
-            .ok_or(MakeFloatingRateLoanError::StructureNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Structure".into()))?;
         let rate_definition = self
             .rate_definition
-            .ok_or(MakeFloatingRateLoanError::RateDefinitionNotSet)?;
-        let spread = self.spread.ok_or(MakeFloatingRateLoanError::SpreadNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
+        let spread = self
+            .spread
+            .ok_or(AtlasError::ValueNotSetErr("Spread".into()))?;
         let currency = self
             .currency
-            .ok_or(MakeFloatingRateLoanError::CurrencyNotSet)?;
-        let side = self.side.ok_or(MakeFloatingRateLoanError::SideNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Currency".into()))?;
+        let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
         let payment_frequency = self
             .payment_frequency
-            .ok_or(MakeFloatingRateLoanError::PaymentFrequencyNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Payment frequency".into()))?;
         match structure {
             Structure::Bullet => {
                 // common
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFloatingRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFloatingRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -271,7 +209,7 @@ impl MakeFloatingRateLoan {
                     .build()?;
                 let notional = self
                     .notional
-                    .ok_or(MakeFloatingRateLoanError::NotionalNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -309,10 +247,19 @@ impl MakeFloatingRateLoan {
                     CashflowType::Redemption,
                 );
 
-                cashflows.iter_mut().for_each(|cf| {
-                    cf.set_discount_curve_id(self.discount_curve_id);
-                    cf.set_forecast_curve_id(self.forecast_curve_id);
-                });
+                match self.discount_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_discount_curve_id(id);
+                    }),
+                    None => (),
+                }
+                match self.forecast_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_forecast_curve_id(id);
+                    }),
+                    None => (),
+                }
+
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
@@ -332,11 +279,13 @@ impl MakeFloatingRateLoan {
                 // common
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFloatingRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFloatingRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -345,7 +294,7 @@ impl MakeFloatingRateLoan {
                     .build()?;
                 let notional = self
                     .notional
-                    .ok_or(MakeFloatingRateLoanError::NotionalNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -383,10 +332,19 @@ impl MakeFloatingRateLoan {
                     CashflowType::Redemption,
                 );
 
-                cashflows.iter_mut().for_each(|cf| {
-                    cf.set_discount_curve_id(self.discount_curve_id);
-                    cf.set_forecast_curve_id(self.forecast_curve_id);
-                });
+                match self.discount_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_discount_curve_id(id);
+                    }),
+                    None => (),
+                }
+                match self.forecast_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_forecast_curve_id(id);
+                    }),
+                    None => (),
+                }
+
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
@@ -406,11 +364,13 @@ impl MakeFloatingRateLoan {
                 // common
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFloatingRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFloatingRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -419,7 +379,7 @@ impl MakeFloatingRateLoan {
                     .build()?;
                 let notional = self
                     .notional
-                    .ok_or(MakeFloatingRateLoanError::NotionalNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -459,10 +419,18 @@ impl MakeFloatingRateLoan {
                     currency,
                     CashflowType::Redemption,
                 );
-                cashflows.iter_mut().for_each(|cf| {
-                    cf.set_discount_curve_id(self.discount_curve_id);
-                    cf.set_forecast_curve_id(self.forecast_curve_id);
-                });
+                match self.discount_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_discount_curve_id(id);
+                    }),
+                    None => (),
+                }
+                match self.forecast_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_forecast_curve_id(id);
+                    }),
+                    None => (),
+                }
 
                 Ok(FloatingRateInstrument::new(
                     start_date,
@@ -482,14 +450,16 @@ impl MakeFloatingRateLoan {
             Structure::Other => {
                 let disbursements = self
                     .disbursements
-                    .ok_or(MakeFloatingRateLoanError::DisbursementsNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Disbursements".into()))?;
                 let redemptions = self
                     .redemptions
-                    .ok_or(MakeFloatingRateLoanError::RedemptionsNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
                 if redemption != notional {
-                    Err(MakeFloatingRateLoanError::RedemptionsAndDisbursementsDoNotMatch)?;
+                    Err(AtlasError::InvalidValueErr(
+                        "Redemption amount must equal disbursement amount".into(),
+                    ))?;
                 }
 
                 let inv_side = match side {
@@ -533,10 +503,18 @@ impl MakeFloatingRateLoan {
                 let end_date = &timeline.last().expect("No end date").1;
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
-                cashflows.iter_mut().for_each(|cf| {
-                    cf.set_discount_curve_id(self.discount_curve_id);
-                    cf.set_forecast_curve_id(self.forecast_curve_id);
-                });
+                match self.discount_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_discount_curve_id(id);
+                    }),
+                    None => (),
+                }
+                match self.forecast_curve_id {
+                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                        cf.set_forecast_curve_id(id);
+                    }),
+                    None => (),
+                }
                 Ok(FloatingRateInstrument::new(
                     *start_date,
                     *end_date,
@@ -552,7 +530,9 @@ impl MakeFloatingRateLoan {
                     self.forecast_curve_id,
                 ))
             }
-            _ => Err(MakeFloatingRateLoanError::InvalidStructure)?,
+            _ => Err(AtlasError::InvalidValueErr(
+                "Invalid structure for floating rate loan".into(),
+            ))?,
         }
     }
 }
@@ -657,13 +637,12 @@ mod tests {
             enums::{Frequency, TimeUnit},
             period::Period,
         },
+        utils::errors::Result,
         visitors::traits::HasCashflows,
     };
 
-    use super::MakeFloatingRateLoanError;
-
     #[test]
-    fn build_bullet() -> Result<(), MakeFloatingRateLoanError> {
+    fn build_bullet() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -700,7 +679,7 @@ mod tests {
     }
 
     #[test]
-    fn build_zero() -> Result<(), MakeFloatingRateLoanError> {
+    fn build_zero() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -736,7 +715,7 @@ mod tests {
     }
 
     #[test]
-    fn build_equal_redemptions() -> Result<(), MakeFloatingRateLoanError> {
+    fn build_equal_redemptions() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
@@ -773,7 +752,7 @@ mod tests {
     }
 
     #[test]
-    fn build_equal_redemptions_with_tenor() -> Result<(), MakeFloatingRateLoanError> {
+    fn build_equal_redemptions_with_tenor() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let rate_definition = RateDefinition::new(
             DayCounter::Actual360,
@@ -808,7 +787,7 @@ mod tests {
     }
 
     #[test]
-    fn build_other() -> Result<(), MakeFloatingRateLoanError> {
+    fn build_other() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(3, TimeUnit::Years);
 

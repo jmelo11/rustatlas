@@ -1,24 +1,19 @@
 use std::rc::Rc;
 
-use argmin::core::Error;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use crate::{
     cashflows::cashflow::Side,
     core::marketstore::MarketStore,
     currencies::enums::Currency,
     instruments::{
-        makefixedrateloan::{MakeFixedRateLoan, MakeFixedRateLoanError},
-        makefloatingrateloan::{MakeFloatingRateLoan, MakeFloatingRateLoanError},
+        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
         traits::Structure,
     },
-    models::{
-        simplemodel::SimpleModel,
-        traits::{Model, ModelError},
-    },
+    models::{simplemodel::SimpleModel, traits::Model},
     rates::{interestrate::RateDefinition, traits::HasReferenceDate},
     time::{enums::Frequency, period::Period},
+    utils::errors::Result,
     visitors::{
         indexingvisitor::IndexingVisitor,
         parvaluevisitor::ParValueConstVisitor,
@@ -34,20 +29,6 @@ pub struct LoanGenerator {
     amount: f64,
     configs: Rc<Vec<LoanConfiguration>>,
     market_store: Rc<MarketStore>,
-}
-
-#[derive(Error, Debug)]
-pub enum LoanGeneratorError {
-    #[error("Invalid configuration")]
-    InvalidConfiguration,
-    #[error("Error fixed rate loan build error {0}")]
-    FixedRateLoanBuildError(#[from] MakeFixedRateLoanError),
-    #[error("Error floating rate loan build error {0}")]
-    FloatingRateLoanBuildError(#[from] MakeFloatingRateLoanError),
-    #[error("Error par value calculation")]
-    ParValueError(#[from] Error),
-    #[error("Model error {0}")]
-    ModelError(#[from] ModelError),
 }
 
 /// # LoanConfiguration
@@ -147,10 +128,7 @@ impl LoanGenerator {
         }
     }
 
-    fn calculate_par_spread(
-        &self,
-        builder: MakeFloatingRateLoan,
-    ) -> Result<f64, LoanGeneratorError> {
+    fn calculate_par_spread(&self, builder: MakeFloatingRateLoan) -> Result<f64> {
         let mut instrument = builder.with_spread(0.01).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
@@ -160,7 +138,7 @@ impl LoanGenerator {
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> Result<f64, LoanGeneratorError> {
+    fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> Result<f64> {
         let mut instrument = builder.with_rate_value(0.03).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
@@ -170,10 +148,7 @@ impl LoanGenerator {
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    pub fn generate_position(
-        &self,
-        config: &LoanConfiguration,
-    ) -> Result<Instrument, LoanGeneratorError> {
+    pub fn generate_position(&self, config: &LoanConfiguration) -> Result<Instrument> {
         let structure = config.structure();
         let notional = self.amount * config.weight();
         let start_date = self.market_store.reference_date();
@@ -238,7 +213,7 @@ mod tests {
 
     use super::*;
 
-    fn create_store() -> MarketStore {
+    fn create_store() -> Result<MarketStore> {
         let ref_date = Date::new(2021, 9, 1);
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
@@ -252,13 +227,13 @@ mod tests {
         let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
         market_store
             .mut_index_store()
-            .add_index("DiscountCurve".to_string(), discount_index);
-        return market_store;
+            .add_index("DiscountCurve".to_string(), discount_index)?;
+        return Ok(market_store);
     }
 
     #[test]
-    fn generator_tests() {
-        let market_store = Rc::new(create_store());
+    fn generator_tests() -> Result<()> {
+        let market_store = Rc::new(create_store()?);
         let configs = Rc::new(vec![LoanConfiguration::new(
             1.0,
             Structure::Bullet,
@@ -274,5 +249,6 @@ mod tests {
         let generator = LoanGenerator::new(100.0, configs, market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
+        Ok(())
     }
 }

@@ -4,14 +4,15 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider, YieldProviderError},
-        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
+        traits::{HasReferenceDate, YieldProvider},
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
         date::Date,
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{
@@ -63,19 +64,9 @@ impl OvernightIndex {
         self
     }
 
-    pub fn average_rate(
-        &self,
-        start_date: Date,
-        end_date: Date,
-    ) -> Result<f64, YieldProviderError> {
-        let start_index = self
-            .fixings
-            .get(&start_date)
-            .ok_or(YieldProviderError::NoFixingRate(start_date))?;
-        let end_index = self
-            .fixings
-            .get(&end_date)
-            .ok_or(YieldProviderError::NoFixingRate(end_date))?;
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
+        let start_index = self.fixing(start_date)?;
+        let end_index = self.fixing(end_date)?;
 
         let comp = end_index / start_index;
         let day_counter = self.rate_definition.day_counter();
@@ -91,8 +82,14 @@ impl OvernightIndex {
 }
 
 impl FixingProvider for OvernightIndex {
-    fn fixing(&self, date: Date) -> Option<f64> {
-        self.fixings.get(&date).cloned()
+    fn fixing(&self, date: Date) -> Result<f64> {
+        self.fixings
+            .get(&date)
+            .cloned()
+            .ok_or(AtlasError::NotFoundErr(format!(
+                "No fixing for date {:?}",
+                date
+            )))
     }
 
     fn fixings(&self) -> &HashMap<Date, f64> {
@@ -111,10 +108,8 @@ impl HasReferenceDate for OvernightIndex {
 }
 
 impl YieldProvider for OvernightIndex {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
-        self.term_structure()
-            .ok_or(YieldProviderError::NoTermStructure)?
-            .discount_factor(date)
+    fn discount_factor(&self, date: Date) -> Result<f64> {
+        self.term_structure()?.discount_factor(date)
     }
 
     fn forward_rate(
@@ -123,20 +118,13 @@ impl YieldProvider for OvernightIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         // mixed case - return w.a.
         if start_date < self.reference_date() && end_date > self.reference_date() {
-            let first_fixing = self
-                .fixing(self.reference_date())
-                .ok_or(YieldProviderError::NoFixingRate(self.reference_date()))?;
-            let second_fixing = self
-                .fixing(self.reference_date())
-                .ok_or(YieldProviderError::NoFixingRate(self.reference_date()))?;
+            let first_fixing = self.fixing(self.reference_date())?;
+            let second_fixing = self.fixing(self.reference_date())?;
 
-            let df = self
-                .term_structure()
-                .ok_or(YieldProviderError::NoTermStructure)?
-                .discount_factor(end_date)?;
+            let df = self.term_structure()?.discount_factor(end_date)?;
 
             let third_fixing = second_fixing / df;
 
@@ -159,36 +147,29 @@ impl YieldProvider for OvernightIndex {
 
         // forecast case
         if start_date >= self.reference_date() && end_date > self.reference_date() {
-            self.term_structure()
-                .ok_or(YieldProviderError::NoTermStructure)?
+            self.term_structure()?
                 .forward_rate(start_date, end_date, comp, freq)
         } else {
-            Err(YieldProviderError::InvalidDate(format!(
-                "Invalid date: {}",
-                end_date
-            )))?
+            Err(AtlasError::InvalidValueErr(format!(
+                "Invalid dates: start_date: {:?}, end_date: {:?}",
+                start_date, end_date
+            )))
         }
     }
 }
 
 impl AdvanceInterestRateIndexInTime for OvernightIndex {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>> {
         let mut fixings = self.fixings().clone();
         let mut seed = self.reference_date();
         let end_date = seed.advance(period.length(), period.units());
-        let curve = self
-            .term_structure()
-            .ok_or(YieldProviderError::NoTermStructure)?;
+        let curve = self.term_structure()?;
 
         while seed < end_date {
-            println!("{:?}", seed);
             let first_df = curve.discount_factor(seed)?;
             let last_fixing = fixings
                 .get(&seed)
-                .expect("No fixing for this OvernightIndex");
+                .expect("No fixing for this OvernightIndex"); // remove this expect
             seed = seed.advance(1, TimeUnit::Days);
             let second_df = curve.discount_factor(seed)?;
             let comp = last_fixing * first_df / second_df;
@@ -204,10 +185,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         ))
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
         let days = (date - self.reference_date()) as i32;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
@@ -215,8 +193,12 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
 }
 
 impl HasTermStructure for OvernightIndex {
-    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>> {
-        self.term_structure.as_ref()
+    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>> {
+        self.term_structure
+            .as_ref()
+            .ok_or(AtlasError::ValueNotSetErr(
+                "Term structure not set".to_string(),
+            ))
     }
 }
 
@@ -274,14 +256,14 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing() {
+    fn test_fixing() -> Result<()> {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         let overnight_index = OvernightIndex::new(date).with_fixings(fixings);
 
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1)), Some(0.02));
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 2)), None);
+        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 0.02);
+        Ok(())
     }
 
     #[test]

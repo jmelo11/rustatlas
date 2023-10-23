@@ -1,6 +1,6 @@
 use crate::{
     math::interpolation::enums::Interpolator,
-    rates::traits::{HasReferenceDate, YieldProviderError},
+    rates::traits::HasReferenceDate,
     rates::{enums::Compounding, interestrate::InterestRate, traits::YieldProvider},
     time::{
         date::Date,
@@ -8,12 +8,10 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::{AtlasError, Result},
 };
 
-use super::traits::{
-    AdvanceInTimeError, AdvanceTermStructureInTime, TermStructureConstructorError,
-    YieldTermStructureTrait,
-};
+use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
 #[derive(Clone)]
 pub struct DiscountTermStructure {
@@ -34,20 +32,26 @@ impl DiscountTermStructure {
         day_counter: DayCounter,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<DiscountTermStructure, TermStructureConstructorError> {
+    ) -> Result<DiscountTermStructure> {
         // check if year_fractions and discount_factors have the same size
         if dates.len() != discount_factors.len() {
-            return Err(TermStructureConstructorError::DatesAndDiscountFactorsSize);
+            return Err(AtlasError::InvalidValueErr(
+                "Dates and discount_factors need to have the same size".to_string(),
+            ));
         }
 
         // dates[0] needs to be equal to reference date
         if dates[0] != reference_date {
-            return Err(TermStructureConstructorError::FirstDateNeedsToBeReferenceDate);
+            return Err(AtlasError::InvalidValueErr(
+                "First date needs to be equal to reference date".to_string(),
+            ));
         }
 
         // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
-            return Err(TermStructureConstructorError::FirstDiscountFactorsNeedsToBeOne);
+            return Err(AtlasError::InvalidValueErr(
+                "First discount factor needs to be 1.0".to_string(),
+            ));
         }
 
         let year_fractions: Vec<f64> = dates
@@ -94,9 +98,11 @@ impl HasReferenceDate for DiscountTermStructure {
 }
 
 impl YieldProvider for DiscountTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64, YieldProviderError> {
+    fn discount_factor(&self, date: Date) -> Result<f64> {
         if date < self.reference_date() {
-            return Err(YieldProviderError::DateMustBeGreaterThanReferenceDate);
+            return Err(AtlasError::InvalidValueErr(
+                "Date needs to be greater than reference date".to_string(),
+            ));
         }
         if date == self.reference_date() {
             return Ok(1.0);
@@ -121,7 +127,7 @@ impl YieldProvider for DiscountTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64, YieldProviderError> {
+    ) -> Result<f64> {
         let discount_factor_to_star = self.discount_factor(start_date)?;
         let discount_factor_to_end = self.discount_factor(end_date)?;
 
@@ -136,10 +142,7 @@ impl YieldProvider for DiscountTermStructure {
 
 /// # AdvanceTermStructureInTime for DiscountTermStructure
 impl AdvanceTermStructureInTime for DiscountTermStructure {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -151,7 +154,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             .collect();
 
         let start_df = self.discount_factor(new_dates[0])?;
-        let shifted_dfs: Result<Vec<f64>, AdvanceInTimeError> = new_dates
+        let shifted_dfs: Result<Vec<f64>> = new_dates
             .iter()
             .map(|x| {
                 let df = self.discount_factor(*x)?;
@@ -169,13 +172,12 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
         )?))
     }
 
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn YieldTermStructureTrait>, AdvanceInTimeError> {
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
-            return Err(AdvanceInTimeError::InvalidDate);
+            return Err(AtlasError::InvalidValueErr(
+                "Date needs to be greater than reference date".to_string(),
+            ));
         }
         let period = Period::new(days, TimeUnit::Days);
         return self.advance_to_period(period);

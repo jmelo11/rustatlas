@@ -4,7 +4,6 @@ use argmin::{
 };
 
 use std::collections::{HashMap, HashSet};
-use thiserror::Error;
 
 use crate::{
     cashflows::{
@@ -15,12 +14,8 @@ use crate::{
     },
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
-    time::{
-        date::Date,
-        enums::Frequency,
-        period::Period,
-        schedule::{MakeSchedule, MakeScheduleError},
-    },
+    time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
 
@@ -48,66 +43,6 @@ pub struct MakeFixedRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
-}
-
-/// # MakeFixedRateLoanError
-/// MakeFixedRateLoanError is an enum that represents the possible errors that can occur when building a FixedRateInstrument.
-#[derive(Error, Debug)]
-pub enum MakeFixedRateLoanError {
-    /// The start date is not set.
-    #[error("Start date not set")]
-    StartDateNotSet,
-    /// The end date is not set.
-    #[error("End date not set")]
-    EndDateNotSet,
-    /// The payment frequency is not set.
-    #[error("Payment frequency not set")]
-    PaymentFrequencyNotSet,
-    /// The tenor is not set.
-    #[error("Tenor not set")]
-    TenorNotSet,
-    /// The rate is not set.
-    #[error("Rate not set")]
-    RateNotSet,
-    /// The rate definition is not set.
-    #[error("Rate definition not set")]
-    RateDefinitionNotSet,
-    /// The rate value is not set.
-    #[error("Rate value not set")]
-    RateValueNotSet,
-    /// The disbursements are not set.
-    #[error("Disbursements not set")]
-    DisbursementsNotSet,
-    /// The redemptions are not set.
-    #[error("Redemptions not set")]
-    RedemptionsNotSet,
-    /// The additional coupon dates are not set.
-    #[error("Additional coupon dates not set")]
-    AdditionalCouponDatesNotSet,
-    /// The schedule could not be built.
-    #[error("Schedule build error: {0}")]
-    ScheduleBuildError(String),
-    /// Currency not set.
-    #[error("Currency not set")]
-    CurrencyNotSet,
-    /// Side not set.
-    #[error("Side not set")]
-    SideNotSet,
-    /// Notional not set.
-    #[error("Notional not set")]
-    NotionalNotSet,
-    /// Redemptions and disbursements do not match.
-    #[error("Redemptions and disbursements do not match")]
-    RedemptionsAndDisbursementsDoNotMatch,
-    /// The structure is not set.
-    #[error("Structure not set")]
-    StructureNotSet,
-}
-
-impl From<MakeScheduleError> for MakeFixedRateLoanError {
-    fn from(e: MakeScheduleError) -> Self {
-        MakeFixedRateLoanError::ScheduleBuildError(format!("{}", e))
-    }
 }
 
 /// New, setters and getters
@@ -301,30 +236,32 @@ impl MakeFixedRateLoan {
 }
 
 impl MakeFixedRateLoan {
-    pub fn build(self) -> Result<FixedRateInstrument, MakeFixedRateLoanError> {
+    pub fn build(self) -> Result<FixedRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
             .structure
-            .ok_or(MakeFixedRateLoanError::StructureNotSet)?;
-        let rate = self.rate.ok_or(MakeFixedRateLoanError::RateNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Structure".into()))?;
+        let rate = self.rate.ok_or(AtlasError::ValueNotSetErr("Rate".into()))?;
         let payment_frequency = self
             .payment_frequency
-            .ok_or(MakeFixedRateLoanError::PaymentFrequencyNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Payment frequency".into()))?;
 
-        let side = self.side.ok_or(MakeFixedRateLoanError::SideNotSet)?;
+        let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
         let currency = self
             .currency
-            .ok_or(MakeFixedRateLoanError::CurrencyNotSet)?;
+            .ok_or(AtlasError::ValueNotSetErr("Currency".into()))?;
 
         match structure {
             Structure::Bullet => {
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFixedRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFixedRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -334,8 +271,8 @@ impl MakeFixedRateLoan {
 
                 let notional = self
                     .notional
-                    .ok_or(MakeFixedRateLoanError::NotionalNotSet)?;
-                let side = self.side.ok_or(MakeFixedRateLoanError::SideNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+                let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -361,7 +298,7 @@ impl MakeFixedRateLoan {
                     rate,
                     side,
                     currency,
-                );
+                )?;
                 build_cashflows(
                     &mut cashflows,
                     &last_date,
@@ -370,9 +307,13 @@ impl MakeFixedRateLoan {
                     currency,
                     CashflowType::Redemption,
                 );
-                cashflows
-                    .iter_mut()
-                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+
+                match self.discount_curve_id {
+                    Some(id) => cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id)),
+                    None => (),
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -390,14 +331,16 @@ impl MakeFixedRateLoan {
             Structure::Other => {
                 let disbursements = self
                     .disbursements
-                    .ok_or(MakeFixedRateLoanError::DisbursementsNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Disbursements".into()))?;
                 let redemptions = self
                     .redemptions
-                    .ok_or(MakeFixedRateLoanError::RedemptionsNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
                 if notional != redemption {
-                    return Err(MakeFixedRateLoanError::RedemptionsAndDisbursementsDoNotMatch);
+                    return Err(AtlasError::InvalidValueErr(
+                        "Notional and redemption must be equal".into(),
+                    ));
                 }
 
                 let inv_side = match side {
@@ -437,9 +380,12 @@ impl MakeFixedRateLoan {
                 let start_date = &timeline.first().expect("No start date").0;
                 let end_date = &timeline.last().expect("No end date").1;
 
-                cashflows
-                    .iter_mut()
-                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+                match self.discount_curve_id {
+                    Some(id) => cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id)),
+                    None => (),
+                }
 
                 Ok(FixedRateInstrument::new(
                     *start_date,
@@ -457,11 +403,13 @@ impl MakeFixedRateLoan {
             Structure::EqualPayments => {
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFixedRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFixedRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -471,8 +419,8 @@ impl MakeFixedRateLoan {
 
                 let notional = self
                     .notional
-                    .ok_or(MakeFixedRateLoanError::NotionalNotSet)?;
-                let side = self.side.ok_or(MakeFixedRateLoanError::SideNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+                let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -502,7 +450,7 @@ impl MakeFixedRateLoan {
                     rate,
                     side,
                     currency,
-                );
+                )?;
                 let redemption_dates: Vec<Date> =
                     schedule.dates().iter().skip(1).cloned().collect();
                 build_cashflows(
@@ -514,9 +462,12 @@ impl MakeFixedRateLoan {
                     CashflowType::Redemption,
                 );
 
-                cashflows
-                    .iter_mut()
-                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+                match self.discount_curve_id {
+                    Some(id) => cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id)),
+                    None => (),
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -534,11 +485,13 @@ impl MakeFixedRateLoan {
             Structure::Zero => {
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFixedRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFixedRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -548,8 +501,8 @@ impl MakeFixedRateLoan {
 
                 let notional = self
                     .notional
-                    .ok_or(MakeFixedRateLoanError::NotionalNotSet)?;
-                let side = self.side.ok_or(MakeFixedRateLoanError::SideNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+                let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -576,7 +529,7 @@ impl MakeFixedRateLoan {
                     rate,
                     side,
                     currency,
-                );
+                )?;
                 build_cashflows(
                     &mut cashflows,
                     &last_date,
@@ -586,9 +539,12 @@ impl MakeFixedRateLoan {
                     CashflowType::Redemption,
                 );
 
-                cashflows
-                    .iter_mut()
-                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+                match self.discount_curve_id {
+                    Some(id) => cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id)),
+                    None => (),
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -606,11 +562,13 @@ impl MakeFixedRateLoan {
             Structure::EqualRedemptions => {
                 let start_date = self
                     .start_date
-                    .ok_or(MakeFixedRateLoanError::StartDateNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
                 let end_date = match self.end_date {
                     Some(date) => date,
                     None => {
-                        let tenor = self.tenor.ok_or(MakeFixedRateLoanError::TenorNotSet)?;
+                        let tenor = self
+                            .tenor
+                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
                         start_date + tenor
                     }
                 };
@@ -620,8 +578,8 @@ impl MakeFixedRateLoan {
 
                 let notional = self
                     .notional
-                    .ok_or(MakeFixedRateLoanError::NotionalNotSet)?;
-                let side = self.side.ok_or(MakeFixedRateLoanError::SideNotSet)?;
+                    .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+                let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
                 let inv_side = match side {
                     Side::Pay => Side::Receive,
                     Side::Receive => Side::Pay,
@@ -648,7 +606,7 @@ impl MakeFixedRateLoan {
                     rate,
                     side,
                     currency,
-                );
+                )?;
                 let redemption_dates: Vec<Date> =
                     schedule.dates().iter().skip(1).cloned().collect();
                 build_cashflows(
@@ -660,9 +618,12 @@ impl MakeFixedRateLoan {
                     CashflowType::Redemption,
                 );
 
-                cashflows
-                    .iter_mut()
-                    .for_each(|cf| cf.set_discount_curve_id(self.discount_curve_id));
+                match self.discount_curve_id {
+                    Some(id) => cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id)),
+                    None => (),
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -688,12 +649,16 @@ fn build_coupons_from_notionals(
     rate: InterestRate,
     side: Side,
     currency: Currency,
-) {
+) -> Result<()> {
     if dates.len() - 1 != notionals.len() {
-        panic!("Dates and notionals must have the same length");
+        Err(AtlasError::InvalidValueErr(
+            "Dates and notionals must have the same length".to_string(),
+        ))?;
     }
     if dates.len() < 2 {
-        panic!("Dates must have at least two elements");
+        Err(AtlasError::InvalidValueErr(
+            "Dates must have at least two elements".to_string(),
+        ))?;
     }
     for (date_pair, notional) in dates.windows(2).zip(notionals) {
         let d1 = date_pair[0];
@@ -701,6 +666,7 @@ fn build_coupons_from_notionals(
         let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
         cashflows.push(Cashflow::FixedRateCoupon(coupon));
     }
+    Ok(())
 }
 
 struct EqualPaymentCost {
@@ -711,7 +677,7 @@ struct EqualPaymentCost {
 impl CostFunction for EqualPaymentCost {
     type Param = f64;
     type Output = f64;
-    fn cost(&self, payment: &Self::Param) -> Result<Self::Output, Error> {
+    fn cost(&self, payment: &Self::Param) -> std::result::Result<Self::Output, Error> {
         let mut total_amount = 1.0;
         for date_pair in self.dates.windows(2) {
             let d1 = date_pair[0];
@@ -830,14 +796,13 @@ mod tests {
             enums::{Frequency, TimeUnit},
             period::Period,
         },
+        utils::errors::Result,
         visitors::traits::HasCashflows,
     };
     use std::collections::{HashMap, HashSet};
 
-    use super::MakeFixedRateLoanError;
-
     #[test]
-    fn build_bullet() -> Result<(), MakeFixedRateLoanError> {
+    fn build_bullet() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -867,7 +832,7 @@ mod tests {
     }
 
     #[test]
-    fn build_equal_payments() -> Result<(), MakeFixedRateLoanError> {
+    fn build_equal_payments() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -932,7 +897,7 @@ mod tests {
     }
 
     #[test]
-    fn build_equal_redemptions() -> Result<(), MakeFixedRateLoanError> {
+    fn build_equal_redemptions() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -967,7 +932,7 @@ mod tests {
     }
 
     #[test]
-    fn build_equal_redemptions_with_tenor() -> Result<(), MakeFixedRateLoanError> {
+    fn build_equal_redemptions_with_tenor() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
 
         let rate = InterestRate::new(
@@ -1001,7 +966,7 @@ mod tests {
     }
 
     #[test]
-    fn build_zero() -> Result<(), MakeFixedRateLoanError> {
+    fn build_zero() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(1, TimeUnit::Years);
 
@@ -1035,7 +1000,7 @@ mod tests {
     }
 
     #[test]
-    fn build_zero_with_tenor() -> Result<(), MakeFixedRateLoanError> {
+    fn build_zero_with_tenor() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let tenor = Period::new(1, TimeUnit::Years);
 
@@ -1068,7 +1033,7 @@ mod tests {
     }
 
     #[test]
-    fn build_other() -> Result<(), MakeFixedRateLoanError> {
+    fn build_other() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(3, TimeUnit::Years);
 
@@ -1115,7 +1080,7 @@ mod tests {
     }
 
     #[test]
-    fn into_test() -> Result<(), MakeFixedRateLoanError> {
+    fn into_test() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -1155,7 +1120,7 @@ mod tests {
 
     #[test]
     // test the From traint
-    fn from_test() -> Result<(), MakeFixedRateLoanError> {
+    fn from_test() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(

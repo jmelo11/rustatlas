@@ -1,6 +1,4 @@
-use thiserror::Error;
-
-use crate::{cashflows::cashflow::Cashflow, core::traits::MarketRequestError, rates::interestrate::InterestRateError};
+use crate::cashflows::cashflow::Cashflow;
 
 pub trait Visit<T> {
     type Output;
@@ -15,39 +13,15 @@ pub trait ConstVisit<T> {
 pub trait HasCashflows {
     fn cashflows(&self) -> &[Cashflow];
     fn mut_cashflows(&mut self) -> &mut [Cashflow];
-    fn set_discount_curve_id(&mut self, id: Option<usize>) {
+    fn set_discount_curve_id(&mut self, id: usize) {
         self.mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_discount_curve_id(id));
     }
-    fn set_forecast_curve_id(&mut self, id: Option<usize>) {
+    fn set_forecast_curve_id(&mut self, id: usize) {
         self.mut_cashflows().iter_mut().for_each(|cf| match cf {
             Cashflow::FloatingRateCoupon(frcf) => frcf.set_forecast_curve_id(id),
             _ => (),
         });
     }
-}
-
-#[derive(Error, Debug)]
-pub enum EvaluationError {
-    #[error("No registry id")]
-    NoRegistryId,
-    #[error("No discount factor")]
-    NoDiscountFactor,
-    #[error("No forward rate")]
-    NoForwardRate,
-    #[error("No exchange rate")]
-    NoExchangeRate,
-    #[error("No amount set")]
-    NoAmount,
-    #[error("No fixing rate set")]
-    NoFixingRate,
-    #[error("No convergence")]
-    NoConvergence,
-    #[error("Market data error: {0}")]
-    MarketDataError(#[from] MarketRequestError),
-    #[error("No market data found")]
-    NoMarketData,
-    #[error("Interest Rate error: {0}")]
-    InterestRateError(#[from] InterestRateError),
 }

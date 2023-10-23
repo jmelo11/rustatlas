@@ -3,9 +3,10 @@ use std::rc::Rc;
 use crate::{
     cashflows::{cashflow::Cashflow, traits::RequiresFixingRate},
     core::{meta::MarketData, traits::Registrable},
+    utils::errors::{AtlasError, Result},
 };
 
-use super::traits::{EvaluationError, HasCashflows, Visit};
+use super::traits::{HasCashflows, Visit};
 
 /// # FixingVisitor
 /// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
@@ -22,22 +23,26 @@ impl FixingVisitor {
 }
 
 impl<T: HasCashflows> Visit<T> for FixingVisitor {
-    type Output = Result<(), EvaluationError>;
+    type Output = Result<()>;
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {
-        has_cashflows.mut_cashflows().iter_mut().try_for_each(
-            |cf| -> Result<(), EvaluationError> {
+        has_cashflows
+            .mut_cashflows()
+            .iter_mut()
+            .try_for_each(|cf| -> Result<()> {
                 if let Cashflow::FloatingRateCoupon(frcf) = cf {
-                    let id = frcf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
-                    let cf_market_data = self
-                        .market_data
-                        .get(id)
-                        .ok_or(EvaluationError::NoMarketData)?;
-                    let fixing_rate = cf_market_data.fwd().ok_or(EvaluationError::NoFixingRate)?;
+                    let id = frcf.id()?;
+                    let cf_market_data =
+                        self.market_data
+                            .get(id)
+                            .ok_or(AtlasError::NotFoundErr(format!(
+                                "Market data for cashflow with id {}",
+                                id
+                            )))?;
+                    let fixing_rate = cf_market_data.fwd()?;
                     frcf.set_fixing_rate(fixing_rate);
                 }
                 Ok(())
-            },
-        )?;
+            })?;
         Ok(())
     }
 }

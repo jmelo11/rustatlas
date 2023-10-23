@@ -1,27 +1,22 @@
-use thiserror::Error;
-
 use super::meta::MarketRequest;
+use crate::{currencies::enums::Currency, utils::errors::Result};
 
-#[derive(Error, Debug)]
-pub enum MarketRequestError {
-    #[error("No registry id")]
-    NoRegistryId,
-    #[error("No discount curve id")]
-    NoDiscountCurveId,
-    #[error("No forecast curve id")]
-    NoForecastCurveId,
-    #[error("No discount factor request")]
-    NoDiscountRequest,
-    #[error("No forward rate request")]
-    NoForwardRateRequest,
-    #[error("No fx rate request")]
-    NoFxRequest,
+pub trait HasCurrency {
+    fn currency(&self) -> Result<Currency>;
+}
+
+pub trait HasDiscountCurveId {
+    fn discount_curve_id(&self) -> Result<usize>;
+}
+
+pub trait HasForecastCurveId {
+    fn forecast_curve_id(&self) -> Result<usize>;
 }
 
 /// # Registrable
 /// A trait for objects that can be registered for market data.
-pub trait Registrable {
-    fn registry_id(&self) -> Option<usize>;
-    fn register_id(&mut self, id: usize);
-    fn market_request(&self) -> Result<MarketRequest, MarketRequestError>;
+pub trait Registrable: HasDiscountCurveId + HasForecastCurveId + HasCurrency {
+    fn id(&self) -> Result<usize>;
+    fn set_id(&mut self, id: usize);
+    fn market_request(&self) -> Result<MarketRequest>;
 }

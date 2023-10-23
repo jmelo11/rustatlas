@@ -1,9 +1,15 @@
+use crate::{
+    core::{
+        meta::{DiscountFactorRequest, ExchangeRateRequest, MarketRequest},
+        traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
+    },
+    currencies::enums::Currency,
+    time::date::Date,
+    utils::errors::{AtlasError, Result},
+};
+
 use super::cashflow::Side;
 use super::traits::{Expires, Payable};
-use crate::core::meta::*;
-use crate::core::traits::{MarketRequestError, Registrable};
-use crate::currencies::enums::Currency;
-use crate::time::date::Date;
 
 /// # SimpleCashflow
 /// A simple cashflow that is payable at a given date.
@@ -24,7 +30,7 @@ pub struct SimpleCashflow {
     side: Side,
     amount: Option<f64>,
     discount_curve_id: Option<usize>,
-    registry_id: Option<usize>,
+    id: Option<usize>,
 }
 
 impl SimpleCashflow {
@@ -35,7 +41,7 @@ impl SimpleCashflow {
             side,
             amount: None,
             discount_curve_id: None,
-            registry_id: None,
+            id: None,
         }
     }
 
@@ -44,18 +50,18 @@ impl SimpleCashflow {
         self
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: Option<usize>) -> SimpleCashflow {
-        self.discount_curve_id = discount_curve_id;
+    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> SimpleCashflow {
+        self.discount_curve_id = Some(discount_curve_id);
         self
     }
 
-    pub fn with_registry_id(mut self, registry_id: usize) -> SimpleCashflow {
-        self.registry_id = Some(registry_id);
+    pub fn with_id(mut self, registry_id: usize) -> SimpleCashflow {
+        self.id = Some(registry_id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
-        self.discount_curve_id = id;
+    pub fn set_discount_curve_id(&mut self, id: usize) {
+        self.discount_curve_id = Some(id);
     }
 
     pub fn set_amount(&mut self, amount: f64) {
@@ -63,29 +69,57 @@ impl SimpleCashflow {
     }
 }
 
-impl Registrable for SimpleCashflow {
-    fn registry_id(&self) -> Option<usize> {
-        return self.registry_id;
+impl HasCurrency for SimpleCashflow {
+    fn currency(&self) -> Result<Currency> {
+        return Ok(self.currency);
     }
+}
 
-    fn register_id(&mut self, id: usize) {
-        self.registry_id = Some(id);
-    }
-
-    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
-        let id = self.registry_id.ok_or(MarketRequestError::NoRegistryId)?;
-        let discount_curve_id = self
+impl HasDiscountCurveId for SimpleCashflow {
+    fn discount_curve_id(&self) -> Result<usize> {
+        return self
             .discount_curve_id
-            .ok_or(MarketRequestError::NoDiscountCurveId)?;
-        let discount = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
-        let currency = ExchangeRateRequest::new(self.currency, None, None);
-        return Ok(MarketRequest::new(id, Some(discount), None, Some(currency)));
+            .ok_or(AtlasError::ValueNotSetErr("Discount curve id".to_string()));
+    }
+}
+
+impl HasForecastCurveId for SimpleCashflow {
+    fn forecast_curve_id(&self) -> Result<usize> {
+        return Err(AtlasError::InvalidValueErr(
+            "No forecast curve id for simple cashflow".to_string(),
+        ));
+    }
+}
+
+impl Registrable for SimpleCashflow {
+    fn id(&self) -> Result<usize> {
+        return self.id.ok_or(AtlasError::ValueNotSetErr("Id".to_string()));
+    }
+
+    fn set_id(&mut self, id: usize) {
+        self.id = Some(id);
+    }
+
+    fn market_request(&self) -> Result<MarketRequest> {
+        let id = self.id()?;
+        let discount_curve_id = self.discount_curve_id()?;
+        let currency = self.currency()?;
+        let currency_request = ExchangeRateRequest::new(currency, None, None);
+        let discount_request = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
+        return Ok(MarketRequest::new(
+            id,
+            Some(discount_request),
+            None,
+            Some(currency_request),
+        ));
     }
 }
 
 impl Payable for SimpleCashflow {
-    fn amount(&self) -> Option<f64> {
-        return self.amount;
+    fn amount(&self) -> Result<f64> {
+        return self.amount.ok_or(AtlasError::ValueNotSetErr(
+            "Amount not set for simple cashflow".to_string(),
+        ));
     }
     fn side(&self) -> Side {
         return self.side;

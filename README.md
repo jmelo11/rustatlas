@@ -6,7 +6,7 @@ A rust version of Atlas
 
 - [X] Indice Ibor/Overnight
 - [X] Accrual Ibor/Overnight (cupones flotantes)
-- [ ] Curvas con base RF y spreads contantes/interpolados
+- [X] Curvas con base RF y spreads contantes/interpolados
 - [ ] Curvas con modelos (nss, vasicek, etc)
 - [X] Fixing en periodos distintos al indice
 - [X] Shock de curvas
@@ -44,7 +44,7 @@ A rust version of Atlas
 - [X] Fixings
 - [X] Accrual
 - [X] Agrupación
-- [ ] MaturingAmount con transformacion de monedas
+- [ ] Cashflows con transformacion de monedas
 - [ ] Zspread
 
 ## Simulación

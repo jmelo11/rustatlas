@@ -11,12 +11,13 @@ use crate::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
         makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
     },
+    utils::errors::Result,
 };
 
 use super::{
     fixingvisitor::FixingVisitor,
     npvconstvisitor::NPVConstVisitor,
-    traits::{ConstVisit, EvaluationError, HasCashflows, Visit},
+    traits::{ConstVisit, HasCashflows, Visit},
 };
 
 /// # ParValue
@@ -43,15 +44,15 @@ impl CostFunction for ParValue<FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
 
-    fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
+    fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
         let builder = MakeFixedRateLoan::from(self.eval.deref());
         let mut inst = builder.with_rate_value(*param).build()?;
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<(), EvaluationError> {
-                let id = old_cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
-                cf.register_id(id);
+            .try_for_each(|(cf, old_cf)| -> Result<()> {
+                let id = old_cf.id()?;
+                cf.set_id(id);
                 Ok(())
             })?;
 
@@ -63,16 +64,16 @@ impl CostFunction for ParValue<FloatingRateInstrument> {
     type Param = f64;
     type Output = f64;
 
-    fn cost(&self, param: &Self::Param) -> Result<Self::Output, Error> {
+    fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
         let builder = MakeFloatingRateLoan::from(self.eval.deref());
         let mut inst = builder.with_spread(*param).build()?;
 
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<(), EvaluationError> {
-                let id = old_cf.registry_id().ok_or(EvaluationError::NoRegistryId)?;
-                cf.register_id(id);
+            .try_for_each(|(cf, old_cf)| -> Result<()> {
+                let id = old_cf.id()?;
+                cf.set_id(id);
                 Ok(())
             })?;
 
@@ -94,7 +95,7 @@ impl ParValueConstVisitor {
 }
 
 impl ConstVisit<FixedRateInstrument> for ParValueConstVisitor {
-    type Output = Result<f64, Error>;
+    type Output = Result<f64>;
     fn visit(&self, instrument: &FixedRateInstrument) -> Self::Output {
         let cost = ParValue::new(Rc::new(instrument.clone()), self.market_data.clone());
         let solver = BrentRoot::new(-1.0, 1.0, 1e-6);
@@ -108,7 +109,7 @@ impl ConstVisit<FixedRateInstrument> for ParValueConstVisitor {
 }
 
 impl ConstVisit<FloatingRateInstrument> for ParValueConstVisitor {
-    type Output = Result<f64, Error>;
+    type Output = Result<f64>;
     fn visit(&self, instrument: &FloatingRateInstrument) -> Self::Output {
         let cost = ParValue::new(Rc::new(instrument.clone()), self.market_data.clone());
         let solver = BrentRoot::new(-1.0, 1.0, 1e-6);

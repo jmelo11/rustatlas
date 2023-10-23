@@ -5,6 +5,8 @@ use std::{
 
 use super::enums::Currency;
 
+use crate::utils::errors::{AtlasError, Result};
+
 #[derive(Clone)]
 pub struct ExchangeRateStore {
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
@@ -37,21 +39,27 @@ impl ExchangeRateStore {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
-    pub fn get_currency_curve(&self, currency: Currency) -> Option<usize> {
-        self.currency_curve.get(&currency).cloned()
+    pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
+        self.currency_curve
+            .get(&currency)
+            .cloned()
+            .ok_or(AtlasError::NotFoundErr(format!(
+                "Currency curve for currency {:?}",
+                currency
+            )))
     }
 
-    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Option<f64> {
+    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
         let first_ccy = first_ccy;
         let second_ccy = second_ccy;
 
         if first_ccy == second_ccy {
-            return Some(1.0);
+            return Ok(1.0);
         }
 
         let cache_key = (first_ccy, second_ccy);
         if let Some(cached_rate) = self.exchange_rate_cache.borrow().get(&cache_key) {
-            return Some(*cached_rate);
+            return Ok(*cached_rate);
         }
 
         let mut q: VecDeque<(Currency, f64)> = VecDeque::new();
@@ -67,7 +75,7 @@ impl ExchangeRateStore {
                     if dest == second_ccy {
                         mutable_cache.insert((first_ccy, second_ccy), new_rate);
                         mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
-                        return Some(new_rate);
+                        return Ok(new_rate);
                     }
                     visited.insert(dest);
                     q.push_back((dest, new_rate));
@@ -76,14 +84,17 @@ impl ExchangeRateStore {
                     if source == second_ccy {
                         mutable_cache.insert((first_ccy, second_ccy), new_rate);
                         mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
-                        return Some(new_rate);
+                        return Ok(new_rate);
                     }
                     visited.insert(source);
                     q.push_back((source, new_rate));
                 }
             }
         }
-        None
+        Err(AtlasError::NotFoundErr(format!(
+            "No exchange rate found between {:?} and {:?}",
+            first_ccy, second_ccy
+        )))
     }
 }
 
@@ -129,7 +140,8 @@ mod tests {
             currency_curve: HashMap::new(),
         };
 
-        assert_eq!(manager.get_exchange_rate(USD, EUR), None);
+        let result = manager.get_exchange_rate(USD, EUR);
+        assert!(result.is_err());
     }
 
     #[test]

@@ -3,15 +3,16 @@ use std::collections::HashMap;
 use crate::{
     rates::{
         traits::{HasReferenceDate, YieldProvider},
-        yieldtermstructure::traits::{AdvanceInTimeError, YieldTermStructureTrait},
+        yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, period::Period},
+    utils::errors::Result,
 };
 
 /// # FloatingRateProvider
 /// Implement this trait for a struct that holds floating rate information.
 pub trait FixingProvider {
-    fn fixing(&self, date: Date) -> Option<f64>;
+    fn fixing(&self, date: Date) -> Result<f64>;
     fn fixings(&self) -> &HashMap<Date, f64>;
     fn add_fixing(&mut self, date: Date, rate: f64);
 }
@@ -41,20 +42,14 @@ impl Clone for Box<dyn InterestRateIndexTrait> {
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period/time.
 pub trait AdvanceInterestRateIndexInTime {
-    fn advance_to_period(
-        &self,
-        period: Period,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError>;
-    fn advance_to_date(
-        &self,
-        date: Date,
-    ) -> Result<Box<dyn InterestRateIndexTrait>, AdvanceInTimeError>;
+    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>>;
+    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>>;
 }
 
 /// # HasTermStructure
 /// Implement this trait for a struct that holds a term structure.
 pub trait HasTermStructure {
-    fn term_structure(&self) -> Option<&Box<dyn YieldTermStructureTrait>>;
+    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>>;
 }
 
 pub trait InterestRateIndexTrait:

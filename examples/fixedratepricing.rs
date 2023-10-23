@@ -28,7 +28,7 @@ use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = Rc::new(create_store());
+    let market_store = Rc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -107,7 +107,7 @@ fn starting_today_pricing() {
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store());
+    let market_store = Rc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -162,7 +162,7 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store());
+    let market_store = Rc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);

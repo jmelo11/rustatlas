@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{
         meta::MarketRequest,
-        traits::{MarketRequestError, Registrable},
+        traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
     },
+    currencies::enums::Currency,
     time::date::Date,
+    utils::errors::Result,
 };
 
 use super::{
@@ -36,7 +38,7 @@ pub enum Cashflow {
 }
 
 impl Cashflow {
-    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
+    pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.set_discount_curve_id(id),
             Cashflow::Disbursement(cashflow) => cashflow.set_discount_curve_id(id),
@@ -45,7 +47,7 @@ impl Cashflow {
         }
     }
 
-    pub fn set_forecast_curve_id(&mut self, id: Option<usize>) {
+    pub fn set_forecast_curve_id(&mut self, id: usize) {
         match self {
             Cashflow::FloatingRateCoupon(coupon) => coupon.set_forecast_curve_id(id),
             _ => (),
@@ -54,7 +56,7 @@ impl Cashflow {
 }
 
 impl Payable for Cashflow {
-    fn amount(&self) -> Option<f64> {
+    fn amount(&self) -> Result<f64> {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.amount(),
             Cashflow::Disbursement(cashflow) => cashflow.amount(),
@@ -82,26 +84,59 @@ impl Payable for Cashflow {
     }
 }
 
+impl HasCurrency for Cashflow {
+    fn currency(&self) -> Result<Currency> {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.currency(),
+            Cashflow::Disbursement(cashflow) => cashflow.currency(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.currency(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.currency(),
+        }
+    }
+}
+
+impl HasDiscountCurveId for Cashflow {
+    fn discount_curve_id(&self) -> Result<usize> {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.discount_curve_id(),
+            Cashflow::Disbursement(cashflow) => cashflow.discount_curve_id(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.discount_curve_id(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.discount_curve_id(),
+        }
+    }
+}
+
+impl HasForecastCurveId for Cashflow {
+    fn forecast_curve_id(&self) -> Result<usize> {
+        match self {
+            Cashflow::Redemption(cashflow) => cashflow.forecast_curve_id(),
+            Cashflow::Disbursement(cashflow) => cashflow.forecast_curve_id(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.forecast_curve_id(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.forecast_curve_id(),
+        }
+    }
+}
+
 impl Registrable for Cashflow {
-    fn register_id(&mut self, id: usize) {
+    fn set_id(&mut self, id: usize) {
         match self {
-            Cashflow::Redemption(cashflow) => cashflow.register_id(id),
-            Cashflow::Disbursement(cashflow) => cashflow.register_id(id),
-            Cashflow::FixedRateCoupon(coupon) => coupon.register_id(id),
-            Cashflow::FloatingRateCoupon(coupon) => coupon.register_id(id),
+            Cashflow::Redemption(cashflow) => cashflow.set_id(id),
+            Cashflow::Disbursement(cashflow) => cashflow.set_id(id),
+            Cashflow::FixedRateCoupon(coupon) => coupon.set_id(id),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.set_id(id),
         }
     }
 
-    fn registry_id(&self) -> Option<usize> {
+    fn id(&self) -> Result<usize> {
         match self {
-            Cashflow::Redemption(cashflow) => cashflow.registry_id(),
-            Cashflow::Disbursement(cashflow) => cashflow.registry_id(),
-            Cashflow::FixedRateCoupon(coupon) => coupon.registry_id(),
-            Cashflow::FloatingRateCoupon(coupon) => coupon.registry_id(),
+            Cashflow::Redemption(cashflow) => cashflow.id(),
+            Cashflow::Disbursement(cashflow) => cashflow.id(),
+            Cashflow::FixedRateCoupon(coupon) => coupon.id(),
+            Cashflow::FloatingRateCoupon(coupon) => coupon.id(),
         }
     }
 
-    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+    fn market_request(&self) -> Result<MarketRequest> {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.market_request(),
             Cashflow::Disbursement(cashflow) => cashflow.market_request(),

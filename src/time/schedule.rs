@@ -1,4 +1,4 @@
-use thiserror::Error;
+use crate::utils::errors::{AtlasError, Result};
 
 use super::calendar::*;
 use super::calendars::nullcalendar::NullCalendar;
@@ -164,36 +164,6 @@ pub struct MakeSchedule {
     dates: Vec<Date>,
 }
 
-/// # MakeScheduleError
-/// This enum represents the errors which can occur when building a schedule.
-#[derive(Error, Debug)]
-pub enum MakeScheduleError {
-    /// The tenor is not positive.
-    #[error("NonPositiveTenor: {0}")]
-    NonPositiveTenor(String),
-    /// The first date is out of the effective-termination date range.
-    #[error("FirstDateOutOfRange: {0}")]
-    FirstDateOutOfRange(String),
-    /// The first date is not an IMM date.
-    #[error("FirstDateNotIMM: {0}")]
-    FirstDateNotIMM(String),
-    /// The next to last date is out of the effective-termination date range.
-    #[error("NextToLastDateOutOfRange: {0}")]
-    NextToLastDateOutOfRange(String),
-    /// The next to last date is not an IMM date.
-    #[error("NextToLastDateNotIMM: {0}")]
-    NextToLastDateNotIMM(String),
-    /// The first date is incompatible with the date generation rule.
-    #[error("FirstDateIncompatible: {0}")]
-    FirstDateIncompatible(String),
-    /// The next to last date is incompatible with the date generation rule.
-    #[error("NextToLastDateIncompatible: {0}")]
-    NextToLastDateIncompatible(String),
-    /// The rule is unknown.
-    #[error("UnknownRule: {0}")]
-    UnknownRule(String),
-}
-
 /// Constructor, setters and getters
 impl MakeSchedule {
     /// Returns a new instance of MakeSchedule.
@@ -286,9 +256,9 @@ impl MakeSchedule {
 
 /// Build method
 impl MakeSchedule {
-    pub fn build(&mut self) -> Result<Schedule, MakeScheduleError> {
+    pub fn build(&mut self) -> Result<Schedule> {
         if self.tenor.length() < 0 {
-            return Err(MakeScheduleError::NonPositiveTenor(format!(
+            return Err(AtlasError::MakeScheduleErr(format!(
                 "non positive tenor ({})",
                 self.tenor.length()
             )));
@@ -303,16 +273,14 @@ impl MakeSchedule {
                     if self.first_date <= self.effective_date
                         || self.first_date > self.termination_date
                     {
-                        //panic!("first date out of effective-termination date range");
-                        return Err(MakeScheduleError::FirstDateOutOfRange(
+                        return Err(AtlasError::MakeScheduleErr(
                             "first date out of effective-termination date range".to_string(),
                         ));
                     }
                 }
                 DateGenerationRule::ThirdWednesday => {
                     if !IMM::is_imm_date(self.first_date, false) {
-                        //panic!("first date is not an IMM date");
-                        return Err(MakeScheduleError::FirstDateNotIMM(
+                        return Err(AtlasError::MakeScheduleErr(
                             "first date is not an IMM date".to_string(),
                         ));
                     }
@@ -323,14 +291,12 @@ impl MakeSchedule {
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
                 | DateGenerationRule::CDS2015 => {
-                    //panic!("first date incompatible with date generation rule");
-                    return Err(MakeScheduleError::FirstDateIncompatible(
+                    return Err(AtlasError::MakeScheduleErr(
                         "first date incompatible with date generation rule".to_string(),
                     ));
                 }
                 _ => {
-                    //panic!("unknown rule");
-                    return Err(MakeScheduleError::UnknownRule("unknown rule".to_string()));
+                    return Err(AtlasError::MakeScheduleErr("unknown rule".to_string()));
                 }
             }
         }
@@ -341,16 +307,14 @@ impl MakeSchedule {
                     if self.next_to_last_date <= self.effective_date
                         || self.next_to_last_date >= self.termination_date
                     {
-                        //panic!("next to last date out of effective-termination date range");
-                        return Err(MakeScheduleError::NextToLastDateOutOfRange(
+                        return Err(AtlasError::MakeScheduleErr(
                             "next to last date out of effective-termination date range".to_string(),
                         ));
                     }
                 }
                 DateGenerationRule::ThirdWednesday => {
                     if !IMM::is_imm_date(self.next_to_last_date, false) {
-                        //panic!("next to last date is not an IMM date");
-                        return Err(MakeScheduleError::NextToLastDateNotIMM(
+                        return Err(AtlasError::MakeScheduleErr(
                             "next to last date is not an IMM date".to_string(),
                         ));
                     }
@@ -361,14 +325,12 @@ impl MakeSchedule {
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
                 | DateGenerationRule::CDS2015 => {
-                    //panic!("next to last date incompatible with date generation rule");
-                    return Err(MakeScheduleError::NextToLastDateIncompatible(
+                    return Err(AtlasError::MakeScheduleErr(
                         "next to last date incompatible with date generation rule".to_string(),
                     ));
                 }
                 _ => {
-                    //panic!("unknown rule");
-                    return Err(MakeScheduleError::UnknownRule("unknown rule".to_string()));
+                    return Err(AtlasError::MakeScheduleErr("unknown rule".to_string()));
                 }
             }
         }
@@ -463,7 +425,7 @@ impl MakeSchedule {
                     // );
                     if self.end_of_month == true {
                         //panic!("endOfMonth convention incompatible with {:?} date generation rule", self.rule);
-                        return Err(MakeScheduleError::UnknownRule(
+                        return Err(AtlasError::MakeScheduleErr(
                             "endOfMonth convention incompatible with date generation rule"
                                 .to_string(),
                         ));
@@ -870,7 +832,7 @@ mod tests {
     }
 
     #[test]
-    fn test_make_simple_schedule_build() -> Result<(), MakeScheduleError> {
+    fn test_make_simple_schedule_build() -> Result<()> {
         let from = Date::new(2022, 1, 1);
         let to = Date::new(2023, 3, 1);
         // monthly
@@ -939,7 +901,7 @@ mod tests {
     }
 
     #[test]
-    fn test_daily_schedule() -> Result<(), MakeScheduleError> {
+    fn test_daily_schedule() -> Result<()> {
         let from = Date::new(2012, 1, 17);
         let to = Date::new(2012, 1, 24);
         let tenor = Period::new(1, TimeUnit::Days);
@@ -976,7 +938,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dates_past_end_date_with_eom_adjustment() -> Result<(), MakeScheduleError> {
+    fn test_dates_past_end_date_with_eom_adjustment() -> Result<()> {
         let from = Date::new(2013, 3, 28);
         let to = Date::new(2015, 3, 30);
         let tenor = Period::new(1, TimeUnit::Years);
@@ -1005,7 +967,7 @@ mod tests {
     }
 
     #[test]
-    fn test_dates_same_as_end_date_with_eom_adjustment() -> Result<(), MakeScheduleError> {
+    fn test_dates_same_as_end_date_with_eom_adjustment() -> Result<()> {
         let from = Date::new(2013, 3, 28);
         let to = Date::new(2015, 3, 31);
         let tenor = Period::new(1, TimeUnit::Years);

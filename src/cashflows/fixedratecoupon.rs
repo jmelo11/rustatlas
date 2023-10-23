@@ -1,11 +1,15 @@
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
-use crate::core::meta::MarketRequest;
-use crate::core::traits::{MarketRequestError, Registrable};
-use crate::currencies::enums::Currency;
-use crate::rates::interestrate::InterestRate;
-use crate::time::date::Date;
+use crate::core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId};
+use crate::utils::errors::AtlasError;
+use crate::{
+    core::{meta::MarketRequest, traits::Registrable},
+    currencies::enums::Currency,
+    rates::interestrate::InterestRate,
+    time::date::Date,
+    utils::errors::Result,
+};
 
 /// # FixedRateCoupon
 /// A fixed rate coupon is a cashflow that pays a fixed rate of interest on a notional amount.
@@ -48,26 +52,46 @@ impl FixedRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> FixedRateCoupon {
-        self.cashflow = self.cashflow.with_discount_curve_id(id);
+    pub fn with_discount_curve_id(mut self, id: usize) -> FixedRateCoupon {
+        self.cashflow.set_discount_curve_id(id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: Option<usize>) {
+    pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 }
 
+impl HasCurrency for FixedRateCoupon {
+    fn currency(&self) -> Result<Currency> {
+        return self.cashflow.currency();
+    }
+}
+
+impl HasDiscountCurveId for FixedRateCoupon {
+    fn discount_curve_id(&self) -> Result<usize> {
+        return self.cashflow.discount_curve_id();
+    }
+}
+
+impl HasForecastCurveId for FixedRateCoupon {
+    fn forecast_curve_id(&self) -> Result<usize> {
+        return Err(AtlasError::InvalidValueErr(
+            "No forecast curve id for fixed rate cashflow".to_string(),
+        ));
+    }
+}
+
 impl Registrable for FixedRateCoupon {
-    fn registry_id(&self) -> Option<usize> {
-        return self.cashflow.registry_id();
+    fn id(&self) -> Result<usize> {
+        return self.cashflow.id();
     }
 
-    fn register_id(&mut self, id: usize) {
-        self.cashflow.register_id(id);
+    fn set_id(&mut self, id: usize) {
+        self.cashflow.set_id(id);
     }
 
-    fn market_request(&self) -> Result<MarketRequest, MarketRequestError> {
+    fn market_request(&self) -> Result<MarketRequest> {
         return self.cashflow.market_request();
     }
 }
@@ -86,7 +110,7 @@ impl InterestAccrual for FixedRateCoupon {
 }
 
 impl Payable for FixedRateCoupon {
-    fn amount(&self) -> Option<f64> {
+    fn amount(&self) -> Result<f64> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {
@@ -167,7 +191,7 @@ mod tests {
             Side::Pay,
         );
 
-        coupon.set_discount_curve_id(Some(id));
+        coupon.set_discount_curve_id(id);
 
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);

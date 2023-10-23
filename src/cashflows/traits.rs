@@ -1,4 +1,4 @@
-use crate::time::date::Date;
+use crate::{time::date::Date, utils::errors::Result};
 
 use super::cashflow::Side;
 
@@ -45,7 +45,7 @@ pub trait RequiresFixingRate: InterestAccrual {
 /// # Payable
 /// A trait that defines the payment of an instrument.
 pub trait Payable {
-    fn amount(&self) -> Option<f64>;
+    fn amount(&self) -> Result<f64>;
     fn side(&self) -> Side;
     fn payment_date(&self) -> Date;
 }

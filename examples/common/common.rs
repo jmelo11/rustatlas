@@ -10,7 +10,7 @@ use rustatlas::{
     currencies::enums::Currency,
     instruments::makefixedrateloan::MakeFixedRateLoan,
     rates::{
-        interestrate::{RateDefinition},
+        interestrate::RateDefinition,
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
         traits::HasReferenceDate,
         yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
@@ -20,6 +20,7 @@ use rustatlas::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
+    utils::errors::Result,
 };
 use std::{collections::HashMap, ops::Deref, rc::Rc};
 
@@ -46,18 +47,18 @@ pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
         let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
 
         let df = match md.df() {
-            Some(df) => format!("{:10.2}", df),
-            None => "None      ".to_string(), // 10 characters wide
+            Ok(df) => format!("{:10.2}", df),
+            _ => "None      ".to_string(), // 10 characters wide
         };
 
         let fx = match md.fx() {
-            Some(fx) => format!("{:10.2}", fx),
-            None => "None      ".to_string(), // 10 characters wide
+            Ok(fx) => format!("{:10.2}", fx),
+            _ => "None      ".to_string(), // 10 characters wide
         };
 
         let fwd = match md.fwd() {
-            Some(fwd) => format!("{:9.3}", fwd),
-            None => "None      ".to_string(), // 10 characters wide
+            Ok(fwd) => format!("{:9.3}", fwd),
+            _ => "None      ".to_string(), // 10 characters wide
         };
 
         println!("{} | {} | {} | {} | {}", date, amount, df, fwd, fx);
@@ -78,7 +79,7 @@ fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
 }
 
 #[allow(dead_code)]
-pub fn create_store() -> MarketStore {
+pub fn create_store() -> Result<MarketStore> {
     let ref_date = Date::new(2021, 9, 1);
     let local_currency = Currency::USD;
     let mut market_store = MarketStore::new(ref_date, local_currency);
@@ -118,19 +119,19 @@ pub fn create_store() -> MarketStore {
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index));
+        .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index))?;
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index));
+        .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store
         .mut_index_store()
-        .add_index("DiscountCurve".to_string(), Box::new(discount_index));
-    return market_store;
+        .add_index("DiscountCurve".to_string(), Box::new(discount_index))?;
+    return Ok(market_store);
 }
 
 use rand::Rng;

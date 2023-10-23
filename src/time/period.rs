@@ -1,15 +1,13 @@
 use super::enums::{Frequency, TimeUnit};
-use serde::{
-    de::{self, Visitor},
-    Deserializer, Serialize,
-};
+use serde::de;
+use serde::{de::Visitor, Deserializer, Serialize};
 use std::fmt;
 use std::{
     cmp::Ordering,
-    num::ParseIntError,
-    ops::{Add, AddAssign, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+    ops::{Add, Mul, MulAssign, Neg, Sub},
 };
-use thiserror::Error;
+
+use crate::utils::errors::{AtlasError, Result};
 
 /// # Period
 /// Struct representing a financial period.
@@ -25,16 +23,6 @@ use thiserror::Error;
 pub struct Period {
     length: i32,
     units: TimeUnit,
-}
-
-#[derive(Debug, Error)]
-pub enum PeriodParseError {
-    #[error("Invalid length")]
-    InvalidLength,
-    #[error("Invalid unit")]
-    InvalidTimeUnit,
-    #[error("Parse error")]
-    ParseIntError(#[from] ParseIntError),
 }
 
 impl Period {
@@ -163,7 +151,7 @@ impl Period {
         }
     }
 
-    pub fn from_str(tenor: &str) -> Result<Period, PeriodParseError> {
+    pub fn from_str(tenor: &str) -> Result<Period> {
         // parse multiple periods and add them
         let mut chars = tenor.chars();
         let mut periods = Vec::new();
@@ -179,12 +167,12 @@ impl Period {
         }
         let mut result = Period::empty();
         for period in periods {
-            result += Period::parse_single_period(&period)?;
+            result = (result + Period::parse_single_period(&period)?)?;
         }
         Ok(result)
     }
 
-    fn parse_single_period(tenor: &str) -> Result<Period, PeriodParseError> {
+    fn parse_single_period(tenor: &str) -> Result<Period> {
         let mut chars = tenor.chars();
         let mut length = String::new();
         let mut units = String::new();
@@ -195,13 +183,21 @@ impl Period {
                 units.push(c);
             }
         }
-        let length = length.parse::<i32>()?;
+        let length = length.parse::<i32>().map_err(|_| {
+            AtlasError::PeriodOperationErr(
+                format!("Invalid period length ({})", length).to_string(),
+            )
+        })?;
         let units = match units.as_str() {
             "Y" => TimeUnit::Years,
             "M" => TimeUnit::Months,
             "W" => TimeUnit::Weeks,
             "D" => TimeUnit::Days,
-            _ => return Err(PeriodParseError::InvalidTimeUnit),
+            _ => {
+                return Err(AtlasError::PeriodOperationErr(
+                    format!("Invalid time unit ({})", units).to_string(),
+                ))
+            }
         };
         Ok(Period::new(length, units))
     }
@@ -209,7 +205,7 @@ impl Period {
 
 /// Deserializes a string in the format like 1Y or 1Y6M to a Period.
 impl<'de> serde::Deserialize<'de> for Period {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Period, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -222,7 +218,7 @@ impl<'de> serde::Deserialize<'de> for Period {
                 formatter.write_str("a string in the format like 1Y or 1Y6M")
             }
 
-            fn visit_str<E>(self, v: &str) -> Result<Period, E>
+            fn visit_str<E>(self, v: &str) -> std::result::Result<Period, E>
             where
                 E: de::Error,
             {
@@ -237,7 +233,7 @@ impl<'de> serde::Deserialize<'de> for Period {
 
 /// Serializes a Period to a string in the format like 1Y or 1Y6M.
 impl Serialize for Period {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -334,92 +330,6 @@ impl Neg for Period {
     }
 }
 
-/// # AddAssign for Period
-/// Adds a Period to another Period.
-/// # Examples
-/// ```
-/// use rustatlas::prelude::*;
-/// let mut p1 = Period::new(5, TimeUnit::Days);
-/// let p2 = Period::new(3, TimeUnit::Days);
-/// p1 += p2;
-/// assert_eq!(p1.length(), 8);
-/// assert_eq!(p1.units(), TimeUnit::Days);
-/// ```
-impl AddAssign for Period {
-    fn add_assign(&mut self, other: Self) {
-        if self.length == 0 {
-            self.length = other.length;
-            self.units = other.units;
-        } else if self.units == other.units {
-            self.length += other.length;
-        } else {
-            match self.units {
-                TimeUnit::Years => match other.units {
-                    TimeUnit::Months => {
-                        self.units = TimeUnit::Months;
-                        self.length = self.length * 12 + other.length;
-                    }
-                    TimeUnit::Weeks | TimeUnit::Days => {
-                        assert!(
-                            other.length == 0,
-                            "impossible addition between {:?} and {:?}",
-                            self,
-                            other
-                        );
-                    }
-                    _ => panic!("unknown time unit ({:?})", other.units),
-                },
-
-                TimeUnit::Months => match other.units {
-                    TimeUnit::Years => {
-                        self.length += other.length * 12;
-                    }
-                    TimeUnit::Weeks | TimeUnit::Days => {
-                        assert!(
-                            other.length == 0,
-                            "impossible addition between {:?} and {:?}",
-                            self,
-                            other
-                        );
-                    }
-                    _ => panic!("unknown time unit ({:?})", other.units),
-                },
-
-                TimeUnit::Weeks => match other.units {
-                    TimeUnit::Days => {
-                        self.units = TimeUnit::Days;
-                        self.length = self.length * 7 + other.length;
-                    }
-                    TimeUnit::Years | TimeUnit::Months => {
-                        assert!(
-                            other.length == 0,
-                            "impossible addition between {:?} and {:?}",
-                            self,
-                            other
-                        );
-                    }
-                    _ => panic!("unknown time unit ({:?})", other.units),
-                },
-
-                TimeUnit::Days => match other.units {
-                    TimeUnit::Weeks => {
-                        self.length += other.length * 7;
-                    }
-                    TimeUnit::Years | TimeUnit::Months => {
-                        assert!(
-                            other.length == 0,
-                            "impossible addition between {:?} and {:?}",
-                            self,
-                            other
-                        );
-                    }
-                    _ => panic!("unknown time unit ({:?})", other.units),
-                },
-            }
-        }
-    }
-}
-
 /// # Add for Period
 /// Adds a Period to another Period.
 /// # Examples
@@ -427,35 +337,97 @@ impl AddAssign for Period {
 /// use rustatlas::prelude::*;
 /// let p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
-/// let p3 = p1 + p2;
+/// let p3 = (p1 + p2).unwrap();
 /// assert_eq!(p3.length(), 8);
 /// assert_eq!(p3.units(), TimeUnit::Days);
-/// ```
 impl Add for Period {
-    type Output = Period;
+    type Output = Result<Period>;
 
     fn add(self, other: Self) -> Self::Output {
         let mut result = self;
-        result += other;
-        result
-    }
-}
+        if result.length == 0 {
+            result.length = other.length;
+            result.units = other.units;
+        } else if result.units == other.units {
+            result.length += other.length;
+        } else {
+            match result.units {
+                TimeUnit::Years => match other.units {
+                    TimeUnit::Months => {
+                        result.units = TimeUnit::Months;
+                        result.length = result.length * 12 + other.length;
+                    }
+                    TimeUnit::Weeks | TimeUnit::Days => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("impossible addition between {:?} and {:?}", result, other)
+                                .to_string(),
+                        ));
+                    }
 
-/// # SubAssign for Period
-/// Subtracts a Period from another Period.
-/// # Examples
-/// ```
-/// use rustatlas::prelude::*;
-///
-/// let mut p1 = Period::new(5, TimeUnit::Days);
-/// let p2 = Period::new(3, TimeUnit::Days);
-/// p1 -= p2;
-/// assert_eq!(p1.length(), 2);
-/// assert_eq!(p1.units(), TimeUnit::Days);
-/// ```
-impl SubAssign for Period {
-    fn sub_assign(&mut self, other: Self) {
-        *self += -other;
+                    _ => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("unknown time unit ({:?})", other.units).to_string(),
+                        ))
+                    }
+                },
+
+                TimeUnit::Months => match other.units {
+                    TimeUnit::Years => {
+                        result.length += other.length * 12;
+                    }
+                    TimeUnit::Weeks | TimeUnit::Days => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("impossible addition between {:?} and {:?}", result, other)
+                                .to_string(),
+                        ));
+                    }
+
+                    _ => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("unknown time unit ({:?})", other.units).to_string(),
+                        ))
+                    }
+                },
+
+                TimeUnit::Weeks => match other.units {
+                    TimeUnit::Days => {
+                        result.units = TimeUnit::Days;
+                        result.length = result.length * 7 + other.length;
+                    }
+                    TimeUnit::Years | TimeUnit::Months => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("impossible addition between {:?} and {:?}", result, other)
+                                .to_string(),
+                        ));
+                    }
+
+                    _ => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("unknown time unit ({:?})", other.units).to_string(),
+                        ))
+                    }
+                },
+
+                TimeUnit::Days => match other.units {
+                    TimeUnit::Weeks => {
+                        result.length += other.length * 7;
+                    }
+                    TimeUnit::Years | TimeUnit::Months => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("impossible addition between {:?} and {:?}", result, other)
+                                .to_string(),
+                        ));
+                    }
+
+                    _ => {
+                        return Err(AtlasError::PeriodOperationErr(
+                            format!("unknown time unit ({:?})", other.units).to_string(),
+                        ))
+                    }
+                },
+            }
+        }
+        Ok(result)
     }
 }
 
@@ -467,17 +439,15 @@ impl SubAssign for Period {
 ///
 /// let p1 = Period::new(5, TimeUnit::Days);
 /// let p2 = Period::new(3, TimeUnit::Days);
-/// let p3 = p1 - p2;
+/// let p3 = (p1 - p2).unwrap();
 /// assert_eq!(p3.length(), 2);
 /// assert_eq!(p3.units(), TimeUnit::Days);
 /// ```
 impl Sub for Period {
-    type Output = Period;
+    type Output = Result<Period>;
 
     fn sub(self, other: Self) -> Self::Output {
-        let mut result = self;
-        result -= other;
-        result
+        self + -other
     }
 }
 
@@ -520,45 +490,6 @@ impl MulAssign<i32> for Period {
     }
 }
 
-/// # DivAssign`<i32>` for Period
-/// Divides a Period by an integer.
-/// # Examples
-/// ```
-/// use rustatlas::time::enums::TimeUnit;
-/// use rustatlas::time::period::Period;
-/// let mut p = Period::new(10, TimeUnit::Days);
-/// p /= 2;
-/// assert_eq!(p.length(), 5);
-/// assert_eq!(p.units(), TimeUnit::Days);
-/// ```
-/// # Panics
-/// Panics if the integer is zero.
-impl DivAssign<i32> for Period {
-    fn div_assign(&mut self, n: i32) {
-        assert!(n != 0, "cannot be divided by zero");
-        if self.length % n == 0 {
-            self.length /= n;
-        } else {
-            let mut units = self.units;
-            let mut length = self.length;
-            match units {
-                TimeUnit::Years => {
-                    length *= 12;
-                    units = TimeUnit::Months;
-                }
-                TimeUnit::Weeks => {
-                    length *= 7;
-                    units = TimeUnit::Days;
-                }
-                _ => {}
-            }
-            assert!(length % n == 0, "{:?} cannot be divided by {}", self, n);
-            self.length = length / n;
-            self.units = units;
-        }
-    }
-}
-
 // Tests
 #[cfg(test)]
 mod tests {
@@ -577,7 +508,7 @@ mod tests {
 
     #[test]
     fn test_period_addition() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 5,
             units: TimeUnit::Days,
         };
@@ -585,14 +516,14 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        p1 += p2;
-        assert_eq!(p1.length, 8);
-        assert_eq!(p1.units, TimeUnit::Days);
+        let p3 = (p1 + p2).unwrap();
+        assert_eq!(p3.length, 8);
+        assert_eq!(p3.units, TimeUnit::Days);
     }
 
     #[test]
     fn test_period_subtraction() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 5,
             units: TimeUnit::Days,
         };
@@ -600,9 +531,9 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        p1 -= p2;
-        assert_eq!(p1.length, 2);
-        assert_eq!(p1.units, TimeUnit::Days);
+        let p3 = (p1 - p2).unwrap();
+        assert_eq!(p3.length, 2);
+        assert_eq!(p3.units, TimeUnit::Days);
     }
 
     #[test]
@@ -614,27 +545,6 @@ mod tests {
         p *= 2;
         assert_eq!(p.length, 10);
         assert_eq!(p.units, TimeUnit::Days);
-    }
-
-    #[test]
-    fn test_period_division() {
-        let mut p = Period {
-            length: 10,
-            units: TimeUnit::Days,
-        };
-        p /= 2;
-        assert_eq!(p.length, 5);
-        assert_eq!(p.units, TimeUnit::Days);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_period_division_by_zero() {
-        let mut p = Period {
-            length: 10,
-            units: TimeUnit::Days,
-        };
-        p /= 0;
     }
 
     #[test]
@@ -661,7 +571,7 @@ mod tests {
 
     #[test]
     fn test_period_addition_different_units_years_months() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 1,
             units: TimeUnit::Years,
         };
@@ -669,14 +579,14 @@ mod tests {
             length: 6,
             units: TimeUnit::Months,
         };
-        p1 += p2;
-        assert_eq!(p1.length, 18);
-        assert_eq!(p1.units, TimeUnit::Months);
+        let p3 = (p1 + p2).unwrap();
+        assert_eq!(p3.length, 18);
+        assert_eq!(p3.units, TimeUnit::Months);
     }
 
     #[test]
     fn test_period_addition_different_units_weeks_days() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 2,
             units: TimeUnit::Weeks,
         };
@@ -684,14 +594,14 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        p1 += p2;
-        assert_eq!(p1.length, 17);
-        assert_eq!(p1.units, TimeUnit::Days);
+        let p3 = (p1 + p2).unwrap();
+        assert_eq!(p3.length, 17);
+        assert_eq!(p3.units, TimeUnit::Days);
     }
 
     #[test]
     fn test_period_addition_days_weeks() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 10,
             units: TimeUnit::Days,
         };
@@ -699,14 +609,14 @@ mod tests {
             length: 1,
             units: TimeUnit::Weeks,
         };
-        p1 += p2;
-        assert_eq!(p1.length, 17);
-        assert_eq!(p1.units, TimeUnit::Days);
+        let p3: Period = (p1 + p2).unwrap();
+        assert_eq!(p3.length, 17);
+        assert_eq!(p3.units, TimeUnit::Days);
     }
 
     #[test]
     fn test_period_addition_months_years() {
-        let mut p1 = Period {
+        let p1 = Period {
             length: 6,
             units: TimeUnit::Months,
         };
@@ -714,15 +624,15 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        p1 += p2;
-        assert_eq!(p1.length, 18);
-        assert_eq!(p1.units, TimeUnit::Months);
+        let p3 = (p1 + p2).unwrap();
+        assert_eq!(p3.length, 18);
+        assert_eq!(p3.units, TimeUnit::Months);
     }
 
     #[test]
-    #[should_panic(expected = "impossible addition")]
-    fn test_impossible_addition_weeks_years() {
-        let mut p1 = Period {
+    fn test_impossible_addition_weeks_years() -> Result<()> {
+        // should err
+        let p1 = Period {
             length: 2,
             units: TimeUnit::Weeks,
         };
@@ -730,13 +640,18 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        p1 += p2;
+        let r = p1 + p2;
+        match r {
+            Err(_) => Ok(()),
+            _ => Err(AtlasError::PeriodOperationErr(
+                "impossible addition between 2W and 1Y".to_string(),
+            )),
+        }
     }
 
     #[test]
-    #[should_panic(expected = "impossible addition")]
-    fn test_impossible_addition_days_years() {
-        let mut p1 = Period {
+    fn test_impossible_addition_days_years() -> Result<()> {
+        let p1 = Period {
             length: 5,
             units: TimeUnit::Days,
         };
@@ -744,7 +659,13 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        p1 += p2;
+        let r = p1 + p2;
+        match r {
+            Err(_) => Ok(()),
+            _ => Err(AtlasError::PeriodOperationErr(
+                "impossible addition between 5D and 1Y".to_string(),
+            )),
+        }
     }
 
     #[test]

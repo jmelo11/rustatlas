@@ -2,9 +2,10 @@ use crate::{
     currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
     rates::{
         indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
-        traits::HasReferenceDate, yieldtermstructure::traits::AdvanceInTimeError,
+        traits::HasReferenceDate,
     },
     time::{date::Date, enums::TimeUnit, period::Period},
+    utils::errors::{AtlasError, Result},
 };
 
 /// # MarketStore
@@ -51,7 +52,7 @@ impl MarketStore {
         &self,
         first_currency: Currency,
         second_currency: Option<Currency>,
-    ) -> Option<f64> {
+    ) -> Result<f64> {
         let second_currency = match second_currency {
             Some(ccy) => ccy,
             None => self.local_currency,
@@ -61,13 +62,16 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_index_by_id(&self, id: usize) -> Option<&Box<dyn InterestRateIndexTrait>> {
+    pub fn get_index_by_id(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
         return self.index_store.get_index_by_id(id);
     }
 
-    pub fn advance_to_period(&self, period: Period) -> Result<MarketStore, AdvanceInTimeError> {
+    pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
         if period.length() < 1 {
-            return Err(AdvanceInTimeError::InvalidPeriod);
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Negative periods are not allowed: {:?}",
+                period
+            )));
         }
         let new_reference_date = self.reference_date + period;
         let new_index_store = self.index_store.advance_to_period(period)?;
@@ -79,9 +83,12 @@ impl MarketStore {
         })
     }
 
-    pub fn advance_to_date(&self, date: Date) -> Result<MarketStore, AdvanceInTimeError> {
+    pub fn advance_to_date(&self, date: Date) -> Result<MarketStore> {
         if date < self.reference_date {
-            return Err(AdvanceInTimeError::InvalidDate);
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Date {:?} is before reference date {:?}",
+                date, self.reference_date
+            )));
         }
         let days = (date - self.reference_date) as i32;
         let period = Period::new(days, TimeUnit::Days);
