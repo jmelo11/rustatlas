@@ -5,7 +5,7 @@ use crate::{
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
     },
-    visitors::traits::HasCashflows,
+    visitors::traits::HasCashflows, time::date::Date,
 };
 
 #[derive(Clone)]
@@ -35,6 +35,20 @@ impl Instrument {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.notional(),
             Instrument::FloatingRateInstrument(fri) => fri.notional(),
+        }
+    }
+
+    pub fn start_date(&self) -> Date {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.start_date(),
+            Instrument::FloatingRateInstrument(fri) => fri.start_date(),
+        }
+    }
+
+    pub fn end_date(&self) -> Date {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.end_date(),
+            Instrument::FloatingRateInstrument(fri) => fri.end_date(),
         }
     }
 }
