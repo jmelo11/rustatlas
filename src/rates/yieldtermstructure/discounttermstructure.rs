@@ -26,7 +26,6 @@ pub struct DiscountTermStructure {
 
 impl DiscountTermStructure {
     pub fn new(
-        reference_date: Date,
         dates: Vec<Date>,
         discount_factors: Vec<f64>,
         day_counter: DayCounter,
@@ -40,20 +39,13 @@ impl DiscountTermStructure {
             ));
         }
 
-        // dates[0] needs to be equal to reference date
-        if dates[0] != reference_date {
-            return Err(AtlasError::InvalidValueErr(
-                "First date needs to be equal to reference date".to_string(),
-            ));
-        }
-
         // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
             ));
         }
-
+        let reference_date = dates[0];
         let year_fractions: Vec<f64> = dates
             .iter()
             .map(|x| day_counter.year_fraction(reference_date, *x))
@@ -143,10 +135,6 @@ impl YieldProvider for DiscountTermStructure {
 /// # AdvanceTermStructureInTime for DiscountTermStructure
 impl AdvanceTermStructureInTime for DiscountTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
-        let new_reference_date = self
-            .reference_date()
-            .advance(period.length(), period.units());
-
         let new_dates: Vec<Date> = self
             .dates()
             .iter()
@@ -163,7 +151,6 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             .collect();
 
         Ok(Box::new(DiscountTermStructure::new(
-            new_reference_date,
             new_dates,
             shifted_dfs?,
             self.day_counter(),
@@ -192,7 +179,6 @@ mod tests {
 
     #[test]
     fn test_year_fractions() {
-        let reference_date = Date::new(2020, 1, 1);
         let dates = vec![
             Date::new(2020, 1, 1),
             Date::new(2020, 4, 1),
@@ -204,7 +190,6 @@ mod tests {
         let day_counter = DayCounter::Actual360;
 
         let discount_term_structure = DiscountTermStructure::new(
-            reference_date,
             dates,
             discount_factors,
             day_counter,
@@ -227,7 +212,6 @@ mod tests {
 
     #[test]
     fn test_discount_dactors() {
-        let reference_date = Date::new(2020, 1, 1);
         let dates = vec![
             Date::new(2020, 1, 1),
             Date::new(2020, 4, 1),
@@ -239,7 +223,6 @@ mod tests {
         let day_counter = DayCounter::Actual360;
 
         let discount_term_structure = DiscountTermStructure::new(
-            reference_date,
             dates,
             discount_factors,
             day_counter,
@@ -256,7 +239,6 @@ mod tests {
 
     #[test]
     fn test_reference_date() {
-        let reference_date = Date::new(2020, 1, 1);
         let dates = vec![
             Date::new(2020, 1, 1),
             Date::new(2020, 4, 1),
@@ -268,7 +250,6 @@ mod tests {
         let day_counter = DayCounter::Actual360;
 
         let discount_term_structure = DiscountTermStructure::new(
-            reference_date,
             dates,
             discount_factors,
             day_counter,
@@ -285,7 +266,6 @@ mod tests {
 
     #[test]
     fn test_interpolation() {
-        let reference_date = Date::new(2020, 1, 1);
         let dates = vec![
             Date::new(2020, 1, 1),
             Date::new(2020, 4, 1),
@@ -297,7 +277,6 @@ mod tests {
         let day_counter = DayCounter::Actual360;
 
         let discount_term_structure = DiscountTermStructure::new(
-            reference_date,
             dates,
             discount_factors,
             day_counter,
@@ -320,7 +299,6 @@ mod tests {
     #[test]
 
     fn test_forward_rate() {
-        let reference_date = Date::new(2020, 1, 1);
         let dates = vec![
             Date::new(2020, 1, 1),
             Date::new(2020, 4, 1),
@@ -332,7 +310,6 @@ mod tests {
         let day_counter = DayCounter::Actual360;
 
         let discount_term_structure = DiscountTermStructure::new(
-            reference_date,
             dates,
             discount_factors,
             day_counter,
