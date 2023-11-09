@@ -30,6 +30,7 @@ use super::{
 pub struct MakeFixedRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
+    first_coupon_date: Option<Date>,
     payment_frequency: Option<Frequency>,
     tenor: Option<Period>,
     currency: Option<Currency>,
@@ -51,6 +52,7 @@ impl MakeFixedRateLoan {
         MakeFixedRateLoan {
             start_date: None,
             end_date: None,
+            first_coupon_date: None,
             payment_frequency: None,
             tenor: None,
             rate: None,
@@ -65,6 +67,12 @@ impl MakeFixedRateLoan {
             rate_definition: None,
             rate_value: None,
         }
+    }
+
+    /// Sets the first coupon date.
+    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFixedRateLoan {
+        self.first_coupon_date = Some(first_coupon_date);
+        self
     }
 
     /// Sets the currency.
@@ -265,9 +273,16 @@ impl MakeFixedRateLoan {
                         start_date + tenor
                     }
                 };
-                let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(payment_frequency)
-                    .build()?;
+
+                // this logic should go into a separate function/ Schedule should have accessing methods
+                // to first and last date and other attributes
+                let mut schedule_builder =
+                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+
+                let schedule = match self.first_coupon_date {
+                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    None => schedule_builder.build()?,
+                };
 
                 let notional = self
                     .notional
@@ -413,9 +428,13 @@ impl MakeFixedRateLoan {
                         start_date + tenor
                     }
                 };
-                let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(payment_frequency)
-                    .build()?;
+                let mut schedule_builder =
+                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+
+                let schedule = match self.first_coupon_date {
+                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    None => schedule_builder.build()?,
+                };
 
                 let notional = self
                     .notional
@@ -572,9 +591,13 @@ impl MakeFixedRateLoan {
                         start_date + tenor
                     }
                 };
-                let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(payment_frequency)
-                    .build()?;
+                let mut schedule_builder =
+                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+
+                let schedule = match self.first_coupon_date {
+                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    None => schedule_builder.build()?,
+                };
 
                 let notional = self
                     .notional

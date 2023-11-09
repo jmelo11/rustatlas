@@ -25,6 +25,7 @@ use super::{
 pub struct MakeFloatingRateLoan {
     start_date: Option<Date>,
     end_date: Option<Date>,
+    first_coupon_date: Option<Date>,
     payment_frequency: Option<Frequency>,
     tenor: Option<Period>,
     rate_definition: Option<RateDefinition>,
@@ -46,6 +47,7 @@ impl MakeFloatingRateLoan {
         MakeFloatingRateLoan {
             start_date: None,
             end_date: None,
+            first_coupon_date: None,
             payment_frequency: None,
             tenor: None,
             rate_definition: None,
@@ -60,6 +62,11 @@ impl MakeFloatingRateLoan {
             redemptions: None,
             additional_coupon_dates: None,
         }
+    }
+
+    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateLoan {
+        self.first_coupon_date = Some(first_coupon_date);
+        self
     }
 
     pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLoan {
@@ -204,9 +211,14 @@ impl MakeFloatingRateLoan {
                         start_date + tenor
                     }
                 };
-                let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(payment_frequency)
-                    .build()?;
+                let mut schedule_builder =
+                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+
+                let schedule = match self.first_coupon_date {
+                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    None => schedule_builder.build()?,
+                };
+
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
@@ -374,9 +386,14 @@ impl MakeFloatingRateLoan {
                         start_date + tenor
                     }
                 };
-                let schedule = MakeSchedule::new(start_date, end_date)
-                    .with_frequency(payment_frequency)
-                    .build()?;
+                let mut schedule_builder =
+                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+
+                let schedule = match self.first_coupon_date {
+                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    None => schedule_builder.build()?,
+                };
+
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
