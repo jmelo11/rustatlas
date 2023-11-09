@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::{AtlasError, Result},
@@ -75,6 +77,22 @@ impl IndexStore {
             "Index with id {} not found",
             id
         )))
+    }
+
+    pub fn id_to_name_map(&self) -> HashMap<usize, String> {
+        self.names
+            .iter()
+            .enumerate()
+            .map(|(n, s)| (n, s.clone()))
+            .collect()
+    }
+
+    pub fn name_to_id_map(&self) -> HashMap<String, usize> {
+        self.names
+            .iter()
+            .enumerate()
+            .map(|(n, s)| (s.clone(), n))
+            .collect()
     }
 
     pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
