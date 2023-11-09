@@ -23,14 +23,6 @@ use crate::{
 
 use super::enums::{Instrument, RateType};
 
-/// # LoanGenerator
-/// Generates a loan based on a configuration and a market store.
-pub struct LoanGenerator {
-    amount: f64,
-    configs: Rc<Vec<LoanConfiguration>>,
-    market_store: Rc<MarketStore>,
-}
-
 /// # LoanConfiguration
 /// Configuration for a loan. Represents the meta data required to generate a loan.
 #[derive(Serialize, Deserialize, Clone)]
@@ -39,7 +31,6 @@ pub struct LoanConfiguration {
     structure: Structure,
     payment_frequency: Frequency,
     tenor: Period,
-    currency: Currency,
     side: Side,
     rate_type: RateType,
     rate_definition: RateDefinition,
@@ -53,7 +44,6 @@ impl LoanConfiguration {
         structure: Structure,
         payment_frequency: Frequency,
         tenor: Period,
-        currency: Currency,
         side: Side,
         rate_type: RateType,
         rate_definition: RateDefinition,
@@ -65,7 +55,6 @@ impl LoanConfiguration {
             structure,
             payment_frequency,
             tenor,
-            currency,
             side,
             rate_type,
             rate_definition,
@@ -90,10 +79,6 @@ impl LoanConfiguration {
         self.tenor
     }
 
-    pub fn currency(&self) -> Currency {
-        self.currency
-    }
-
     pub fn side(&self) -> Side {
         self.side
     }
@@ -115,14 +100,25 @@ impl LoanConfiguration {
     }
 }
 
+/// # LoanGenerator
+/// Generates a loan based on a configuration and a market store.
+pub struct LoanGenerator {
+    amount: f64,
+    currency: Currency,
+    configs: Rc<Vec<LoanConfiguration>>,
+    market_store: Rc<MarketStore>,
+}
+
 impl LoanGenerator {
     pub fn new(
         amount: f64,
+        currency: Currency,
         configs: Rc<Vec<LoanConfiguration>>,
         market_store: Rc<MarketStore>,
     ) -> LoanGenerator {
         LoanGenerator {
             amount,
+            currency,
             configs,
             market_store,
         }
@@ -162,7 +158,7 @@ impl LoanGenerator {
                     .with_side(config.side())
                     .with_forecast_curve_id(Some(config.forecast_curve_id()))
                     .with_discount_curve_id(Some(config.discount_curve_id()))
-                    .with_currency(config.currency())
+                    .with_currency(self.currency)
                     .with_rate_definition(config.rate_definition())
                     .with_notional(notional);
                 let spread = self.calculate_par_spread(builder.clone())?;
@@ -178,7 +174,7 @@ impl LoanGenerator {
                     .with_payment_frequency(config.payment_frequency())
                     .with_rate_definition(config.rate_definition())
                     .with_side(config.side())
-                    .with_currency(config.currency())
+                    .with_currency(self.currency)
                     .with_discount_curve_id(Some(config.discount_curve_id()))
                     .with_structure(structure);
 
@@ -239,14 +235,13 @@ mod tests {
             Structure::Bullet,
             Frequency::Annual,
             Period::new(1, TimeUnit::Years),
-            Currency::USD,
             Side::Receive,
             RateType::Fixed,
             RateDefinition::default(),
             0,
             None,
         )]);
-        let generator = LoanGenerator::new(100.0, configs, market_store);
+        let generator = LoanGenerator::new(100.0, Currency::USD, configs, market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
         Ok(())
