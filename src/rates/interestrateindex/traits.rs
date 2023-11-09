@@ -1,20 +1,44 @@
 use std::collections::HashMap;
 
 use crate::{
+    math::interpolation::enums::Interpolator,
     rates::{
         traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
-    time::{date::Date, period::Period},
+    time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::Result,
 };
 
 /// # FloatingRateProvider
 /// Implement this trait for a struct that holds floating rate information.
+/// This trait is implemented by IborIndex and OvernightIndex.
 pub trait FixingProvider {
     fn fixing(&self, date: Date) -> Result<f64>;
     fn fixings(&self) -> &HashMap<Date, f64>;
     fn add_fixing(&mut self, date: Date, rate: f64);
+    fn fill_missing_fixings(&mut self, interpolator: Interpolator) {
+        if !self.fixings().is_empty() {
+            let first_date = self.fixings().keys().min().unwrap().clone();
+            let last_date = self.fixings().keys().max().unwrap().clone();
+            let x = self
+                .fixings()
+                .keys()
+                .map(|&d| (d - first_date) as f64)
+                .collect::<Vec<f64>>();
+
+            let y = self.fixings().values().map(|r| *r).collect::<Vec<f64>>();
+            let mut current_date = first_date;
+            while current_date <= last_date {
+                if !self.fixings().contains_key(&current_date) {
+                    let days = (current_date - first_date) as f64;
+                    let rate = interpolator.interpolate(days, &x, &y, false);
+                    self.add_fixing(current_date, rate);
+                }
+                current_date = current_date + Period::new(1, TimeUnit::Days);
+            }
+        }
+    }
 }
 
 /// # InterestRateIndexClone

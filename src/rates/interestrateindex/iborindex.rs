@@ -93,7 +93,7 @@ impl FixingProvider for IborIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing found for date {:?}",
+                "No fixing for date {}",
                 date
             )))
     }
@@ -184,27 +184,16 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
-        let curve = self.term_structure()?;
-        let mut fixings = self.fixings().clone();
-        let mut seed = self.reference_date();
-        while seed <= date {
-            let rate = curve.forward_rate(
-                seed,
-                seed + self.tenor,
-                self.rate_definition.compounding(),
-                self.rate_definition.frequency(),
-            )?;
-            fixings.insert(seed, rate);
-            seed = seed.advance(1, TimeUnit::Days);
+        let days = (date - self.reference_date()) as i32;
+        if days < 0 {
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Date {} is before reference date {}",
+                date,
+                self.reference_date()
+            )));
         }
-        let new_curve = curve.advance_to_date(date)?;
-        Ok(Box::new(
-            IborIndex::new(new_curve.reference_date())
-                .with_tenor(self.tenor)
-                .with_rate_definition(self.rate_definition)
-                .with_fixings(fixings)
-                .with_term_structure(new_curve),
-        ))
+        let period = Period::new(days, TimeUnit::Days);
+        self.advance_to_period(period)
     }
 }
 
@@ -236,43 +225,4 @@ mod tests {
             DayCounter::Actual360
         );
     }
-
-    // #[test]
-    // fn test_ibor_advance() {
-    //     let ref_date = Date::new(2021, 1, 1);
-    //     let advance_period = Period::new(1, TimeUnit::Months);
-    //     let tenor = Period::new(1, TimeUnit::Months);
-    //     let rate_definition = RateDefinition::new(
-    //         DayCounter::Actual360,
-    //         Compounding::Simple,
-    //         Frequency::Annual,
-    //     );
-    //     let ibor_index = IborIndex::new()
-    //         .with_tenor(tenor)
-    //         .with_rate_definition(rate_definition);
-    //     let curve = FlatForwardTermStructure::new(
-    //         ref_date,
-    //         InterestRate::new(
-    //             0.05,
-    //             Compounding::Simple,
-    //             Frequency::Annual,
-    //             DayCounter::Actual360,
-    //         ),
-    //     );
-    //     let ibor_index =
-    //         ibor_index.with_term_structure(YieldTermStructure::FlatForwardTermStructure(curve));
-    //     let ibor_index_advance = ibor_index.advance(advance_period);
-
-    //     let mut seed = ref_date;
-    //     while seed < ref_date + advance_period {
-    //         let rate = curve.forward_rate(
-    //             seed,
-    //             seed + ibor_index.tenor(),
-    //             ibor_index.rate_definition().compounding(),
-    //             ibor_index.rate_definition().frequency(),
-    //         );
-    //         assert_eq!(ibor_index_advance.fixing(seed).unwrap(), rate);
-    //         seed = seed.advance(1, TimeUnit::Days);
-    //     }
-    // }
 }

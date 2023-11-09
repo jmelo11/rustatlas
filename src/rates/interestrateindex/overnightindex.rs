@@ -87,7 +87,7 @@ impl FixingProvider for OvernightIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {:?}",
+                "No fixing for date {}",
                 date
             )))
     }
@@ -165,15 +165,17 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let end_date = seed.advance(period.length(), period.units());
         let curve = self.term_structure()?;
 
-        while seed < end_date {
-            let first_df = curve.discount_factor(seed)?;
-            let last_fixing = fixings
-                .get(&seed)
-                .expect("No fixing for this OvernightIndex"); // remove this expect
-            seed = seed.advance(1, TimeUnit::Days);
-            let second_df = curve.discount_factor(seed)?;
-            let comp = last_fixing * first_df / second_df;
-            fixings.insert(seed, comp);
+        if !fixings.is_empty() {
+            while seed < end_date {
+                let first_df = curve.discount_factor(seed)?;
+                let last_fixing = fixings
+                    .get(&seed)
+                    .expect("No fixing for this OvernightIndex"); // remove this expect
+                seed = seed.advance(1, TimeUnit::Days);
+                let second_df = curve.discount_factor(seed)?;
+                let comp = last_fixing * first_df / second_df;
+                fixings.insert(seed, comp);
+            }
         }
         let new_curve = curve.advance_to_period(period)?;
 
