@@ -37,14 +37,6 @@ impl RateDefinition {
         }
     }
 
-    pub fn default() -> RateDefinition {
-        return RateDefinition::new(
-            DayCounter::Actual360,
-            Compounding::Simple,
-            Frequency::Annual,
-        );
-    }
-
     pub fn compounding(&self) -> Compounding {
         return self.compounding;
     }
@@ -55,6 +47,16 @@ impl RateDefinition {
 
     pub fn day_counter(&self) -> DayCounter {
         return self.day_counter;
+    }
+}
+
+impl Default for RateDefinition {
+    fn default() -> Self {
+        RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Simple,
+            Frequency::Annual,
+        )
     }
 }
 
