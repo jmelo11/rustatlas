@@ -1,5 +1,6 @@
 extern crate rustatlas;
-use std::rc::Rc;
+
+use std::sync::Arc;
 
 use rustatlas::{
     core::meta::MarketData,
@@ -25,7 +26,7 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -54,7 +55,7 @@ fn starting_today_pricing() {
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
+    let ref_data: Arc<Vec<MarketData>> = Arc::new(data);
 
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
     let _ = fixing_visitor.visit(&mut instrument);
@@ -75,7 +76,7 @@ fn starting_today_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -104,7 +105,7 @@ fn already_started_pricing() {
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
+    let ref_data: Arc<Vec<MarketData>> = Arc::new(data);
     let fixing_visitor = FixingVisitor::new(ref_data.clone());
     let _ = fixing_visitor.visit(&mut instrument);
 

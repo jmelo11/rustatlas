@@ -161,6 +161,12 @@ pub struct Date {
     base_date: NaiveDate,
 }
 
+impl From<NaiveDate> for Date {
+    fn from(base_date: NaiveDate) -> Self {
+        Date { base_date }
+    }
+}
+
 impl Serialize for Date {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
@@ -184,18 +190,14 @@ impl Date {
     pub fn new(year: i32, month: u32, day: u32) -> Date {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
         match base_date {
-            Some(base_date) => Date::from_base_date(base_date),
+            Some(base_date) => Date::from(base_date),
             None => panic!("Invalid date: {}-{}-{}", year, month, day),
         }
     }
 
-    pub fn from_base_date(base_date: NaiveDate) -> Date {
-        Date { base_date }
-    }
-
     pub fn parse_from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
-        Ok(Date::from_base_date(base_date))
+        Ok(Date::from(base_date))
     }
 
     pub fn base_date(&self) -> NaiveDate {
@@ -228,18 +230,18 @@ impl Date {
 
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
         let base_date = self.base_date.advance(n, units);
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 
     pub fn add_period(&self, period: Period) -> Date {
         let base_date = self.base_date + period;
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 
     // testing needed
     pub fn end_of_month(date: Date) -> Date {
         let base_date = NaiveDate::end_of_month(date.base_date);
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 
     // testing needed
@@ -249,7 +251,7 @@ impl Date {
         let skip = n - if day_of_week >= first { 1 } else { 0 };
         let day = 1 + day_of_week + skip * 7 - first;
         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 
     // testing needed
@@ -272,7 +274,7 @@ impl Date {
 
     pub fn empty() -> Date {
         //min
-        Date::from_base_date(NaiveDate::MIN)
+        Date::from(NaiveDate::MIN)
     }
 }
 
@@ -309,7 +311,7 @@ impl Add<Period> for Date {
 
     fn add(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date + rhs;
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 }
 
@@ -327,7 +329,7 @@ impl Sub<Period> for Date {
 
     fn sub(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date - rhs;
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 }
 
@@ -344,7 +346,7 @@ impl Add<i64> for Date {
 
     fn add(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate = self.base_date + Duration::days(rhs as i64);
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 }
 
@@ -376,7 +378,7 @@ impl Sub<i64> for Date {
 
     fn sub(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate = self.base_date - Duration::days(rhs as i64);
-        Date::from_base_date(base_date)
+        Date::from(base_date)
     }
 }
 
@@ -524,7 +526,7 @@ mod tests {
     #[test]
     fn test_empty() {
         let date = Date::empty();
-        assert_eq!(date, Date::from_base_date(NaiveDate::MIN));
+        assert_eq!(date, Date::from(NaiveDate::MIN));
     }
 
     #[test]

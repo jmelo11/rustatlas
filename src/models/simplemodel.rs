@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     core::{
@@ -21,11 +21,11 @@ use super::traits::Model;
 /// * `market_store` - The market store.
 #[derive(Clone)]
 pub struct SimpleModel {
-    market_store: Rc<MarketStore>,
+    market_store: Arc<MarketStore>,
 }
 
 impl SimpleModel {
-    pub fn new(market_store: Rc<MarketStore>) -> SimpleModel {
+    pub fn new(market_store: Arc<MarketStore>) -> SimpleModel {
         SimpleModel { market_store }
     }
 }

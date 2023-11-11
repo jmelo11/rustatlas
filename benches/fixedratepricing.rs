@@ -1,5 +1,6 @@
 extern crate rustatlas;
-use std::rc::Rc;
+
+use std::sync::Arc;
 
 use rayon::{
     prelude::{IntoParallelIterator, ParallelIterator},
@@ -62,7 +63,7 @@ fn multiple() {
         .collect(); // Collect the results into a Vec<_>
 
     fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-        let store = Rc::new(create_store().unwrap());
+        let store = Arc::new(create_store().unwrap());
         let mut npv = 0.0;
         let indexer = IndexingVisitor::new();
         instruments
@@ -72,7 +73,7 @@ fn multiple() {
         let model = SimpleModel::new(store.clone());
         let data = model.gen_market_data(&indexer.request()).unwrap();
 
-        let ref_data = Rc::new(data);
+        let ref_data = Arc::new(data);
         let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
         instruments
             .iter()

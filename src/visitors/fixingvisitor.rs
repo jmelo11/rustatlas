@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     cashflows::{cashflow::Cashflow, traits::RequiresFixingRate},
@@ -11,11 +11,11 @@ use super::traits::{HasCashflows, Visit};
 /// # FixingVisitor
 /// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
 pub struct FixingVisitor {
-    market_data: Rc<Vec<MarketData>>,
+    market_data: Arc<Vec<MarketData>>,
 }
 
 impl FixingVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
+    pub fn new(market_data: Arc<Vec<MarketData>>) -> Self {
         FixingVisitor {
             market_data: market_data,
         }

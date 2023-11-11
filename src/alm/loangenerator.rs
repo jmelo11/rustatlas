@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ use crate::{
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{interestrate::RateDefinition, traits::HasReferenceDate},
     time::{enums::Frequency, period::Period},
-    utils::errors::Result,
+    utils::errors::{AtlasError, Result},
     visitors::{
         indexingvisitor::IndexingVisitor,
         parvaluevisitor::ParValueConstVisitor,
@@ -102,35 +102,44 @@ impl LoanConfiguration {
 
 /// # LoanGenerator
 /// Generates a loan based on a configuration and a market store.
+#[derive(Clone)]
 pub struct LoanGenerator {
-    amount: f64,
     currency: Currency,
-    configs: Rc<Vec<LoanConfiguration>>,
-    market_store: Rc<MarketStore>,
+    configs: Vec<LoanConfiguration>,
+    market_store: Option<Arc<MarketStore>>,
+    amount: Option<f64>,
 }
 
 impl LoanGenerator {
-    pub fn new(
-        amount: f64,
-        currency: Currency,
-        configs: Rc<Vec<LoanConfiguration>>,
-        market_store: Rc<MarketStore>,
-    ) -> LoanGenerator {
+    pub fn new(currency: Currency, configs: Vec<LoanConfiguration>) -> LoanGenerator {
         LoanGenerator {
-            amount,
             currency,
             configs,
-            market_store,
+            market_store: None,
+            amount: None,
         }
+    }
+
+    pub fn with_amount(mut self, amount: f64) -> LoanGenerator {
+        self.amount = Some(amount);
+        self
+    }
+
+    pub fn with_market_store(mut self, market_store: Arc<MarketStore>) -> LoanGenerator {
+        self.market_store = Some(market_store);
+        self
     }
 
     fn calculate_par_spread(&self, builder: MakeFloatingRateLoan) -> Result<f64> {
         let mut instrument = builder.with_spread(0.01).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
-        let model = SimpleModel::new(self.market_store.clone());
+        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+            "Market store not set for loan generator".into(),
+        ))?;
+        let model = SimpleModel::new(market_store.clone());
         let data = model.gen_market_data(&indexing_visitor.request())?;
-        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        let par_visitor = ParValueConstVisitor::new(Arc::new(data));
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
@@ -138,16 +147,26 @@ impl LoanGenerator {
         let mut instrument = builder.with_rate_value(0.03).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
-        let model = SimpleModel::new(self.market_store.clone());
+        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+            "Market store not set for loan generator".into(),
+        ))?;
+        let model = SimpleModel::new(market_store.clone());
         let data = model.gen_market_data(&indexing_visitor.request())?;
-        let par_visitor = ParValueConstVisitor::new(Rc::new(data));
+        let par_visitor = ParValueConstVisitor::new(Arc::new(data));
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
     pub fn generate_position(&self, config: &LoanConfiguration) -> Result<Instrument> {
         let structure = config.structure();
-        let notional = self.amount * config.weight();
-        let start_date = self.market_store.reference_date();
+        let amount = self
+            .amount
+            .ok_or(AtlasError::ValueNotSetErr("Amount".into()))?;
+        let notional = amount * config.weight();
+
+        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+            "Market store not set for loan generator".into(),
+        ))?;
+        let start_date = market_store.reference_date();
         match config.rate_type() {
             RateType::Floating => {
                 let builder = MakeFloatingRateLoan::new()
@@ -192,7 +211,6 @@ impl LoanGenerator {
             .iter()
             .map(|c| self.generate_position(c).unwrap())
             .collect();
-
         positions
     }
 }
@@ -229,8 +247,8 @@ mod tests {
 
     #[test]
     fn generator_tests() -> Result<()> {
-        let market_store = Rc::new(create_store()?);
-        let configs = Rc::new(vec![LoanConfiguration::new(
+        let market_store = Arc::new(create_store()?);
+        let configs = vec![LoanConfiguration::new(
             1.0,
             Structure::Bullet,
             Frequency::Annual,
@@ -240,8 +258,10 @@ mod tests {
             RateDefinition::default(),
             0,
             None,
-        )]);
-        let generator = LoanGenerator::new(100.0, Currency::USD, configs, market_store);
+        )];
+        let generator = LoanGenerator::new(Currency::USD, configs)
+            .with_amount(100.0)
+            .with_market_store(market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
         Ok(())

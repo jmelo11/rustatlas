@@ -2,13 +2,11 @@ extern crate rustatlas;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
     alm::enums::Instrument,
-    cashflows::{
-        cashflow::{Cashflow, Side},
-        traits::Payable,
-    },
+    cashflows::cashflow::{Cashflow, Side},
     core::{marketstore::MarketStore, meta::MarketData},
     currencies::enums::Currency,
     instruments::makefixedrateloan::MakeFixedRateLoan,
+    prelude::Payable,
     rates::{
         interestrate::RateDefinition,
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
@@ -22,7 +20,7 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -37,7 +35,7 @@ pub fn print_title(title: &str) {
 }
 
 #[allow(dead_code)]
-pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
+pub fn print_table(cashflows: &[Cashflow], market_data: Arc<Vec<MarketData>>) {
     println!(
         "{:10} | {:10} | {:10} | {:10}| {:10}",
         "Date", "Amount", "DF", "FWD", "FX"

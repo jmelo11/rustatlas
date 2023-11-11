@@ -73,3 +73,24 @@ A rust version of Atlas
 
 - [X] Corregir panics/remplazar por errores
 - [ ] Unificar errores
+
+### Incidencias
+
+- [ ] Fixings en fines de semana: se debe incorporar un interpolador
+  - [X] Feature
+  - [ ] UT
+- [ ] Visitantes restringidos a fecha de valorizacion
+  - [ ] Feature
+  - [ ] UT
+- [ ] Periodos de gracia en creditos
+  - [ ] Feature
+  - [ ] UT
+- [ ] Relajar constructor de productos con tabla de pago
+  - [ ] Feature
+  - [ ] UT
+- [ ] Transformador de tablas de pagos a cashflows
+  - [ ] Feature
+  - [ ] UT
+- [ ] Convertir monedas de forma automatica
+  - [ ] Feature
+  - [ ] UT

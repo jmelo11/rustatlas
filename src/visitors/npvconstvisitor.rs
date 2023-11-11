@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
@@ -12,12 +12,12 @@ use super::traits::{ConstVisit, HasCashflows};
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVConstVisitor {
-    market_data: Rc<Vec<MarketData>>,
+    market_data: Arc<Vec<MarketData>>,
     include_today_cashflows: bool,
 }
 
 impl NPVConstVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>, include_today_cashflows: bool) -> Self {
+    pub fn new(market_data: Arc<Vec<MarketData>>, include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data: market_data,
             include_today_cashflows,
@@ -43,6 +43,7 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
                     )))?;
 
             if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
+                || cf.payment_date() < cf_market_data.reference_date()
             {
                 return Ok(acc);
             }

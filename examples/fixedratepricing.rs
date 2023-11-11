@@ -1,5 +1,6 @@
 extern crate rustatlas;
-use std::rc::Rc;
+
+use std::sync::Arc;
 
 use rustatlas::{
     cashflows::{
@@ -28,7 +29,7 @@ use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -66,7 +67,7 @@ fn starting_today_pricing() {
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data = Rc::new(data);
+    let ref_data = Arc::new(data);
 
     print_table(instrument.cashflows(), ref_data.clone());
 
@@ -107,7 +108,7 @@ fn starting_today_pricing() {
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -139,7 +140,7 @@ fn forward_starting_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
-    let ref_data = Rc::new(data);
+    let ref_data = Arc::new(data);
     print_table(instrument.cashflows(), ref_data.clone());
 
     let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
@@ -162,7 +163,7 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);
@@ -198,7 +199,7 @@ fn already_started_pricing() {
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data = Rc::new(data);
+    let ref_data = Arc::new(data);
 
     print_table(instrument.cashflows(), ref_data.clone());
 

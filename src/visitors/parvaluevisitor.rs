@@ -1,4 +1,4 @@
-use std::{ops::Deref, rc::Rc};
+use std::{ops::Deref, rc::Rc, sync::Arc};
 
 use argmin::{
     core::{CostFunction, Error, Executor, State},
@@ -29,7 +29,7 @@ struct ParValue<T> {
 }
 
 impl<T> ParValue<T> {
-    pub fn new(eval: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
+    pub fn new(eval: Rc<T>, market_data: Arc<Vec<MarketData>>) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data.clone(), true);
         let fixing_visitor = FixingVisitor::new(market_data.clone());
         ParValue {
@@ -85,11 +85,11 @@ impl CostFunction for ParValue<FloatingRateInstrument> {
 /// # ParValueConstVisitor
 /// ParValueConstVisitor is a visitor that calculates the par rate/spread of.
 pub struct ParValueConstVisitor {
-    market_data: Rc<Vec<MarketData>>,
+    market_data: Arc<Vec<MarketData>>,
 }
 
 impl ParValueConstVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
+    pub fn new(market_data: Arc<Vec<MarketData>>) -> Self {
         ParValueConstVisitor { market_data }
     }
 }

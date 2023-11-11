@@ -10,25 +10,32 @@ use crate::{
 };
 
 pub struct CashAccount {
-    currency: Currency,
+    currency: Option<Currency>,
     amount: RefCell<BTreeMap<Date, f64>>,
 }
 
 impl HasCurrency for CashAccount {
     fn currency(&self) -> Result<Currency> {
-        Ok(self.currency)
+        self.currency
+            .ok_or(AtlasError::InvalidValueErr("Currency not set".to_string()))
     }
 }
 
 impl CashAccount {
-    pub fn new(currency: Currency) -> Self {
+    pub fn new() -> Self {
         Self {
-            currency,
             amount: RefCell::new(BTreeMap::new()),
+            currency: None,
         }
     }
 
+    pub fn with_currency(mut self, currency: Currency) -> Self {
+        self.currency = Some(currency);
+        self
+    }
+
     pub fn add_flows_from_instrument(&self, instrument: &dyn HasCashflows) -> Result<()> {
+        let account_currency = self.currency()?;
         instrument
             .cashflows()
             .iter()
@@ -40,7 +47,7 @@ impl CashAccount {
                     Side::Receive => cf.amount()?,
                 };
                 let currency = cf.currency()?;
-                if currency == self.currency {
+                if currency == account_currency {
                     let mut amount_map = self.amount.borrow_mut();
                     let entry = amount_map.entry(date).or_insert(0.0);
                     *entry += amount;
@@ -118,7 +125,7 @@ mod tests {
             .bullet()
             .build()?;
 
-        let cash_account = CashAccount::new(Currency::USD);
+        let cash_account = CashAccount::new().with_currency(Currency::USD);
         cash_account.add_flows_from_instrument(&instrument)?;
         let cash_account = cash_account.cash_account_evolution()?;
 
@@ -162,7 +169,7 @@ mod tests {
             .bullet()
             .build()?;
 
-        let cash_account = CashAccount::new(Currency::USD);
+        let cash_account = CashAccount::new().with_currency(Currency::USD);
         cash_account.add_flows_from_instrument(&instrument1)?;
         cash_account.add_flows_from_instrument(&instrument2)?;
         let cash_account = cash_account.cash_account_evolution()?;
