@@ -516,8 +516,14 @@ impl MakeFloatingRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                let start_date = &timeline.first().expect("No start date").0;
-                let end_date = &timeline.last().expect("No end date").1;
+                
+                let start_date = &timeline.first().ok_or(AtlasError::ValueNotSetErr(
+                    "Start date".into(),
+                ))?.0; 
+                let end_date = &timeline.last().ok_or(AtlasError::ValueNotSetErr(
+                    "End date".into(),
+                ))?.1;
+               
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
                 match self.discount_curve_id {

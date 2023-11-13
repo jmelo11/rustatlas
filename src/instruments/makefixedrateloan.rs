@@ -392,8 +392,12 @@ impl MakeFixedRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                let start_date = &timeline.first().expect("No start date").0;
-                let end_date = &timeline.last().expect("No end date").1;
+                let start_date = &timeline.first().ok_or(AtlasError::ValueNotSetErr(
+                    "Start date".into(),
+                ))?.0; 
+                let end_date = &timeline.last().ok_or(AtlasError::ValueNotSetErr(
+                    "End date".into(),
+                ))?.1;
 
                 match self.discount_curve_id {
                     Some(id) => cashflows
@@ -446,7 +450,7 @@ impl MakeFixedRateLoan {
                 };
 
                 let redemptions =
-                    calculate_redemptions(schedule.dates().clone(), rate, notional, side);
+                    calculate_redemptions(schedule.dates().clone(), rate, notional, side)?;
                 let mut notionals = redemptions.iter().fold(vec![notional], |mut acc, x| {
                     acc.push(acc.last().unwrap() - x);
                     acc
@@ -716,7 +720,7 @@ fn calculate_redemptions(
     rate: InterestRate,
     notional: f64,
     side: Side,
-) -> Vec<f64> {
+) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
         dates: dates.clone(),
         rate: rate,
@@ -726,10 +730,9 @@ fn calculate_redemptions(
     let init_param = 1.0 / (dates.len() as f64);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
-        .run()
-        .expect("Solver failed");
+        .run()?;
 
-    let payment = res.state().best_param.expect("No best parameter found") * notional;
+    let payment = res.state().best_param.ok_or(AtlasError::EvaluationErr("Solver failed".into()))? * notional;
 
     let mut redemptions = Vec::new();
     let mut total_amount = notional;
@@ -745,7 +748,7 @@ fn calculate_redemptions(
         total_amount -= k;
         redemptions.push(k * flag);
     }
-    redemptions
+    Ok(redemptions)
 }
 
 impl Into<MakeFixedRateLoan> for FixedRateInstrument {
