@@ -23,10 +23,10 @@ use crate::{
 
 use super::enums::{Instrument, RateType};
 
-/// # LoanConfiguration
+/// # RolloverStrategy
 /// Configuration for a loan. Represents the meta data required to generate a loan.
 #[derive(Serialize, Deserialize, Clone)]
-pub struct LoanConfiguration {
+pub struct RolloverStrategy {
     weight: f64,
     structure: Structure,
     payment_frequency: Frequency,
@@ -38,7 +38,7 @@ pub struct LoanConfiguration {
     forecast_curve_id: Option<usize>,
 }
 
-impl LoanConfiguration {
+impl RolloverStrategy {
     pub fn new(
         weight: f64,
         structure: Structure,
@@ -49,8 +49,8 @@ impl LoanConfiguration {
         rate_definition: RateDefinition,
         discount_curve_id: usize,
         forecast_curve_id: Option<usize>,
-    ) -> LoanConfiguration {
-        LoanConfiguration {
+    ) -> RolloverStrategy {
+        RolloverStrategy {
             weight,
             structure,
             payment_frequency,
@@ -100,19 +100,19 @@ impl LoanConfiguration {
     }
 }
 
-/// # LoanGenerator
+/// # RolloverEngine
 /// Generates a loan based on a configuration and a market store.
 #[derive(Clone)]
-pub struct LoanGenerator {
+pub struct RolloverEngine {
     currency: Currency,
-    configs: Vec<LoanConfiguration>,
+    configs: Vec<RolloverStrategy>,
     market_store: Option<Arc<MarketStore>>,
     amount: Option<f64>,
 }
 
-impl LoanGenerator {
-    pub fn new(currency: Currency, configs: Vec<LoanConfiguration>) -> LoanGenerator {
-        LoanGenerator {
+impl RolloverEngine {
+    pub fn new(currency: Currency, configs: Vec<RolloverStrategy>) -> RolloverEngine {
+        RolloverEngine {
             currency,
             configs,
             market_store: None,
@@ -120,12 +120,12 @@ impl LoanGenerator {
         }
     }
 
-    pub fn with_amount(mut self, amount: f64) -> LoanGenerator {
+    pub fn with_amount(mut self, amount: f64) -> RolloverEngine {
         self.amount = Some(amount);
         self
     }
 
-    pub fn with_market_store(mut self, market_store: Arc<MarketStore>) -> LoanGenerator {
+    pub fn with_market_store(mut self, market_store: Arc<MarketStore>) -> RolloverEngine {
         self.market_store = Some(market_store);
         self
     }
@@ -156,7 +156,7 @@ impl LoanGenerator {
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    pub fn generate_position(&self, config: &LoanConfiguration) -> Result<Instrument> {
+    pub fn generate_position(&self, config: &RolloverStrategy) -> Result<Instrument> {
         let structure = config.structure();
         let amount = self
             .amount
@@ -248,7 +248,7 @@ mod tests {
     #[test]
     fn generator_tests() -> Result<()> {
         let market_store = Arc::new(create_store()?);
-        let configs = vec![LoanConfiguration::new(
+        let configs = vec![RolloverStrategy::new(
             1.0,
             Structure::Bullet,
             Frequency::Annual,
@@ -259,7 +259,7 @@ mod tests {
             0,
             None,
         )];
-        let generator = LoanGenerator::new(Currency::USD, configs)
+        let generator = RolloverEngine::new(Currency::USD, configs)
             .with_amount(100.0)
             .with_market_store(market_store);
         let positions = generator.generate();

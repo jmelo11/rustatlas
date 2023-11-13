@@ -1,5 +1,5 @@
 pub use crate::{
-    alm::enums::*,
+    alm::{cashaccount::*, enums::*, rollover::*},
     cashflows::cashflow::Side,
     cashflows::{
         cashflow::Cashflow,
@@ -45,6 +45,7 @@ pub use crate::{
         schedule::*,
     },
     visitors::{
+        aggregationvisitor::AggregationConstVisitor,
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
