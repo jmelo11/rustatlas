@@ -86,7 +86,7 @@ impl MarketStore {
     pub fn advance_to_date(&self, date: Date) -> Result<MarketStore> {
         if date < self.reference_date {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {:?} is before reference date {:?}",
+                "Date {} is before reference date {}",
                 date, self.reference_date
             )));
         }
