@@ -200,6 +200,10 @@ impl Date {
         Ok(Date::from(base_date))
     }
 
+    pub fn to_str(&self, fmt: &str) -> String {
+        self.base_date.format(fmt).to_string()
+    }
+
     pub fn base_date(&self) -> NaiveDate {
         self.base_date
     }
