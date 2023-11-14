@@ -34,6 +34,12 @@ pub trait InterestAccrual {
             (Date::empty(), Date::empty())
         }
     }
+
+    fn delta_accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
+        let acc_1 = self.accrued_amount(self.accrual_start_date(), start_date);
+        let acc_2 = self.accrued_amount(self.accrual_start_date(), end_date);
+        return acc_2 - acc_1;
+    }
 }
 
 /// # RequiresFixingRate
