@@ -53,7 +53,7 @@ impl Instrument {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RateType {
     Fixed,
     Floating,
