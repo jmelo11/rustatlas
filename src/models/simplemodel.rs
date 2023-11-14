@@ -54,10 +54,16 @@ impl Model for SimpleModel {
 
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64> {
         let id = fwd.provider_id();
+        let end_date = fwd.end_date();
+        let ref_date = self.market_store.reference_date();
+        if end_date >= ref_date {
+            return Ok(0.0);
+        }
+
         let index = self.market_store.get_index_by_id(id)?;
 
         let start_date = fwd.start_date();
-        let end_date = fwd.end_date();
+        
         Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
     }
 
