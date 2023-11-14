@@ -61,3 +61,95 @@ pub trait Payable {
 pub trait Expires {
     fn is_expired(&self, date: Date) -> bool;
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::{InterestRate, Frequency, Compounding, DayCounter, Currency, FixedRateCoupon, Side, Date};
+   
+    #[test]
+    fn test_delta_accrued_amount_simple() {
+        let notional = 10000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let accrual_start_date = Date::new(2023, 1, 1);
+        let accrual_end_date = Date::new(2023, 3, 31);
+        let payment_date = Date::new(2023, 3, 31);
+        let currency = Currency::JPY;
+
+        let coupon = FixedRateCoupon::new(
+            notional,
+            rate,
+            accrual_start_date,
+            accrual_end_date,
+            payment_date,
+            currency,
+            Side::Pay,
+        );
+
+        let mut  start_date = Date::new(2023, 1, 1);
+        let mut end_date = Date::new(2023, 3, 31);
+        let mut accrued_amount = coupon.delta_accrued_amount(start_date, end_date);
+        assert!( (accrued_amount - 125.0).abs() < 0.00001);
+
+        start_date =Date::new(2023, 1, 15); 
+        end_date = Date::new(2023, 1, 16);
+        accrued_amount = coupon.delta_accrued_amount(start_date, end_date);
+        assert!( (accrued_amount - 125.0/90.0).abs() < 0.00001);
+
+    }
+
+    #[test]
+    fn test_delta_accrued_amount_compounded() {
+        let notional = 10000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let accrual_start_date = Date::new(2023, 1, 30);
+        let accrual_end_date = Date::new(2023, 3, 31);
+        let payment_date = Date::new(2023, 3, 31);
+        let currency = Currency::JPY;
+
+        let coupon = FixedRateCoupon::new(
+            notional,
+            rate,
+            accrual_start_date,
+            accrual_end_date,
+            payment_date,
+            currency,
+            Side::Pay,
+        );
+
+        let mut start_date = Date::new(2023, 1, 30);
+        let mut end_date = Date::new(2023, 3, 31);
+        let mut accrued_amount = coupon.clone().delta_accrued_amount(start_date, end_date);
+    
+        assert!(accrued_amount - 122.72234429 < 0.00001);
+
+        start_date = Date::new(2023, 2, 15);
+        end_date = Date::new(2023, 2, 16  );
+        accrued_amount = coupon.clone().delta_accrued_amount(start_date, end_date);
+        //println!("accrued_amount = {}", accrued_amount);
+
+        start_date = Date::new(2023, 2, 15);
+        end_date = Date::new(2023, 2, 16  );
+        accrued_amount = coupon.clone().delta_accrued_amount(start_date, end_date);
+        //println!("accrued_amount = {}", accrued_amount);
+
+        start_date = Date::new(2023, 1, 30);
+        end_date = Date::new(2023, 1, 31);
+        accrued_amount = coupon.clone().delta_accrued_amount(start_date, end_date);
+        //println!("accrued_amount = {}", accrued_amount);
+        assert_eq!(accrued_amount, 0.0);
+
+    }
+
+}
