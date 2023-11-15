@@ -246,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn generator_tests() -> Result<()> {
+    fn generator_tests_fixed() -> Result<()> {
         let market_store = Arc::new(create_store()?);
         let configs = vec![RolloverStrategy::new(
             1.0,
@@ -262,6 +262,33 @@ mod tests {
         let generator = RolloverEngine::new(Currency::USD, configs)
             .with_amount(100.0)
             .with_market_store(market_store);
+        let positions = generator.generate();
+        assert_eq!(positions.len(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn generator_tests_floating() -> Result<()> {
+        let market_store = Arc::new(create_store()?);
+        
+        let configs = vec![RolloverStrategy::new(
+            0.5,
+            Structure::EqualRedemptions,
+            Frequency::Annual,
+            Period::new(1, TimeUnit::Years),
+            Side::Receive,
+            RateType::Floating,
+            RateDefinition::default(),
+            0,
+            Some(0),
+        )];
+
+        let date = Date::new(2021, 9, 1) + Period::new(7, TimeUnit::Days);
+        let tmp_store = Arc::new(market_store.advance_to_date(date)?);
+
+        let generator = RolloverEngine::new(Currency::USD, configs)
+            .with_amount(100.0)
+            .with_market_store(tmp_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
         Ok(())
