@@ -7,7 +7,7 @@ use super::cashflow::Side;
 pub trait InterestAccrual {
     fn accrual_start_date(&self) -> Date;
     fn accrual_end_date(&self) -> Date;
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64;
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64>;
 
     fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> (Date, Date) {
         let accrual_start = self.accrual_start_date();
@@ -35,10 +35,10 @@ pub trait InterestAccrual {
         }
     }
 
-    fn delta_accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
-        let acc_1 = self.accrued_amount(self.accrual_start_date(), start_date);
-        let acc_2 = self.accrued_amount(self.accrual_start_date(), end_date);
-        return acc_2 - acc_1;
+    fn delta_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
+        let acc_1 = self.accrued_amount(self.accrual_start_date(), start_date)?;
+        let acc_2 = self.accrued_amount(self.accrual_start_date(), end_date)?;
+        return Ok(acc_2 - acc_1);
     }
 }
 

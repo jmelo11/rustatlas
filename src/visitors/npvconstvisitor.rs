@@ -71,7 +71,8 @@ mod tests {
 
     use rayon::{prelude::{IntoParallelIterator, ParallelIterator}, slice::ParallelSliceMut};
 
-    use crate::{prelude::{InterestRate, FixedRateInstrument, MakeFixedRateLoan, Frequency, Currency, SimpleModel, Model, DayCounter, Compounding, Period, TimeUnit, MarketStore, FlatForwardTermStructure, RateDefinition, IborIndex, HasReferenceDate, OvernightIndex, Date}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
+
+    use crate::{core::marketstore::MarketStore, time::{date::Date, enums::{Frequency, TimeUnit}, period::Period, daycounter::DayCounter}, rates::{yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure, interestrate::{RateDefinition, InterestRate}, interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex}, traits::HasReferenceDate, enums::Compounding}, currencies::enums::Currency, instruments::{fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan}, models::{simplemodel::SimpleModel, traits::Model}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
 
     use super::*;
 

@@ -11,9 +11,8 @@ use crate::{
         traits::Payable,
     },
     core::traits::HasCurrency,
-    prelude::Currency,
     time::date::Date,
-    utils::errors::Result,
+    utils::errors::Result, currencies::enums::Currency,
 };
 
 use super::traits::{ConstVisit, HasCashflows};
