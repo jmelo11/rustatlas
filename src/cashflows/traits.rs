@@ -35,11 +35,6 @@ pub trait InterestAccrual {
         }
     }
 
-    fn delta_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        let acc_1 = self.accrued_amount(self.accrual_start_date(), start_date)?;
-        let acc_2 = self.accrued_amount(self.accrual_start_date(), end_date)?;
-        return Ok(acc_2 - acc_1);
-    }
 }
 
 /// # RequiresFixingRate
@@ -95,12 +90,12 @@ mod tests {
 
         let mut start_date = Date::new(2023, 1, 1);
         let mut end_date = Date::new(2023, 3, 31);
-        let mut accrued_amount = coupon.delta_accrued_amount(start_date, end_date).unwrap();
+        let mut accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
         assert!((accrued_amount - 125.0).abs() < 0.00001);
 
         start_date = Date::new(2023, 1, 15);
         end_date = Date::new(2023, 1, 16);
-        accrued_amount = coupon.delta_accrued_amount(start_date, end_date).unwrap();
+        accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
         assert!((accrued_amount - 125.0 / 90.0).abs() < 0.00001);
     }
 
@@ -132,34 +127,10 @@ mod tests {
         let end_date = Date::new(2023, 3, 31);
         let accrued_amount = coupon
             .clone()
-            .delta_accrued_amount(start_date, end_date)
+            .accrued_amount(start_date, end_date)
             .unwrap();
 
         assert!(accrued_amount - 122.72234429 < 0.00001);
 
-        // start_date = Date::new(2023, 2, 15);
-        // end_date = Date::new(2023, 2, 16);
-        // accrued_amount = coupon
-        //     .clone()
-        //     .delta_accrued_amount(start_date, end_date)
-        //     .unwrap();
-        // //println!("accrued_amount = {}", accrued_amount);
-
-        // start_date = Date::new(2023, 2, 15);
-        // end_date = Date::new(2023, 2, 16);
-        // accrued_amount = coupon
-        //     .clone()
-        //     .delta_accrued_amount(start_date, end_date)
-        //     .unwrap();
-        // //println!("accrued_amount = {}", accrued_amount);
-
-        // start_date = Date::new(2023, 1, 30);
-        // end_date = Date::new(2023, 1, 31);
-        // accrued_amount = coupon
-        //     .clone()
-        //     .delta_accrued_amount(start_date, end_date)
-        //     .unwrap();
-        // //println!("accrued_amount = {}", accrued_amount);
-        // assert_eq!(accrued_amount, 0.0);
     }
 }

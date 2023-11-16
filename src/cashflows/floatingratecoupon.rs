@@ -95,10 +95,15 @@ impl InterestAccrual for FloatingRateCoupon {
         let fixing = self
             .fixing_rate
             .ok_or(AtlasError::ValueNotSetErr("Fixing rate".to_string()))?;
-
         let rate = InterestRate::from_rate_definition(fixing + self.spread, self.rate_definition);
-        let (d1, d2) = self.relevant_accrual_dates(start_date, end_date);
-        return Ok(self.notional * (rate.compound_factor(d1, d2) - 1.0));
+
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date);
+        let acc_1 = self.notional * (rate.compound_factor(d1, d2) - 1.0);
+
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date);
+        let acc_2 = self.notional * (rate.compound_factor(d1, d2) - 1.0);
+
+        return Ok(acc_1 - acc_2);
     }
 }
 
