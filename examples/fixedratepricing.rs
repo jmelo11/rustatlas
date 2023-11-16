@@ -80,8 +80,9 @@ fn starting_today_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
+
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
@@ -152,7 +153,7 @@ fn forward_starting_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
     println!(
         "Accrued Amount between {} and {}: {}",
@@ -212,7 +213,7 @@ fn already_started_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
     println!(
         "Accrued Amount between {} and {}: {}",
