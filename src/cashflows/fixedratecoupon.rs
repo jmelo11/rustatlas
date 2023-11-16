@@ -103,9 +103,9 @@ impl InterestAccrual for FixedRateCoupon {
     fn accrual_end_date(&self) -> Date {
         return self.accrual_end_date;
     }
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let (d1, d2) = self.relevant_accrual_dates(start_date, end_date);
-        return self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
+        return Ok( self.notional * (self.rate.compound_factor(d1, d2) - 1.0));
     }
 }
 
@@ -196,7 +196,7 @@ mod tests {
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
         assert_eq!(
-            coupon.accrued_amount(accrual_start_date, accrual_end_date),
+            coupon.accrued_amount(accrual_start_date, accrual_end_date).unwrap(),
             expected_amount
         );
     }

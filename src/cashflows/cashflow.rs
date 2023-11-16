@@ -163,11 +163,11 @@ impl InterestAccrual for Cashflow {
         }
     }
 
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64 {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
-            _ => 0.0,
+            _ => Ok(0.0),
         }
     }
 }
