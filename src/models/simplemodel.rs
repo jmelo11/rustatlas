@@ -56,7 +56,7 @@ impl Model for SimpleModel {
         let id = fwd.provider_id();
         let end_date = fwd.end_date();
         let ref_date = self.market_store.reference_date();
-        if end_date >= ref_date {
+        if end_date <= ref_date {
             return Ok(0.0);
         }
 
