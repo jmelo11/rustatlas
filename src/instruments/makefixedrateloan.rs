@@ -44,6 +44,7 @@ pub struct MakeFixedRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
+    id: Option<usize>,
 }
 
 /// New, setters and getters
@@ -66,6 +67,7 @@ impl MakeFixedRateLoan {
             additional_coupon_dates: None,
             rate_definition: None,
             rate_value: None,
+            id: None,
         }
     }
 
@@ -90,6 +92,11 @@ impl MakeFixedRateLoan {
     /// Sets the notional.
     pub fn with_notional(mut self, notional: f64) -> MakeFixedRateLoan {
         self.notional = Some(notional);
+        self
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
+        self.id = id;
         self
     }
 
@@ -341,6 +348,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id
                 ))
             }
             Structure::Other => {
@@ -392,12 +400,14 @@ impl MakeFixedRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                let start_date = &timeline.first().ok_or(AtlasError::ValueNotSetErr(
-                    "Start date".into(),
-                ))?.0; 
-                let end_date = &timeline.last().ok_or(AtlasError::ValueNotSetErr(
-                    "End date".into(),
-                ))?.1;
+                let start_date = &timeline
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?
+                    .0;
+                let end_date = &timeline
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
+                    .1;
 
                 match self.discount_curve_id {
                     Some(id) => cashflows
@@ -417,6 +427,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualPayments => {
@@ -503,6 +514,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::Zero => {
@@ -580,6 +592,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -663,6 +676,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
         }
@@ -732,7 +746,11 @@ fn calculate_redemptions(
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
         .run()?;
 
-    let payment = res.state().best_param.ok_or(AtlasError::EvaluationErr("Solver failed".into()))? * notional;
+    let payment = res
+        .state()
+        .best_param
+        .ok_or(AtlasError::EvaluationErr("Solver failed".into()))?
+        * notional;
 
     let mut redemptions = Vec::new();
     let mut total_amount = notional;

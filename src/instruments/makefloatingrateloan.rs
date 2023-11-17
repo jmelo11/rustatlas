@@ -39,6 +39,7 @@ pub struct MakeFloatingRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
+    id: Option<usize>,
 }
 
 /// Constructor, setters and getters.
@@ -61,7 +62,13 @@ impl MakeFloatingRateLoan {
             disbursements: None,
             redemptions: None,
             additional_coupon_dates: None,
+            id: None,
         }
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFloatingRateLoan {
+        self.id = id;
+        self
     }
 
     pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateLoan {
@@ -285,6 +292,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::Zero => {
@@ -370,6 +378,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -462,6 +471,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::Other => {
@@ -516,14 +526,16 @@ impl MakeFloatingRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                
-                let start_date = &timeline.first().ok_or(AtlasError::ValueNotSetErr(
-                    "Start date".into(),
-                ))?.0; 
-                let end_date = &timeline.last().ok_or(AtlasError::ValueNotSetErr(
-                    "End date".into(),
-                ))?.1;
-               
+
+                let start_date = &timeline
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?
+                    .0;
+                let end_date = &timeline
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
+                    .1;
+
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
                 match self.discount_curve_id {
@@ -551,6 +563,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             _ => Err(AtlasError::InvalidValueErr(
