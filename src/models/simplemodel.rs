@@ -22,11 +22,20 @@ use super::traits::Model;
 #[derive(Clone)]
 pub struct SimpleModel {
     market_store: Arc<MarketStore>,
+    transform_currencies: bool,
 }
 
 impl SimpleModel {
     pub fn new(market_store: Arc<MarketStore>) -> SimpleModel {
-        SimpleModel { market_store }
+        SimpleModel {
+            market_store,
+            transform_currencies: false,
+        }
+    }
+
+    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel {
+        self.transform_currencies = flag;
+        self
     }
 }
 
@@ -61,9 +70,7 @@ impl Model for SimpleModel {
         }
 
         let index = self.market_store.get_index_by_id(id)?;
-
         let start_date = fwd.start_date();
-        
         Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
     }
 
@@ -71,7 +78,13 @@ impl Model for SimpleModel {
         let first_currency = fx.first_currency();
         let second_currency = match fx.second_currency() {
             Some(ccy) => ccy,
-            None => self.market_store.local_currency(),
+            None => {
+                if self.transform_currencies {
+                    self.market_store.local_currency()
+                } else {
+                    first_currency
+                }
+            }
         };
 
         match fx.reference_date() {
