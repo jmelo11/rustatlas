@@ -11,7 +11,7 @@ use crate::{
 
 pub struct CashAccount {
     currency: Option<Currency>,
-    amount: RefCell<BTreeMap<Date, f64>>,
+    pub amount: RefCell<BTreeMap<Date, f64>>,
 }
 
 impl HasCurrency for CashAccount {
@@ -76,15 +76,16 @@ impl CashAccount {
         self.add_flows_from_map(&amount_map)
     }
 
-    pub fn cash_account_evolution(&self) -> Result<BTreeMap<Date, f64>> {
+    pub fn cash_account_evolution(&self, evals_dates: Vec<Date>) -> Result<BTreeMap<Date, f64>> {
         let amount_map = self.amount.borrow();
         let mut dates = amount_map.keys().cloned().collect::<Vec<Date>>();
         dates.sort();
         let mut cash_account = BTreeMap::new();
         let mut amount = 0.0;
-        for date in dates {
-            amount += amount_map.get(&date).unwrap();
+        for date in evals_dates  {
+            amount += amount_map.get(&date).unwrap_or(&0.0);
             cash_account.insert(date, amount);
+    
         }
         Ok(cash_account)
     }
@@ -127,7 +128,22 @@ mod tests {
 
         let cash_account = CashAccount::new().with_currency(Currency::USD);
         cash_account.add_flows_from_instrument(&instrument)?;
-        let cash_account = cash_account.cash_account_evolution()?;
+
+        let evals_dates = vec![
+            Date::new(2020, 1, 1),
+            Date::new(2020, 7, 1),
+            Date::new(2021, 1, 1),
+            Date::new(2021, 7, 1),
+            Date::new(2022, 1, 1),
+            Date::new(2022, 7, 1),
+            Date::new(2023, 1, 1),
+            Date::new(2023, 7, 1),
+            Date::new(2024, 1, 1),
+            Date::new(2024, 7, 1),
+            Date::new(2025, 1, 1),
+            Date::new(2025, 7, 1),
+        ];
+        let cash_account = cash_account.cash_account_evolution(evals_dates)?;
 
         cash_account.iter().for_each(|(date, amount)| {
             println!("{}: {}", date, amount);
@@ -172,7 +188,21 @@ mod tests {
         let cash_account = CashAccount::new().with_currency(Currency::USD);
         cash_account.add_flows_from_instrument(&instrument1)?;
         cash_account.add_flows_from_instrument(&instrument2)?;
-        let cash_account = cash_account.cash_account_evolution()?;
+        let evals_dates = vec![
+            Date::new(2020, 1, 1),
+            Date::new(2020, 7, 1),
+            Date::new(2021, 1, 1),
+            Date::new(2021, 7, 1),
+            Date::new(2022, 1, 1),
+            Date::new(2022, 7, 1),
+            Date::new(2023, 1, 1),
+            Date::new(2023, 7, 1),
+            Date::new(2024, 1, 1),
+            Date::new(2024, 7, 1),
+            Date::new(2025, 1, 1),
+            Date::new(2025, 7, 1),
+        ];
+        let cash_account = cash_account.cash_account_evolution(evals_dates)?;
 
         cash_account.iter().for_each(|(date, amount)| {
             println!("{}: {}", date, amount);
