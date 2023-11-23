@@ -66,6 +66,13 @@ impl CashAccount {
         Ok(())
     }
 
+    pub fn add_flows_from_new_position(&self, date: Date, value: f64) -> Result<()> {
+        let mut amount_map = self.amount.borrow_mut();
+        let entry = amount_map.entry(date).or_insert(0.0);
+        *entry += value;
+        Ok(())
+    }
+
     pub fn add_flows_from_cash_account(&self, cash_account: &CashAccount) -> Result<()> {
         let amount_map = cash_account.amount.borrow();
         if self.currency != cash_account.currency {
