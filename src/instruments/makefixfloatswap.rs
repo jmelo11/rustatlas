@@ -11,10 +11,12 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-use super::swap::Swap;
+use super::fixfloatswap::FixFloatSwap;
 
 pub struct MakeFixFloatSwap {
     fixed_rate: Option<InterestRate>,
+    spread: Option<f64>,
+
     currency: Option<Currency>,
     notional: Option<f64>,
     start_date: Option<Date>,
@@ -22,10 +24,10 @@ pub struct MakeFixFloatSwap {
     fix_leg_frequency: Option<Frequency>,
     floating_leg_frequency: Option<Frequency>,
     rate_definition: Option<RateDefinition>,
-    spread: Option<f64>,
     side: Option<Side>,
     forecast_curve: Option<usize>,
     discount_curve: Option<usize>,
+    id: Option<usize>,
 }
 
 impl MakeFixFloatSwap {
@@ -43,7 +45,13 @@ impl MakeFixFloatSwap {
             side: None,
             forecast_curve: None,
             discount_curve: None,
+            id: None,
         }
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> Self {
+        self.id = id;
+        self
     }
 
     pub fn with_spread(mut self, spread: f64) -> Self {
@@ -106,7 +114,7 @@ impl MakeFixFloatSwap {
         self
     }
 
-    pub fn build(self) -> Result<Swap> {
+    pub fn build(self) -> Result<FixFloatSwap> {
         let fixed_rate = self
             .fixed_rate
             .ok_or(AtlasError::ValueNotSetErr("Fixed rate".into()))?;
@@ -207,7 +215,7 @@ impl MakeFixFloatSwap {
         let redemption = SimpleCashflow::new(end_date, currency, side).with_amount(notional);
         float_cashflows.push(Cashflow::Redemption(redemption));
 
-        Ok(Swap::new(fix_cashflows, float_cashflows))
+        Ok(FixFloatSwap::new(fix_cashflows, float_cashflows))
     }
 }
 
