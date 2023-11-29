@@ -29,7 +29,7 @@ pub use crate::{
         },
         traits::*,
         yieldtermstructure::{
-            discounttermstructure::*, flatforwardtermstructure::*, mixedtermstructure::*,
+            compositetermstructure::*, discounttermstructure::*, flatforwardtermstructure::*,
             tenorbasedzeroratetermstructure::*, traits::*, zeroratetermstructure::*,
         },
     },
