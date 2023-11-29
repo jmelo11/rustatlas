@@ -115,7 +115,7 @@ impl YieldTermStructureTrait for FlatForwardTermStructure {}
 
 #[cfg(test)]
 mod tests {
-    use crate::time::daycounter::DayCounter;
+    use crate::time::{daycounter::DayCounter, enums::TimeUnit};
 
     use super::*;
 
@@ -136,6 +136,25 @@ mod tests {
 
         let term_structure =
             FlatForwardTermStructure::new(reference_date, 0.05, RateDefinition::default());
+
+        let expected_discount = interest_rate.discount_factor(reference_date, target_date);
+        let actual_discount = term_structure.discount_factor(target_date)?;
+
+        assert_eq!(actual_discount, expected_discount);
+        Ok(())
+    }
+
+    #[test]
+    fn test_discount_continuous() -> Result<()> {
+        let reference_date = Date::new(2023, 8, 19);
+        let target_date = reference_date + Period::new(1, TimeUnit::Years);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Continuous,
+            Frequency::Semiannual,
+        );
+        let interest_rate = InterestRate::from_rate_definition(0.05, rate_definition);
+        let term_structure = FlatForwardTermStructure::new(reference_date, 0.05, rate_definition);
 
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
