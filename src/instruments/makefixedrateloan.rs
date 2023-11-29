@@ -802,6 +802,8 @@ impl From<&FixedRateInstrument> for MakeFixedRateLoan {
 
 #[cfg(test)]
 mod tests {
+    use serde::de;
+
     use crate::{
         cashflows::{
             cashflow::{Cashflow, Side},
@@ -817,7 +819,7 @@ mod tests {
             period::Period,
         },
         utils::errors::Result,
-        visitors::traits::HasCashflows,
+        visitors::traits::HasCashflows, prelude::FixedRateInstrument,
     };
     use std::collections::{HashMap, HashSet};
 
@@ -915,6 +917,76 @@ mod tests {
 
         Ok(())
     }
+
+
+    #[test]
+    fn build_equal_payments_with_delay_first_day() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(2, TimeUnit::Years);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let delay = 2;
+        let first_coupon_date = start_date + Period::new(delay, TimeUnit::Months);
+
+        let notional = 1000.0;
+        let instrument = MakeFixedRateLoan::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_first_coupon_date(first_coupon_date)
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(notional)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .equal_payments()
+            .build()?;
+
+
+        assert_eq!(instrument.notional(), notional);
+        assert_eq!(instrument.rate(), rate);
+        assert_eq!(instrument.payment_frequency(), Frequency::Monthly);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+
+        let mut payments = HashMap::new();
+        instrument.cashflows().iter().for_each(|cf| match cf {
+            Cashflow::FixedRateCoupon(c) => {
+                if payments.contains_key(&c.payment_date()) {
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
+                } else {
+                    payments.insert(c.payment_date(), c.amount().unwrap());
+                }
+            }
+            Cashflow::Redemption(c) => {
+                if payments.contains_key(&c.payment_date()) {
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
+                } else {
+                    payments.insert(c.payment_date(), c.amount().unwrap());
+                }
+            }
+            _ => (),
+        });
+
+
+
+        Ok(())
+    }
+
 
     #[test]
     fn build_equal_redemptions() -> Result<()> {
