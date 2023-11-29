@@ -139,7 +139,7 @@ impl RolloverEngine {
         ))?;
         let model = SimpleModel::new(market_store.clone());
         let data = model.gen_market_data(&indexing_visitor.request())?;
-        let par_visitor = ParValueConstVisitor::new(Arc::new(data));
+        let par_visitor = ParValueConstVisitor::new(&data);
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
@@ -152,7 +152,7 @@ impl RolloverEngine {
         ))?;
         let model = SimpleModel::new(market_store.clone());
         let data = model.gen_market_data(&indexing_visitor.request())?;
-        let par_visitor = ParValueConstVisitor::new(Arc::new(data));
+        let par_visitor = ParValueConstVisitor::new(&data);
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
