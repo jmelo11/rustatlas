@@ -76,6 +76,11 @@ impl MakeFloatingRateLoan {
         self
     }
 
+    pub fn with_option_first_date(mut self, first_date: Option<Date>) -> MakeFloatingRateLoan {
+        self.first_coupon_date = first_date;
+        self
+    }
+
     pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLoan {
         self.start_date = Some(start_date);
         self
