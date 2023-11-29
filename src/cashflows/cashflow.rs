@@ -27,6 +27,22 @@ pub enum Side {
     Receive,
 }
 
+impl Side {
+    pub fn sign(&self) -> f64 {
+        match self {
+            Side::Pay => -1.0,
+            Side::Receive => 1.0,
+        }
+    }
+
+    pub fn inverse(&self) -> Side {
+        match self {
+            Side::Pay => Side::Receive,
+            Side::Receive => Side::Pay,
+        }
+    }
+}
+
 /// # Cashflow
 /// Enum that represents a cashflow.
 #[derive(Clone, Copy)]

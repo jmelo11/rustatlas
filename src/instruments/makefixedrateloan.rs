@@ -295,10 +295,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 let last_date = vec![*schedule.dates().last().unwrap()];
@@ -309,7 +305,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -348,7 +344,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
-                    self.id
+                    self.id,
                 ))
             }
             Structure::Other => {
@@ -366,11 +362,6 @@ impl MakeFixedRateLoan {
                     ));
                 }
 
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
-
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
                 let timeline =
@@ -378,7 +369,7 @@ impl MakeFixedRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
@@ -455,10 +446,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let redemptions =
                     calculate_redemptions(schedule.dates().clone(), rate, notional, side)?;
@@ -473,7 +460,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -538,10 +525,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
@@ -553,7 +536,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -620,10 +603,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
 
@@ -635,7 +614,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -754,10 +733,7 @@ fn calculate_redemptions(
 
     let mut redemptions = Vec::new();
     let mut total_amount = notional;
-    let flag = match side {
-        Side::Pay => -1.0,
-        Side::Receive => 1.0,
-    };
+    let flag = side.sign();
     for date_pair in dates.windows(2) {
         let d1 = date_pair[0];
         let d2 = date_pair[1];

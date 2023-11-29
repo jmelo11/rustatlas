@@ -229,10 +229,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let notionals =
@@ -244,7 +241,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -315,10 +312,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let notionals =
@@ -330,7 +324,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -406,10 +400,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let n = schedule.dates().len() - 1;
@@ -422,7 +413,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -489,11 +480,6 @@ impl MakeFloatingRateLoan {
                     ))?;
                 }
 
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
-
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
                 let timeline =
@@ -501,7 +487,7 @@ impl MakeFloatingRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
