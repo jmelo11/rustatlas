@@ -66,12 +66,9 @@ fn starting_today_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
+    print_table(instrument.cashflows(), &data);
 
-    let ref_data = Arc::new(data);
-
-    print_table(instrument.cashflows(), ref_data.clone());
-
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -101,7 +98,7 @@ fn starting_today_pricing() {
         start_accrual, end_accrual, maturing_amount
     );
 
-    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_visitor = ParValueConstVisitor::new(&data);
     let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
@@ -141,10 +138,9 @@ fn forward_starting_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
-    let ref_data = Arc::new(data);
-    print_table(instrument.cashflows(), ref_data.clone());
+    print_table(instrument.cashflows(), &data);
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -199,12 +195,9 @@ fn already_started_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
+    print_table(instrument.cashflows(), &data);
 
-    let ref_data = Arc::new(data);
-
-    print_table(instrument.cashflows(), ref_data.clone());
-
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -220,7 +213,7 @@ fn already_started_pricing() {
         start_accrual, end_accrual, accrued_amount
     );
 
-    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_visitor = ParValueConstVisitor::new(&data);
     let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }

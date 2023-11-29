@@ -73,8 +73,7 @@ fn multiple() {
         let model = SimpleModel::new(store.clone());
         let data = model.gen_market_data(&indexer.request()).unwrap();
 
-        let ref_data = Arc::new(data);
-        let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+        let npv_visitor = NPVConstVisitor::new(&data, true);
         instruments
             .iter()
             .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
