@@ -34,7 +34,6 @@ pub trait InterestAccrual {
             (Date::empty(), Date::empty())
         }
     }
-
 }
 
 /// # RequiresFixingRate
@@ -59,10 +58,14 @@ pub trait Expires {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::prelude::{
-        Compounding, Currency, Date, DayCounter, FixedRateCoupon, Frequency, InterestRate, Side,
+    use crate::{
+        cashflows::fixedratecoupon::FixedRateCoupon,
+        currencies::enums::Currency,
+        rates::{enums::Compounding, interestrate::InterestRate},
+        time::{daycounter::DayCounter, enums::Frequency},
     };
+
+    use super::*;
 
     #[test]
     fn test_delta_accrued_amount_simple() {
@@ -125,12 +128,8 @@ mod tests {
 
         let start_date = Date::new(2023, 1, 30);
         let end_date = Date::new(2023, 3, 31);
-        let accrued_amount = coupon
-            .clone()
-            .accrued_amount(start_date, end_date)
-            .unwrap();
+        let accrued_amount = coupon.clone().accrued_amount(start_date, end_date).unwrap();
 
         assert!(accrued_amount - 122.72234429 < 0.00001);
-
     }
 }
