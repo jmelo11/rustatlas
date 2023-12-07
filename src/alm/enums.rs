@@ -1,3 +1,5 @@
+use std::hash;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -61,7 +63,7 @@ impl Instrument {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
     Fixed,
     Floating,

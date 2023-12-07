@@ -861,7 +861,7 @@ mod tests {
     #[test]
     fn build_equal_payments() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
-        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let end_date = start_date + Period::new(2, TimeUnit::Months);
         let rate = InterestRate::new(
             0.05,
             Compounding::Compounded,
@@ -872,7 +872,7 @@ mod tests {
         let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
-            .with_payment_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Monthly)
             .with_rate(rate)
             .with_notional(notional)
             .with_side(Side::Receive)
@@ -882,7 +882,7 @@ mod tests {
 
         assert_eq!(instrument.notional(), notional);
         assert_eq!(instrument.rate(), rate);
-        assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
+        assert_eq!(instrument.payment_frequency(), Frequency::Monthly);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
