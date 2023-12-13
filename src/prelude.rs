@@ -49,6 +49,7 @@ pub use crate::{
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         npvconstvisitor::NPVConstVisitor,
+        npvbtreemapvisitor::NPVBTreeMapVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },
 };

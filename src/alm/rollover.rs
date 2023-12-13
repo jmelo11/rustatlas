@@ -27,7 +27,7 @@ use super::enums::{Instrument, RateType};
 /// Configuration for a loan. Represents the meta data required to generate a loan.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RolloverStrategy {
-    weight: f64,
+    pub weight: f64,
     structure: Structure,
     payment_frequency: Frequency,
     tenor: Period,
