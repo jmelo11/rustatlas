@@ -13,12 +13,13 @@ use crate::{
 use super::traits::Model;
 
 /// # SimpleModel
-/// A simple model that provides market data based in the current market state. Uses the
-/// market store to get the market data. All values are calculated using the reference date
-/// of the market store.
+/// A simple model that provides market data based on the current market state. Uses the
+/// market store to get the market data (curves, currencies and others). All values are calculated using the 
+/// reference date and local currency of the market store.
 ///
 /// ## Parameters
 /// * `market_store` - The market store.
+/// * `transform_currencies` - If true, the model will transform the currencies to the local currency of the market store.
 #[derive(Clone)]
 pub struct SimpleModel {
     market_store: Arc<MarketStore>,
