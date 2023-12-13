@@ -807,7 +807,6 @@ impl From<&FixedRateInstrument> for MakeFixedRateLoan {
 
 #[cfg(test)]
 mod tests {
-    use serde::de;
 
     use crate::{
         cashflows::{
@@ -815,7 +814,7 @@ mod tests {
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::makefixedrateloan::{self, MakeFixedRateLoan},
+        instruments::makefixedrateloan::MakeFixedRateLoan,
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -824,7 +823,7 @@ mod tests {
             period::Period,
         },
         utils::errors::Result,
-        visitors::traits::HasCashflows, prelude::FixedRateInstrument,
+        visitors::traits::HasCashflows,
     };
     use std::collections::{HashMap, HashSet};
 
@@ -923,7 +922,6 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn build_equal_payments_with_delay_first_day() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
@@ -949,7 +947,6 @@ mod tests {
             .with_currency(Currency::USD)
             .equal_payments()
             .build()?;
-
 
         assert_eq!(instrument.notional(), notional);
         assert_eq!(instrument.rate(), rate);
@@ -987,11 +984,8 @@ mod tests {
             _ => (),
         });
 
-
-
         Ok(())
     }
-
 
     #[test]
     fn build_equal_redemptions() -> Result<()> {
@@ -1238,7 +1232,7 @@ mod tests {
             .equal_payments()
             .build()?;
 
-        let builder: MakeFixedRateLoan = makefixedrateloan::MakeFixedRateLoan::from(&instrument);
+        let builder: MakeFixedRateLoan = MakeFixedRateLoan::from(&instrument);
         let instrument2 = builder.build()?;
 
         assert_eq!(instrument2.notional(), instrument.notional());
