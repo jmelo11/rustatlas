@@ -292,7 +292,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
@@ -443,7 +449,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
@@ -600,7 +612,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
