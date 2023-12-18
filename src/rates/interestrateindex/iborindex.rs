@@ -10,7 +10,7 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::{AtlasError, Result},
+    utils::errors::{AtlasError, Result}, prelude::HasTenor,
 };
 use std::collections::HashMap;
 
@@ -51,10 +51,6 @@ impl IborIndex {
             fixings: HashMap::new(),
             term_structure: None,
         }
-    }
-
-    pub fn tenor(&self) -> Period {
-        self.tenor
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -113,6 +109,12 @@ impl FixingProvider for IborIndex {
 impl HasReferenceDate for IborIndex {
     fn reference_date(&self) -> Date {
         self.reference_date
+    }
+}
+
+impl HasTenor for IborIndex {
+    fn tenor(&self) -> Period {
+        self.tenor
     }
 }
 

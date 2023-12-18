@@ -12,7 +12,7 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::{AtlasError, Result},
+    utils::errors::{AtlasError, Result}, prelude::HasTenor,
 };
 
 use super::traits::{
@@ -43,10 +43,6 @@ impl OvernightIndex {
 
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
-    }
-
-    pub fn tenor(&self) -> Period {
-        self.tenor
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
@@ -104,6 +100,12 @@ impl FixingProvider for OvernightIndex {
 impl HasReferenceDate for OvernightIndex {
     fn reference_date(&self) -> Date {
         self.reference_date
+    }
+}
+
+impl HasTenor for OvernightIndex {
+    fn tenor(&self) -> Period {
+        self.tenor
     }
 }
 

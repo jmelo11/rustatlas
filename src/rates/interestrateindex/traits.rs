@@ -7,7 +7,7 @@ use crate::{
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::TimeUnit, period::Period},
-    utils::errors::Result,
+    utils::errors::Result, prelude::HasTenor,
 };
 
 /// # FloatingRateProvider
@@ -91,5 +91,6 @@ pub trait InterestRateIndexTrait:
     + AdvanceInterestRateIndexInTime
     + InterestRateIndexClone
     + HasTermStructure
+    + HasTenor
 {
 }
