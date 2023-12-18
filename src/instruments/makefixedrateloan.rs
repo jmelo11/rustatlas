@@ -77,11 +77,6 @@ impl MakeFixedRateLoan {
         self
     }
 
-    pub fn with_option_first_date(mut self, first_date: Option<Date>) -> MakeFixedRateLoan {
-        self.first_coupon_date = first_date;
-        self
-    }
-
     /// Sets the currency.
     pub fn with_currency(mut self, currency: Currency) -> MakeFixedRateLoan {
         self.currency = Some(currency);
