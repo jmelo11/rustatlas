@@ -4,7 +4,7 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, HasTenor, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
@@ -12,7 +12,7 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::{AtlasError, Result}, prelude::HasTenor,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{
@@ -210,7 +210,10 @@ impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
 mod tests {
-    use crate::{rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure, math::interpolation::enums::Interpolator};
+    use crate::{
+        math::interpolation::enums::Interpolator,
+        rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+    };
 
     use super::*;
     use std::collections::HashMap;
@@ -302,7 +305,7 @@ mod tests {
 
     #[test]
     fn test_fixing_provider_overnight() -> Result<()> {
-        let fixing: HashMap<Date, f64> = [    
+        let fixing: HashMap<Date, f64> = [
             (Date::new(2023, 6, 2), 21945.57),
             (Date::new(2023, 6, 5), 21966.14),
         ]

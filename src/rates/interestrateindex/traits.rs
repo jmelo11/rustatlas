@@ -3,11 +3,11 @@ use std::collections::{BTreeMap, HashMap};
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, HasTenor, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::TimeUnit, period::Period},
-    utils::errors::Result, prelude::HasTenor,
+    utils::errors::Result,
 };
 
 /// # FloatingRateProvider

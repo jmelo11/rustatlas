@@ -270,7 +270,7 @@ mod tests {
     #[test]
     fn generator_tests_floating() -> Result<()> {
         let market_store = Arc::new(create_store()?);
-        
+
         let configs = vec![RolloverStrategy::new(
             0.5,
             Structure::EqualRedemptions,

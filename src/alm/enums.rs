@@ -1,12 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cashflows::cashflow::Cashflow,
+    cashflows::cashflow::{Cashflow, Side},
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
+        traits::Structure,
     },
-    time::date::Date,
-    visitors::traits::HasCashflows, prelude::{Structure, Frequency, Side},
+    time::{date::Date, enums::Frequency},
+    visitors::traits::HasCashflows,
 };
 
 #[derive(Clone)]
@@ -60,7 +61,7 @@ impl Instrument {
         }
     }
 
-    pub fn structure (&self) -> Structure {
+    pub fn structure(&self) -> Structure {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.structure(),
             Instrument::FloatingRateInstrument(fri) => fri.structure(),
@@ -80,7 +81,6 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.side(),
         }
     }
-
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]

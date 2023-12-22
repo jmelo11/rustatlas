@@ -32,7 +32,9 @@ A rust version of Atlas
     - [X] Cero
     - [X] Irregular
   - [ ] Mixtos
-- [ ] Cuentas corrientes
+- [X] Cuentas corrientes
+- [X] Depositos a plazo
+- [ ] Bonos
 - [ ] Swaps
 - [ ] Opciones
 - [ ] Forwards
@@ -45,7 +47,7 @@ A rust version of Atlas
 - [X] Accrual
 - [X] Agrupación
 - [ ] Cashflows con transformacion de monedas
-- [ ] Zspread
+- [X] Zspread
 
 ## Simulación
 
@@ -72,25 +74,16 @@ A rust version of Atlas
 ## Rust
 
 - [X] Corregir panics/remplazar por errores
-- [ ] Unificar errores
+- [X] Unificar errores
 
 ### Incidencias
 
-- [ ] Fixings en fines de semana: se debe incorporar un interpolador
+- [X] Fixings en fines de semana: se debe incorporar un interpolador
   - [X] Feature
-  - [ ] UT
-- [ ] Visitantes restringidos a fecha de valorizacion
-  - [ ] Feature
-  - [ ] UT
-- [ ] Periodos de gracia en creditos
-  - [ ] Feature
-  - [ ] UT
-- [ ] Relajar constructor de productos con tabla de pago
-  - [ ] Feature
-  - [ ] UT
-- [ ] Transformador de tablas de pagos a cashflows
-  - [ ] Feature
-  - [ ] UT
+  - [X] UT
+- [X] Periodos de gracia en creditos
+  - [X] Feature
+  - [X] UT
 - [ ] Convertir monedas de forma automatica
   - [ ] Feature
   - [ ] UT

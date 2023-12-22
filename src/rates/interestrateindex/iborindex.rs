@@ -2,7 +2,7 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider, HasTenor},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
@@ -10,7 +10,7 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::{AtlasError, Result}, prelude::HasTenor,
+    utils::errors::{AtlasError, Result},
 };
 use std::collections::HashMap;
 
@@ -202,7 +202,10 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{time::{daycounter::DayCounter, enums::TimeUnit}, math::interpolation::enums::Interpolator};
+    use crate::{
+        math::interpolation::enums::Interpolator,
+        time::{daycounter::DayCounter, enums::TimeUnit},
+    };
 
     #[test]
     fn test_ibor_index() {
@@ -235,7 +238,10 @@ mod tests {
             (Date::new(2023, 6, 2), 21945.57),
             (Date::new(2023, 6, 5), 21966.14),
             (Date::new(2023, 6, 6), 21973.0),
-        ].iter().cloned().collect();
+        ]
+        .iter()
+        .cloned()
+        .collect();
         let mut ibor_index = IborIndex::new(Date::new(2023, 11, 6)).with_fixings(fixing);
         ibor_index.fill_missing_fixings(Interpolator::Linear);
         assert!(ibor_index.fixings().get(&Date::new(2023, 6, 3)).unwrap() - 21952.4266666 < 0.001);

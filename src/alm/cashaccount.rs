@@ -89,10 +89,9 @@ impl CashAccount {
         dates.sort();
         let mut cash_account = BTreeMap::new();
         let mut amount = 0.0;
-        for date in evals_dates  {
+        for date in evals_dates {
             amount += amount_map.get(&date).unwrap_or(&0.0);
             cash_account.insert(date, amount);
-    
         }
         Ok(cash_account)
     }

@@ -1,7 +1,7 @@
 use super::enums::Compounding;
 use crate::{
-    time::{date::Date, enums::Frequency},
-    utils::errors::Result, prelude::Period,
+    time::{date::Date, enums::Frequency, period::Period},
+    utils::errors::Result,
 };
 
 /// # HasReferenceDate
