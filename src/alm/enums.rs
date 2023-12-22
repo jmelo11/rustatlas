@@ -6,7 +6,7 @@ use crate::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
     },
     time::date::Date,
-    visitors::traits::HasCashflows,
+    visitors::traits::HasCashflows, prelude::{Structure, Frequency, Side},
 };
 
 #[derive(Clone)]
@@ -59,6 +59,28 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.id(),
         }
     }
+
+    pub fn structure (&self) -> Structure {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.structure(),
+            Instrument::FloatingRateInstrument(fri) => fri.structure(),
+        }
+    }
+
+    pub fn payment_frequency(&self) -> Frequency {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.payment_frequency(),
+            Instrument::FloatingRateInstrument(fri) => fri.payment_frequency(),
+        }
+    }
+
+    pub fn side(&self) -> Side {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.side(),
+            Instrument::FloatingRateInstrument(fri) => fri.side(),
+        }
+    }
+
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
