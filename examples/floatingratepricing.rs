@@ -1,8 +1,8 @@
 extern crate rustatlas;
-use std::rc::Rc;
+
+use std::sync::Arc;
 
 use rustatlas::{
-    core::meta::MarketData,
     instruments::makefloatingrateloan::MakeFloatingRateLoan,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::traits::HasReferenceDate,
@@ -25,7 +25,7 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -51,23 +51,20 @@ fn starting_today_pricing() {
     }
 
     let model = SimpleModel::new(market_store);
-
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
-
-    let fixing_visitor = FixingVisitor::new(ref_data.clone());
+    let fixing_visitor = FixingVisitor::new(&data);
     let _ = fixing_visitor.visit(&mut instrument);
 
-    print_table(instrument.cashflows(), ref_data.clone());
+    print_table(instrument.cashflows(), &data);
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
     println!("NPV: {}", npv.unwrap());
 
-    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_visitor = ParValueConstVisitor::new(&data);
     let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
@@ -75,7 +72,7 @@ fn starting_today_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -104,13 +101,12 @@ fn already_started_pricing() {
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
-    let ref_data: Rc<Vec<MarketData>> = Rc::new(data);
-    let fixing_visitor = FixingVisitor::new(ref_data.clone());
+    let fixing_visitor = FixingVisitor::new(&data);
     let _ = fixing_visitor.visit(&mut instrument);
 
-    print_table(instrument.cashflows(), ref_data.clone());
+    print_table(instrument.cashflows(), &data);
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();

@@ -176,23 +176,23 @@ impl InterestRate {
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
         let rate = self.rate();
         let compounding = self.compounding();
-
+        let f = self.frequency() as i64 as f64;
         match compounding {
             Compounding::Simple => 1.0 + rate * year_fraction,
-            Compounding::Compounded => (1.0 + rate).powf(year_fraction),
-            Compounding::Continuous => (1.0 + rate).exp() * year_fraction,
+            Compounding::Compounded => (1.0 + rate / f).powf(f * year_fraction),
+            Compounding::Continuous => (rate * year_fraction).exp(),
             Compounding::SimpleThenCompounded => {
-                if year_fraction <= 1.0 {
+                if year_fraction <= 1.0 / f {
                     1.0 + rate * year_fraction
                 } else {
-                    (1.0 + rate).powf(year_fraction)
+                    (1.0 + rate / f).powf(year_fraction * f)
                 }
             }
             Compounding::CompoundedThenSimple => {
-                if year_fraction <= 1.0 {
-                    (1.0 + rate).powf(year_fraction)
-                } else {
+                if year_fraction > 1.0 / f {
                     1.0 + rate * year_fraction
+                } else {
+                    (1.0 + rate / f).powf(year_fraction * f)
                 }
             }
         }
@@ -222,6 +222,346 @@ mod tests {
         },
         time::{daycounter::DayCounter, enums::Frequency},
     };
+
+    struct InterestRateData {
+        rate: f64,
+        compounding: Compounding,
+        frequency: Frequency,
+        time: f64,
+        compounding2: Compounding,
+        frequency2: Frequency,
+        rate2: f64,
+        precision: i64,
+    }
+    fn test_cases() -> Vec<InterestRateData> {
+        let test_cases = vec![
+            InterestRateData {
+                rate: 0.0800,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 1.00,
+                compounding2: Compounding::Continuous,
+                frequency2: Frequency::Annual,
+                rate2: 0.0792,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.1200,
+                compounding: Compounding::Continuous,
+                frequency: Frequency::Annual,
+                time: 1.00,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Annual,
+                rate2: 0.1275,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0800,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 1.00,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Annual,
+                rate2: 0.0824,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0700,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 1.00,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0706,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0100,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Annual,
+                time: 1.00,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0100,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0200,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 1.00,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Annual,
+                rate2: 0.0200,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Semiannual,
+                time: 0.50,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 0.50,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0500,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::EveryFourthMonth,
+                time: 1.0 / 3.0,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0500,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0600,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 1.0 / 3.0,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::EveryFourthMonth,
+                rate2: 0.0600,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0500,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 0.25,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0500,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0600,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 0.25,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Quarterly,
+                rate2: 0.0600,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0700,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Bimonthly,
+                time: 1.0 / 6.0,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0700,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0800,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 1.0 / 6.0,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Bimonthly,
+                rate2: 0.0800,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0900,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Monthly,
+                time: 1.0 / 12.0,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0900,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.1000,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Annual,
+                time: 1.0 / 12.0,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Monthly,
+                rate2: 0.1000,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Quarterly,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.50,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Annual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.50,
+                compounding2: Compounding::Simple,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0300,
+                compounding: Compounding::SimpleThenCompounded,
+                frequency: Frequency::Semiannual,
+                time: 0.75,
+                compounding2: Compounding::Compounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0300,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Quarterly,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Semiannual,
+                time: 0.25,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Annual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 0.50,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Quarterly,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Semiannual,
+                time: 0.50,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Simple,
+                frequency: Frequency::Semiannual,
+                time: 0.50,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Annual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Quarterly,
+                time: 0.75,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Quarterly,
+                rate2: 0.0400,
+                precision: 4,
+            },
+            InterestRateData {
+                rate: 0.0400,
+                compounding: Compounding::Compounded,
+                frequency: Frequency::Semiannual,
+                time: 0.75,
+                compounding2: Compounding::SimpleThenCompounded,
+                frequency2: Frequency::Semiannual,
+                rate2: 0.0400,
+                precision: 4,
+            },
+        ];
+        return test_cases;
+    }
+    #[test]
+    fn test_all_cases() {
+        let test_cases = test_cases();
+        for test_case in test_cases {
+            let rate = InterestRate::new(
+                test_case.rate,
+                test_case.compounding,
+                test_case.frequency,
+                DayCounter::Actual360,
+            );
+            let implied_rate = InterestRate::implied_rate(
+                rate.compound_factor_from_yf(test_case.time),
+                DayCounter::Actual360,
+                test_case.compounding2,
+                test_case.frequency2,
+                test_case.time,
+            )
+            .unwrap();
+            assert!(
+                (implied_rate.rate() - test_case.rate2).abs()
+                    < (test_case.precision as f64) / 100.0
+            );
+        }
+    }
 
     #[test]
     fn test_rate_definition_new() {

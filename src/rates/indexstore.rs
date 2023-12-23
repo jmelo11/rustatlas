@@ -87,6 +87,10 @@ impl IndexStore {
             .collect()
     }
 
+    pub fn get_names(&self) -> &Vec<String> {
+        &self.names
+    }   
+    
     pub fn name_to_id_map(&self) -> HashMap<String, usize> {
         self.names
             .iter()

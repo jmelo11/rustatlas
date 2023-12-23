@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
@@ -11,13 +9,13 @@ use super::traits::{ConstVisit, HasCashflows};
 /// # NPVConstVisitor
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
-pub struct NPVConstVisitor {
-    market_data: Rc<Vec<MarketData>>,
+pub struct NPVConstVisitor<'a> {
+    market_data: &'a [MarketData],
     include_today_cashflows: bool,
 }
 
-impl NPVConstVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>, include_today_cashflows: bool) -> Self {
+impl<'a> NPVConstVisitor<'a> {
+    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data: market_data,
             include_today_cashflows,
@@ -28,7 +26,7 @@ impl NPVConstVisitor {
     }
 }
 
-impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
+impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
@@ -43,6 +41,7 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
                     )))?;
 
             if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
+                || cf.payment_date() < cf_market_data.reference_date()
             {
                 return Ok(acc);
             }
@@ -57,5 +56,168 @@ impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor {
             Ok(acc + df * amount / fx * flag)
         });
         return npv;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::{collections::HashMap, sync::Arc};
+
+    use rayon::{
+        prelude::{IntoParallelIterator, ParallelIterator},
+        slice::ParallelSliceMut,
+    };
+
+    use crate::{
+        core::marketstore::MarketStore,
+        currencies::enums::Currency,
+        instruments::{
+            fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan,
+        },
+        models::{simplemodel::SimpleModel, traits::Model},
+        rates::{
+            enums::Compounding,
+            interestrate::{InterestRate, RateDefinition},
+            interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
+            traits::HasReferenceDate,
+            yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+        },
+        time::{
+            date::Date,
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+            period::Period,
+        },
+        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+    };
+
+    use super::*;
+
+    pub fn create_store() -> Result<MarketStore> {
+        let ref_date = Date::new(2021, 9, 1);
+        let local_currency = Currency::USD;
+        let mut market_store = MarketStore::new(ref_date, local_currency);
+
+        let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.02,
+            RateDefinition::default(),
+        ));
+
+        let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.03,
+            RateDefinition::default(),
+        ));
+
+        let discount_curve = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.05,
+            RateDefinition::default(),
+        ));
+
+        let mut ibor_fixings = HashMap::new();
+        ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
+        ibor_fixings.insert(Date::new(2021, 8, 31), 0.02); // yesterday
+
+        let ibor_index = IborIndex::new(forecast_curve_1.reference_date())
+            .with_fixings(ibor_fixings)
+            .with_term_structure(forecast_curve_1)
+            .with_frequency(Frequency::Annual);
+
+        let overnight_fixings =
+            make_fixings(ref_date - Period::new(1, TimeUnit::Years), ref_date, 0.06);
+        let overnigth_index = OvernightIndex::new(forecast_curve_2.reference_date())
+            .with_term_structure(forecast_curve_2)
+            .with_fixings(overnight_fixings);
+
+        market_store
+            .mut_index_store()
+            .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index))?;
+
+        market_store
+            .mut_index_store()
+            .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index))?;
+
+        let discount_index =
+            IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
+
+        market_store
+            .mut_index_store()
+            .add_index("DiscountCurve".to_string(), Box::new(discount_index))?;
+        return Ok(market_store);
+    }
+
+    fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
+        let mut fixings = HashMap::new();
+        let mut seed = start;
+        let mut init = 100.0;
+        while seed <= end {
+            fixings.insert(seed, init);
+            seed = seed + Period::new(1, TimeUnit::Days);
+            init = init * (1.0 + rate * 1.0 / 360.0);
+        }
+        return fixings;
+    }
+
+    #[test]
+    fn generator_tests() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+
+        // par build
+        let mut instruments: Vec<FixedRateInstrument> = (0..150000)
+            .into_par_iter() // Create a parallel iterator
+            .map(|_| {
+                MakeFixedRateLoan::new()
+                    .with_start_date(start_date.clone()) // clone data if needed
+                    .with_end_date(end_date.clone()) // clone data if needed
+                    .with_rate(rate)
+                    .with_payment_frequency(Frequency::Semiannual)
+                    .with_side(Side::Receive)
+                    .with_currency(Currency::USD)
+                    .bullet()
+                    .with_discount_curve_id(Some(2))
+                    .with_notional(notional)
+                    .build()
+                    .unwrap()
+            })
+            .collect(); // Collect the results into a Vec<_>
+
+        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
+            let store = Arc::new(create_store().unwrap());
+            let mut npv = 0.0;
+            let indexer = IndexingVisitor::new();
+            instruments
+                .iter_mut()
+                .for_each(|inst| indexer.visit(inst).unwrap());
+
+            let model = SimpleModel::new(store.clone());
+            let data = model.gen_market_data(&indexer.request()).unwrap();
+
+            let npv_visitor = NPVConstVisitor::new(&data, true);
+            instruments
+                .iter()
+                .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
+            npv
+        }
+        // let n_threads = rayon::current_num_threads();
+        // let chunk_size = instruments.len() / n_threads;
+        instruments.par_rchunks_mut(1000).for_each(|chunk| {
+            npv(chunk);
+        });
+
+        Ok(())
     }
 }

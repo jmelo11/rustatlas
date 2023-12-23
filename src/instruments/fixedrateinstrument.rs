@@ -30,6 +30,7 @@ pub struct FixedRateInstrument {
     side: Side,
     currency: Currency,
     discount_curve_id: Option<usize>,
+    id: Option<usize>,
 }
 
 impl FixedRateInstrument {
@@ -44,6 +45,7 @@ impl FixedRateInstrument {
         side: Side,
         currency: Currency,
         discount_curve_id: Option<usize>,
+        id: Option<usize>
     ) -> Self {
         FixedRateInstrument {
             start_date,
@@ -56,7 +58,12 @@ impl FixedRateInstrument {
             side,
             currency,
             discount_curve_id,
+            id
         }
+    }
+
+    pub fn id(&self) -> Option<usize>{
+        self.id
     }
 
     pub fn start_date(&self) -> Date {

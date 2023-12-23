@@ -7,7 +7,7 @@ use super::cashflow::Side;
 pub trait InterestAccrual {
     fn accrual_start_date(&self) -> Date;
     fn accrual_end_date(&self) -> Date;
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> f64;
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64>;
 
     fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> (Date, Date) {
         let accrual_start = self.accrual_start_date();
@@ -54,4 +54,82 @@ pub trait Payable {
 /// A trait that defines if an instrument expires.
 pub trait Expires {
     fn is_expired(&self, date: Date) -> bool;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        cashflows::fixedratecoupon::FixedRateCoupon,
+        currencies::enums::Currency,
+        rates::{enums::Compounding, interestrate::InterestRate},
+        time::{daycounter::DayCounter, enums::Frequency},
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_delta_accrued_amount_simple() {
+        let notional = 10000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let accrual_start_date = Date::new(2023, 1, 1);
+        let accrual_end_date = Date::new(2023, 3, 31);
+        let payment_date = Date::new(2023, 3, 31);
+        let currency = Currency::JPY;
+
+        let coupon = FixedRateCoupon::new(
+            notional,
+            rate,
+            accrual_start_date,
+            accrual_end_date,
+            payment_date,
+            currency,
+            Side::Pay,
+        );
+
+        let mut start_date = Date::new(2023, 1, 1);
+        let mut end_date = Date::new(2023, 3, 31);
+        let mut accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
+        assert!((accrued_amount - 125.0).abs() < 0.00001);
+
+        start_date = Date::new(2023, 1, 15);
+        end_date = Date::new(2023, 1, 16);
+        accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
+        assert!((accrued_amount - 125.0 / 90.0).abs() < 0.00001);
+    }
+
+    #[test]
+    fn test_delta_accrued_amount_compounded() {
+        let notional = 10000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let accrual_start_date = Date::new(2023, 1, 30);
+        let accrual_end_date = Date::new(2023, 3, 31);
+        let payment_date = Date::new(2023, 3, 31);
+        let currency = Currency::JPY;
+
+        let coupon = FixedRateCoupon::new(
+            notional,
+            rate,
+            accrual_start_date,
+            accrual_end_date,
+            payment_date,
+            currency,
+            Side::Pay,
+        );
+
+        let start_date = Date::new(2023, 1, 30);
+        let end_date = Date::new(2023, 3, 31);
+        let accrued_amount = coupon.clone().accrued_amount(start_date, end_date).unwrap();
+
+        assert!(accrued_amount - 122.72234429 < 0.00001);
+    }
 }

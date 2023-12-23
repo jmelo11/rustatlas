@@ -1,5 +1,5 @@
 pub use crate::{
-    alm::enums::*,
+    alm::{cashaccount::*, enums::*, rollover::*},
     cashflows::cashflow::Side,
     cashflows::{
         cashflow::Cashflow,
@@ -29,7 +29,7 @@ pub use crate::{
         },
         traits::*,
         yieldtermstructure::{
-            discounttermstructure::*, flatforwardtermstructure::*, mixedtermstructure::*,
+            compositetermstructure::*, discounttermstructure::*, flatforwardtermstructure::*,
             tenorbasedzeroratetermstructure::*, traits::*, zeroratetermstructure::*,
         },
     },
@@ -44,10 +44,11 @@ pub use crate::{
         period::*,
         schedule::*,
     },
-    utils::errors,
     visitors::{
+        aggregationvisitor::AggregationConstVisitor,
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
+        npvbydateconstvisitor::NPVByDateConstVisitor,
         npvconstvisitor::NPVConstVisitor,
         traits::{ConstVisit, HasCashflows, Visit},
     },

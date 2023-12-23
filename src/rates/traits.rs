@@ -1,6 +1,6 @@
 use super::enums::Compounding;
 use crate::{
-    time::{date::Date, enums::Frequency},
+    time::{date::Date, enums::Frequency, period::Period},
     utils::errors::Result,
 };
 
@@ -8,6 +8,10 @@ use crate::{
 /// Implement this trait for a struct that has a reference date.
 pub trait HasReferenceDate {
     fn reference_date(&self) -> Date;
+}
+
+pub trait HasTenor {
+    fn tenor(&self) -> Period;
 }
 
 /// # YieldProvider

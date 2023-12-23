@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     core::{
@@ -13,20 +13,30 @@ use crate::{
 use super::traits::Model;
 
 /// # SimpleModel
-/// A simple model that provides market data based in the current market state. Uses the
-/// market store to get the market data. All values are calculated using the reference date
-/// of the market store.
+/// A simple model that provides market data based on the current market state. Uses the
+/// market store to get the market data (curves, currencies and others). All values are calculated using the 
+/// reference date and local currency of the market store.
 ///
 /// ## Parameters
 /// * `market_store` - The market store.
+/// * `transform_currencies` - If true, the model will transform the currencies to the local currency of the market store.
 #[derive(Clone)]
 pub struct SimpleModel {
-    market_store: Rc<MarketStore>,
+    market_store: Arc<MarketStore>,
+    transform_currencies: bool,
 }
 
 impl SimpleModel {
-    pub fn new(market_store: Rc<MarketStore>) -> SimpleModel {
-        SimpleModel { market_store }
+    pub fn new(market_store: Arc<MarketStore>) -> SimpleModel {
+        SimpleModel {
+            market_store,
+            transform_currencies: false,
+        }
+    }
+
+    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel {
+        self.transform_currencies = flag;
+        self
     }
 }
 
@@ -54,10 +64,14 @@ impl Model for SimpleModel {
 
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64> {
         let id = fwd.provider_id();
-        let index = self.market_store.get_index_by_id(id)?;
-
-        let start_date = fwd.start_date();
         let end_date = fwd.end_date();
+        let ref_date = self.market_store.reference_date();
+        if end_date <= ref_date {
+            return Ok(0.0);
+        }
+
+        let index = self.market_store.get_index_by_id(id)?;
+        let start_date = fwd.start_date();
         Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
     }
 
@@ -65,7 +79,13 @@ impl Model for SimpleModel {
         let first_currency = fx.first_currency();
         let second_currency = match fx.second_currency() {
             Some(ccy) => ccy,
-            None => self.market_store.local_currency(),
+            None => {
+                if self.transform_currencies {
+                    self.market_store.local_currency()
+                } else {
+                    first_currency
+                }
+            }
         };
 
         match fx.reference_date() {

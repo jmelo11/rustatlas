@@ -1,5 +1,6 @@
 extern crate rustatlas;
-use std::rc::Rc;
+
+use std::sync::Arc;
 
 use rustatlas::{
     cashflows::{
@@ -28,7 +29,7 @@ use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -65,12 +66,9 @@ fn starting_today_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
+    print_table(instrument.cashflows(), &data);
 
-    let ref_data = Rc::new(data);
-
-    print_table(instrument.cashflows(), ref_data.clone());
-
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -79,8 +77,9 @@ fn starting_today_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
+
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
@@ -99,7 +98,7 @@ fn starting_today_pricing() {
         start_accrual, end_accrual, maturing_amount
     );
 
-    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_visitor = ParValueConstVisitor::new(&data);
     let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }
@@ -107,7 +106,7 @@ fn starting_today_pricing() {
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -139,10 +138,9 @@ fn forward_starting_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
-    let ref_data = Rc::new(data);
-    print_table(instrument.cashflows(), ref_data.clone());
+    print_table(instrument.cashflows(), &data);
 
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -151,7 +149,7 @@ fn forward_starting_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
     println!(
         "Accrued Amount between {} and {}: {}",
@@ -162,7 +160,7 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Rc::new(create_store().unwrap());
+    let market_store = Arc::new(create_store().unwrap());
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);
@@ -197,12 +195,9 @@ fn already_started_pricing() {
     let model = SimpleModel::new(market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
+    print_table(instrument.cashflows(), &data);
 
-    let ref_data = Rc::new(data);
-
-    print_table(instrument.cashflows(), ref_data.clone());
-
-    let npv_visitor = NPVConstVisitor::new(ref_data.clone(), true);
+    let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
@@ -211,14 +206,14 @@ fn already_started_pricing() {
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual)
+        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
     });
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
     );
 
-    let par_visitor = ParValueConstVisitor::new(ref_data.clone());
+    let par_visitor = ParValueConstVisitor::new(&data);
     let par_value = par_visitor.visit(&instrument).unwrap();
     println!("Par Value: {}", par_value);
 }

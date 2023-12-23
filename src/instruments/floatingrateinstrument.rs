@@ -35,6 +35,7 @@ pub struct FloatingRateInstrument {
     currency: Currency,
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
+    id: Option<usize>,
 }
 
 impl FloatingRateInstrument {
@@ -51,6 +52,7 @@ impl FloatingRateInstrument {
         currency: Currency,
         discount_curve_id: Option<usize>,
         forecast_curve_id: Option<usize>,
+        id: Option<usize>,
     ) -> Self {
         FloatingRateInstrument {
             start_date,
@@ -65,7 +67,12 @@ impl FloatingRateInstrument {
             currency,
             discount_curve_id,
             forecast_curve_id,
+            id,
         }
+    }
+
+    pub fn id(&self) -> Option<usize> {
+        self.id
     }
 
     pub fn start_date(&self) -> Date {

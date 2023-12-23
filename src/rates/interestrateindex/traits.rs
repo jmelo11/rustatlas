@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, HasTenor, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::TimeUnit, period::Period},
@@ -21,14 +21,22 @@ pub trait FixingProvider {
         if !self.fixings().is_empty() {
             let first_date = self.fixings().keys().min().unwrap().clone();
             let last_date = self.fixings().keys().max().unwrap().clone();
-            let x = self
+
+            let aux_btreemap = self
                 .fixings()
+                .iter()
+                .map(|(k, v)| (*k, *v))
+                .collect::<BTreeMap<Date, f64>>();
+
+            let x = aux_btreemap
                 .keys()
                 .map(|&d| (d - first_date) as f64)
                 .collect::<Vec<f64>>();
 
-            let y = self.fixings().values().map(|r| *r).collect::<Vec<f64>>();
-            let mut current_date = first_date;
+            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<f64>>();
+
+            let mut current_date = first_date.clone();
+
             while current_date <= last_date {
                 if !self.fixings().contains_key(&current_date) {
                     let days = (current_date - first_date) as f64;
@@ -83,5 +91,6 @@ pub trait InterestRateIndexTrait:
     + AdvanceInterestRateIndexInTime
     + InterestRateIndexClone
     + HasTermStructure
+    + HasTenor
 {
 }

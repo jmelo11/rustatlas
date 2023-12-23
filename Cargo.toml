@@ -10,9 +10,11 @@ chrono = "0.4.26"
 rayon = "1.7.0"
 rand = "0.8.0"
 thiserror = "1.0"
-serde = "1.0.136"
 argmin = { version = "0.8.1" }
-#argmin-math = { git = "https://github.com/argmin-rs/argmin", features = ["ndarray_latest-serde", "nalgebra_latest-serde"] }
+indicatif = "0.17.7"
+serde = "1.0.136"
+serde_json = "1.0.68"
+
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

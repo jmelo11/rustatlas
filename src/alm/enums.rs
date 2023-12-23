@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cashflows::cashflow::Cashflow,
+    cashflows::cashflow::{Cashflow, Side},
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
+        traits::Structure,
     },
-    visitors::traits::HasCashflows, time::date::Date,
+    time::{date::Date, enums::Frequency},
+    visitors::traits::HasCashflows,
 };
 
 #[derive(Clone)]
@@ -51,9 +53,37 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.end_date(),
         }
     }
+
+    pub fn id(&self) -> Option<usize> {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.id(),
+            Instrument::FloatingRateInstrument(fri) => fri.id(),
+        }
+    }
+
+    pub fn structure(&self) -> Structure {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.structure(),
+            Instrument::FloatingRateInstrument(fri) => fri.structure(),
+        }
+    }
+
+    pub fn payment_frequency(&self) -> Frequency {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.payment_frequency(),
+            Instrument::FloatingRateInstrument(fri) => fri.payment_frequency(),
+        }
+    }
+
+    pub fn side(&self) -> Side {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.side(),
+            Instrument::FloatingRateInstrument(fri) => fri.side(),
+        }
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
     Fixed,
     Floating,

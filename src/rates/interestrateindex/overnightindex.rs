@@ -4,7 +4,7 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, YieldProvider},
+        traits::{HasReferenceDate, HasTenor, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
@@ -43,10 +43,6 @@ impl OvernightIndex {
 
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
-    }
-
-    pub fn tenor(&self) -> Period {
-        self.tenor
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
@@ -104,6 +100,12 @@ impl FixingProvider for OvernightIndex {
 impl HasReferenceDate for OvernightIndex {
     fn reference_date(&self) -> Date {
         self.reference_date
+    }
+}
+
+impl HasTenor for OvernightIndex {
+    fn tenor(&self) -> Period {
+        self.tenor
     }
 }
 
@@ -208,7 +210,10 @@ impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
 mod tests {
-    use crate::rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure;
+    use crate::{
+        math::interpolation::enums::Interpolator,
+        rates::yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+    };
 
     use super::*;
     use std::collections::HashMap;
@@ -296,5 +301,30 @@ mod tests {
             .with_fixings(fixings);
 
         assert_eq!(overnight_index.reference_date(), next_date_2);
+    }
+
+    #[test]
+    fn test_fixing_provider_overnight() -> Result<()> {
+        let fixing: HashMap<Date, f64> = [
+            (Date::new(2023, 6, 2), 21945.57),
+            (Date::new(2023, 6, 5), 21966.14),
+        ]
+        .iter()
+        .cloned()
+        .collect();
+
+        let mut overnight_index = OvernightIndex::new(Date::new(2023, 6, 5)).with_fixings(fixing);
+
+        overnight_index.fill_missing_fixings(Interpolator::Linear);
+
+        assert!(
+            overnight_index
+                .fixings()
+                .get(&Date::new(2023, 6, 3))
+                .unwrap()
+                - 21952.4266666
+                < 0.001
+        );
+        Ok(())
     }
 }

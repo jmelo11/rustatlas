@@ -9,7 +9,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # MixedTermStructure
+/// # CompositeTermStructure
 /// Struct that defines a term structure made with a combination of two curves. It's defined as:
 /// $$
 ///    df_{spreaded}(t) = df_{spread}(t) * df_{base}(t)
@@ -32,22 +32,22 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 ///     RateDefinition::default()
 /// );
 ///
-/// let spreaded_curve = MixedTermStructure::new(Box::new(spread_curve), Box::new(base_curve));
+/// let spreaded_curve = CompositeTermStructure::new(Box::new(spread_curve), Box::new(base_curve));
 /// assert_eq!(spreaded_curve.reference_date(), ref_date);
 /// ```
 #[derive(Clone)]
-pub struct MixedTermStructure {
+pub struct CompositeTermStructure {
     date_reference: Date, // reference_date
     spread_curve: Box<dyn YieldTermStructureTrait>,
     base_curve: Box<dyn YieldTermStructureTrait>,
 }
 
-impl MixedTermStructure {
+impl CompositeTermStructure {
     pub fn new(
         spread_curve: Box<dyn YieldTermStructureTrait>,
         base_curve: Box<dyn YieldTermStructureTrait>,
-    ) -> MixedTermStructure {
-        MixedTermStructure {
+    ) -> CompositeTermStructure {
+        CompositeTermStructure {
             date_reference: base_curve.reference_date(),
             spread_curve,
             base_curve,
@@ -63,13 +63,13 @@ impl MixedTermStructure {
     }
 }
 
-impl HasReferenceDate for MixedTermStructure {
+impl HasReferenceDate for CompositeTermStructure {
     fn reference_date(&self) -> Date {
         return self.date_reference;
     }
 }
 
-impl YieldProvider for MixedTermStructure {
+impl YieldProvider for CompositeTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
@@ -96,22 +96,22 @@ impl YieldProvider for MixedTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for MixedTermStructure
-impl AdvanceTermStructureInTime for MixedTermStructure {
+/// # AdvanceTermStructureInTime for CompositeTermStructure
+impl AdvanceTermStructureInTime for CompositeTermStructure {
     fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
-        Ok(Box::new(MixedTermStructure::new(spread, base)))
+        Ok(Box::new(CompositeTermStructure::new(spread, base)))
     }
 
     fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
-        Ok(Box::new(MixedTermStructure::new(spread, base)))
+        Ok(Box::new(CompositeTermStructure::new(spread, base)))
     }
 }
 
-impl YieldTermStructureTrait for MixedTermStructure {}
+impl YieldTermStructureTrait for CompositeTermStructure {}
 
 #[cfg(test)]
 mod test {
@@ -121,8 +121,8 @@ mod test {
             interestrate::RateDefinition,
             traits::{HasReferenceDate, YieldProvider},
             yieldtermstructure::{
+                compositetermstructure::CompositeTermStructure,
                 flatforwardtermstructure::FlatForwardTermStructure,
-                mixedtermstructure::MixedTermStructure,
             },
         },
         time::{date::Date, daycounter::DayCounter, enums::Frequency},
@@ -149,7 +149,7 @@ mod test {
                 Frequency::Annual,
             ),
         ));
-        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = CompositeTermStructure::new(spread_curve, base_curve);
         assert!(spreaded_curve.reference_date() == Date::new(2020, 1, 1));
     }
 
@@ -174,7 +174,7 @@ mod test {
                 Frequency::Annual,
             ),
         ));
-        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = CompositeTermStructure::new(spread_curve, base_curve);
 
         let fr = spreaded_curve.forward_rate(
             Date::new(2020, 1, 1),
@@ -207,7 +207,7 @@ mod test {
             ),
         ));
 
-        let spreaded_curve = MixedTermStructure::new(spread_curve, base_curve);
+        let spreaded_curve = CompositeTermStructure::new(spread_curve, base_curve);
 
         let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));
         println!("df: {:?}", df);

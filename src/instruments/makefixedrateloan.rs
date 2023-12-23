@@ -44,6 +44,7 @@ pub struct MakeFixedRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
+    id: Option<usize>,
 }
 
 /// New, setters and getters
@@ -66,6 +67,7 @@ impl MakeFixedRateLoan {
             additional_coupon_dates: None,
             rate_definition: None,
             rate_value: None,
+            id: None,
         }
     }
 
@@ -90,6 +92,11 @@ impl MakeFixedRateLoan {
     /// Sets the notional.
     pub fn with_notional(mut self, notional: f64) -> MakeFixedRateLoan {
         self.notional = Some(notional);
+        self
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
+        self.id = id;
         self
     }
 
@@ -280,7 +287,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
@@ -288,10 +301,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 let last_date = vec![*schedule.dates().last().unwrap()];
@@ -302,7 +311,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -341,6 +350,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::Other => {
@@ -358,11 +368,6 @@ impl MakeFixedRateLoan {
                     ));
                 }
 
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
-
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
                 let timeline =
@@ -370,7 +375,7 @@ impl MakeFixedRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
@@ -392,8 +397,14 @@ impl MakeFixedRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                let start_date = &timeline.first().expect("No start date").0;
-                let end_date = &timeline.last().expect("No end date").1;
+                let start_date = &timeline
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?
+                    .0;
+                let end_date = &timeline
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
+                    .1;
 
                 match self.discount_curve_id {
                     Some(id) => cashflows
@@ -413,6 +424,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualPayments => {
@@ -432,7 +444,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
@@ -440,13 +458,9 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let redemptions =
-                    calculate_redemptions(schedule.dates().clone(), rate, notional, side);
+                    calculate_redemptions(schedule.dates().clone(), rate, notional, side)?;
                 let mut notionals = redemptions.iter().fold(vec![notional], |mut acc, x| {
                     acc.push(acc.last().unwrap() - x);
                     acc
@@ -458,7 +472,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -499,6 +513,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::Zero => {
@@ -522,10 +537,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
@@ -537,7 +548,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -576,6 +587,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -595,7 +607,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => { 
+                        if date != start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            schedule_builder.build()?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
@@ -603,10 +621,6 @@ impl MakeFixedRateLoan {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
 
                 let first_date = vec![*schedule.dates().first().unwrap()];
 
@@ -618,7 +632,7 @@ impl MakeFixedRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -659,6 +673,7 @@ impl MakeFixedRateLoan {
                     side,
                     currency,
                     self.discount_curve_id,
+                    self.id,
                 ))
             }
         }
@@ -716,7 +731,7 @@ fn calculate_redemptions(
     rate: InterestRate,
     notional: f64,
     side: Side,
-) -> Vec<f64> {
+) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
         dates: dates.clone(),
         rate: rate,
@@ -726,17 +741,17 @@ fn calculate_redemptions(
     let init_param = 1.0 / (dates.len() as f64);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
-        .run()
-        .expect("Solver failed");
+        .run()?;
 
-    let payment = res.state().best_param.expect("No best parameter found") * notional;
+    let payment = res
+        .state()
+        .best_param
+        .ok_or(AtlasError::EvaluationErr("Solver failed".into()))?
+        * notional;
 
     let mut redemptions = Vec::new();
     let mut total_amount = notional;
-    let flag = match side {
-        Side::Pay => -1.0,
-        Side::Receive => 1.0,
-    };
+    let flag = side.sign();
     for date_pair in dates.windows(2) {
         let d1 = date_pair[0];
         let d2 = date_pair[1];
@@ -745,7 +760,7 @@ fn calculate_redemptions(
         total_amount -= k;
         redemptions.push(k * flag);
     }
-    redemptions
+    Ok(redemptions)
 }
 
 impl Into<MakeFixedRateLoan> for FixedRateInstrument {
@@ -805,13 +820,14 @@ impl From<&FixedRateInstrument> for MakeFixedRateLoan {
 
 #[cfg(test)]
 mod tests {
+
     use crate::{
         cashflows::{
             cashflow::{Cashflow, Side},
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::makefixedrateloan::{self, MakeFixedRateLoan},
+        instruments::makefixedrateloan::MakeFixedRateLoan,
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -857,7 +873,7 @@ mod tests {
     #[test]
     fn build_equal_payments() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
-        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let end_date = start_date + Period::new(2, TimeUnit::Months);
         let rate = InterestRate::new(
             0.05,
             Compounding::Compounded,
@@ -868,7 +884,7 @@ mod tests {
         let instrument = MakeFixedRateLoan::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
-            .with_payment_frequency(Frequency::Semiannual)
+            .with_payment_frequency(Frequency::Monthly)
             .with_rate(rate)
             .with_notional(notional)
             .with_side(Side::Receive)
@@ -878,7 +894,7 @@ mod tests {
 
         assert_eq!(instrument.notional(), notional);
         assert_eq!(instrument.rate(), rate);
-        assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
+        assert_eq!(instrument.payment_frequency(), Frequency::Monthly);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -915,6 +931,71 @@ mod tests {
         //check if all equal
         let first = payments.values().next().unwrap();
         payments.values().for_each(|x| assert_eq!(first, x));
+
+        Ok(())
+    }
+
+    #[test]
+    fn build_equal_payments_with_delay_first_day() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(2, TimeUnit::Years);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let delay = 2;
+        let first_coupon_date = start_date + Period::new(delay, TimeUnit::Months);
+
+        let notional = 1000.0;
+        let instrument = MakeFixedRateLoan::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_first_coupon_date(first_coupon_date)
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(notional)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .equal_payments()
+            .build()?;
+
+        assert_eq!(instrument.notional(), notional);
+        assert_eq!(instrument.rate(), rate);
+        assert_eq!(instrument.payment_frequency(), Frequency::Monthly);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| println!("{}", cf));
+
+        let mut payments = HashMap::new();
+        instrument.cashflows().iter().for_each(|cf| match cf {
+            Cashflow::FixedRateCoupon(c) => {
+                if payments.contains_key(&c.payment_date()) {
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
+                } else {
+                    payments.insert(c.payment_date(), c.amount().unwrap());
+                }
+            }
+            Cashflow::Redemption(c) => {
+                if payments.contains_key(&c.payment_date()) {
+                    payments.insert(
+                        c.payment_date(),
+                        payments[&c.payment_date()] + c.amount().unwrap(),
+                    );
+                } else {
+                    payments.insert(c.payment_date(), c.amount().unwrap());
+                }
+            }
+            _ => (),
+        });
 
         Ok(())
     }
@@ -1164,7 +1245,7 @@ mod tests {
             .equal_payments()
             .build()?;
 
-        let builder: MakeFixedRateLoan = makefixedrateloan::MakeFixedRateLoan::from(&instrument);
+        let builder: MakeFixedRateLoan = MakeFixedRateLoan::from(&instrument);
         let instrument2 = builder.build()?;
 
         assert_eq!(instrument2.notional(), instrument.notional());

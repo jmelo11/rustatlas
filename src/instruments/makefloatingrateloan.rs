@@ -39,6 +39,7 @@ pub struct MakeFloatingRateLoan {
     additional_coupon_dates: Option<HashSet<Date>>,
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
+    id: Option<usize>,
 }
 
 /// Constructor, setters and getters.
@@ -61,11 +62,22 @@ impl MakeFloatingRateLoan {
             disbursements: None,
             redemptions: None,
             additional_coupon_dates: None,
+            id: None,
         }
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFloatingRateLoan {
+        self.id = id;
+        self
     }
 
     pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateLoan {
         self.first_coupon_date = Some(first_coupon_date);
+        self
+    }
+
+    pub fn with_option_first_date(mut self, first_date: Option<Date>) -> MakeFloatingRateLoan {
+        self.first_coupon_date = first_date;
         self
     }
 
@@ -222,10 +234,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let notionals =
@@ -237,7 +246,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -285,6 +294,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::Zero => {
@@ -307,10 +317,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let notionals =
@@ -322,7 +329,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -370,6 +377,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -397,10 +405,7 @@ impl MakeFloatingRateLoan {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
+
                 // end common
 
                 let n = schedule.dates().len() - 1;
@@ -413,7 +418,7 @@ impl MakeFloatingRateLoan {
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
-                    inv_side,
+                    side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
@@ -462,6 +467,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             Structure::Other => {
@@ -479,11 +485,6 @@ impl MakeFloatingRateLoan {
                     ))?;
                 }
 
-                let inv_side = match side {
-                    Side::Pay => Side::Receive,
-                    Side::Receive => Side::Pay,
-                };
-
                 let additional_dates = self.additional_coupon_dates.unwrap_or_default();
 
                 let timeline =
@@ -491,7 +492,7 @@ impl MakeFloatingRateLoan {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, inv_side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
                     cashflows.push(cashflow);
                 }
@@ -516,8 +517,16 @@ impl MakeFloatingRateLoan {
                     );
                     cashflows.push(cashflow);
                 }
-                let start_date = &timeline.first().expect("No start date").0;
-                let end_date = &timeline.last().expect("No end date").1;
+
+                let start_date = &timeline
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?
+                    .0;
+                let end_date = &timeline
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
+                    .1;
+
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
                 match self.discount_curve_id {
@@ -545,6 +554,7 @@ impl MakeFloatingRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.forecast_curve_id,
+                    self.id,
                 ))
             }
             _ => Err(AtlasError::InvalidValueErr(

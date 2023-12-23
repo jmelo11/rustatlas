@@ -1,5 +1,3 @@
-use std::{ops::Deref, rc::Rc};
-
 use argmin::{
     core::{CostFunction, Error, Executor, State},
     solver::brent::BrentRoot,
@@ -22,16 +20,16 @@ use super::{
 
 /// # ParValue
 /// ParValue is a cost function that calculates the NPV of a generic instrument.
-struct ParValue<T> {
-    eval: Rc<T>,
-    npv_visitor: Box<NPVConstVisitor>,
-    fixing_visitor: Box<FixingVisitor>,
+struct ParValue<'a, T> {
+    eval: &'a T,
+    npv_visitor: Box<NPVConstVisitor<'a>>,
+    fixing_visitor: Box<FixingVisitor<'a>>,
 }
 
-impl<T> ParValue<T> {
-    pub fn new(eval: Rc<T>, market_data: Rc<Vec<MarketData>>) -> Self {
-        let npv_visitor = NPVConstVisitor::new(market_data.clone(), true);
-        let fixing_visitor = FixingVisitor::new(market_data.clone());
+impl<'a, T> ParValue<'a, T> {
+    pub fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
+        let npv_visitor = NPVConstVisitor::new(market_data, true);
+        let fixing_visitor = FixingVisitor::new(market_data);
         ParValue {
             eval,
             npv_visitor: Box::new(npv_visitor),
@@ -40,12 +38,12 @@ impl<T> ParValue<T> {
     }
 }
 
-impl CostFunction for ParValue<FixedRateInstrument> {
+impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFixedRateLoan::from(self.eval.deref());
+        let builder = MakeFixedRateLoan::from(self.eval);
         let mut inst = builder.with_rate_value(*param).build()?;
         inst.mut_cashflows()
             .iter_mut()
@@ -60,12 +58,12 @@ impl CostFunction for ParValue<FixedRateInstrument> {
     }
 }
 
-impl CostFunction for ParValue<FloatingRateInstrument> {
+impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
     type Param = f64;
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFloatingRateLoan::from(self.eval.deref());
+        let builder = MakeFloatingRateLoan::from(self.eval);
         let mut inst = builder.with_spread(*param).build()?;
 
         inst.mut_cashflows()
@@ -84,38 +82,36 @@ impl CostFunction for ParValue<FloatingRateInstrument> {
 
 /// # ParValueConstVisitor
 /// ParValueConstVisitor is a visitor that calculates the par rate/spread of.
-pub struct ParValueConstVisitor {
-    market_data: Rc<Vec<MarketData>>,
+pub struct ParValueConstVisitor<'a> {
+    market_data: &'a [MarketData],
 }
 
-impl ParValueConstVisitor {
-    pub fn new(market_data: Rc<Vec<MarketData>>) -> Self {
+impl<'a> ParValueConstVisitor<'a> {
+    pub fn new(market_data: &'a [MarketData]) -> Self {
         ParValueConstVisitor { market_data }
     }
 }
 
-impl ConstVisit<FixedRateInstrument> for ParValueConstVisitor {
+impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
     fn visit(&self, instrument: &FixedRateInstrument) -> Self::Output {
-        let cost = ParValue::new(Rc::new(instrument.clone()), self.market_data.clone());
+        let cost = ParValue::new(instrument, &self.market_data);
         let solver = BrentRoot::new(-1.0, 1.0, 1e-6);
-        let init_param = 0.05;
         let res = Executor::new(cost, solver)
-            .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
+            .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
         Ok(*res.state().get_best_param().unwrap())
     }
 }
 
-impl ConstVisit<FloatingRateInstrument> for ParValueConstVisitor {
+impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
     fn visit(&self, instrument: &FloatingRateInstrument) -> Self::Output {
-        let cost = ParValue::new(Rc::new(instrument.clone()), self.market_data.clone());
+        let cost = ParValue::new(instrument, &self.market_data);
         let solver = BrentRoot::new(-1.0, 1.0, 1e-6);
-        let init_param = 0.05;
         let res = Executor::new(cost, solver)
-            .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
+            .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
         Ok(*res.state().get_best_param().unwrap())

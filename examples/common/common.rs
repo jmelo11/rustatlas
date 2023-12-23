@@ -22,7 +22,7 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::{collections::HashMap, ops::Deref, rc::Rc};
+use std::collections::HashMap;
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -37,12 +37,12 @@ pub fn print_title(title: &str) {
 }
 
 #[allow(dead_code)]
-pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
+pub fn print_table(cashflows: &[Cashflow], market_data: &[MarketData]) {
     println!(
         "{:10} | {:10} | {:10} | {:10}| {:10}",
         "Date", "Amount", "DF", "FWD", "FX"
     );
-    for (cf, md) in cashflows.iter().zip(market_data.deref()) {
+    for (cf, md) in cashflows.iter().zip(market_data) {
         let date = format!("{:10}", cf.payment_date().to_string());
         let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
 
