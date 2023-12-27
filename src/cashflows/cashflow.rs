@@ -9,7 +9,7 @@ use crate::{
     },
     currencies::enums::Currency,
     time::date::Date,
-    utils::errors::Result,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::{
@@ -21,7 +21,7 @@ use super::{
 
 /// # Side
 /// Enum that represents the side of a cashflow.
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Side {
     Pay,
     Receive,
@@ -39,6 +39,14 @@ impl Side {
         match self {
             Side::Pay => Side::Receive,
             Side::Receive => Side::Pay,
+        }
+    }
+
+    pub fn from_str(s: &str) -> Result<Side> {
+        match s {
+            "Pay" => Ok(Side::Pay),
+            "Receive" => Ok(Side::Receive),
+            _ => Err(AtlasError::InvalidValueErr(format!("Invalid side: {}", s))),
         }
     }
 }
