@@ -82,6 +82,10 @@ impl FloatingRateCoupon {
     pub fn set_forecast_curve_id(&mut self, id: usize) {
         self.forecast_curve_id = Some(id);
     }
+
+    pub fn notional(&self) -> f64 {
+        self.notional
+    }
 }
 
 impl InterestAccrual for FloatingRateCoupon {
@@ -110,7 +114,9 @@ impl InterestAccrual for FloatingRateCoupon {
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
-        let accrual = self.accrued_amount(self.accrual_start_date, self.accrual_end_date).unwrap();
+        let accrual = self
+            .accrued_amount(self.accrual_start_date, self.accrual_end_date)
+            .unwrap();
         self.cashflow = self.cashflow.with_amount(accrual);
     }
 }

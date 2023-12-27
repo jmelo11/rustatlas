@@ -60,6 +60,10 @@ impl FixedRateCoupon {
     pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
+
+    pub fn notional(&self) -> f64 {
+        return self.notional;
+    }
 }
 
 impl HasCurrency for FixedRateCoupon {
@@ -201,7 +205,9 @@ mod tests {
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
         assert_eq!(
-            coupon.accrued_amount(accrual_start_date, accrual_end_date).unwrap(),
+            coupon
+                .accrued_amount(accrual_start_date, accrual_end_date)
+                .unwrap(),
             expected_amount
         );
     }
