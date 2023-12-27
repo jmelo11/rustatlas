@@ -62,8 +62,8 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_index_by_id(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
-        return self.index_store.get_index_by_id(id);
+    pub fn get_index(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
+        return self.index_store.get_index(id);
     }
 
     pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {

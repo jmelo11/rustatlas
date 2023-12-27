@@ -2,7 +2,7 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
-        traits::{HasReferenceDate, YieldProvider, HasTenor},
+        traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
@@ -15,7 +15,8 @@ use crate::{
 use std::collections::HashMap;
 
 use super::traits::{
-    AdvanceInterestRateIndexInTime, FixingProvider, HasTermStructure, InterestRateIndexTrait,
+    AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
+    InterestRateIndexTrait,
 };
 
 /// # IborIndex
@@ -35,6 +36,7 @@ use super::traits::{
 /// ```
 #[derive(Clone)]
 pub struct IborIndex {
+    name: Option<String>,
     tenor: Period,
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
@@ -45,6 +47,7 @@ pub struct IborIndex {
 impl IborIndex {
     pub fn new(reference_date: Date) -> IborIndex {
         IborIndex {
+            name: None,
             reference_date: reference_date,
             tenor: Period::empty(),
             rate_definition: RateDefinition::default(),
@@ -55,6 +58,11 @@ impl IborIndex {
 
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
+    }
+
+    pub fn with_name(mut self, name: String) -> Self {
+        self.name = Some(name);
+        self
     }
 
     pub fn with_tenor(mut self, tenor: Period) -> Self {
@@ -115,6 +123,14 @@ impl HasReferenceDate for IborIndex {
 impl HasTenor for IborIndex {
     fn tenor(&self) -> Period {
         self.tenor
+    }
+}
+
+impl HasName for IborIndex {
+    fn name(&self) -> Result<String> {
+        self.name
+            .clone()
+            .ok_or(AtlasError::ValueNotSetErr("Name not set".to_string()))
     }
 }
 
