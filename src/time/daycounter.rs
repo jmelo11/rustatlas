@@ -1,14 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-use super::daycounters::actual360::Actual360;
-use super::daycounters::actual365::Actual365;
-use super::daycounters::thirty360::Thirty360;
-use super::daycounters::traits::DayCountProvider;
-use crate::time::date::Date;
+use super::daycounters::{
+    actual360::Actual360, actual365::Actual365, thirty360::Thirty360, traits::DayCountProvider,
+};
+use crate::{
+    time::date::Date,
+    utils::errors::{AtlasError, Result},
+};
 
 /// # DayCounter
 /// Day count convention enum.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DayCounter {
     Actual360,
     Actual365,
@@ -29,6 +31,18 @@ impl DayCounter {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),
             DayCounter::Actual365 => Actual365::year_fraction(start, end),
             DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
+        }
+    }
+
+    pub fn from_str(s: &str) -> Result<DayCounter> {
+        match s {
+            "Actual360" => Ok(DayCounter::Actual360),
+            "Actual365" => Ok(DayCounter::Actual365),
+            "Thirty360" => Ok(DayCounter::Thirty360),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid day counter: {}",
+                s
+            ))),
         }
     }
 }

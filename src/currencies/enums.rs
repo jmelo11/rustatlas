@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use super::structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR};
-use super::traits::CurrencyDetails;
+use crate::utils::errors::{AtlasError, Result};
+
+use super::{
+    structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR},
+    traits::CurrencyDetails,
+};
 
 /// # Currency
 /// Enum for currencies supported by the library
@@ -14,6 +18,24 @@ pub enum Currency {
     CLP,
     CLF,
     CHF,
+}
+
+impl Currency {
+    pub fn from_str(s: &str) -> Result<Currency> {
+        match s {
+            "USD" => Ok(Currency::USD),
+            "EUR" => Ok(Currency::EUR),
+            "JPY" => Ok(Currency::JPY),
+            "ZAR" => Ok(Currency::ZAR),
+            "CLP" => Ok(Currency::CLP),
+            "CLF" => Ok(Currency::CLF),
+            "CHF" => Ok(Currency::CHF),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid currency: {}",
+                s
+            ))),
+        }
+    }
 }
 
 impl CurrencyDetails for Currency {

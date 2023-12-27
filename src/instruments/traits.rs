@@ -9,9 +9,12 @@ use crate::{
     },
     currencies::enums::Currency,
     time::date::Date,
+    utils::errors::{AtlasError, Result},
 };
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
+/// # Structure
+/// A struct that contains the information needed to define a structure.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Structure {
     Bullet,
     EqualRedemptions,
@@ -20,6 +23,23 @@ pub enum Structure {
     Other,
 }
 
+impl Structure {
+    pub fn from_str(s: &str) -> Result<Structure> {
+        match s {
+            "Bullet" => Ok(Structure::Bullet),
+            "EqualRedemptions" => Ok(Structure::EqualRedemptions),
+            "Zero" => Ok(Structure::Zero),
+            "EqualPayments" => Ok(Structure::EqualPayments),
+            "Other" => Ok(Structure::Other),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid structure: {}",
+                s
+            ))),
+        }
+    }
+}
+
+/// # CashflowType
 pub enum CashflowType {
     Redemption,
     Disbursement,

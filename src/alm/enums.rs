@@ -7,9 +7,12 @@ use crate::{
         traits::Structure,
     },
     time::{date::Date, enums::Frequency},
+    utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
 
+/// # Instrument
+/// Represents an instrument. This is a wrapper around the FixedRateInstrument and FloatingRateInstrument.
 #[derive(Clone)]
 pub enum Instrument {
     FixedRateInstrument(FixedRateInstrument),
@@ -83,8 +86,23 @@ impl Instrument {
     }
 }
 
+/// # RateType
+/// Represents the type of rate. It can be either fixed or floating.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
     Fixed,
     Floating,
+}
+
+impl RateType {
+    pub fn from_str(s: &str) -> Result<RateType> {
+        match s {
+            "Fixed" => Ok(RateType::Fixed),
+            "Floating" => Ok(RateType::Floating),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid rate type: {}",
+                s
+            ))),
+        }
+    }
 }
