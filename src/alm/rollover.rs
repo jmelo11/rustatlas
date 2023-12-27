@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -24,10 +22,21 @@ use crate::{
 use super::enums::{Instrument, RateType};
 
 /// # RolloverStrategy
-/// Configuration for a loan. Represents the meta data required to generate a loan.
+/// Configuration for a loan. It holds the data required to generate a loan.
+///
+/// ## Fields
+/// * `weight` - Weight of the loan in the portfolio
+/// * `structure` - Structure of the loan
+/// * `payment_frequency` - Payment frequency of the loan
+/// * `tenor` - Tenor of the loan
+/// * `side` - Side of the loan
+/// * `rate_type` - Type of the rate
+/// * `rate_definition` - Rate definition
+/// * `discount_curve_id` - Id of the discount curve
+/// * `forecast_curve_id` - Id of the forecast curve, if any
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RolloverStrategy {
-    pub weight: f64,
+    weight: f64,
     structure: Structure,
     payment_frequency: Frequency,
     tenor: Period,
@@ -102,30 +111,37 @@ impl RolloverStrategy {
 
 /// # RolloverEngine
 /// Generates a loan based on a configuration and a market store.
+///
+/// ## Fields
+/// * `new_positions_currency` - Currency of the new positions
+/// * `strategies` - Strategies to generate the new positions
 #[derive(Clone)]
-pub struct RolloverEngine {
-    currency: Currency,
-    configs: Vec<RolloverStrategy>,
-    market_store: Option<Arc<MarketStore>>,
+pub struct RolloverEngine<'a> {
+    new_positions_currency: Currency,
+    strategies: Vec<RolloverStrategy>,
+    market_store: Option<&'a MarketStore>,
     amount: Option<f64>,
 }
 
-impl RolloverEngine {
-    pub fn new(currency: Currency, configs: Vec<RolloverStrategy>) -> RolloverEngine {
+impl<'a> RolloverEngine<'a> {
+    pub fn new(
+        new_positions_currency: Currency,
+        strategies: Vec<RolloverStrategy>,
+    ) -> RolloverEngine<'a> {
         RolloverEngine {
-            currency,
-            configs,
+            new_positions_currency,
+            strategies,
             market_store: None,
             amount: None,
         }
     }
 
-    pub fn with_amount(mut self, amount: f64) -> RolloverEngine {
+    pub fn with_amount(mut self, amount: f64) -> RolloverEngine<'a> {
         self.amount = Some(amount);
         self
     }
 
-    pub fn with_market_store(mut self, market_store: Arc<MarketStore>) -> RolloverEngine {
+    pub fn with_market_store(mut self, market_store: &'a MarketStore) -> RolloverEngine<'a> {
         self.market_store = Some(market_store);
         self
     }
@@ -137,7 +153,7 @@ impl RolloverEngine {
         let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
-        let model = SimpleModel::new(market_store.clone());
+        let model = SimpleModel::new(market_store);
         let data = model.gen_market_data(&indexing_visitor.request())?;
         let par_visitor = ParValueConstVisitor::new(&data);
         Ok(par_visitor.visit(&mut instrument)?)
@@ -150,35 +166,37 @@ impl RolloverEngine {
         let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
-        let model = SimpleModel::new(market_store.clone());
+        let model = SimpleModel::new(market_store);
+
         let data = model.gen_market_data(&indexing_visitor.request())?;
+
         let par_visitor = ParValueConstVisitor::new(&data);
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    pub fn generate_position(&self, config: &RolloverStrategy) -> Result<Instrument> {
-        let structure = config.structure();
+    pub fn generate_position(&self, strategies: &RolloverStrategy) -> Result<Instrument> {
+        let structure = strategies.structure();
         let amount = self
             .amount
             .ok_or(AtlasError::ValueNotSetErr("Amount".into()))?;
-        let notional = amount * config.weight();
+        let notional = amount * strategies.weight();
 
         let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
         let start_date = market_store.reference_date();
-        match config.rate_type() {
+        match strategies.rate_type() {
             RateType::Floating => {
                 let builder = MakeFloatingRateLoan::new()
                     .with_start_date(start_date)
-                    .with_tenor(config.tenor())
-                    .with_payment_frequency(config.payment_frequency())
+                    .with_tenor(strategies.tenor())
+                    .with_payment_frequency(strategies.payment_frequency())
                     .with_structure(structure)
-                    .with_side(config.side())
-                    .with_forecast_curve_id(Some(config.forecast_curve_id()))
-                    .with_discount_curve_id(Some(config.discount_curve_id()))
-                    .with_currency(self.currency)
-                    .with_rate_definition(config.rate_definition())
+                    .with_side(strategies.side())
+                    .with_forecast_curve_id(Some(strategies.forecast_curve_id()))
+                    .with_discount_curve_id(Some(strategies.discount_curve_id()))
+                    .with_currency(self.new_positions_currency)
+                    .with_rate_definition(strategies.rate_definition())
                     .with_notional(notional);
                 let spread = self.calculate_par_spread(builder.clone())?;
                 Ok(Instrument::FloatingRateInstrument(
@@ -189,12 +207,12 @@ impl RolloverEngine {
                 let builder = MakeFixedRateLoan::new()
                     .with_notional(notional)
                     .with_start_date(start_date)
-                    .with_tenor(config.tenor())
-                    .with_payment_frequency(config.payment_frequency())
-                    .with_rate_definition(config.rate_definition())
-                    .with_side(config.side())
-                    .with_currency(self.currency)
-                    .with_discount_curve_id(Some(config.discount_curve_id()))
+                    .with_tenor(strategies.tenor())
+                    .with_payment_frequency(strategies.payment_frequency())
+                    .with_rate_definition(strategies.rate_definition())
+                    .with_side(strategies.side())
+                    .with_currency(self.new_positions_currency)
+                    .with_discount_curve_id(Some(strategies.discount_curve_id()))
                     .with_structure(structure);
 
                 let rate = self.calculate_par_rate(builder.clone())?;
@@ -207,7 +225,7 @@ impl RolloverEngine {
 
     pub fn generate(&self) -> Vec<Instrument> {
         let positions = self
-            .configs
+            .strategies
             .iter()
             .map(|c| self.generate_position(c).unwrap())
             .collect();
@@ -241,13 +259,13 @@ mod tests {
         let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
         market_store
             .mut_index_store()
-            .add_index("DiscountCurve".to_string(), discount_index)?;
+            .add_index(0, discount_index)?;
         return Ok(market_store);
     }
 
     #[test]
     fn generator_tests_fixed() -> Result<()> {
-        let market_store = Arc::new(create_store()?);
+        let market_store = create_store()?;
         let configs = vec![RolloverStrategy::new(
             1.0,
             Structure::Bullet,
@@ -261,7 +279,7 @@ mod tests {
         )];
         let generator = RolloverEngine::new(Currency::USD, configs)
             .with_amount(100.0)
-            .with_market_store(market_store);
+            .with_market_store(&market_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
         Ok(())
@@ -269,7 +287,7 @@ mod tests {
 
     #[test]
     fn generator_tests_floating() -> Result<()> {
-        let market_store = Arc::new(create_store()?);
+        let market_store = create_store()?;
 
         let configs = vec![RolloverStrategy::new(
             0.5,
@@ -284,11 +302,11 @@ mod tests {
         )];
 
         let date = Date::new(2021, 9, 1) + Period::new(7, TimeUnit::Days);
-        let tmp_store = Arc::new(market_store.advance_to_date(date)?);
+        let tmp_store = market_store.advance_to_date(date)?;
 
         let generator = RolloverEngine::new(Currency::USD, configs)
             .with_amount(100.0)
-            .with_market_store(tmp_store);
+            .with_market_store(&tmp_store);
         let positions = generator.generate();
         assert_eq!(positions.len(), 1);
         Ok(())

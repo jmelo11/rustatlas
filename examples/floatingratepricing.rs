@@ -1,7 +1,5 @@
 extern crate rustatlas;
 
-use std::sync::Arc;
-
 use rustatlas::{
     instruments::makefloatingrateloan::MakeFloatingRateLoan,
     models::{simplemodel::SimpleModel, traits::Model},
@@ -25,7 +23,7 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -50,7 +48,7 @@ fn starting_today_pricing() {
         Err(e) => panic!("IndexingVisitor failed with error: {}", e),
     }
 
-    let model = SimpleModel::new(market_store);
+    let model = SimpleModel::new(&market_store);
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let fixing_visitor = FixingVisitor::new(&data);
@@ -72,7 +70,7 @@ fn starting_today_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -97,8 +95,7 @@ fn already_started_pricing() {
         Err(e) => panic!("IndexingVisitor failed with error: {}", e),
     }
 
-    let model = SimpleModel::new(market_store);
-
+    let model = SimpleModel::new(&market_store);
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let fixing_visitor = FixingVisitor::new(&data);

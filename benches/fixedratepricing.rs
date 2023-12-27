@@ -70,7 +70,7 @@ fn multiple() {
             .iter_mut()
             .for_each(|inst| indexer.visit(inst).unwrap());
 
-        let model = SimpleModel::new(store.clone());
+        let model = SimpleModel::new(&store);
         let data = model.gen_market_data(&indexer.request()).unwrap();
 
         let npv_visitor = NPVConstVisitor::new(&data, true);

@@ -119,18 +119,18 @@ pub fn create_store() -> Result<MarketStore> {
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index))?;
+        .add_index(0, Box::new(ibor_index))?;
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index))?;
+        .add_index(1, Box::new(overnigth_index))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store
         .mut_index_store()
-        .add_index("DiscountCurve".to_string(), Box::new(discount_index))?;
+        .add_index(2, Box::new(discount_index))?;
     return Ok(market_store);
 }
 
