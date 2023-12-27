@@ -182,7 +182,7 @@ impl<'de> Deserialize<'de> for Date {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Date::parse_from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
+        Date::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
     }
 }
 
@@ -195,7 +195,7 @@ impl Date {
         }
     }
 
-    pub fn parse_from_str(date: &str, fmt: &str) -> Result<Date> {
+    pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
         Ok(Date::from(base_date))
     }

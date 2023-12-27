@@ -62,7 +62,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
 #[cfg(test)]
 mod tests {
 
-    use std::{collections::HashMap, sync::Arc};
+    use std::collections::HashMap;
 
     use rayon::{
         prelude::{IntoParallelIterator, ParallelIterator},
@@ -134,18 +134,18 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index))?;
+            .add_index(0, Box::new(ibor_index))?;
 
         market_store
             .mut_index_store()
-            .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index))?;
+            .add_index(1, Box::new(overnigth_index))?;
 
         let discount_index =
             IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
         market_store
             .mut_index_store()
-            .add_index("DiscountCurve".to_string(), Box::new(discount_index))?;
+            .add_index(2, Box::new(discount_index))?;
         return Ok(market_store);
     }
 
@@ -196,14 +196,14 @@ mod tests {
             .collect(); // Collect the results into a Vec<_>
 
         fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = Arc::new(create_store().unwrap());
+            let store = create_store().unwrap();
             let mut npv = 0.0;
             let indexer = IndexingVisitor::new();
             instruments
                 .iter_mut()
                 .for_each(|inst| indexer.visit(inst).unwrap());
 
-            let model = SimpleModel::new(store.clone());
+            let model = SimpleModel::new(&store);
             let data = model.gen_market_data(&indexer.request()).unwrap();
 
             let npv_visitor = NPVConstVisitor::new(&data, true);
@@ -212,8 +212,7 @@ mod tests {
                 .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
             npv
         }
-        // let n_threads = rayon::current_num_threads();
-        // let chunk_size = instruments.len() / n_threads;
+
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
             npv(chunk);
         });

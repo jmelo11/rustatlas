@@ -133,7 +133,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
 
     use crate::{
         cashflows::cashflow::Side,
@@ -185,7 +184,7 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index("DiscountCurve".to_string(), Box::new(ibor_index))?;
+            .add_index(0, Box::new(ibor_index))?;
         Ok(market_store)
     }
 
@@ -215,11 +214,11 @@ mod tests {
             .bullet()
             .build()?;
 
-        let market_store = Arc::new(create_store()?);
+        let market_store = create_store()?;
         let indexer = IndexingVisitor::new();
         let _ = indexer.visit(&mut instrument);
 
-        let model = SimpleModel::new(market_store);
+        let model = SimpleModel::new(&market_store);
         let data = model.gen_market_data(&indexer.request())?;
         let zspread_rate_definition = RateDefinition::new(
             DayCounter::Actual360,
