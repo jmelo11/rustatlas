@@ -176,20 +176,19 @@ mod tests {
             enable_extrapolation,
         )?;
 
-        let df = zero_rate_term_structure
-            .discount_factor(Date::new(2022, 6, 1))
-            .unwrap();
-        println!("df: {}", df);
+        years.iter().for_each(|x| {
+            let forward_rate = zero_rate_term_structure
+                .forward_rate(
+                    reference_date,
+                    reference_date + Period::new(*x, TimeUnit::Years),
+                    Compounding::Compounded,
+                    Frequency::Annual,
+                )
+                .unwrap();
+            let tmp = *x as f64;
+            assert!(forward_rate - tmp < 1e-10);
+        });
 
-        let forward_rate = zero_rate_term_structure
-            .forward_rate(
-                reference_date,
-                reference_date + Period::new(1, TimeUnit::Years),
-                Compounding::Compounded,
-                Frequency::Annual,
-            )
-            .unwrap();
-        assert!(forward_rate - 0.01 < 1e-10);
         Ok(())
     }
 }

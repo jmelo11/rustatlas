@@ -73,9 +73,7 @@ impl YieldProvider for CompositeTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
-
         let add_df = spread_discount_factor * base_discount_factor;
-
         return Ok(add_df);
     }
 
@@ -214,4 +212,7 @@ mod test {
 
         assert!(df.unwrap() - 0.9702040771633191 < 0.00001);
     }
+
+
+
 }
