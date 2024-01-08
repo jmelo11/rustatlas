@@ -45,6 +45,7 @@ pub struct MakeFixedRateLoan {
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
     id: Option<usize>,
+    yield_rate : Option<InterestRate>
 }
 
 /// New, setters and getters
@@ -68,6 +69,7 @@ impl MakeFixedRateLoan {
             rate_definition: None,
             rate_value: None,
             id: None,
+            yield_rate : None
         }
     }
 
@@ -97,6 +99,11 @@ impl MakeFixedRateLoan {
 
     pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
         self.id = id;
+        self
+    }
+
+    pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateLoan {
+        self.yield_rate = Some(yield_rate);
         self
     }
 
@@ -351,6 +358,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.yield_rate
                 ))
             }
             Structure::Other => {
@@ -425,6 +433,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.yield_rate
                 ))
             }
             Structure::EqualPayments => {
@@ -514,6 +523,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.yield_rate
                 ))
             }
             Structure::Zero => {
@@ -588,6 +598,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.yield_rate
                 ))
             }
             Structure::EqualRedemptions => {
@@ -674,6 +685,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.yield_rate
                 ))
             }
         }
