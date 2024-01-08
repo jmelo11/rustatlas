@@ -138,7 +138,7 @@ mod tests {
         cashflows::cashflow::Side,
         core::marketstore::MarketStore,
         currencies::enums::Currency,
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         models::{simplemodel::SimpleModel, traits::Model},
         rates::{
             enums::Compounding,
@@ -202,7 +202,7 @@ mod tests {
             ),
         );
 
-        let mut instrument = MakeFixedRateLoan::new()
+        let mut instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate(rate)

@@ -100,7 +100,7 @@ impl CashAccount {
 #[cfg(test)]
 mod tests {
     use crate::{
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             daycounter::DayCounter,
@@ -121,7 +121,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -167,7 +167,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument1 = MakeFixedRateLoan::new()
+        let instrument1 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -180,7 +180,7 @@ mod tests {
 
         let start_date = Date::new(2020, 2, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
-        let instrument2 = MakeFixedRateLoan::new()
+        let instrument2 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)

@@ -1,14 +1,13 @@
 extern crate rustatlas;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
-    alm::enums::Instrument,
     cashflows::{
         cashflow::{Cashflow, Side},
         traits::Payable,
     },
     core::{marketstore::MarketStore, meta::MarketData},
     currencies::enums::Currency,
-    instruments::makefixedrateloan::MakeFixedRateLoan,
+    instruments::{instrument::Instrument, makefixedrateinstrument::MakeFixedRateInstrument},
     rates::{
         interestrate::RateDefinition,
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
@@ -217,7 +216,7 @@ impl Mock for MockMaker {
                 let notional = MockMaker::random_notional();
                 let random_currency = MockMaker::random_currency();
                 let payment_frequency = MockMaker::random_frequency();
-                let instrument = MakeFixedRateLoan::new()
+                let instrument = MakeFixedRateInstrument::new()
                     .with_start_date(start_date)
                     .with_end_date(end_date)
                     .with_payment_frequency(payment_frequency)

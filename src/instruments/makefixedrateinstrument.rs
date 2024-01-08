@@ -24,10 +24,10 @@ use super::{
     traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
 };
 
-/// # MakeFixedRateLoan
-/// MakeFixedRateLoan is a builder for FixedRateInstrument. Uses the builder pattern.
+/// # MakeFixedRateInstrument
+/// MakeFixedRateInstrument is a builder for FixedRateInstrument. Uses the builder pattern.
 #[derive(Debug, Clone)]
-pub struct MakeFixedRateLoan {
+pub struct MakeFixedRateInstrument {
     start_date: Option<Date>,
     end_date: Option<Date>,
     first_coupon_date: Option<Date>,
@@ -45,12 +45,13 @@ pub struct MakeFixedRateLoan {
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
     id: Option<usize>,
+    issue_date: Option<Date>,
 }
 
 /// New, setters and getters
-impl MakeFixedRateLoan {
-    pub fn new() -> MakeFixedRateLoan {
-        MakeFixedRateLoan {
+impl MakeFixedRateInstrument {
+    pub fn new() -> MakeFixedRateInstrument {
+        MakeFixedRateInstrument {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -68,40 +69,50 @@ impl MakeFixedRateLoan {
             rate_definition: None,
             rate_value: None,
             id: None,
+            issue_date: None,
         }
     }
 
+    /// Sets the issue date.
+    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFixedRateInstrument {
+        self.issue_date = Some(issue_date);
+        self
+    }
+
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFixedRateLoan {
+    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFixedRateInstrument {
         self.first_coupon_date = Some(first_coupon_date);
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeFixedRateLoan {
+    pub fn with_currency(mut self, currency: Currency) -> MakeFixedRateInstrument {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
-    pub fn with_side(mut self, side: Side) -> MakeFixedRateLoan {
+    pub fn with_side(mut self, side: Side) -> MakeFixedRateInstrument {
         self.side = Some(side);
         self
     }
 
     /// Sets the notional.
-    pub fn with_notional(mut self, notional: f64) -> MakeFixedRateLoan {
+    pub fn with_notional(mut self, notional: f64) -> MakeFixedRateInstrument {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
         self.id = id;
         self
     }
 
     /// Sets the rate definition.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFixedRateLoan {
+    pub fn with_rate_definition(
+        mut self,
+        rate_definition: RateDefinition,
+    ) -> MakeFixedRateInstrument {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -128,7 +139,7 @@ impl MakeFixedRateLoan {
     }
 
     /// Sets the rate value.
-    pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateLoan {
+    pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateInstrument {
         self.rate_value = Some(rate_value);
         match self.rate {
             Some(rate) => {
@@ -155,25 +166,28 @@ impl MakeFixedRateLoan {
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFixedRateLoan {
+    pub fn with_start_date(mut self, start_date: Date) -> MakeFixedRateInstrument {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFixedRateLoan {
+    pub fn with_end_date(mut self, end_date: Date) -> MakeFixedRateInstrument {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the disbursements.
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFixedRateLoan {
+    pub fn with_disbursements(
+        mut self,
+        disbursements: HashMap<Date, f64>,
+    ) -> MakeFixedRateInstrument {
         self.disbursements = Some(disbursements);
         self
     }
 
     /// Sets the redemptions.
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFixedRateLoan {
+    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFixedRateInstrument {
         self.redemptions = Some(redemptions);
         self
     }
@@ -182,75 +196,75 @@ impl MakeFixedRateLoan {
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFixedRateLoan {
+    ) -> MakeFixedRateInstrument {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
     /// Sets the rate.
-    pub fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateLoan {
+    pub fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateInstrument {
         self.rate = Some(rate);
         self
     }
 
     /// Sets the discount curve id.
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateLoan {
+    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFixedRateLoan {
+    pub fn with_tenor(mut self, tenor: Period) -> MakeFixedRateInstrument {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateLoan {
+    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateInstrument {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure to bullet.
-    pub fn bullet(mut self) -> MakeFixedRateLoan {
+    pub fn bullet(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the structure to equal redemptions.
-    pub fn equal_redemptions(mut self) -> MakeFixedRateLoan {
+    pub fn equal_redemptions(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the structure to zero.
-    pub fn zero(mut self) -> MakeFixedRateLoan {
+    pub fn zero(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
     /// Sets the structure to equal payments.
-    pub fn equal_payments(mut self) -> MakeFixedRateLoan {
+    pub fn equal_payments(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::EqualPayments);
         self
     }
 
     /// Sets the structure to other.
-    pub fn other(mut self) -> MakeFixedRateLoan {
+    pub fn other(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
     /// Sets the structure.
-    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateLoan {
+    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateInstrument {
         self.structure = Some(structure);
         self
     }
 }
 
-impl MakeFixedRateLoan {
+impl MakeFixedRateInstrument {
     pub fn build(self) -> Result<FixedRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -287,13 +301,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => { 
+                    Some(date) => {
                         if date != start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
                             schedule_builder.build()?
                         }
-                    },
+                    }
                     None => schedule_builder.build()?,
                 };
 
@@ -351,6 +365,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::Other => {
@@ -425,6 +440,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::EqualPayments => {
@@ -444,13 +460,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => { 
+                    Some(date) => {
                         if date != start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
                             schedule_builder.build()?
                         }
-                    },
+                    }
                     None => schedule_builder.build()?,
                 };
 
@@ -514,6 +530,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::Zero => {
@@ -588,6 +605,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -607,13 +625,13 @@ impl MakeFixedRateLoan {
                     MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => { 
+                    Some(date) => {
                         if date != start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
                             schedule_builder.build()?
                         }
-                    },
+                    }
                     None => schedule_builder.build()?,
                 };
 
@@ -674,6 +692,7 @@ impl MakeFixedRateLoan {
                     currency,
                     self.discount_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
         }
@@ -763,8 +782,8 @@ fn calculate_redemptions(
     Ok(redemptions)
 }
 
-impl Into<MakeFixedRateLoan> for FixedRateInstrument {
-    fn into(self) -> MakeFixedRateLoan {
+impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
+    fn into(self) -> MakeFixedRateInstrument {
         match self.structure() {
             Structure::Other => {
                 let mut disbursements = HashMap::new();
@@ -785,7 +804,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
                         _ => (),
                     }
                 }
-                MakeFixedRateLoan::new()
+                MakeFixedRateInstrument::new()
                     .with_start_date(self.start_date())
                     .with_end_date(self.end_date())
                     .with_disbursements(disbursements)
@@ -798,7 +817,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
                     .with_side(self.side())
                     .with_currency(self.currency())
             }
-            _ => MakeFixedRateLoan::new()
+            _ => MakeFixedRateInstrument::new()
                 .with_start_date(self.start_date())
                 .with_end_date(self.end_date())
                 .with_payment_frequency(self.payment_frequency())
@@ -812,7 +831,7 @@ impl Into<MakeFixedRateLoan> for FixedRateInstrument {
     }
 }
 
-impl From<&FixedRateInstrument> for MakeFixedRateLoan {
+impl From<&FixedRateInstrument> for MakeFixedRateInstrument {
     fn from(val: &FixedRateInstrument) -> Self {
         val.clone().into()
     }
@@ -827,7 +846,7 @@ mod tests {
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -850,7 +869,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -881,7 +900,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 1000.0;
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Monthly)
@@ -949,7 +968,7 @@ mod tests {
         let first_coupon_date = start_date + Period::new(delay, TimeUnit::Months);
 
         let notional = 1000.0;
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_first_coupon_date(first_coupon_date)
@@ -1010,7 +1029,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -1045,7 +1064,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_tenor(Period::new(5, TimeUnit::Years))
             .with_payment_frequency(Frequency::Semiannual)
@@ -1080,7 +1099,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate(rate)
@@ -1114,7 +1133,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_tenor(tenor)
             .with_rate(rate)
@@ -1160,7 +1179,7 @@ mod tests {
             DayCounter::Actual360,
         );
 
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
@@ -1194,7 +1213,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 100.0;
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Monthly)
@@ -1205,7 +1224,7 @@ mod tests {
             .equal_payments()
             .build()?;
 
-        let builder: MakeFixedRateLoan = instrument.clone().into();
+        let builder: MakeFixedRateInstrument = instrument.clone().into();
         let instrument2 = builder.build()?;
         assert_eq!(instrument2.notional(), instrument.notional());
         assert_eq!(instrument2.rate(), instrument.rate());
@@ -1234,7 +1253,7 @@ mod tests {
             DayCounter::Actual360,
         );
         let notional = 100.0;
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Monthly)
@@ -1245,7 +1264,7 @@ mod tests {
             .equal_payments()
             .build()?;
 
-        let builder: MakeFixedRateLoan = MakeFixedRateLoan::from(&instrument);
+        let builder: MakeFixedRateInstrument = MakeFixedRateInstrument::from(&instrument);
         let instrument2 = builder.build()?;
 
         assert_eq!(instrument2.notional(), instrument.notional());

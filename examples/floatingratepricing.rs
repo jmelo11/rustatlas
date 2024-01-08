@@ -1,7 +1,7 @@
 extern crate rustatlas;
 
 use rustatlas::{
-    instruments::makefloatingrateloan::MakeFloatingRateLoan,
+    instruments::makefloatingrateinstrument::MakeFloatingRateInstrument,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::traits::HasReferenceDate,
     time::{
@@ -30,7 +30,7 @@ fn starting_today_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new()
+    let mut instrument = MakeFloatingRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_payment_frequency(Frequency::Semiannual)
@@ -77,7 +77,7 @@ fn already_started_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new()
+    let mut instrument = MakeFloatingRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_payment_frequency(Frequency::Semiannual)

@@ -5,7 +5,7 @@ use rustatlas::{
         cashflow::Side,
         traits::{InterestAccrual, Payable},
     },
-    instruments::makefixedrateloan::MakeFixedRateLoan,
+    instruments::makefixedrateinstrument::MakeFixedRateInstrument,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
     time::{
@@ -40,7 +40,7 @@ fn starting_today_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)
@@ -117,7 +117,7 @@ fn forward_starting_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)
@@ -170,7 +170,7 @@ fn already_started_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)

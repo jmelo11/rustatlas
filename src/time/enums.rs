@@ -23,9 +23,11 @@ pub enum Frequency {
     OtherFrequency = 999,
 }
 
-impl Frequency {
-    pub fn from_str(s: &str) -> Result<Frequency> {
-        match s {
+impl TryFrom<String> for Frequency {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "NoFrequency" => Ok(Frequency::NoFrequency),
             "Once" => Ok(Frequency::Once),
             "Annual" => Ok(Frequency::Annual),
@@ -47,6 +49,26 @@ impl Frequency {
     }
 }
 
+impl From<Frequency> for String {
+    fn from(frequency: Frequency) -> Self {
+        match frequency {
+            Frequency::NoFrequency => "NoFrequency".to_string(),
+            Frequency::Once => "Once".to_string(),
+            Frequency::Annual => "Annual".to_string(),
+            Frequency::Semiannual => "Semiannual".to_string(),
+            Frequency::EveryFourthMonth => "EveryFourthMonth".to_string(),
+            Frequency::Quarterly => "Quarterly".to_string(),
+            Frequency::Bimonthly => "Bimonthly".to_string(),
+            Frequency::Monthly => "Monthly".to_string(),
+            Frequency::EveryFourthWeek => "EveryFourthWeek".to_string(),
+            Frequency::Biweekly => "Biweekly".to_string(),
+            Frequency::Weekly => "Weekly".to_string(),
+            Frequency::Daily => "Daily".to_string(),
+            Frequency::OtherFrequency => "OtherFrequency".to_string(),
+        }
+    }
+}
+
 /// # TimeUnit
 /// Enum representing a time unit.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
@@ -57,9 +79,11 @@ pub enum TimeUnit {
     Years,
 }
 
-impl TimeUnit {
-    pub fn from_str(s: &str) -> Result<TimeUnit> {
-        match s {
+impl TryFrom<String> for TimeUnit {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Days" => Ok(TimeUnit::Days),
             "Weeks" => Ok(TimeUnit::Weeks),
             "Months" => Ok(TimeUnit::Months),
@@ -68,6 +92,17 @@ impl TimeUnit {
                 "Invalid time unit: {}",
                 s
             ))),
+        }
+    }
+}
+
+impl From<TimeUnit> for String {
+    fn from(time_unit: TimeUnit) -> Self {
+        match time_unit {
+            TimeUnit::Days => "Days".to_string(),
+            TimeUnit::Weeks => "Weeks".to_string(),
+            TimeUnit::Months => "Months".to_string(),
+            TimeUnit::Years => "Years".to_string(),
         }
     }
 }
@@ -90,9 +125,11 @@ pub enum Month {
     December,
 }
 
-impl Month {
-    pub fn from_str(s: &str) -> Result<Month> {
-        match s {
+impl TryFrom<String> for Month {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "January" => Ok(Month::January),
             "February" => Ok(Month::February),
             "March" => Ok(Month::March),
@@ -106,6 +143,25 @@ impl Month {
             "November" => Ok(Month::November),
             "December" => Ok(Month::December),
             _ => Err(AtlasError::InvalidValueErr(format!("Invalid month: {}", s))),
+        }
+    }
+}
+
+impl From<Month> for String {
+    fn from(month: Month) -> Self {
+        match month {
+            Month::January => "January".to_string(),
+            Month::February => "February".to_string(),
+            Month::March => "March".to_string(),
+            Month::April => "April".to_string(),
+            Month::May => "May".to_string(),
+            Month::June => "June".to_string(),
+            Month::July => "July".to_string(),
+            Month::August => "August".to_string(),
+            Month::September => "September".to_string(),
+            Month::October => "October".to_string(),
+            Month::November => "November".to_string(),
+            Month::December => "December".to_string(),
         }
     }
 }
@@ -144,9 +200,11 @@ pub enum DateGenerationRule {
     CDS2015,
 }
 
-impl DateGenerationRule {
-    pub fn from_str(s: &str) -> Result<DateGenerationRule> {
-        match s {
+impl TryFrom<String> for DateGenerationRule {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Backward" => Ok(DateGenerationRule::Backward),
             "Forward" => Ok(DateGenerationRule::Forward),
             "Zero" => Ok(DateGenerationRule::Zero),
@@ -165,6 +223,23 @@ impl DateGenerationRule {
     }
 }
 
+impl From<DateGenerationRule> for String {
+    fn from(date_generation_rule: DateGenerationRule) -> Self {
+        match date_generation_rule {
+            DateGenerationRule::Backward => "Backward".to_string(),
+            DateGenerationRule::Forward => "Forward".to_string(),
+            DateGenerationRule::Zero => "Zero".to_string(),
+            DateGenerationRule::ThirdWednesday => "ThirdWednesday".to_string(),
+            DateGenerationRule::ThirdWednesdayInclusive => "ThirdWednesdayInclusive".to_string(),
+            DateGenerationRule::Twentieth => "Twentieth".to_string(),
+            DateGenerationRule::TwentiethIMM => "TwentiethIMM".to_string(),
+            DateGenerationRule::OldCDS => "OldCDS".to_string(),
+            DateGenerationRule::CDS => "CDS".to_string(),
+            DateGenerationRule::CDS2015 => "CDS2015".to_string(),
+        }
+    }
+}
+
 /// # BusinessDayConvention
 /// Enum representing a business day convention.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -178,9 +253,11 @@ pub enum BusinessDayConvention {
     Nearest,
 }
 
-impl BusinessDayConvention {
-    pub fn from_str(s: &str) -> Result<BusinessDayConvention> {
-        match s {
+impl TryFrom<String> for BusinessDayConvention {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Following" => Ok(BusinessDayConvention::Following),
             "ModifiedFollowing" => Ok(BusinessDayConvention::ModifiedFollowing),
             "Preceding" => Ok(BusinessDayConvention::Preceding),
@@ -192,6 +269,22 @@ impl BusinessDayConvention {
                 "Invalid business day convention: {}",
                 s
             ))),
+        }
+    }
+}
+
+impl From<BusinessDayConvention> for String {
+    fn from(business_day_convention: BusinessDayConvention) -> Self {
+        match business_day_convention {
+            BusinessDayConvention::Following => "Following".to_string(),
+            BusinessDayConvention::ModifiedFollowing => "ModifiedFollowing".to_string(),
+            BusinessDayConvention::Preceding => "Preceding".to_string(),
+            BusinessDayConvention::ModifiedPreceding => "ModifiedPreceding".to_string(),
+            BusinessDayConvention::Unadjusted => "Unadjusted".to_string(),
+            BusinessDayConvention::HalfMonthModifiedFollowing => {
+                "HalfMonthModifiedFollowing".to_string()
+            }
+            BusinessDayConvention::Nearest => "Nearest".to_string(),
         }
     }
 }
@@ -209,9 +302,11 @@ pub enum Weekday {
     Saturday,
 }
 
-impl Weekday {
-    pub fn from_str(s: &str) -> Result<Weekday> {
-        match s {
+impl TryFrom<String> for Weekday {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Sunday" => Ok(Weekday::Sunday),
             "Monday" => Ok(Weekday::Monday),
             "Tuesday" => Ok(Weekday::Tuesday),
@@ -223,6 +318,20 @@ impl Weekday {
                 "Invalid weekday: {}",
                 s
             ))),
+        }
+    }
+}
+
+impl From<Weekday> for String {
+    fn from(weekday: Weekday) -> Self {
+        match weekday {
+            Weekday::Sunday => "Sunday".to_string(),
+            Weekday::Monday => "Monday".to_string(),
+            Weekday::Tuesday => "Tuesday".to_string(),
+            Weekday::Wednesday => "Wednesday".to_string(),
+            Weekday::Thursday => "Thursday".to_string(),
+            Weekday::Friday => "Friday".to_string(),
+            Weekday::Saturday => "Saturday".to_string(),
         }
     }
 }

@@ -20,9 +20,11 @@ pub enum Currency {
     CHF,
 }
 
-impl Currency {
-    pub fn from_str(s: &str) -> Result<Currency> {
-        match s {
+impl TryFrom<String> for Currency {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "USD" => Ok(Currency::USD),
             "EUR" => Ok(Currency::EUR),
             "JPY" => Ok(Currency::JPY),
@@ -34,6 +36,20 @@ impl Currency {
                 "Invalid currency: {}",
                 s
             ))),
+        }
+    }
+}
+
+impl From<Currency> for String {
+    fn from(currency: Currency) -> Self {
+        match currency {
+            Currency::USD => "USD".to_string(),
+            Currency::EUR => "EUR".to_string(),
+            Currency::JPY => "JPY".to_string(),
+            Currency::ZAR => "ZAR".to_string(),
+            Currency::CLP => "CLP".to_string(),
+            Currency::CLF => "CLF".to_string(),
+            Currency::CHF => "CHF".to_string(),
         }
     }
 }

@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::BTreeMap, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
@@ -11,28 +8,34 @@ use crate::{
         traits::Payable,
     },
     core::traits::HasCurrency,
+    currencies::enums::Currency,
     time::date::Date,
-    utils::errors::Result, currencies::enums::Currency,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{ConstVisit, HasCashflows};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AggregationConstVisitor {
-    currency: Currency,
-    redemptions: Arc<Mutex<BTreeMap<Date, f64>>>,
-    disbursements: Arc<Mutex<BTreeMap<Date, f64>>>,
-    interest: Arc<Mutex<BTreeMap<Date, f64>>>,
+pub struct CashflowsAggregatorConstVisitor {
+    redemptions: Mutex<BTreeMap<Date, f64>>,
+    disbursements: Mutex<BTreeMap<Date, f64>>,
+    interest: Mutex<BTreeMap<Date, f64>>,
+    validation_currency: Option<Currency>,
 }
 
-impl AggregationConstVisitor {
-    pub fn new(currency: Currency) -> Self {
+impl CashflowsAggregatorConstVisitor {
+    pub fn new() -> Self {
         Self {
-            currency,
-            redemptions: Arc::new(Mutex::new(BTreeMap::new())),
-            disbursements: Arc::new(Mutex::new(BTreeMap::new())),
-            interest: Arc::new(Mutex::new(BTreeMap::new())),
+            redemptions: Mutex::new(BTreeMap::new()),
+            disbursements: Mutex::new(BTreeMap::new()),
+            interest: Mutex::new(BTreeMap::new()),
+            validation_currency: None,
         }
+    }
+
+    pub fn with_validate_currency(mut self, currency: Currency) -> Self {
+        self.validation_currency = Some(currency);
+        self
     }
 
     pub fn redemptions(&self) -> BTreeMap<Date, f64> {
@@ -48,7 +51,7 @@ impl AggregationConstVisitor {
     }
 }
 
-impl<T: HasCashflows> ConstVisit<T> for AggregationConstVisitor {
+impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
     type Output = Result<()>;
 
     fn visit(&self, visitable: &T) -> Self::Output {
@@ -56,9 +59,19 @@ impl<T: HasCashflows> ConstVisit<T> for AggregationConstVisitor {
             .cashflows()
             .iter()
             .try_for_each(|cf| -> Result<()> {
-                if self.currency != cf.currency()? {
-                    return Ok(());
+                match self.validation_currency {
+                    Some(currency) => {
+                        if cf.currency()? != currency {
+                            return Err(AtlasError::InvalidValueErr(format!(
+                                "Cashflow currency {:?} does not match visitor currency {:?}",
+                                cf.currency()?,
+                                currency
+                            )));
+                        }
+                    }
+                    None => {} // do nothing
                 }
+
                 let side = cf.side();
                 let amount = match side {
                     Side::Pay => -cf.amount()?,
@@ -104,7 +117,7 @@ mod tests {
     use super::*;
     use crate::cashflows::cashflow::Side;
     use crate::currencies::enums::Currency;
-    use crate::instruments::makefixedrateloan::MakeFixedRateLoan;
+    use crate::instruments::makefixedrateinstrument::MakeFixedRateInstrument;
     use crate::rates::enums::Compounding;
     use crate::rates::interestrate::InterestRate;
     use crate::time::date::Date;
@@ -113,7 +126,7 @@ mod tests {
     use crate::time::enums::TimeUnit;
     use crate::time::period::Period;
 
-    use super::AggregationConstVisitor;
+    use super::CashflowsAggregatorConstVisitor;
 
     #[test]
     fn test_aggregation_const_visitor() {
@@ -125,7 +138,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        let instrument_1 = MakeFixedRateLoan::new()
+        let instrument_1 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -137,7 +150,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let instrument_2 = MakeFixedRateLoan::new()
+        let instrument_2 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date + Period::new(1, TimeUnit::Years))
             .with_payment_frequency(Frequency::Semiannual)
@@ -149,7 +162,7 @@ mod tests {
             .build()
             .unwrap();
 
-        let visitor = AggregationConstVisitor::new(Currency::USD);
+        let visitor = CashflowsAggregatorConstVisitor::new().with_validate_currency(Currency::USD);
         let _ = visitor.visit(&instrument_1);
         let _ = visitor.visit(&instrument_2);
 

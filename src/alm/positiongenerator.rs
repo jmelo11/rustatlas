@@ -5,7 +5,9 @@ use crate::{
     core::marketstore::MarketStore,
     currencies::enums::Currency,
     instruments::{
-        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
+        instrument::{Instrument, RateType},
+        makefixedrateinstrument::MakeFixedRateInstrument,
+        makefloatingrateinstrument::MakeFloatingRateInstrument,
         traits::Structure,
     },
     models::{simplemodel::SimpleModel, traits::Model},
@@ -18,8 +20,6 @@ use crate::{
         traits::{ConstVisit, Visit},
     },
 };
-
-use super::enums::{Instrument, RateType};
 
 /// # RolloverStrategy
 /// Configuration for a loan. It holds the data required to generate a loan.
@@ -109,26 +109,26 @@ impl RolloverStrategy {
     }
 }
 
-/// # RolloverEngine
+/// # PositionGenerator
 /// Generates a loan based on a configuration and a market store.
 ///
 /// ## Fields
 /// * `new_positions_currency` - Currency of the new positions
 /// * `strategies` - Strategies to generate the new positions
 #[derive(Clone)]
-pub struct RolloverEngine<'a> {
+pub struct PositionGenerator<'a> {
     new_positions_currency: Currency,
     strategies: Vec<RolloverStrategy>,
     market_store: Option<&'a MarketStore>,
     amount: Option<f64>,
 }
 
-impl<'a> RolloverEngine<'a> {
+impl<'a> PositionGenerator<'a> {
     pub fn new(
         new_positions_currency: Currency,
         strategies: Vec<RolloverStrategy>,
-    ) -> RolloverEngine<'a> {
-        RolloverEngine {
+    ) -> PositionGenerator<'a> {
+        PositionGenerator {
             new_positions_currency,
             strategies,
             market_store: None,
@@ -136,17 +136,17 @@ impl<'a> RolloverEngine<'a> {
         }
     }
 
-    pub fn with_amount(mut self, amount: f64) -> RolloverEngine<'a> {
+    pub fn with_amount(mut self, amount: f64) -> PositionGenerator<'a> {
         self.amount = Some(amount);
         self
     }
 
-    pub fn with_market_store(mut self, market_store: &'a MarketStore) -> RolloverEngine<'a> {
+    pub fn with_market_store(mut self, market_store: &'a MarketStore) -> PositionGenerator<'a> {
         self.market_store = Some(market_store);
         self
     }
 
-    fn calculate_par_spread(&self, builder: MakeFloatingRateLoan) -> Result<f64> {
+    fn calculate_par_spread(&self, builder: MakeFloatingRateInstrument) -> Result<f64> {
         let mut instrument = builder.with_spread(0.01).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
@@ -159,7 +159,7 @@ impl<'a> RolloverEngine<'a> {
         Ok(par_visitor.visit(&mut instrument)?)
     }
 
-    fn calculate_par_rate(&self, builder: MakeFixedRateLoan) -> Result<f64> {
+    fn calculate_par_rate(&self, builder: MakeFixedRateInstrument) -> Result<f64> {
         let mut instrument = builder.with_rate_value(0.03).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
@@ -187,7 +187,8 @@ impl<'a> RolloverEngine<'a> {
         let start_date = market_store.reference_date();
         match strategies.rate_type() {
             RateType::Floating => {
-                let builder = MakeFloatingRateLoan::new()
+                let builder = MakeFloatingRateInstrument::new()
+                    .with_issue_date(start_date)
                     .with_start_date(start_date)
                     .with_tenor(strategies.tenor())
                     .with_payment_frequency(strategies.payment_frequency())
@@ -204,7 +205,8 @@ impl<'a> RolloverEngine<'a> {
                 ))
             }
             RateType::Fixed => {
-                let builder = MakeFixedRateLoan::new()
+                let builder = MakeFixedRateInstrument::new()
+                    .with_issue_date(start_date)
                     .with_notional(notional)
                     .with_start_date(start_date)
                     .with_tenor(strategies.tenor())
@@ -277,7 +279,7 @@ mod tests {
             0,
             None,
         )];
-        let generator = RolloverEngine::new(Currency::USD, configs)
+        let generator = PositionGenerator::new(Currency::USD, configs)
             .with_amount(100.0)
             .with_market_store(&market_store);
         let positions = generator.generate();
@@ -304,7 +306,7 @@ mod tests {
         let date = Date::new(2021, 9, 1) + Period::new(7, TimeUnit::Days);
         let tmp_store = market_store.advance_to_date(date)?;
 
-        let generator = RolloverEngine::new(Currency::USD, configs)
+        let generator = PositionGenerator::new(Currency::USD, configs)
             .with_amount(100.0)
             .with_market_store(&tmp_store);
         let positions = generator.generate();

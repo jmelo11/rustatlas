@@ -41,12 +41,25 @@ impl Side {
             Side::Receive => Side::Pay,
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Result<Side> {
-        match s {
+impl TryFrom<String> for Side {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Pay" => Ok(Side::Pay),
             "Receive" => Ok(Side::Receive),
             _ => Err(AtlasError::InvalidValueErr(format!("Invalid side: {}", s))),
+        }
+    }
+}
+
+impl From<Side> for String {
+    fn from(side: Side) -> Self {
+        match side {
+            Side::Pay => "Pay".to_string(),
+            Side::Receive => "Receive".to_string(),
         }
     }
 }

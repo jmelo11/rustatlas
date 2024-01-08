@@ -9,6 +9,15 @@ pub struct WeekendsOnly {
     removed_holidays: HashSet<Date>,
 }
 
+impl WeekendsOnly {
+    pub fn new() -> Self {
+        WeekendsOnly {
+            added_holidays: HashSet::new(),
+            removed_holidays: HashSet::new(),
+        }
+    }
+}
+
 impl ImplCalendar for WeekendsOnly {
     fn impl_is_business_day(&self, date: &Date) -> bool {
         !self.is_weekend(&date.weekday())
@@ -49,7 +58,10 @@ impl IsCalendar for WeekendsOnly {}
 mod tests {
     use std::collections::HashSet;
 
-    use crate::time::{calendars::{weekendsonly::WeekendsOnly, traits::IsCalendar}, date::Date};
+    use crate::time::{
+        calendars::{traits::IsCalendar, weekendsonly::WeekendsOnly},
+        date::Date,
+    };
 
     #[test]
     fn test_weekendsonly() {

@@ -23,9 +23,11 @@ pub enum Structure {
     Other,
 }
 
-impl Structure {
-    pub fn from_str(s: &str) -> Result<Structure> {
-        match s {
+impl TryFrom<String> for Structure {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Bullet" => Ok(Structure::Bullet),
             "EqualRedemptions" => Ok(Structure::EqualRedemptions),
             "Zero" => Ok(Structure::Zero),
@@ -39,10 +41,52 @@ impl Structure {
     }
 }
 
+impl From<Structure> for String {
+    fn from(structure: Structure) -> Self {
+        match structure {
+            Structure::Bullet => "Bullet".to_string(),
+            Structure::EqualRedemptions => "EqualRedemptions".to_string(),
+            Structure::Zero => "Zero".to_string(),
+            Structure::EqualPayments => "EqualPayments".to_string(),
+            Structure::Other => "Other".to_string(),
+        }
+    }
+}
+
 /// # CashflowType
 pub enum CashflowType {
     Redemption,
     Disbursement,
+    FixedRateCoupon,
+    FloatingRateCoupon,
+}
+
+impl TryFrom<String> for CashflowType {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "Redemption" => Ok(CashflowType::Redemption),
+            "Disbursement" => Ok(CashflowType::Disbursement),
+            "FixedRateCoupon" => Ok(CashflowType::FixedRateCoupon),
+            "FloatingRateCoupon" => Ok(CashflowType::FloatingRateCoupon),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid cashflow type: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<CashflowType> for String {
+    fn from(cashflow_type: CashflowType) -> Self {
+        match cashflow_type {
+            CashflowType::Redemption => "Redemption".to_string(),
+            CashflowType::Disbursement => "Disbursement".to_string(),
+            CashflowType::FixedRateCoupon => "FixedRateCoupon".to_string(),
+            CashflowType::FloatingRateCoupon => "FloatingRateCoupon".to_string(),
+        }
+    }
 }
 
 pub fn build_cashflows(
@@ -58,6 +102,7 @@ pub fn build_cashflows(
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
+            _ => (),
         }
     }
 }

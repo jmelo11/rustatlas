@@ -535,7 +535,7 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let date = Date::parse_from_str("2020-01-15", "%Y-%m-%d").unwrap();
+        let date = Date::from_str("2020-01-15", "%Y-%m-%d").unwrap();
         assert_eq!(date, Date::new(2020, 1, 15));
     }
 }

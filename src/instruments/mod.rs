@@ -1,7 +1,8 @@
 pub mod fixedrateinstrument;
 pub mod floatingrateinstrument;
 pub mod traits;
-pub mod makefixedrateloan;
-pub mod makefloatingrateloan;
+pub mod makefixedrateinstrument;
+pub mod makefloatingrateinstrument;
 pub mod fixfloatswap;
 pub mod makefixfloatswap;
+pub mod instrument;

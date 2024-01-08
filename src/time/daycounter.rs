@@ -33,9 +33,13 @@ impl DayCounter {
             DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Result<DayCounter> {
-        match s {
+impl TryFrom<String> for DayCounter {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
             "Actual360" => Ok(DayCounter::Actual360),
             "Actual365" => Ok(DayCounter::Actual365),
             "Thirty360" => Ok(DayCounter::Thirty360),
@@ -43,6 +47,16 @@ impl DayCounter {
                 "Invalid day counter: {}",
                 s
             ))),
+        }
+    }
+}
+
+impl From<DayCounter> for String {
+    fn from(day_counter: DayCounter) -> Self {
+        match day_counter {
+            DayCounter::Actual360 => "Actual360".to_string(),
+            DayCounter::Actual365 => "Actual365".to_string(),
+            DayCounter::Thirty360 => "Thirty360".to_string(),
         }
     }
 }

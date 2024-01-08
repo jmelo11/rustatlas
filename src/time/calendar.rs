@@ -1,8 +1,13 @@
-use super::calendars::nullcalendar::NullCalendar;
-use super::calendars::target::TARGET;
-use super::calendars::traits::{ImplCalendar, IsCalendar};
-use super::calendars::weekendsonly::WeekendsOnly;
-use crate::time::date::Date;
+use super::calendars::{
+    nullcalendar::NullCalendar,
+    target::TARGET,
+    traits::{ImplCalendar, IsCalendar},
+    weekendsonly::WeekendsOnly,
+};
+use crate::{
+    time::date::Date,
+    utils::errors::{AtlasError, Result},
+};
 use std::collections::HashSet;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -10,6 +15,32 @@ pub enum Calendar {
     NullCalendar(NullCalendar),
     WeekendsOnly(WeekendsOnly),
     TARGET(TARGET),
+}
+
+impl TryFrom<String> for Calendar {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
+            "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
+            "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid calendar: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<Calendar> for String {
+    fn from(calendar: Calendar) -> Self {
+        match calendar {
+            Calendar::NullCalendar(_) => "NullCalendar".to_string(),
+            Calendar::WeekendsOnly(_) => "WeekendsOnly".to_string(),
+            Calendar::TARGET(_) => "TARGET".to_string(),
+        }
+    }
 }
 
 impl ImplCalendar for Calendar {
