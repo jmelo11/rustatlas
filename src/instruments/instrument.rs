@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
     currencies::enums::Currency,
-    prelude::HasCurrency,
+    prelude::{HasCurrency, InterestAccrual},
     time::{date::Date, enums::Frequency},
     utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
@@ -84,6 +84,29 @@ impl From<RateType> for String {
 pub enum Instrument {
     FixedRateInstrument(FixedRateInstrument),
     FloatingRateInstrument(FloatingRateInstrument),
+}
+
+impl InterestAccrual for Instrument {
+    fn accrual_start_date(&self) -> Date {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.accrual_start_date(),
+            Instrument::FloatingRateInstrument(fri) => fri.accrual_start_date(),
+        }
+    }
+
+    fn accrual_end_date(&self) -> Date {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.accrual_end_date(),
+            Instrument::FloatingRateInstrument(fri) => fri.accrual_end_date(),
+        }
+    }
+
+    fn accrued_amount (&self, start_date: Date, end_date: Date) -> Result<f64> {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
+            Instrument::FloatingRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
+        }
+    }
 }
 
 impl HasCashflows for Instrument {
