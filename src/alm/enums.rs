@@ -5,7 +5,6 @@ use crate::{
         traits::Structure,
     },
 };
-
 use crate::utils::errors::{AtlasError, Result};
 use serde::{Deserialize, Serialize};
 
@@ -237,9 +236,13 @@ impl From<AccountType> for String {
             AccountType::Equity => "Equity".to_string(),
             AccountType::Revenue => "Revenue".to_string(),
             AccountType::Expense => "Expense".to_string(),
+
         }
     }
 }
+
+
+
 
 /// # EvaluationMode
 /// A struct that contains the information needed to define

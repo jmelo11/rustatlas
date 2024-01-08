@@ -46,6 +46,7 @@ pub struct MakeFixedRateInstrument {
     rate_value: Option<f64>,
     id: Option<usize>,
     issue_date: Option<Date>,
+    yield_rate : Option<InterestRate>
 }
 
 /// New, setters and getters
@@ -70,6 +71,7 @@ impl MakeFixedRateInstrument {
             rate_value: None,
             id: None,
             issue_date: None,
+            yield_rate : None
         }
     }
 
@@ -105,6 +107,11 @@ impl MakeFixedRateInstrument {
 
     pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
         self.id = id;
+        self
+    }
+
+    pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
+        self.yield_rate = Some(yield_rate);
         self
     }
 
@@ -366,6 +373,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
+                    self.yield_rate
                 ))
             }
             Structure::Other => {
@@ -441,6 +449,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
+                    self.yield_rate
                 ))
             }
             Structure::EqualPayments => {
@@ -531,6 +540,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
+                    self.yield_rate
                 ))
             }
             Structure::Zero => {
@@ -606,6 +616,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
+                    self.yield_rate
                 ))
             }
             Structure::EqualRedemptions => {
@@ -693,6 +704,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
+                    self.yield_rate
                 ))
             }
         }

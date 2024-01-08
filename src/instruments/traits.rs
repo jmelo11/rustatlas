@@ -1,7 +1,5 @@
 use std::collections::{HashMap, HashSet};
-
 use serde::{Deserialize, Serialize};
-
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -169,6 +167,7 @@ pub fn calculate_outstanding(
 
     outstanding
 }
+
 
 #[cfg(test)]
 mod tests {

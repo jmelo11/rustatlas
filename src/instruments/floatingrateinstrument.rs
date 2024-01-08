@@ -1,5 +1,5 @@
 use crate::{
-    cashflows::cashflow::{Cashflow, Side},
+    cashflows::{cashflow::{Cashflow, Side}, traits::InterestAccrual},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::traits::Structure;
+use crate::utils::errors::Result;
 
 /// # FloatingRateInstrument
 /// A floating rate instrument.
@@ -124,6 +125,22 @@ impl FloatingRateInstrument {
 
     pub fn currency(&self) -> Currency {
         self.currency
+    }
+}
+
+
+impl InterestAccrual for FloatingRateInstrument {
+    fn accrual_start_date(&self) -> Date {
+        self.start_date
+    }
+    fn accrual_end_date(&self) -> Date {
+        self.end_date
+    }
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
+        let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {
+            acc + cf.accrued_amount(start_date, end_date).unwrap_or(0.0)
+        });
+        Ok(total_accrued_amount)
     }
 }
 
