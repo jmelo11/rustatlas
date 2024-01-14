@@ -30,6 +30,12 @@ use crate::{
 /// - indexing the new positions and getting the relevant market data
 /// - aggregating the new redemptions to the portfolio redemptions
 ///
+/// ## Parameters
+/// * `market_store` - A reference to a market store
+/// * `base_redemptions` - A map of redemptions for the base portfolio
+/// * `redemption_currency` - The currency of the redemptions
+/// * `horizon` - The horizon of the simulation
+///
 /// ## Details
 /// - Requires redemptions and the currency of the redemptions
 pub struct RolloverSimulationEngine<'a> {

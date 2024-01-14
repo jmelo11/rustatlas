@@ -62,7 +62,8 @@ impl Default for RateDefinition {
 
 /// # InterestRate
 /// Struct that defines an interest rate.
-/// # Example
+///
+/// ## Example
 /// ```
 /// use rustatlas::prelude::*;
 /// let rate = InterestRate::new(0.05, Compounding::Simple, Frequency::Annual, DayCounter::Actual360);

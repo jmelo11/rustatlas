@@ -10,6 +10,13 @@ use crate::{
 
 use super::traits::ConstVisit;
 
+/// # AccruedAmountConstVisitor
+/// Visitor for calculating accrued amounts.
+///
+/// ## Parameters
+/// * `evaluation_date` - The evaluation date
+/// * `horizon` - The horizon of the calculation
+/// * `validation_currency` - Flag to validate the currency of the instrument against the provided currency
 pub struct AccruedAmountConstVisitor {
     accrued_amounts: Mutex<BTreeMap<Date, f64>>,
     validation_currency: Option<Currency>,

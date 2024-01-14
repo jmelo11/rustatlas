@@ -15,6 +15,16 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
+/// # TenorBasedZeroRateTermStructure
+/// A term structure of zero rates based on tenors.
+///
+/// ## Parameters
+/// * `reference_date` - The reference date of the term structure
+/// * `tenors` - The tenors of the term structure
+/// * `spreads` - The spreads of the term structure
+/// * `rate_definition` - The rate definition of the term structure
+/// * `interpolation` - The interpolation method of the term structure
+/// * `enable_extrapolation` - Enable extrapolation
 #[derive(Clone)]
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
