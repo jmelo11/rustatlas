@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cashflows::cashflow::{Cashflow, Side},
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::InterestAccrual,
+    },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
-    prelude::{HasCurrency, InterestAccrual},
     time::{date::Date, enums::Frequency},
     utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
@@ -101,7 +104,7 @@ impl InterestAccrual for Instrument {
         }
     }
 
-    fn accrued_amount (&self, start_date: Date, end_date: Date) -> Result<f64> {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
             Instrument::FloatingRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
@@ -193,8 +196,8 @@ impl Instrument {
 impl HasCurrency for Instrument {
     fn currency(&self) -> Result<Currency> {
         match self {
-            Instrument::FixedRateInstrument(fri) => Ok(fri.currency()),
-            Instrument::FloatingRateInstrument(fri) => Ok(fri.currency()),
+            Instrument::FixedRateInstrument(fri) => fri.currency(),
+            Instrument::FloatingRateInstrument(fri) => fri.currency(),
         }
     }
 }

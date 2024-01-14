@@ -1,5 +1,9 @@
 use crate::{
-    cashflows::{cashflow::{Cashflow, Side}, traits::InterestAccrual},
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::InterestAccrual,
+    },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -122,12 +126,13 @@ impl FloatingRateInstrument {
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
-
-    pub fn currency(&self) -> Currency {
-        self.currency
-    }
 }
 
+impl HasCurrency for FloatingRateInstrument {
+    fn currency(&self) -> Result<Currency> {
+        Ok(self.currency)
+    }
+}
 
 impl InterestAccrual for FloatingRateInstrument {
     fn accrual_start_date(&self) -> Date {
