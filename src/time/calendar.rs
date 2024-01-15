@@ -10,6 +10,13 @@ use crate::{
 };
 use std::collections::HashSet;
 
+/// # Calendar
+/// A calendar.
+///
+/// ## Enums
+/// * `NullCalendar` - A calendar that considers all days as business days.
+/// * `WeekendsOnly` - A calendar that considers only weekends as business days.
+/// * `TARGET` - A calendar that considers only TARGET business days as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Calendar {
     NullCalendar(NullCalendar),

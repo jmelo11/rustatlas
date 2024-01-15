@@ -9,6 +9,10 @@ use super::traits::{ConstVisit, HasCashflows};
 /// # NPVConstVisitor
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
+/// 
+/// ## Parameters
+/// * `market_data` - The market data to use for NPV calculation
+/// * `include_today_cashflows` - Flag to include cashflows with payment date equal to the reference date
 pub struct NPVConstVisitor<'a> {
     market_data: &'a [MarketData],
     include_today_cashflows: bool,

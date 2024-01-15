@@ -15,6 +15,12 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
+/// # CashflowsAggregatorConstVisitor
+/// Visitor for aggregating cashflows.
+/// The visitor will aggregate the cashflows by date and side.
+///
+/// ## Parameters
+/// * `validation_currency` - Flag to validate the currency of the instrument against the provided currency
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CashflowsAggregatorConstVisitor {
     redemptions: Mutex<BTreeMap<Date, f64>>,

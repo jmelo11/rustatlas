@@ -241,7 +241,19 @@ impl From<DateGenerationRule> for String {
 }
 
 /// # BusinessDayConvention
-/// Enum representing a business day convention.
+/// Enum representing a business day convention. Business day conventions are used to 
+/// adjust a date in case it is not a business day.
+///
+/// ## Convention
+/// * Following - Choose the first business day after the given holiday.
+/// * ModifiedFollowing - Choose the first business day after the given holiday unless 
+/// it belongs to a different month, in which case choose the first business day before the given holiday.
+/// * Preceding - Choose the first business day before the given holiday.
+/// * ModifiedPreceding - Choose the first business day before the given holiday unless 
+/// it belongs to a different month, in which case choose the first business day after the given holiday.
+/// * Unadjusted - Do not adjust.
+/// * HalfMonthModifiedFollowing - Choose the first business day after the given holiday 
+/// unless that day falls in the first half of the month, in which case choose the first business day before the given holiday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum BusinessDayConvention {
     Following,

@@ -4,6 +4,8 @@ use crate::time::date::Date;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
+/// # NullCalendar
+/// A calendar that considers all days as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NullCalendar {
     added_holidays: HashSet<Date>,

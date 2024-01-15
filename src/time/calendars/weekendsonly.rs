@@ -3,6 +3,8 @@ use std::collections::HashSet;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
+/// # WeekendsOnly
+/// A calendar that considers only weekends as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WeekendsOnly {
     added_holidays: HashSet<Date>,

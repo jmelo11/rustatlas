@@ -21,6 +21,10 @@ use super::{
 
 /// # ParValue
 /// ParValue is a cost function that calculates the NPV of a generic instrument.
+///
+/// ## Parameters
+/// * `eval` - The instrument to evaluate
+/// * `market_data` - The market data to use for evaluation
 struct ParValue<'a, T> {
     eval: &'a T,
     npv_visitor: Box<NPVConstVisitor<'a>>,

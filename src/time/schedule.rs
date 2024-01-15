@@ -48,8 +48,19 @@ fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
 
 /// # Schedule
 /// A schedule is a sequence of dates. It is defined by an effective date, a termination date and
-/// a tenor. It is also defined by a calendar, a convention, a termination date convention, a rule
-/// and end of month flag.
+/// a tenor.
+///
+/// ## Parameters
+/// * `tenor` - The tenor of the schedule
+/// * `calendar` - The calendar of the schedule
+/// * `convention` - The business day convention of the schedule
+/// * `termination_date_convention` - The business day convention of the termination date
+/// * `rule` - The date generation rule
+/// * `end_of_month` - The end of month flag
+/// * `first_date` - The first date of the schedule
+/// * `next_to_last_date` - The next to last date of the schedule
+/// * `dates` - The dates of the schedule
+/// * `is_regular` - The regularity of the schedule
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Schedule {
     tenor: Period,
@@ -149,6 +160,18 @@ impl Schedule {
 
 /// # MakeSchedule
 /// This struct is used to build a schedule.
+///
+/// ## Parameters
+/// * `effective_date` - The effective date of the schedule
+/// * `termination_date` - The termination date of the schedule
+/// * `tenor` - The tenor of the schedule
+/// * `calendar` - The calendar of the schedule
+/// * `convention` - The business day convention of the schedule
+/// * `termination_date_convention` - The business day convention of the termination date
+/// * `rule` - The date generation rule
+/// * `end_of_month` - The end of month flag
+/// * `first_date` - The first date of the schedule
+/// * `next_to_last_date` - The next to last date of the schedule
 pub struct MakeSchedule {
     effective_date: Date,
     termination_date: Date,

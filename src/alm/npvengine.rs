@@ -21,6 +21,12 @@ use crate::{
 
 /// # NPVEngine
 /// The NPVEngine is responsible for calculating the NPV of a portfolio.
+/// It is a parallelized engine that uses rayon to parallelize the calculation.
+///
+/// ## Parameters
+/// * `instruments` - A mutable slice of instruments
+/// * `market_store` - A reference to a market store
+/// * `chunk_size` - The chunk size to use for parallelization
 pub struct NPVEngine<'a> {
     instruments: &'a mut [Instrument],
     market_store: &'a MarketStore,
