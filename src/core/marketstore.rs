@@ -10,6 +10,12 @@ use crate::{
 
 /// # MarketStore
 /// A store for market data.
+///
+/// ## Parameters
+/// * `reference_date` - The reference date of the market store
+/// * `local_currency` - The local currency of the market store
+/// * `exchange_rate_store` - The exchange rate store
+/// * `index_store` - The index store
 #[derive(Clone)]
 pub struct MarketStore {
     reference_date: Date,

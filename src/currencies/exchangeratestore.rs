@@ -7,6 +7,13 @@ use super::enums::Currency;
 
 use crate::utils::errors::{AtlasError, Result};
 
+/// # ExchangeRateStore
+/// A store for exchange rates.
+/// Exchange rates are stored as a map of pairs of currencies to rates.
+/// 
+/// ## Details
+/// - Exchange rates are stored as a map of pairs of currencies to rates.
+/// - The exchange rate between two currencies is calculated by traversing the graph of exchange rates.
 #[derive(Clone)]
 pub struct ExchangeRateStore {
     exchange_rate_map: HashMap<(Currency, Currency), f64>,

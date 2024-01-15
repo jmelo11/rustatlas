@@ -7,6 +7,11 @@ use crate::{
 
 use super::interestrateindex::traits::InterestRateIndexTrait;
 
+/// # IndexStore
+/// A store for interest rate indices.
+/// 
+/// ## Parameters
+/// * `reference_date` - The reference date of the index store
 #[derive(Clone)]
 pub struct IndexStore {
     reference_date: Date,

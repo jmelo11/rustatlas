@@ -7,6 +7,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
@@ -83,7 +84,10 @@ impl MakeFloatingRateInstrument {
         self
     }
 
-    pub fn with_option_first_date(mut self, first_date: Option<Date>) -> MakeFloatingRateInstrument {
+    pub fn with_option_first_date(
+        mut self,
+        first_date: Option<Date>,
+    ) -> MakeFloatingRateInstrument {
         self.first_coupon_date = first_date;
         self
     }
@@ -103,12 +107,18 @@ impl MakeFloatingRateInstrument {
         return self;
     }
 
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFloatingRateInstrument {
+    pub fn with_disbursements(
+        mut self,
+        disbursements: HashMap<Date, f64>,
+    ) -> MakeFloatingRateInstrument {
         self.disbursements = Some(disbursements);
         self
     }
 
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFloatingRateInstrument {
+    pub fn with_redemptions(
+        mut self,
+        redemptions: HashMap<Date, f64>,
+    ) -> MakeFloatingRateInstrument {
         self.redemptions = Some(redemptions);
         self
     }
@@ -137,7 +147,10 @@ impl MakeFloatingRateInstrument {
         return self;
     }
 
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateInstrument {
+    pub fn with_rate_definition(
+        mut self,
+        rate_definition: RateDefinition,
+    ) -> MakeFloatingRateInstrument {
         self.rate_definition = Some(rate_definition);
         return self;
     }
@@ -636,7 +649,7 @@ impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
                     .with_forecast_curve_id(self.forecast_curve_id())
                     .with_discount_curve_id(self.discount_curve_id())
                     .with_payment_frequency(self.payment_frequency())
-                    .with_currency(self.currency())
+                    .with_currency(self.currency().unwrap())
                     .other()
             }
             _ => MakeFloatingRateInstrument::new()
@@ -649,7 +662,7 @@ impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
                 .with_rate_definition(self.rate_definition())
                 .with_forecast_curve_id(self.forecast_curve_id())
                 .with_discount_curve_id(self.discount_curve_id())
-                .with_currency(self.currency())
+                .with_currency(self.currency().unwrap())
                 .with_structure(self.structure()),
         }
     }

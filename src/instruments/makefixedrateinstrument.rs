@@ -12,6 +12,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
@@ -46,7 +47,7 @@ pub struct MakeFixedRateInstrument {
     rate_value: Option<f64>,
     id: Option<usize>,
     issue_date: Option<Date>,
-    yield_rate : Option<InterestRate>
+    yield_rate: Option<InterestRate>,
 }
 
 /// New, setters and getters
@@ -71,7 +72,7 @@ impl MakeFixedRateInstrument {
             rate_value: None,
             id: None,
             issue_date: None,
-            yield_rate : None
+            yield_rate: None,
         }
     }
 
@@ -373,7 +374,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
-                    self.yield_rate
+                    self.yield_rate,
                 ))
             }
             Structure::Other => {
@@ -449,7 +450,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
-                    self.yield_rate
+                    self.yield_rate,
                 ))
             }
             Structure::EqualPayments => {
@@ -540,7 +541,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
-                    self.yield_rate
+                    self.yield_rate,
                 ))
             }
             Structure::Zero => {
@@ -616,7 +617,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
-                    self.yield_rate
+                    self.yield_rate,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -704,7 +705,7 @@ impl MakeFixedRateInstrument {
                     self.discount_curve_id,
                     self.id,
                     self.issue_date,
-                    self.yield_rate
+                    self.yield_rate,
                 ))
             }
         }
@@ -827,7 +828,7 @@ impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
                     .with_discount_curve_id(self.discount_curve_id())
                     .with_structure(self.structure())
                     .with_side(self.side())
-                    .with_currency(self.currency())
+                    .with_currency(self.currency().unwrap())
             }
             _ => MakeFixedRateInstrument::new()
                 .with_start_date(self.start_date())
@@ -838,7 +839,7 @@ impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
                 .with_discount_curve_id(self.discount_curve_id())
                 .with_structure(self.structure())
                 .with_side(self.side())
-                .with_currency(self.currency()),
+                .with_currency(self.currency().unwrap()),
         }
     }
 }
