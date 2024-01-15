@@ -211,4 +211,40 @@ mod tests {
             expected_amount
         );
     }
+
+    #[test]
+    fn test_accrual() {
+        let notional = 1000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360
+        );
+        let accrual_start_date = Date::new(2023, 12, 10);
+        let accrual_end_date = Date::new(2024, 3,  30 );
+        let payment_date = Date::new(2024, 1, 10);
+        let id = 1;
+        let currency = Currency::USD;
+
+        let mut coupon = FixedRateCoupon::new(
+            notional,
+            rate,
+            accrual_start_date,
+            accrual_end_date,
+            payment_date,
+            currency,
+            Side::Receive,
+        );
+
+        coupon.set_discount_curve_id(id);
+
+        let star_date = Date::new(2024, 2, 28);
+        let end_date = Date::new(2024, 3 , 1);
+        let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
+
+        print!("Accrued amount between {} and {} is {}", star_date, end_date, accrued_amount);
+
+    
+    }
 }

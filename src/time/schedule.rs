@@ -202,7 +202,7 @@ impl MakeSchedule {
         self
     }
 
-    /// Sets the convention.
+    /// Sets the convention. weekday correccions are applied.
     pub fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
         self
@@ -637,7 +637,7 @@ impl MakeSchedule {
 mod tests {
     use std::vec;
 
-    use crate::time::calendars::target::TARGET;
+    use crate::time::{calendars::target::TARGET, date};
 
     use super::*;
 
@@ -994,4 +994,46 @@ mod tests {
 
         Ok(())
     }
+
+
+
+    #[test]
+    fn test_make_schedule_new_2() {
+        let from = Date::new(2023, 2, 7);
+        let to = Date::new(2025, 3, 31);
+        let tenor = Period::new(1, TimeUnit::Months);
+        let make_schedule = MakeSchedule::new(from, to)
+            //.with_rule(DateGenerationRule::Forward)
+            .with_convention(BusinessDayConvention::ModifiedFollowing)
+            .end_of_month(false)
+            .with_tenor(tenor).build().unwrap();
+
+        for date in make_schedule.dates() {
+            println!("{}", date);
+        }
+
+
+
+
+        //assert_eq!(make_schedule.effective_date, from);
+        //assert_eq!(make_schedule.termination_date, to);
+        //assert_eq!(make_schedule.tenor, tenor);
+        //assert_eq!(
+        //    make_schedule.calendar,
+        //    Calendar::NullCalendar(NullCalendar::new())
+        //);
+        //assert_eq!(make_schedule.convention, BusinessDayConvention::Unadjusted);
+        //assert_eq!(
+        //    make_schedule.termination_date_convention,
+        //    BusinessDayConvention::Unadjusted
+        //);
+        //assert_eq!(make_schedule.rule, DateGenerationRule::Backward);
+        //assert_eq!(make_schedule.end_of_month, false);
+        //assert_eq!(make_schedule.first_date, Date::empty());
+        //assert_eq!(make_schedule.next_to_last_date, Date::empty());
+        //assert_eq!(make_schedule.dates, Vec::new());
+    }
+
+
+
 }
