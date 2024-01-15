@@ -1,7 +1,7 @@
 use super::traits::DayCountProvider;
 use crate::time::date::Date;
 
-/// # Thirty360ISMA
+/// # Thirty360 (ISMA)
 /// Convention: if the starting date is the 31st of a
 /// month, it becomes equal to the 30th of the same month.
 /// If the ending date is the 31st of a month and the starting
@@ -12,12 +12,12 @@ use crate::time::date::Date;
 ///
 /// let start = Date::new(2020, 1, 1);
 /// let end = Date::new(2020, 2, 1);
-/// assert_eq!(Thirty360ISMA::day_count(start, end), 30);
-/// assert_eq!(Thirty360ISMA::year_fraction(start, end), 30.0 / 360.0);
+/// assert_eq!(Thirty360::day_count(start, end), 30);
+/// assert_eq!(Thirty360::year_fraction(start, end), 30.0 / 360.0);
 /// ```
-pub struct Thirty360ISMA;
+pub struct Thirty360;
 
-impl DayCountProvider for Thirty360ISMA {
+impl DayCountProvider for Thirty360 {
     fn day_count(start: Date, end: Date) -> i64 {
         let d1 = start.day() as i64;
         let d2 = end.day() as i64;
@@ -33,7 +33,7 @@ impl DayCountProvider for Thirty360ISMA {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        return Thirty360ISMA::day_count(start, end) as f64 / 360.0;
+        return Thirty360::day_count(start, end) as f64 / 360.0;
     }
 }
 
