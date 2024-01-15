@@ -174,7 +174,7 @@ mod tests {
             0.05,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Thirty360,
+            DayCounter::Thirty360ISMA,
         );
 
         // par build

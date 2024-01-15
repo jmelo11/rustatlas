@@ -28,7 +28,7 @@ pub use crate::{
         calendar::*,
         date::*,
         daycounter::*,
-        daycounters::{actual360::*, actual365::*, thirty360::*, traits::*},
+        daycounters::{actual360::*, actual365fixed::*, thirty360::*, traits::*},
         enums::*,
         period::*,
         schedule::*,

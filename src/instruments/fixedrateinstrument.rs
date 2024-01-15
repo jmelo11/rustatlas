@@ -206,14 +206,14 @@ mod tests {
             0.06,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Thirty360,
+            DayCounter::Thirty360ISMA,
         );
 
         let yield_rate = InterestRate::new(
             0.07,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Thirty360,
+            DayCounter::Thirty360ISMA,
         );
 
         let instrument = MakeFixedRateInstrument::new()
@@ -278,14 +278,14 @@ mod tests {
             0.06,
             Compounding::Simple,
             Frequency::Annual,
-            DayCounter::Thirty360,
+            DayCounter::Thirty360ISMA,
         );
 
         let yield_rate = InterestRate::new(
             0.07,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Thirty360,
+            DayCounter::Thirty360ISMA,
         );
 
         let instrument = MakeFixedRateInstrument::new()
