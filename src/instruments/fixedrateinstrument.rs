@@ -202,9 +202,9 @@ mod tests {
         utils::errors::Result,
     };
     use std::collections::{HashMap, HashSet};
-
+    
     #[test]
-    fn accrual_bullet_instrument() -> Result<()> {
+    fn accrual_bullet_instrumen_with_tir() -> Result<()> {
         let start_date = Date::new(2024, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -254,7 +254,7 @@ mod tests {
     }
 
     #[test]
-    fn accrual_other_instrument() -> Result<()> {
+    fn accrual_other_instrument_with_tir() -> Result<()> {
         let start_date = Date::new(2024, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
 

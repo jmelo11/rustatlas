@@ -225,7 +225,7 @@ impl MakeSchedule {
         self
     }
 
-    /// Sets the convention.
+    /// Sets the convention. weekday correccions are applied.
     pub fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
         self
@@ -1017,4 +1017,5 @@ mod tests {
 
         Ok(())
     }
+
 }

@@ -63,10 +63,11 @@ impl From<DayCounter> for String {
 
 #[cfg(test)]
 mod tests {
+    use crate::time::daycounter;
     use super::*;
 
     #[test]
-    fn test_day_count() {
+    fn test_day_count_standard() {
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2020, 1, 2);
 
@@ -76,6 +77,7 @@ mod tests {
         assert_eq!(day_count, 1);
         let day_count = DayCounter::Thirty360.day_count(start, end);
         assert_eq!(day_count, 1);
+
     }
 
     #[test]
@@ -90,4 +92,72 @@ mod tests {
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
         assert_eq!(year_fraction, 1.0 / 360.0);
     }
+
+
+    #[test]
+    fn test_year_fraction_trithy360_end_of_month() {
+        let start = Date::new(2023, 12, 10);
+        let end_1 = Date::new(2023, 12, 30);
+        let end_2 = Date::new(2023, 12, 31);
+
+        let yf_1 = DayCounter::Thirty360ISMA.year_fraction(start, end_1);
+        let yf_2 = DayCounter::Thirty360ISMA.year_fraction(start, end_2);
+        assert_ne!(yf_1, yf_2);
+    }
+
+    #[test]
+    fn test_year_fraction_trithy360_end_of_month_2() {
+        let start = Date::new(2023, 12, 10);
+        let end_1 = Date::new(2023, 12, 31);
+        let end_2 = Date::new(2024, 1, 1);
+
+        let yf_1 = DayCounter::Thirty360ISMA.year_fraction(start, end_1);
+        let yf_2 = DayCounter::Thirty360ISMA.year_fraction(start, end_2);
+        println!("{} days between {} and {} with Thirty360", yf_1, start, end_1);
+        println!("{} days between {} and {} with Thirty360", yf_2, start, end_2);
+        assert_eq!(yf_1, yf_2);
+    }
+
+    #[test]
+    fn test_year_fraction_trithy360_1() {
+        let start = Date::new(2023, 12, 30);
+        let end_1 = Date::new(2023, 12, 31);
+        let end_2 = Date::new(2024, 1, 1);
+
+        let yf_1 = DayCounter::Thirty360ISMA.year_fraction(start, end_1);
+        let yf_2 = DayCounter::Thirty360ISMA.year_fraction(start, end_2);
+        //println!("{} days between {} and {} with Thirty360", yf_1, start, end_1);
+        //println!("{} days between {} and {} with Thirty360", yf_2, start, end_2);
+        assert_ne!(yf_1, yf_2);
+    }
+
+
+    #[test]
+    fn test_year_fraction_trithy360_4() {
+        let start = Date::new(2024, 2, 10);
+        let end_1 = Date::new(2024, 2, 29);
+        let end_2 = Date::new(2024, 3, 1);
+
+        let yf_1 = DayCounter::Thirty360ISMA.year_fraction(start, end_1);
+        let yf_2 = DayCounter::Thirty360ISMA.year_fraction(start, end_2);
+        //println!("{} days between {} and {} with Thirty360", yf_1, start, end_1);
+        //println!("{} days between {} and {} with Thirty360", yf_2, start, end_2);
+        assert_ne!(yf_1, yf_2);
+    }
+
+
+    #[test]
+    fn test_year_fraction_trithy360_5() {
+        let start = Date::new(2023, 2, 10);
+        let end_1 = Date::new(2023, 2, 28);
+        let end_2 = Date::new(2023, 3, 1);
+
+        let yf_1 = DayCounter::Thirty360ISMA.year_fraction(start, end_1);
+        let yf_2 = DayCounter::Thirty360ISMA.year_fraction(start, end_2);
+        //println!("{} days between {} and {} with Thirty360", yf_1, start, end_1);
+        //println!("{} days between {} and {} with Thirty360", yf_2, start, end_2);
+        assert_ne!(yf_1, yf_2);
+    }
 }
+
+
