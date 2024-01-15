@@ -105,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn test_year_fraction_trithy360_end_of_month_2() {
+    fn test_year_fraction_trithy360_beetween_end_and_start_of_month() {
         let start = Date::new(2023, 12, 10);
         let end_1 = Date::new(2023, 12, 31);
         let end_2 = Date::new(2024, 1, 1);
@@ -118,7 +118,7 @@ mod tests {
     }
 
     #[test]
-    fn test_year_fraction_trithy360_1() {
+    fn test_year_fraction_trithy360_star_in_end_of_month() {
         let start = Date::new(2023, 12, 30);
         let end_1 = Date::new(2023, 12, 31);
         let end_2 = Date::new(2024, 1, 1);
@@ -130,7 +130,7 @@ mod tests {
 
 
     #[test]
-    fn test_year_fraction_trithy360_4() {
+    fn test_year_fraction_trithy360_leap_february() {
         let start = Date::new(2024, 2, 10);
         let end_1 = Date::new(2024, 2, 29);
         let end_2 = Date::new(2024, 3, 1);
@@ -143,7 +143,7 @@ mod tests {
 
 
     #[test]
-    fn test_year_fraction_trithy360_5() {
+    fn test_year_fraction_trithy360_february() {
         let start = Date::new(2023, 2, 10);
         let end_1 = Date::new(2023, 2, 28);
         let end_2 = Date::new(2023, 3, 1);
