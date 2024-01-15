@@ -5,7 +5,7 @@ use super::daycounters::{
 };
 use crate::{
     time::date::Date,
-    utils::errors::{AtlasError, Result},
+    utils::errors::{AtlasError, Result}
 };
 
 /// # DayCounter
