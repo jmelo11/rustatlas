@@ -219,7 +219,7 @@ mod tests {
             0.05,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Thirty360ISMA,
+            DayCounter::Thirty360,
         );
         let accrual_start_date = Date::new(2023, 12, 10);
         let accrual_end_date = Date::new(2024, 3,  30 );
