@@ -7,3 +7,4 @@ pub mod npvconstvisitor;
 pub mod parvaluevisitor;
 pub mod traits;
 pub mod zspreadconstvisitor;
+pub mod durationconstvisitor;
