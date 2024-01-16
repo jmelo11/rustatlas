@@ -89,57 +89,60 @@ impl<'a> RolloverSimulationEngine<'a> {
             let maturing_amount = redemptions.get(date);
             match maturing_amount {
                 Some(amount) => {
-                    // relevant data for new positions
-                    let tmp_store = self.market_store.advance_to_date(*date)?;
-                    let new_generator = generator
-                        .clone()
-                        .with_market_store(&tmp_store)
-                        .with_amount(*amount);
+                    if *amount != 0.0 {
+                        let amount_abs = amount.abs();
+                        // relevant data for new positions
+                        let tmp_store = self.market_store.advance_to_date(*date)?;
+                        let new_generator = generator
+                            .clone()
+                            .with_market_store(&tmp_store)
+                            .with_amount(amount_abs);
 
-                    // generate positions
-                    let mut positions = new_generator.generate();
+                        // generate positions
+                        let mut positions = new_generator.generate();
 
-                    // indexing
-                    let indexing_visitor = IndexingVisitor::new();
-                    positions.iter_mut().try_for_each(|inst| -> Result<()> {
-                        indexing_visitor.visit(inst)?;
-                        Ok(())
-                    })?;
-
-                    // market data for new positions
-                    let model = SimpleModel::new(&tmp_store);
-                    let data = model.gen_market_data(&indexing_visitor.request())?;
-
-                    // fixing for new positions
-                    let fixing_visitor = FixingVisitor::new(&data);
-                    positions.iter_mut().try_for_each(|inst| -> Result<()> {
-                        fixing_visitor.visit(inst)?;
-                        Ok(())
-                    })?;
-
-                    // add new positions to the vector
-                    simulated_instruments.append(&mut positions);
-
-                    // add new redemptions to the vector
-                    let aggregator = CashflowsAggregatorConstVisitor::new()
-                        .with_validate_currency(self.redemptions_currency);
-                    positions.iter().try_for_each(|inst| -> Result<()> {
-                        aggregator.visit(inst)?;
-                        Ok(())
-                    })?;
-
-                    let new_redemptions = aggregator.redemptions();
-
-                    redemptions
-                        .iter_mut()
-                        .try_for_each(|(date, amount)| -> Result<()> {
-                            let new_amount = new_redemptions.get(date);
-                            match new_amount {
-                                Some(new_amount) => *amount += new_amount,
-                                None => {}
-                            }
+                        // indexing
+                        let indexing_visitor = IndexingVisitor::new();
+                        positions.iter_mut().try_for_each(|inst| -> Result<()> {
+                            indexing_visitor.visit(inst)?;
                             Ok(())
                         })?;
+
+                        // market data for new positions
+                        let model = SimpleModel::new(&tmp_store);
+                        let data = model.gen_market_data(&indexing_visitor.request())?;
+
+                        // fixing for new positions
+                        let fixing_visitor = FixingVisitor::new(&data);
+                        positions.iter_mut().try_for_each(|inst| -> Result<()> {
+                            fixing_visitor.visit(inst)?;
+                            Ok(())
+                        })?;
+
+                        // add new positions to the vector
+                        simulated_instruments.append(&mut positions);
+
+                        // add new redemptions to the vector
+                        let aggregator = CashflowsAggregatorConstVisitor::new()
+                            .with_validate_currency(self.redemptions_currency);
+                        positions.iter().try_for_each(|inst| -> Result<()> {
+                            aggregator.visit(inst)?;
+                            Ok(())
+                        })?;
+
+                        let new_redemptions = aggregator.redemptions();
+
+                        redemptions
+                            .iter_mut()
+                            .try_for_each(|(date, amount)| -> Result<()> {
+                                let new_amount = new_redemptions.get(date);
+                                match new_amount {
+                                    Some(new_amount) => *amount += new_amount,
+                                    None => {}
+                                }
+                                Ok(())
+                            })?;
+                    }
                 }
                 None => {}
             }
