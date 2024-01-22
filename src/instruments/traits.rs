@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -9,6 +7,8 @@ use crate::{
     time::date::Date,
     utils::errors::{AtlasError, Result},
 };
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
 /// # Structure
 /// A struct that contains the information needed to define a structure.
@@ -52,6 +52,7 @@ impl From<Structure> for String {
 }
 
 /// # CashflowType
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum CashflowType {
     Redemption,
     Disbursement,
@@ -167,7 +168,6 @@ pub fn calculate_outstanding(
 
     outstanding
 }
-
 
 #[cfg(test)]
 mod tests {
