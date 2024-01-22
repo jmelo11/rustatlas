@@ -189,7 +189,7 @@ pub enum IMMMonth {
 
 /// # DateGenerationRule
 /// Enum representing a date generation rule.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum DateGenerationRule {
     Backward,
     Forward,
