@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
-    actual360::Actual360, actual365::Actual365, thirty360::Thirty360, traits::DayCountProvider,
+    actual360::Actual360, actual365::Actual365, thirty360::*, traits::DayCountProvider,
 };
 use crate::{
     time::date::Date,
@@ -15,6 +15,7 @@ pub enum DayCounter {
     Actual360,
     Actual365,
     Thirty360,
+    Thirty360US
 }
 
 impl DayCounter {
@@ -23,6 +24,7 @@ impl DayCounter {
             DayCounter::Actual360 => Actual360::day_count(start, end),
             DayCounter::Actual365 => Actual365::day_count(start, end),
             DayCounter::Thirty360 => Thirty360::day_count(start, end),
+            DayCounter::Thirty360US => Thirty360US::day_count(start, end),
         }
     }
 
@@ -31,6 +33,7 @@ impl DayCounter {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),
             DayCounter::Actual365 => Actual365::year_fraction(start, end),
             DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
+            DayCounter::Thirty360US => Thirty360US::year_fraction(start, end),
         }
     }
 }
@@ -43,6 +46,7 @@ impl TryFrom<String> for DayCounter {
             "Actual360" => Ok(DayCounter::Actual360),
             "Actual365" => Ok(DayCounter::Actual365),
             "Thirty360" => Ok(DayCounter::Thirty360), // to match curveengine
+            "Thirty360US" => Ok(DayCounter::Thirty360US),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid day counter: {}",
                 s
@@ -57,6 +61,7 @@ impl From<DayCounter> for String {
             DayCounter::Actual360 => "Actual360".to_string(),
             DayCounter::Actual365 => "Actual365".to_string(),
             DayCounter::Thirty360 => "Thirty360".to_string(),
+            DayCounter::Thirty360US => "Thirty360US".to_string(),
         }
     }
 }
