@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::utils::errors::{AtlasError, Result};
 
 use super::{
-    structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR},
+    structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR, BRL, COP},
     traits::CurrencyDetails,
 };
 
@@ -18,6 +18,8 @@ pub enum Currency {
     CLP,
     CLF,
     CHF,
+    BRL, 
+    COP,
 }
 
 impl TryFrom<String> for Currency {
@@ -32,6 +34,8 @@ impl TryFrom<String> for Currency {
             "CLP" => Ok(Currency::CLP),
             "CLF" => Ok(Currency::CLF),
             "CHF" => Ok(Currency::CHF),
+            "BRL" => Ok(Currency::BRL),
+            "COP" => Ok(Currency::COP),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid currency: {}",
                 s
@@ -50,6 +54,8 @@ impl From<Currency> for String {
             Currency::CLP => "CLP".to_string(),
             Currency::CLF => "CLF".to_string(),
             Currency::CHF => "CHF".to_string(),
+            Currency::BRL => "BRL".to_string(),
+            Currency::COP => "COP".to_string(),
         }
     }
 }
@@ -64,6 +70,8 @@ impl CurrencyDetails for Currency {
             Currency::CLP => CLP.code(),
             Currency::CLF => CLF.code(),
             Currency::CHF => CHF.code(),
+            Currency::BRL => BRL.code(),
+            Currency::COP => COP.code(),
         }
     }
     fn name(&self) -> String {
@@ -75,6 +83,8 @@ impl CurrencyDetails for Currency {
             Currency::CLP => CLP.name(),
             Currency::CLF => CLF.name(),
             Currency::CHF => CHF.name(),
+            Currency::BRL => BRL.name(),
+            Currency::COP => COP.name(),
         }
     }
     fn symbol(&self) -> String {
@@ -86,6 +96,8 @@ impl CurrencyDetails for Currency {
             Currency::CLP => CLP.symbol(),
             Currency::CLF => CLF.symbol(),
             Currency::CHF => CHF.symbol(),
+            Currency::BRL => BRL.symbol(),
+            Currency::COP => COP.symbol(),
         }
     }
     fn precision(&self) -> u8 {
@@ -97,6 +109,8 @@ impl CurrencyDetails for Currency {
             Currency::CLP => CLP.precision(),
             Currency::CLF => CLF.precision(),
             Currency::CHF => CHF.precision(),
+            Currency::BRL => BRL.precision(),
+            Currency::COP => COP.precision(),
         }
     }
     fn numeric_code(&self) -> u16 {
@@ -108,6 +122,8 @@ impl CurrencyDetails for Currency {
             Currency::CLP => CLP.numeric_code(),
             Currency::CLF => CLF.numeric_code(),
             Currency::CHF => CHF.numeric_code(),
+            Currency::BRL => BRL.numeric_code(),
+            Currency::COP => COP.numeric_code(),
         }
     }
 }
