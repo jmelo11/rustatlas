@@ -325,7 +325,8 @@ pub enum ProductFamily {
     CAE,
     Leasing,
     Fogape,
-    Corfo
+    Corfo,
+    Factoring
 }
 
 impl TryFrom<String> for ProductFamily {
@@ -343,6 +344,7 @@ impl TryFrom<String> for ProductFamily {
             "Leasing" => Ok(ProductFamily::Leasing),
             "Fogape" => Ok(ProductFamily::Fogape),
             "Corfo" => Ok(ProductFamily::Corfo),
+            "Factoring" => Ok(ProductFamily::Factoring),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid product family: {}",
                 s
@@ -364,6 +366,7 @@ impl From<ProductFamily> for String {
             ProductFamily::Leasing => "Leasing".to_string(),
             ProductFamily::Fogape => "Fogape".to_string(),
             ProductFamily::Corfo => "Corfo".to_string(),
+            ProductFamily::Factoring => "Factoring".to_string(),
         }
     }
 }
