@@ -1,14 +1,13 @@
 extern crate rustatlas;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
-    alm::enums::Instrument,
     cashflows::{
         cashflow::{Cashflow, Side},
         traits::Payable,
     },
     core::{marketstore::MarketStore, meta::MarketData},
     currencies::enums::Currency,
-    instruments::makefixedrateloan::MakeFixedRateLoan,
+    instruments::{instrument::Instrument, makefixedrateinstrument::MakeFixedRateInstrument},
     rates::{
         interestrate::RateDefinition,
         interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
@@ -119,18 +118,18 @@ pub fn create_store() -> Result<MarketStore> {
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 1".to_string(), Box::new(ibor_index))?;
+        .add_index(0, Box::new(ibor_index))?;
 
     market_store
         .mut_index_store()
-        .add_index("ForecastCurve 2".to_string(), Box::new(overnigth_index))?;
+        .add_index(1, Box::new(overnigth_index))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store
         .mut_index_store()
-        .add_index("DiscountCurve".to_string(), Box::new(discount_index))?;
+        .add_index(2, Box::new(discount_index))?;
     return Ok(market_store);
 }
 
@@ -217,7 +216,7 @@ impl Mock for MockMaker {
                 let notional = MockMaker::random_notional();
                 let random_currency = MockMaker::random_currency();
                 let payment_frequency = MockMaker::random_frequency();
-                let instrument = MakeFixedRateLoan::new()
+                let instrument = MakeFixedRateInstrument::new()
                     .with_start_date(start_date)
                     .with_end_date(end_date)
                     .with_payment_frequency(payment_frequency)

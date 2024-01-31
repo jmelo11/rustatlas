@@ -28,6 +28,15 @@ pub struct CLF;
 /// Struct for CHF currency
 pub struct CHF;
 
+/// # BRL
+/// Struct for BRL currency
+pub struct BRL;
+
+/// # COP
+/// Struct for COP currency
+pub struct COP;
+
+
 impl CurrencyDetails for USD {
     fn code(&self) -> String {
         return "USD".to_string();
@@ -151,5 +160,42 @@ impl CurrencyDetails for CHF {
     }
     fn numeric_code(&self) -> u16 {
         return 756;
+    }
+}
+
+
+impl  CurrencyDetails for BRL {
+    fn code(&self) -> String {
+        return "BRL".to_string();
+    }
+    fn name(&self) -> String {
+        return "Brazilian Real".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "R$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 986;
+    }
+}
+
+impl CurrencyDetails for COP {
+    fn code(&self) -> String {
+        return "COP".to_string();
+    }
+    fn name(&self) -> String {
+        return "Colombian Peso".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 170;
     }
 }

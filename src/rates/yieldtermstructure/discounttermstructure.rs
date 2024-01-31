@@ -13,6 +13,49 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
+/// # DiscountTermStructure
+/// A discount factors term structure.
+///
+/// ## Parameters
+/// * `dates` - The dates of the discount factors
+/// * `discount_factors` - The discount factors
+/// * `day_counter` - The day counter of the discount factors
+/// * `interpolator` - The interpolator to use
+/// * `enable_extrapolation` - Enable extrapolation
+///
+/// ## Example
+///
+/// ```
+/// use rustatlas::prelude::*;
+///
+/// let dates = vec![
+///     Date::new(2020, 1, 1),
+///     Date::new(2020, 4, 1),
+///     Date::new(2020, 7, 1),
+///     Date::new(2020, 10, 1),
+///     Date::new(2021, 1, 1),
+/// ];
+///
+/// let discount_factors = vec![1.0, 0.99, 0.98, 0.97, 0.96];
+/// let day_counter = DayCounter::Actual360;
+///
+/// let discount_term_structure = DiscountTermStructure::new(
+///    dates.clone(),
+///    discount_factors.clone(),
+///    day_counter,
+///    Interpolator::Linear,
+///    true).unwrap();
+///
+/// assert_eq!(
+///     discount_term_structure.dates().clone(),
+///     dates
+/// );
+/// assert_eq!(
+///     discount_term_structure.discount_factors().clone(),
+///     discount_factors
+/// );
+///  ```
+
 #[derive(Clone)]
 pub struct DiscountTermStructure {
     reference_date: Date,

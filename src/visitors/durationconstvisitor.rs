@@ -1,39 +1,34 @@
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
-    utils::errors::{AtlasError, Result},
+    utils::errors::{AtlasError, Result}, time::daycounter::DayCounter,
 };
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # DurationConstVisitor
+/// DurationConstVisitor is a visitor that calculates the Duration of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 /// 
 /// ## Parameters
-/// * `market_data` - The market data to use for NPV calculation
+/// * `market_data` - The market data to use for Duration calculation
 /// * `include_today_cashflows` - Flag to include cashflows with payment date equal to the reference date
-pub struct NPVConstVisitor<'a> {
+pub struct DurationConstVisitor<'a> {
     market_data: &'a [MarketData],
-    include_today_cashflows: bool,
 }
 
-impl<'a> NPVConstVisitor<'a> {
-    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
-        NPVConstVisitor {
+impl<'a> DurationConstVisitor<'a> {
+    pub fn new(market_data: &'a [MarketData]) -> Self {
+        DurationConstVisitor {
             market_data: market_data,
-            include_today_cashflows,
         }
     }
-    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
-        self.include_today_cashflows = include_today_cashflows;
-    }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
+impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
+        let duration = visitable.cashflows().iter().try_fold((0.0, 0.0), |mut acc, cf| {
             let id = cf.id()?;
 
             let cf_market_data =
@@ -44,24 +39,30 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
                         id
                     )))?;
 
-            if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
-                || cf.payment_date() < cf_market_data.reference_date()
-            {
-                return Ok(acc);
-            }
-
+            let year_fraction =  DayCounter::Actual365.year_fraction(cf_market_data.reference_date(), cf.payment_date());
+            
             let df = cf_market_data.df()?;
             let fx = cf_market_data.fx()?;
             let flag = match cf.side() {
                 Side::Pay => -1.0,
                 Side::Receive => 1.0,
             };
-            let amount = cf.amount()?;
-            Ok(acc + df * amount / fx * flag)
+
+            let aux_amount = cf.amount()?* df / fx * flag;
+            
+            acc.0 += aux_amount.clone() * year_fraction;
+            acc.1 += aux_amount.clone();
+            
+            Ok(acc)    
         });
-        return npv;
+
+        match duration {
+            Ok((d1, d2)) => Ok(d1/d2),
+            Err(e) => Err(e),
+        }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -173,7 +174,7 @@ mod tests {
 
         let start_date = ref_date;
         let end_date = start_date + Period::new(10, TimeUnit::Years);
-        let notional = 100_000.0;
+        let notional = 100000.0;
         let rate = InterestRate::new(
             0.05,
             Compounding::Simple,
@@ -200,9 +201,9 @@ mod tests {
             })
             .collect(); // Collect the results into a Vec<_>
 
-        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
+        fn duration(instruments: &mut [FixedRateInstrument]) -> f64 {
             let store = create_store().unwrap();
-            let mut npv = 0.0;
+            let mut duration = 0.0;
             let indexer = IndexingVisitor::new();
             instruments
                 .iter_mut()
@@ -211,17 +212,18 @@ mod tests {
             let model = SimpleModel::new(&store);
             let data = model.gen_market_data(&indexer.request()).unwrap();
 
-            let npv_visitor = NPVConstVisitor::new(&data, true);
+            let duration_visitor = DurationConstVisitor::new(&data);
             instruments
                 .iter()
-                .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
-            npv
+                .for_each(|inst| duration += duration_visitor.visit(inst).unwrap());
+            duration
         }
 
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
-            npv(chunk);
+            duration(chunk);
         });
 
         Ok(())
     }
 }
+

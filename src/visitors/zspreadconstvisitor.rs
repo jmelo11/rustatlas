@@ -12,6 +12,13 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
+/// # ZSpreadConstVisitor
+/// ZSpreadConstVisitor is a visitor that calculates the ZSpread of a generic instrument.
+///
+/// ## Parameters
+/// * `market_data` - The market data to use for evaluation
+/// * `rate_definition` - The rate definition to use for the given spread
+/// * `target` - The target npv to match the spread calculation
 pub struct ZSpreadConstVisitor<'a> {
     market_data: &'a [MarketData],
     rate_definition: RateDefinition,
@@ -133,13 +140,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
 
     use crate::{
         cashflows::cashflow::Side,
         core::marketstore::MarketStore,
         currencies::enums::Currency,
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         models::{simplemodel::SimpleModel, traits::Model},
         rates::{
             enums::Compounding,
@@ -185,7 +191,7 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index("DiscountCurve".to_string(), Box::new(ibor_index))?;
+            .add_index(0, Box::new(ibor_index))?;
         Ok(market_store)
     }
 
@@ -203,7 +209,7 @@ mod tests {
             ),
         );
 
-        let mut instrument = MakeFixedRateLoan::new()
+        let mut instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate(rate)
@@ -215,11 +221,11 @@ mod tests {
             .bullet()
             .build()?;
 
-        let market_store = Arc::new(create_store()?);
+        let market_store = create_store()?;
         let indexer = IndexingVisitor::new();
         let _ = indexer.visit(&mut instrument);
 
-        let model = SimpleModel::new(market_store);
+        let model = SimpleModel::new(&market_store);
         let data = model.gen_market_data(&indexer.request())?;
         let zspread_rate_definition = RateDefinition::new(
             DayCounter::Actual360,

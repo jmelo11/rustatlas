@@ -18,7 +18,7 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 /// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
 /// assert_eq!(date.days_in_year(), 366);
 /// let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
-/// assert!(date.is_leap_year());
+/// assert!(date.date_has_leap_year());
 /// let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
 /// assert_eq!(date.advance(15, TimeUnit::Days), NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
 /// ```
@@ -26,7 +26,7 @@ pub trait NaiveDateExt {
     fn days_in_month(&self) -> i32;
     fn days_in_year(&self) -> i32;
     fn day_of_year(&self) -> i32;
-    fn is_leap_year(&self) -> bool;
+    fn date_has_leap_year(&self) -> bool;
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate;
     fn end_of_month(date: NaiveDate) -> NaiveDate;
 }
@@ -38,7 +38,7 @@ impl NaiveDateExt for NaiveDate {
             1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
             4 | 6 | 9 | 11 => 30,
             2 => {
-                if self.is_leap_year() {
+                if self.date_has_leap_year() {
                     29
                 } else {
                     28
@@ -49,7 +49,7 @@ impl NaiveDateExt for NaiveDate {
     }
 
     fn days_in_year(&self) -> i32 {
-        if self.is_leap_year() {
+        if self.date_has_leap_year() {
             366
         } else {
             365
@@ -66,10 +66,12 @@ impl NaiveDateExt for NaiveDate {
         day + self.day() as i32
     }
 
-    fn is_leap_year(&self) -> bool {
+    fn date_has_leap_year(&self) -> bool {
         let year = self.year();
         return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
     }
+
+    
 
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate {
         let date = *self;
@@ -182,7 +184,7 @@ impl<'de> Deserialize<'de> for Date {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Date::parse_from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
+        Date::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
     }
 }
 
@@ -195,7 +197,7 @@ impl Date {
         }
     }
 
-    pub fn parse_from_str(date: &str, fmt: &str) -> Result<Date> {
+    pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
         Ok(Date::from(base_date))
     }
@@ -228,8 +230,12 @@ impl Date {
         self.base_date.day_of_year()
     }
 
-    pub fn is_leap_year(&self) -> bool {
-        self.base_date.is_leap_year()
+    pub fn date_has_leap_year(&self) -> bool {
+        self.base_date.date_has_leap_year()
+    }
+
+    pub fn is_leap_year(year: i32) -> bool {
+        return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
     }
 
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
@@ -446,12 +452,12 @@ mod tests {
     }
 
     #[test]
-    fn test_is_leap_year() {
+    fn test_date_has_leap_year() {
         let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
-        assert!(date.is_leap_year());
+        assert!(date.date_has_leap_year());
 
         let date = NaiveDate::from_ymd_opt(2021, 5, 15).unwrap();
-        assert!(!date.is_leap_year());
+        assert!(!date.date_has_leap_year());
     }
 
     #[test]
@@ -535,7 +541,7 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let date = Date::parse_from_str("2020-01-15", "%Y-%m-%d").unwrap();
+        let date = Date::from_str("2020-01-15", "%Y-%m-%d").unwrap();
         assert_eq!(date, Date::new(2020, 1, 15));
     }
 }

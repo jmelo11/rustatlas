@@ -9,7 +9,9 @@ use rayon::{
 use rustatlas::{
     cashflows::cashflow::Side,
     currencies::enums::Currency,
-    instruments::{fixedrateinstrument::FixedRateInstrument, makefixedrateloan::MakeFixedRateLoan},
+    instruments::{
+        fixedrateinstrument::FixedRateInstrument, makefixedrateinstrument::MakeFixedRateInstrument,
+    },
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
     time::{
@@ -47,7 +49,7 @@ fn multiple() {
     let mut instruments: Vec<FixedRateInstrument> = (0..150000)
         .into_par_iter() // Create a parallel iterator
         .map(|_| {
-            MakeFixedRateLoan::new()
+            MakeFixedRateInstrument::new()
                 .with_start_date(start_date.clone()) // clone data if needed
                 .with_end_date(end_date.clone()) // clone data if needed
                 .with_rate(rate)
@@ -70,7 +72,7 @@ fn multiple() {
             .iter_mut()
             .for_each(|inst| indexer.visit(inst).unwrap());
 
-        let model = SimpleModel::new(store.clone());
+        let model = SimpleModel::new(&store);
         let data = model.gen_market_data(&indexer.request()).unwrap();
 
         let npv_visitor = NPVConstVisitor::new(&data, true);

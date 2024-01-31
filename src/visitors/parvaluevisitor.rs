@@ -7,7 +7,8 @@ use crate::{
     core::{meta::MarketData, traits::Registrable},
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
-        makefixedrateloan::MakeFixedRateLoan, makefloatingrateloan::MakeFloatingRateLoan,
+        makefixedrateinstrument::MakeFixedRateInstrument,
+        makefloatingrateinstrument::MakeFloatingRateInstrument,
     },
     utils::errors::Result,
 };
@@ -20,6 +21,10 @@ use super::{
 
 /// # ParValue
 /// ParValue is a cost function that calculates the NPV of a generic instrument.
+///
+/// ## Parameters
+/// * `eval` - The instrument to evaluate
+/// * `market_data` - The market data to use for evaluation
 struct ParValue<'a, T> {
     eval: &'a T,
     npv_visitor: Box<NPVConstVisitor<'a>>,
@@ -43,7 +48,7 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFixedRateLoan::from(self.eval);
+        let builder = MakeFixedRateInstrument::from(self.eval);
         let mut inst = builder.with_rate_value(*param).build()?;
         inst.mut_cashflows()
             .iter_mut()
@@ -63,7 +68,7 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
     type Output = f64;
 
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFloatingRateLoan::from(self.eval);
+        let builder = MakeFloatingRateInstrument::from(self.eval);
         let mut inst = builder.with_spread(*param).build()?;
 
         inst.mut_cashflows()

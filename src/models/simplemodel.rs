@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     core::{
         marketstore::MarketStore,
@@ -14,33 +12,33 @@ use super::traits::Model;
 
 /// # SimpleModel
 /// A simple model that provides market data based on the current market state. Uses the
-/// market store to get the market data (curves, currencies and others). All values are calculated using the 
+/// market store to get the market data (curves, currencies and others). All values are calculated using the
 /// reference date and local currency of the market store.
 ///
 /// ## Parameters
 /// * `market_store` - The market store.
 /// * `transform_currencies` - If true, the model will transform the currencies to the local currency of the market store.
 #[derive(Clone)]
-pub struct SimpleModel {
-    market_store: Arc<MarketStore>,
+pub struct SimpleModel<'a> {
+    market_store: &'a MarketStore,
     transform_currencies: bool,
 }
 
-impl SimpleModel {
-    pub fn new(market_store: Arc<MarketStore>) -> SimpleModel {
+impl<'a> SimpleModel<'a> {
+    pub fn new(market_store: &'a MarketStore) -> SimpleModel {
         SimpleModel {
             market_store,
             transform_currencies: false,
         }
     }
 
-    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel {
+    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel<'a> {
         self.transform_currencies = flag;
         self
     }
 }
 
-impl Model for SimpleModel {
+impl<'a> Model for SimpleModel<'a> {
     fn reference_date(&self) -> Date {
         self.market_store.reference_date()
     }
@@ -57,7 +55,7 @@ impl Model for SimpleModel {
         }
 
         let id = df.provider_id();
-        let index = self.market_store.get_index_by_id(id)?;
+        let index = self.market_store.get_index(id)?;
         let curve = index.term_structure()?;
         Ok(curve.discount_factor(date)?)
     }
@@ -70,7 +68,7 @@ impl Model for SimpleModel {
             return Ok(0.0);
         }
 
-        let index = self.market_store.get_index_by_id(id)?;
+        let index = self.market_store.get_index(id)?;
         let start_date = fwd.start_date();
         Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
     }
@@ -105,9 +103,8 @@ impl Model for SimpleModel {
                     .exchange_rate_store()
                     .get_exchange_rate(first_currency, second_currency)?;
 
-                let first_curve = self.market_store.get_index_by_id(first_id)?;
-
-                let second_curve = self.market_store.get_index_by_id(second_id)?;
+                let first_curve = self.market_store.get_index(first_id)?;
+                let second_curve = self.market_store.get_index(second_id)?;
 
                 let first_df = first_curve.discount_factor(date)?;
                 let second_df = second_curve.discount_factor(date)?;

@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
-        traits::{HasReferenceDate, HasTenor, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{date::Date, enums::TimeUnit, period::Period},
@@ -77,11 +77,22 @@ pub trait AdvanceInterestRateIndexInTime {
     fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>>;
     fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>>;
 }
+/// # HasTenor
+/// Implement this trait for a struct that holds a tenor.
+pub trait HasTenor {
+    fn tenor(&self) -> Period;
+}
 
 /// # HasTermStructure
 /// Implement this trait for a struct that holds a term structure.
 pub trait HasTermStructure {
     fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>>;
+}
+
+/// # HasName
+/// Implement this trait for a struct that holds a name.
+pub trait HasName {
+    fn name(&self) -> Result<String>;
 }
 
 pub trait InterestRateIndexTrait:
@@ -92,5 +103,6 @@ pub trait InterestRateIndexTrait:
     + InterestRateIndexClone
     + HasTermStructure
     + HasTenor
+    + HasName
 {
 }

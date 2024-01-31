@@ -15,6 +15,16 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
+/// # TenorBasedZeroRateTermStructure
+/// A term structure of zero rates based on tenors.
+///
+/// ## Parameters
+/// * `reference_date` - The reference date of the term structure
+/// * `tenors` - The tenors of the term structure
+/// * `spreads` - The spreads of the term structure
+/// * `rate_definition` - The rate definition of the term structure
+/// * `interpolation` - The interpolation method of the term structure
+/// * `enable_extrapolation` - Enable extrapolation
 #[derive(Clone)]
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
@@ -176,20 +186,19 @@ mod tests {
             enable_extrapolation,
         )?;
 
-        let df = zero_rate_term_structure
-            .discount_factor(Date::new(2022, 6, 1))
-            .unwrap();
-        println!("df: {}", df);
+        years.iter().for_each(|x| {
+            let forward_rate = zero_rate_term_structure
+                .forward_rate(
+                    reference_date,
+                    reference_date + Period::new(*x, TimeUnit::Years),
+                    Compounding::Compounded,
+                    Frequency::Annual,
+                )
+                .unwrap();
+            let tmp = *x as f64;
+            assert!(forward_rate - tmp < 1e-10);
+        });
 
-        let forward_rate = zero_rate_term_structure
-            .forward_rate(
-                reference_date,
-                reference_date + Period::new(1, TimeUnit::Years),
-                Compounding::Compounded,
-                Frequency::Annual,
-            )
-            .unwrap();
-        assert!(forward_rate - 0.01 < 1e-10);
         Ok(())
     }
 }

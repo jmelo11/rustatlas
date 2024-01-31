@@ -4,7 +4,7 @@ use crate::{
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-        traits::{HasReferenceDate, HasTenor, YieldProvider},
+        traits::{HasReferenceDate, YieldProvider},
         yieldtermstructure::traits::YieldTermStructureTrait,
     },
     time::{
@@ -16,13 +16,15 @@ use crate::{
 };
 
 use super::traits::{
-    AdvanceInterestRateIndexInTime, FixingProvider, HasTermStructure, InterestRateIndexTrait,
+    AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
+    InterestRateIndexTrait,
 };
 
 /// # OvernightIndex
 /// Overnight index.
 #[derive(Clone)]
 pub struct OvernightIndex {
+    name: Option<String>,
     fixings: HashMap<Date, f64>,
     term_structure: Option<Box<dyn YieldTermStructureTrait>>,
     rate_definition: RateDefinition,
@@ -33,12 +35,18 @@ pub struct OvernightIndex {
 impl OvernightIndex {
     pub fn new(reference_date: Date) -> OvernightIndex {
         OvernightIndex {
+            name: None,
             fixings: HashMap::new(),
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
             reference_date: reference_date,
         }
+    }
+
+    pub fn with_name(mut self, name: String) -> Self {
+        self.name = Some(name);
+        self
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
@@ -106,6 +114,14 @@ impl HasReferenceDate for OvernightIndex {
 impl HasTenor for OvernightIndex {
     fn tenor(&self) -> Period {
         self.tenor
+    }
+}
+
+impl HasName for OvernightIndex {
+    fn name(&self) -> Result<String> {
+        self.name
+            .clone()
+            .ok_or(AtlasError::ValueNotSetErr("Name not set".to_string()))
     }
 }
 

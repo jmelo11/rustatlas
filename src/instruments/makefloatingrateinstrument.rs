@@ -7,6 +7,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
@@ -19,10 +20,10 @@ use super::{
     traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
 };
 
-/// # MakeFloatingRateLoan
+/// # MakeFloatingRateInstrument
 /// Builder for a floating rate loan.
 #[derive(Debug, Clone)]
-pub struct MakeFloatingRateLoan {
+pub struct MakeFloatingRateInstrument {
     start_date: Option<Date>,
     end_date: Option<Date>,
     first_coupon_date: Option<Date>,
@@ -40,12 +41,13 @@ pub struct MakeFloatingRateLoan {
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
     id: Option<usize>,
+    issue_date: Option<Date>,
 }
 
 /// Constructor, setters and getters.
-impl MakeFloatingRateLoan {
-    pub fn new() -> MakeFloatingRateLoan {
-        MakeFloatingRateLoan {
+impl MakeFloatingRateInstrument {
+    pub fn new() -> MakeFloatingRateInstrument {
+        MakeFloatingRateInstrument {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -63,45 +65,60 @@ impl MakeFloatingRateLoan {
             redemptions: None,
             additional_coupon_dates: None,
             id: None,
+            issue_date: None,
         }
     }
 
-    pub fn with_id(mut self, id: Option<usize>) -> MakeFloatingRateLoan {
+    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateInstrument {
+        self.issue_date = Some(issue_date);
+        self
+    }
+
+    pub fn with_id(mut self, id: Option<usize>) -> MakeFloatingRateInstrument {
         self.id = id;
         self
     }
 
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateLoan {
+    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateInstrument {
         self.first_coupon_date = Some(first_coupon_date);
         self
     }
 
-    pub fn with_option_first_date(mut self, first_date: Option<Date>) -> MakeFloatingRateLoan {
+    pub fn with_option_first_date(
+        mut self,
+        first_date: Option<Date>,
+    ) -> MakeFloatingRateInstrument {
         self.first_coupon_date = first_date;
         self
     }
 
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLoan {
+    pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateInstrument {
         self.start_date = Some(start_date);
         self
     }
 
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateLoan {
+    pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateInstrument {
         self.end_date = Some(end_date);
         self
     }
 
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLoan {
+    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateInstrument {
         self.tenor = Some(tenor);
         return self;
     }
 
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFloatingRateLoan {
+    pub fn with_disbursements(
+        mut self,
+        disbursements: HashMap<Date, f64>,
+    ) -> MakeFloatingRateInstrument {
         self.disbursements = Some(disbursements);
         self
     }
 
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFloatingRateLoan {
+    pub fn with_redemptions(
+        mut self,
+        redemptions: HashMap<Date, f64>,
+    ) -> MakeFloatingRateInstrument {
         self.redemptions = Some(redemptions);
         self
     }
@@ -109,7 +126,7 @@ impl MakeFloatingRateLoan {
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFloatingRateLoan {
+    ) -> MakeFloatingRateInstrument {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
@@ -117,7 +134,7 @@ impl MakeFloatingRateLoan {
     pub fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
-    ) -> MakeFloatingRateLoan {
+    ) -> MakeFloatingRateInstrument {
         self.forecast_curve_id = forecast_curve_id;
         return self;
     }
@@ -125,71 +142,74 @@ impl MakeFloatingRateLoan {
     pub fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
-    ) -> MakeFloatingRateLoan {
+    ) -> MakeFloatingRateInstrument {
         self.discount_curve_id = discount_curve_id;
         return self;
     }
 
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLoan {
+    pub fn with_rate_definition(
+        mut self,
+        rate_definition: RateDefinition,
+    ) -> MakeFloatingRateInstrument {
         self.rate_definition = Some(rate_definition);
         return self;
     }
 
-    pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateLoan {
+    pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateInstrument {
         self.notional = Some(notional);
         return self;
     }
 
-    pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateLoan {
+    pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateInstrument {
         self.currency = Some(currency);
         return self;
     }
 
-    pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateLoan {
+    pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateInstrument {
         self.spread = Some(spread);
         return self;
     }
 
-    pub fn bullet(mut self) -> MakeFloatingRateLoan {
+    pub fn bullet(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Bullet);
         return self;
     }
 
-    pub fn equal_redemptions(mut self) -> MakeFloatingRateLoan {
+    pub fn equal_redemptions(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
-    pub fn zero(mut self) -> MakeFloatingRateLoan {
+    pub fn zero(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
-    pub fn other(mut self) -> MakeFloatingRateLoan {
+    pub fn other(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
-    pub fn with_side(mut self, side: Side) -> MakeFloatingRateLoan {
+    pub fn with_side(mut self, side: Side) -> MakeFloatingRateInstrument {
         self.side = Some(side);
         return self;
     }
 
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLoan {
+    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateInstrument {
         self.payment_frequency = Some(frequency);
         return self;
     }
 
-    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLoan {
+    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateInstrument {
         self.structure = Some(structure);
         return self;
     }
 }
 
 /// Build
-impl MakeFloatingRateLoan {
+impl MakeFloatingRateInstrument {
     pub fn build(self) -> Result<FloatingRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -295,6 +315,7 @@ impl MakeFloatingRateLoan {
                     self.discount_curve_id,
                     self.forecast_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::Zero => {
@@ -378,6 +399,7 @@ impl MakeFloatingRateLoan {
                     self.discount_curve_id,
                     self.forecast_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::EqualRedemptions => {
@@ -468,6 +490,7 @@ impl MakeFloatingRateLoan {
                     self.discount_curve_id,
                     self.forecast_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             Structure::Other => {
@@ -555,6 +578,7 @@ impl MakeFloatingRateLoan {
                     self.discount_curve_id,
                     self.forecast_curve_id,
                     self.id,
+                    self.issue_date,
                 ))
             }
             _ => Err(AtlasError::InvalidValueErr(
@@ -590,8 +614,8 @@ fn build_coupons_from_notionals(
     }
 }
 
-impl Into<MakeFloatingRateLoan> for FloatingRateInstrument {
-    fn into(self) -> MakeFloatingRateLoan {
+impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
+    fn into(self) -> MakeFloatingRateInstrument {
         match self.structure() {
             Structure::Other => {
                 let mut disbursements = HashMap::new();
@@ -612,7 +636,7 @@ impl Into<MakeFloatingRateLoan> for FloatingRateInstrument {
                         _ => (),
                     }
                 }
-                MakeFloatingRateLoan::new()
+                MakeFloatingRateInstrument::new()
                     .with_start_date(self.start_date())
                     .with_end_date(self.end_date())
                     .with_notional(self.notional())
@@ -625,10 +649,10 @@ impl Into<MakeFloatingRateLoan> for FloatingRateInstrument {
                     .with_forecast_curve_id(self.forecast_curve_id())
                     .with_discount_curve_id(self.discount_curve_id())
                     .with_payment_frequency(self.payment_frequency())
-                    .with_currency(self.currency())
+                    .with_currency(self.currency().unwrap())
                     .other()
             }
-            _ => MakeFloatingRateLoan::new()
+            _ => MakeFloatingRateInstrument::new()
                 .with_start_date(self.start_date())
                 .with_end_date(self.end_date())
                 .with_notional(self.notional())
@@ -638,14 +662,14 @@ impl Into<MakeFloatingRateLoan> for FloatingRateInstrument {
                 .with_rate_definition(self.rate_definition())
                 .with_forecast_curve_id(self.forecast_curve_id())
                 .with_discount_curve_id(self.discount_curve_id())
-                .with_currency(self.currency())
+                .with_currency(self.currency().unwrap())
                 .with_structure(self.structure()),
         }
     }
 }
 
-impl From<&FloatingRateInstrument> for MakeFloatingRateLoan {
-    fn from(instrument: &FloatingRateInstrument) -> MakeFloatingRateLoan {
+impl From<&FloatingRateInstrument> for MakeFloatingRateInstrument {
+    fn from(instrument: &FloatingRateInstrument) -> MakeFloatingRateInstrument {
         instrument.clone().into()
     }
 }
@@ -678,7 +702,7 @@ mod tests {
             Frequency::Annual,
         );
 
-        let mut instrument = super::MakeFloatingRateLoan::new()
+        let mut instrument = super::MakeFloatingRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
@@ -698,10 +722,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
         Ok(())
     }
 
@@ -715,7 +735,7 @@ mod tests {
             Frequency::Annual,
         );
 
-        let mut instrument = super::MakeFloatingRateLoan::new()
+        let mut instrument = super::MakeFloatingRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
@@ -734,10 +754,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
         Ok(())
     }
 
@@ -751,7 +767,7 @@ mod tests {
             Frequency::Annual,
         );
 
-        let mut instrument = super::MakeFloatingRateLoan::new()
+        let mut instrument = super::MakeFloatingRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_rate_definition(rate_definition)
@@ -771,10 +787,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
         Ok(())
     }
 
@@ -787,7 +799,7 @@ mod tests {
             Frequency::Annual,
         );
 
-        let mut instrument = super::MakeFloatingRateLoan::new()
+        let mut instrument = super::MakeFloatingRateInstrument::new()
             .with_start_date(start_date)
             .with_tenor(Period::new(23, TimeUnit::Months))
             .with_rate_definition(rate_definition)
@@ -806,10 +818,6 @@ mod tests {
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
         Ok(())
     }
 
@@ -836,7 +844,7 @@ mod tests {
             Frequency::Annual,
         );
 
-        let mut instrument = super::MakeFloatingRateLoan::new()
+        let mut instrument = super::MakeFloatingRateInstrument::new()
             .with_start_date(start_date)
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
@@ -856,10 +864,6 @@ mod tests {
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.start_date(), start_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
         Ok(())
     }
 }

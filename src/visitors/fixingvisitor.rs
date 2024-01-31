@@ -8,6 +8,9 @@ use super::traits::{HasCashflows, Visit};
 
 /// # FixingVisitor
 /// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
+///
+/// ## Parameters
+/// * `market_data` - The market data to use for fixing
 pub struct FixingVisitor<'a> {
     market_data: &'a [MarketData],
 }

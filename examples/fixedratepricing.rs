@@ -1,13 +1,11 @@
 extern crate rustatlas;
 
-use std::sync::Arc;
-
 use rustatlas::{
     cashflows::{
         cashflow::Side,
         traits::{InterestAccrual, Payable},
     },
-    instruments::makefixedrateloan::MakeFixedRateLoan,
+    instruments::makefixedrateinstrument::MakeFixedRateInstrument,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
     time::{
@@ -29,7 +27,7 @@ use crate::common::common::*;
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -42,7 +40,7 @@ fn starting_today_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)
@@ -62,8 +60,7 @@ fn starting_today_pricing() {
     }
 
     let ref_date = market_store.reference_date();
-
-    let model = SimpleModel::new(market_store);
+    let model = SimpleModel::new(&market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
     print_table(instrument.cashflows(), &data);
@@ -106,7 +103,7 @@ fn starting_today_pricing() {
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -120,7 +117,7 @@ fn forward_starting_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)
@@ -135,7 +132,7 @@ fn forward_starting_pricing() {
     let indexer = IndexingVisitor::new();
     let _ = indexer.visit(&mut instrument);
 
-    let model = SimpleModel::new(market_store);
+    let model = SimpleModel::new(&market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
     print_table(instrument.cashflows(), &data);
@@ -160,7 +157,7 @@ fn forward_starting_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);
@@ -173,7 +170,7 @@ fn already_started_pricing() {
         DayCounter::Actual360,
     );
 
-    let mut instrument = MakeFixedRateLoan::new()
+    let mut instrument = MakeFixedRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_rate(rate)
@@ -192,7 +189,7 @@ fn already_started_pricing() {
         Err(e) => panic!("IndexingVisitor failed with error: {}", e),
     }
 
-    let model = SimpleModel::new(market_store);
+    let model = SimpleModel::new(&market_store);
 
     let data = model.gen_market_data(&indexer.request()).unwrap();
     print_table(instrument.cashflows(), &data);

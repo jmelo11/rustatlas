@@ -202,7 +202,7 @@ impl Period {
         Ok(Period::new(length, units))
     }
 
-    pub fn period_in_year (&self) -> f64 {
+    pub fn period_in_year(&self) -> f64 {
         match self.units {
             TimeUnit::Years => self.length as f64,
             TimeUnit::Months => self.length as f64 / 12.0,
@@ -210,7 +210,25 @@ impl Period {
             TimeUnit::Days => self.length as f64 / 365.0,
         }
     }
+}
 
+impl TryFrom<String> for Period {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        Period::from_str(&s)
+    }
+}
+
+impl From<Period> for String {
+    fn from(period: Period) -> Self {
+        match period.units {
+            TimeUnit::Years => format!("{}Y", period.length),
+            TimeUnit::Months => format!("{}M", period.length),
+            TimeUnit::Weeks => format!("{}W", period.length),
+            TimeUnit::Days => format!("{}D", period.length),
+        }
+    }
 }
 
 /// Deserializes a string in the format like 1Y or 1Y6M to a Period.

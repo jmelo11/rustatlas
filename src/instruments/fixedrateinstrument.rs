@@ -1,12 +1,13 @@
+use super::traits::Structure;
 use crate::cashflows::cashflow::{Cashflow, Side};
 use crate::cashflows::traits::{InterestAccrual, Payable};
+use crate::core::traits::HasCurrency;
 use crate::currencies::enums::Currency;
 use crate::rates::interestrate::InterestRate;
 use crate::time::date::Date;
 use crate::time::enums::Frequency;
-use crate::visitors::traits::HasCashflows;
 use crate::utils::errors::Result;
-use super::traits::Structure;
+use crate::visitors::traits::HasCashflows;
 
 /// # FixedRateInstrument
 /// A fixed rate instrument.
@@ -32,7 +33,8 @@ pub struct FixedRateInstrument {
     currency: Currency,
     discount_curve_id: Option<usize>,
     id: Option<usize>,
-    yield_rate : Option<InterestRate>
+    issue_date: Option<Date>,
+    yield_rate: Option<InterestRate>,
 }
 
 impl FixedRateInstrument {
@@ -48,7 +50,8 @@ impl FixedRateInstrument {
         currency: Currency,
         discount_curve_id: Option<usize>,
         id: Option<usize>,
-        yield_rate : Option<InterestRate>
+        issue_date: Option<Date>,
+        yield_rate: Option<InterestRate>,
     ) -> Self {
         FixedRateInstrument {
             start_date,
@@ -62,11 +65,12 @@ impl FixedRateInstrument {
             currency,
             discount_curve_id,
             id,
-            yield_rate
+            issue_date,
+            yield_rate,
         }
     }
 
-    pub fn id(&self) -> Option<usize>{
+    pub fn id(&self) -> Option<usize> {
         self.id
     }
 
@@ -102,14 +106,19 @@ impl FixedRateInstrument {
         self.side
     }
 
-    pub fn currency(&self) -> Currency {
-        self.currency
+    pub fn issue_date(&self) -> Option<Date> {
+        self.issue_date
     }
 
     pub fn yield_rate(&self) -> Option<InterestRate> {
         self.yield_rate
     }
+}
 
+impl HasCurrency for FixedRateInstrument {
+    fn currency(&self) -> Result<Currency> {
+        Ok(self.currency)
+    }
 }
 
 impl InterestAccrual for FixedRateInstrument {
@@ -120,7 +129,7 @@ impl InterestAccrual for FixedRateInstrument {
                 let end_pv = self.discounted_cashflows(end_date, rate)?;
                 let redemption_amount = self.sum_cashflows_between_dates(start_date, end_date)?;
                 Ok(end_pv - ini_pv + redemption_amount)
-            },
+            }
             None => {
                 let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {
                     acc + cf.accrued_amount(start_date, end_date).unwrap_or(0.0)
@@ -137,15 +146,15 @@ impl InterestAccrual for FixedRateInstrument {
     }
 }
 
-impl FixedRateInstrument { 
+impl FixedRateInstrument {
     fn discounted_cashflows(&self, date: Date, rate: InterestRate) -> Result<f64> {
         let mut pv = 0.0;
         for cf in self.cashflows.iter() {
-            if cf.payment_date()>date {
+            if cf.payment_date() > date {
                 let amount = cf.amount()?;
                 let payment_date = cf.payment_date();
                 let df = rate.discount_factor(date, payment_date);
-                pv += amount * df*cf.side().sign();
+                pv += amount * df * cf.side().sign();
             }
         }
         Ok(pv)
@@ -156,7 +165,10 @@ impl FixedRateInstrument {
         let initial_instrument_date = self.start_date();
 
         for cf in self.cashflows.iter() {
-            if cf.payment_date()>initial_instrument_date && cf.payment_date()>initial_date && cf.payment_date()<=final_date {
+            if cf.payment_date() > initial_instrument_date
+                && cf.payment_date() > initial_date
+                && cf.payment_date() <= final_date
+            {
                 redemption_amount += cf.amount()? * cf.side().sign();
             }
         }
@@ -179,7 +191,7 @@ mod tests {
     use crate::{
         cashflows::{cashflow::Side, traits::InterestAccrual},
         currencies::enums::Currency,
-        instruments::makefixedrateloan::MakeFixedRateLoan,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -190,9 +202,9 @@ mod tests {
         utils::errors::Result,
     };
     use std::collections::{HashMap, HashSet};
-
+    
     #[test]
-    fn accrual_bullet_instrument() -> Result<()> {
+    fn accrual_bullet_instrumen_with_tir() -> Result<()> {
         let start_date = Date::new(2024, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate = InterestRate::new(
@@ -209,7 +221,7 @@ mod tests {
             DayCounter::Thirty360,
         );
 
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
             .with_payment_frequency(Frequency::Semiannual)
@@ -222,30 +234,30 @@ mod tests {
             .build()?;
 
         let date = start_date + Period::new(1, TimeUnit::Months);
-        let mut accrual_aux = instrument.accrued_amount(date, date+Period::new(1, TimeUnit::Months))?;
+        let mut accrual_aux =
+            instrument.accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
         assert!((accrual_aux - 27385.193447).abs() < 1e-6);
 
         let date = start_date + Period::new(2, TimeUnit::Months);
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(1, TimeUnit::Months))?;
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
         assert!((accrual_aux - 27540.033312).abs() < 1e-6);
 
-        let date = start_date + Period::new(3, TimeUnit::Months);   
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(6, TimeUnit::Months))?;
+        let date = start_date + Period::new(3, TimeUnit::Months);
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
         assert!((accrual_aux - 165982.43365).abs() < 1e-6);
 
         let date = start_date + Period::new(54, TimeUnit::Months);
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(6, TimeUnit::Months))?;
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
         assert!((accrual_aux - 171307.0814148).abs() < 1e-6);
 
         Ok(())
     }
 
-
     #[test]
-    fn accrual_other_instrument() -> Result<()> {
+    fn accrual_other_instrument_with_tir() -> Result<()> {
         let start_date = Date::new(2024, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
-       
+
         let mut disbursements = HashMap::new();
         disbursements.insert(start_date, 5000000.0);
 
@@ -281,7 +293,7 @@ mod tests {
             DayCounter::Thirty360,
         );
 
-        let instrument = MakeFixedRateLoan::new()
+        let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
@@ -293,42 +305,23 @@ mod tests {
             .other()
             .build()?;
 
-        //let cashflows = instrument.cashflows();
-        ////print cashflows
-        //for cf in cashflows {
-        //    println!("{:?} {:?}", cf.payment_date(), cf.amount());
-        //}
-
-        //for i in 0..=60 {
-        //    let date = start_date + Period::new(i, TimeUnit::Months);
-        //    println!("vp: {:?}", instrument.intrument_cashflow_discounted(date, yield_rate));
-        //}
-
-        //for i in 0..60 {
-        //    let date = start_date + Period::new(i, TimeUnit::Months); 
-        //    println!("Fecha: {:?}   Devengo: {:?}", instrument.accrued_amount(date, date+Period::new(1, TimeUnit::Months)), date+Period::new(1, TimeUnit::Months));
-        //}
-        
         let date = start_date + Period::new(1, TimeUnit::Months);
-        let mut accrual_aux = instrument.accrued_amount(date, date+Period::new(1, TimeUnit::Months))?;
+        let mut accrual_aux =
+            instrument.accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
         assert!((accrual_aux - 27621.871414).abs() < 1e-6);
 
         let date = start_date + Period::new(2, TimeUnit::Months);
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(1, TimeUnit::Months))?;
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
         assert!((accrual_aux - 27778.049491).abs() < 1e-6);
 
-        let date = start_date + Period::new(3, TimeUnit::Months);   
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(6, TimeUnit::Months))?;
+        let date = start_date + Period::new(3, TimeUnit::Months);
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
         assert!((accrual_aux - 167439.059899).abs() < 1e-6);
 
         let date = start_date + Period::new(54, TimeUnit::Months);
-        accrual_aux = instrument.accrued_amount(date, date+Period::new(6, TimeUnit::Months))?;
+        accrual_aux = instrument.accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
         assert!((accrual_aux - 102784.2488489).abs() < 1e-6);
 
         Ok(())
     }
-
 }
-
-
-

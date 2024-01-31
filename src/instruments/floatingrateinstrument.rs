@@ -1,5 +1,9 @@
 use crate::{
-    cashflows::{cashflow::{Cashflow, Side}, traits::InterestAccrual},
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::InterestAccrual,
+    },
+    core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -37,6 +41,7 @@ pub struct FloatingRateInstrument {
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
     id: Option<usize>,
+    issue_date: Option<Date>,
 }
 
 impl FloatingRateInstrument {
@@ -54,6 +59,7 @@ impl FloatingRateInstrument {
         discount_curve_id: Option<usize>,
         forecast_curve_id: Option<usize>,
         id: Option<usize>,
+        issue_date: Option<Date>,
     ) -> Self {
         FloatingRateInstrument {
             start_date,
@@ -69,7 +75,12 @@ impl FloatingRateInstrument {
             discount_curve_id,
             forecast_curve_id,
             id,
+            issue_date,
         }
+    }
+
+    pub fn issue_date(&self) -> Option<Date> {
+        self.issue_date
     }
 
     pub fn id(&self) -> Option<usize> {
@@ -115,12 +126,13 @@ impl FloatingRateInstrument {
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
-
-    pub fn currency(&self) -> Currency {
-        self.currency
-    }
 }
 
+impl HasCurrency for FloatingRateInstrument {
+    fn currency(&self) -> Result<Currency> {
+        Ok(self.currency)
+    }
+}
 
 impl InterestAccrual for FloatingRateInstrument {
     fn accrual_start_date(&self) -> Date {

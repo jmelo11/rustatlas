@@ -25,6 +25,8 @@ pub enum AtlasError {
     InvalidValueErr(String),
     #[error("Solver error: {0}")]
     SolverErr(#[from] argmin::core::Error),
+    #[error("{0}")]
+    NotImplementedErr(String),
 }
 
 pub type Result<T> = std::result::Result<T, AtlasError>;

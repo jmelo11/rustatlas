@@ -1,9 +1,7 @@
 extern crate rustatlas;
 
-use std::sync::Arc;
-
 use rustatlas::{
-    instruments::makefloatingrateloan::MakeFloatingRateLoan,
+    instruments::makefloatingrateinstrument::MakeFloatingRateInstrument,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::traits::HasReferenceDate,
     time::{
@@ -25,14 +23,14 @@ use crate::common::common::*;
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new()
+    let mut instrument = MakeFloatingRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_payment_frequency(Frequency::Semiannual)
@@ -50,7 +48,7 @@ fn starting_today_pricing() {
         Err(e) => panic!("IndexingVisitor failed with error: {}", e),
     }
 
-    let model = SimpleModel::new(market_store);
+    let model = SimpleModel::new(&market_store);
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let fixing_visitor = FixingVisitor::new(&data);
@@ -72,14 +70,14 @@ fn starting_today_pricing() {
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = Arc::new(create_store().unwrap());
+    let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let mut instrument = MakeFloatingRateLoan::new()
+    let mut instrument = MakeFloatingRateInstrument::new()
         .with_start_date(start_date)
         .with_end_date(end_date)
         .with_payment_frequency(Frequency::Semiannual)
@@ -97,8 +95,7 @@ fn already_started_pricing() {
         Err(e) => panic!("IndexingVisitor failed with error: {}", e),
     }
 
-    let model = SimpleModel::new(market_store);
-
+    let model = SimpleModel::new(&market_store);
     let data = model.gen_market_data(&indexer.request()).unwrap();
 
     let fixing_visitor = FixingVisitor::new(&data);

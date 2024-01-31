@@ -3,10 +3,21 @@ use std::collections::HashSet;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
+/// # WeekendsOnly
+/// A calendar that considers only weekends as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WeekendsOnly {
     added_holidays: HashSet<Date>,
     removed_holidays: HashSet<Date>,
+}
+
+impl WeekendsOnly {
+    pub fn new() -> Self {
+        WeekendsOnly {
+            added_holidays: HashSet::new(),
+            removed_holidays: HashSet::new(),
+        }
+    }
 }
 
 impl ImplCalendar for WeekendsOnly {
@@ -49,7 +60,10 @@ impl IsCalendar for WeekendsOnly {}
 mod tests {
     use std::collections::HashSet;
 
-    use crate::time::{calendars::{weekendsonly::WeekendsOnly, traits::IsCalendar}, date::Date};
+    use crate::time::{
+        calendars::{traits::IsCalendar, weekendsonly::WeekendsOnly},
+        date::Date,
+    };
 
     #[test]
     fn test_weekendsonly() {

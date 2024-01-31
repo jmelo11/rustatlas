@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-use serde::{Deserialize, Serialize};
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -7,9 +5,14 @@ use crate::{
     },
     currencies::enums::Currency,
     time::date::Date,
+    utils::errors::{AtlasError, Result},
 };
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
+/// # Structure
+/// A struct that contains the information needed to define a structure.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Structure {
     Bullet,
     EqualRedemptions,
@@ -18,9 +21,71 @@ pub enum Structure {
     Other,
 }
 
+impl TryFrom<String> for Structure {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "Bullet" => Ok(Structure::Bullet),
+            "EqualRedemptions" => Ok(Structure::EqualRedemptions),
+            "Zero" => Ok(Structure::Zero),
+            "EqualPayments" => Ok(Structure::EqualPayments),
+            "Other" => Ok(Structure::Other),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid structure: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<Structure> for String {
+    fn from(structure: Structure) -> Self {
+        match structure {
+            Structure::Bullet => "Bullet".to_string(),
+            Structure::EqualRedemptions => "EqualRedemptions".to_string(),
+            Structure::Zero => "Zero".to_string(),
+            Structure::EqualPayments => "EqualPayments".to_string(),
+            Structure::Other => "Other".to_string(),
+        }
+    }
+}
+
+/// # CashflowType
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum CashflowType {
     Redemption,
     Disbursement,
+    FixedRateCoupon,
+    FloatingRateCoupon,
+}
+
+impl TryFrom<String> for CashflowType {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "Redemption" => Ok(CashflowType::Redemption),
+            "Disbursement" => Ok(CashflowType::Disbursement),
+            "FixedRateCoupon" => Ok(CashflowType::FixedRateCoupon),
+            "FloatingRateCoupon" => Ok(CashflowType::FloatingRateCoupon),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid cashflow type: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<CashflowType> for String {
+    fn from(cashflow_type: CashflowType) -> Self {
+        match cashflow_type {
+            CashflowType::Redemption => "Redemption".to_string(),
+            CashflowType::Disbursement => "Disbursement".to_string(),
+            CashflowType::FixedRateCoupon => "FixedRateCoupon".to_string(),
+            CashflowType::FloatingRateCoupon => "FloatingRateCoupon".to_string(),
+        }
+    }
 }
 
 pub fn build_cashflows(
@@ -36,6 +101,7 @@ pub fn build_cashflows(
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
+            _ => (),
         }
     }
 }
@@ -102,7 +168,6 @@ pub fn calculate_outstanding(
 
     outstanding
 }
-
 
 #[cfg(test)]
 mod tests {

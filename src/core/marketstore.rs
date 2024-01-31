@@ -10,6 +10,12 @@ use crate::{
 
 /// # MarketStore
 /// A store for market data.
+///
+/// ## Parameters
+/// * `reference_date` - The reference date of the market store
+/// * `local_currency` - The local currency of the market store
+/// * `exchange_rate_store` - The exchange rate store
+/// * `index_store` - The index store
 #[derive(Clone)]
 pub struct MarketStore {
     reference_date: Date,
@@ -62,8 +68,8 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_index_by_id(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
-        return self.index_store.get_index_by_id(id);
+    pub fn get_index(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
+        return self.index_store.get_index(id);
     }
 
     pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
