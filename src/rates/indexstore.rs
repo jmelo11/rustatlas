@@ -78,6 +78,14 @@ impl IndexStore {
         names
     }
 
+    pub fn get_index_map(&self) -> HashMap<String,usize> {
+        let mut map = HashMap::new();
+        for (id, index) in self.index_map.iter() {
+            map.insert(index.name().unwrap(), *id);
+        }
+        map
+    }
+
     pub fn next_available_id(&self) -> usize {
         let keys = self.index_map.keys();
         let mut max = 0;
