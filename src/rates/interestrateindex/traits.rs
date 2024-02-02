@@ -104,5 +104,6 @@ pub trait InterestRateIndexTrait:
     + HasTermStructure
     + HasTenor
     + HasName
+    + Send
 {
 }

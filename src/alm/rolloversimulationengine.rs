@@ -43,7 +43,6 @@ pub struct RolloverSimulationEngine<'a> {
     base_redemptions: BTreeMap<Date, f64>,
     redemptions_currency: Currency,
     eval_dates: Vec<Date>,
-    chunk_size: usize,
 }
 
 impl<'a> RolloverSimulationEngine<'a> {
@@ -68,14 +67,9 @@ impl<'a> RolloverSimulationEngine<'a> {
             base_redemptions,
             redemptions_currency: redemption_currency,
             eval_dates: schedule.dates().clone(),
-            chunk_size: 1000,
         }
     }
 
-    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.chunk_size = chunk_size;
-        self
-    }
 
     pub fn run(&self, strategies: Vec<RolloverStrategy>) -> Result<Vec<Instrument>> {
         let mut redemptions = self.base_redemptions.clone();
@@ -84,7 +78,6 @@ impl<'a> RolloverSimulationEngine<'a> {
 
         // redemptions for target portfolio
         let generator = PositionGenerator::new(self.redemptions_currency, strategies.clone());
-
         self.eval_dates.iter().try_for_each(|date| -> Result<()> {
             let maturing_amount = redemptions.get(date);
             match maturing_amount {

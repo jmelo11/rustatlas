@@ -36,6 +36,6 @@ pub trait AdvanceTermStructureInTime {
 /// # YieldTermStructureTrait
 /// Trait that defines a yield term structure.
 pub trait YieldTermStructureTrait:
-    YieldProvider + HasReferenceDate + YieldTermStructureTraitClone + AdvanceTermStructureInTime
+    YieldProvider + HasReferenceDate + YieldTermStructureTraitClone + AdvanceTermStructureInTime + Send
 {
 }
