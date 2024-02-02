@@ -9,6 +9,9 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
+/// # CashAccount
+/// Struct that defines a cash account. It is used to keep track of the cash inflows and outflows
+/// of an account.
 pub struct CashAccount {
     currency: Option<Currency>,
     pub amount: RefCell<BTreeMap<Date, f64>>,

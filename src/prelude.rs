@@ -17,7 +17,7 @@ pub use crate::{
         enums::*,
         indexstore::*,
         interestrate::*,
-        interestrateindex::{iborindex::*, overnightindex::*, traits::*, traits::*},
+        interestrateindex::{iborindex::*, overnightindex::*, traits::*},
         traits::*,
         yieldtermstructure::{
             compositetermstructure::*, discounttermstructure::*, flatforwardtermstructure::*,
