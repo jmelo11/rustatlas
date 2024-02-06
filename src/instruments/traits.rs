@@ -1,6 +1,6 @@
 use crate::{
     cashflows::{
-        cashflow::{Cashflow, Side},
+        cashflow::{Cashflow, CashflowType, Side},
         simplecashflow::SimpleCashflow,
     },
     currencies::enums::Currency,
@@ -49,15 +49,6 @@ impl From<Structure> for String {
             Structure::Other => "Other".to_string(),
         }
     }
-}
-
-/// # CashflowType
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum CashflowType {
-    Redemption,
-    Disbursement,
-    FixedRateCoupon,
-    FloatingRateCoupon,
 }
 
 impl TryFrom<String> for CashflowType {

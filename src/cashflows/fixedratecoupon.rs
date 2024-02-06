@@ -64,6 +64,10 @@ impl FixedRateCoupon {
     pub fn notional(&self) -> f64 {
         return self.notional;
     }
+
+    pub fn rate(&self) -> InterestRate {
+        return self.rate;
+    }
 }
 
 impl HasCurrency for FixedRateCoupon {
@@ -222,7 +226,7 @@ mod tests {
             DayCounter::Thirty360,
         );
         let accrual_start_date = Date::new(2023, 12, 10);
-        let accrual_end_date = Date::new(2024, 3,  30 );
+        let accrual_end_date = Date::new(2024, 3, 30);
         let payment_date = Date::new(2024, 1, 10);
         let id = 1;
         let currency = Currency::USD;
@@ -240,11 +244,12 @@ mod tests {
         coupon.set_discount_curve_id(id);
 
         let star_date = Date::new(2024, 2, 28);
-        let end_date = Date::new(2024, 3 , 1);
+        let end_date = Date::new(2024, 3, 1);
         let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
 
-        print!("Accrued amount between {} and {} is {}", star_date, end_date, accrued_amount);
-
-    
+        print!(
+            "Accrued amount between {} and {} is {}",
+            star_date, end_date, accrued_amount
+        );
     }
 }

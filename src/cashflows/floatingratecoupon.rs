@@ -86,6 +86,14 @@ impl FloatingRateCoupon {
     pub fn notional(&self) -> f64 {
         self.notional
     }
+
+    pub fn spread(&self) -> f64 {
+        self.spread
+    }
+
+    pub fn rate_definition(&self) -> RateDefinition {
+        self.rate_definition
+    }
 }
 
 impl InterestAccrual for FloatingRateCoupon {

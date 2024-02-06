@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     cashflows::{
-        cashflow::{Cashflow, Side},
+        cashflow::{Cashflow, CashflowType, Side},
         floatingratecoupon::FloatingRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
@@ -17,7 +17,7 @@ use crate::{
 
 use super::{
     floatingrateinstrument::FloatingRateInstrument,
-    traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
+    traits::{build_cashflows, calculate_outstanding, notionals_vector, Structure},
 };
 
 /// # MakeFloatingRateInstrument

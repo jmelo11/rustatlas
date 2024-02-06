@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     cashflows::{
-        cashflow::{Cashflow, Side},
+        cashflow::{Cashflow, CashflowType, Side},
         fixedratecoupon::FixedRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
@@ -22,7 +22,7 @@ use crate::{
 
 use super::{
     fixedrateinstrument::FixedRateInstrument,
-    traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
+    traits::{build_cashflows, calculate_outstanding, notionals_vector, Structure},
 };
 
 /// # MakeFixedRateInstrument
