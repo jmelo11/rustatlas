@@ -75,6 +75,25 @@ pub enum Cashflow {
     FloatingRateCoupon(FloatingRateCoupon),
 }
 
+impl Serialize for Cashflow {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        SerializedCashflow::from(*self).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Cashflow {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Cashflow, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let serialized = SerializedCashflow::deserialize(deserializer)?;
+        Cashflow::try_from(serialized).map_err(serde::de::Error::custom)
+    }
+}
+
 impl Cashflow {
     pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
@@ -477,4 +496,3 @@ impl TryFrom<SerializedCashflow> for Cashflow {
         }
     }
 }
-

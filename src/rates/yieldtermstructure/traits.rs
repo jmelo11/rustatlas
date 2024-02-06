@@ -34,8 +34,8 @@ pub trait AdvanceTermStructureInTime {
 }
 
 /// # YieldTermStructureTrait
-/// Trait that defines a yield term structure. 
-/// 
+/// Trait that defines a yield term structure.
+///
 /// ## Note
 /// This trait is a combination of the following traits:
 /// - YieldProvider
@@ -43,7 +43,7 @@ pub trait AdvanceTermStructureInTime {
 /// - YieldTermStructureTraitClone
 /// - AdvanceTermStructureInTime
 /// - Send
-/// 
+///
 /// Send is required to be able to send the trait to another thread.
 pub trait YieldTermStructureTrait:
     YieldProvider + HasReferenceDate + YieldTermStructureTraitClone + AdvanceTermStructureInTime + Send
