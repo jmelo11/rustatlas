@@ -222,6 +222,12 @@ impl<'a> PositionGenerator<'a> {
                     builder.with_rate_value(rate).build()?,
                 ))
             }
+            RateType::FixedThenFloating => {
+                unimplemented!("Not implemented")
+            }
+            RateType::FloatingThenFixed => {
+                unimplemented!("Not implemented")
+            }
         }
     }
 

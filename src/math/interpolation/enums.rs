@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits::Interpolate};
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Interpolator {
     Linear,
     LogLinear,

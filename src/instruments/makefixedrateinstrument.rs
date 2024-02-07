@@ -1294,4 +1294,43 @@ mod tests {
 
         Ok(())
     }
+
+
+    #[test]
+    fn build_equal_payment_with_delay() -> Result<()> {
+        let start_date = Date::new(2023, 2, 24);
+
+        let rate = InterestRate::new(
+            0.1116,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let delay_date = start_date.clone() + Period::new(11, TimeUnit::Months);
+
+        let instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_tenor(Period::new(8, TimeUnit::Years))
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(5044205279.0)
+            .with_side(Side::Receive)
+            .with_currency(Currency::CLP)
+            .with_first_coupon_date(delay_date)
+            .equal_payments()
+            .build()?;
+
+        assert_eq!(instrument.notional(), 5044205279.0);
+        //assert_eq!(instrument.rate(), rate);
+        //assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
+        //assert_eq!(instrument.start_date(), start_date);
+
+        //instrument
+        //    .cashflows()
+        //    .iter()
+        //    .for_each(|cf| println!("{}", cf));
+        Ok(())
+    }
+
 }

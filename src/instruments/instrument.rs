@@ -55,6 +55,9 @@ impl From<PositionType> for String {
 pub enum RateType {
     Fixed,
     Floating,
+    FixedThenFloating,
+    FloatingThenFixed,
+
 }
 
 impl TryFrom<String> for RateType {
@@ -77,6 +80,8 @@ impl From<RateType> for String {
         match rate_type {
             RateType::Fixed => "Fixed".to_string(),
             RateType::Floating => "Floating".to_string(),
+            RateType::FixedThenFloating => "FixedThenFloating".to_string(),
+            RateType::FloatingThenFixed => "FloatingThenFixed".to_string(),
         }
     }
 }
