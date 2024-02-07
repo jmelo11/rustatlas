@@ -202,7 +202,7 @@ mod tests {
         utils::errors::Result,
     };
     use std::collections::{HashMap, HashSet};
-    
+
     #[test]
     fn accrual_bullet_instrumen_with_tir() -> Result<()> {
         let start_date = Date::new(2024, 1, 1);

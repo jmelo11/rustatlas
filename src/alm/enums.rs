@@ -1,3 +1,4 @@
+use crate::utils::errors::{AtlasError, Result};
 use crate::{
     currencies::enums::Currency,
     instruments::{
@@ -5,7 +6,6 @@ use crate::{
         traits::Structure,
     },
 };
-use crate::utils::errors::{AtlasError, Result};
 use serde::{Deserialize, Serialize};
 
 /// # Portfolio
@@ -236,18 +236,14 @@ impl From<AccountType> for String {
             AccountType::Equity => "Equity".to_string(),
             AccountType::Revenue => "Revenue".to_string(),
             AccountType::Expense => "Expense".to_string(),
-
         }
     }
 }
 
-
-
-
 /// # EvaluationMode
 /// A struct that contains the information needed to define
 /// an evaluation mode when running simulations and building instruments.
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum EvaluationMode {
     FTPRate,
     ClientRate,
@@ -326,7 +322,7 @@ pub enum ProductFamily {
     Leasing,
     Fogape,
     Corfo,
-    Factoring
+    Factoring,
 }
 
 impl TryFrom<String> for ProductFamily {

@@ -8,3 +8,4 @@ pub mod makemixedrateinstrument;
 pub mod fixfloatswap;
 pub mod makefixfloatswap;
 pub mod instrument;
+pub mod loandepo;
