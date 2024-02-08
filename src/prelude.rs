@@ -8,7 +8,7 @@ pub use crate::{
     core::{marketstore::MarketStore, traits::*},
     currencies::{enums::*, structs::*, traits::*},
     instruments::{
-        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*,
+        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*, loandepo::*,
         makefixedrateinstrument::*, makefloatingrateinstrument::*, traits::*,
     },
     math::interpolation::{enums::*, linear::*, loglinear::*, traits::*},
