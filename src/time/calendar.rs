@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::calendars::{
     nullcalendar::NullCalendar,
     target::TARGET,
@@ -22,6 +24,35 @@ pub enum Calendar {
     NullCalendar(NullCalendar),
     WeekendsOnly(WeekendsOnly),
     TARGET(TARGET),
+}
+
+impl Serialize for Calendar {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let s = match self {
+            Calendar::NullCalendar(cal) => cal.impl_name(),
+            Calendar::WeekendsOnly(cal) => cal.impl_name(),
+            Calendar::TARGET(cal) => cal.impl_name(),
+        };
+        serializer.serialize_str(&s)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for Calendar {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Calendar, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        match s.as_str() {
+            "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
+            "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
+            "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
+            _ => Err(serde::de::Error::custom(format!("Invalid calendar: {}", s))),
+        }
+    }
 }
 
 impl TryFrom<String> for Calendar {
