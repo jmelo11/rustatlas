@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     core::{
         meta::{ForwardRateRequest, MarketRequest},
@@ -30,7 +32,7 @@ use super::{
 /// * `forecast_curve_id` - The ID of the forecast curve used to calculate the present value of the coupon
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FloatingRateCoupon {
     notional: f64,
     spread: f64,

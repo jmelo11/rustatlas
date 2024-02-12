@@ -66,7 +66,7 @@ impl From<Side> for String {
 
 /// # Cashflow
 /// Enum that represents a cashflow.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Cashflow {
     Redemption(SimpleCashflow),
     Disbursement(SimpleCashflow),

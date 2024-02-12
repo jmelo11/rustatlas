@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
@@ -22,7 +24,7 @@ use crate::{
 /// * `payment_date` - The date on which the coupon is paid
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FixedRateCoupon {
     notional: f64,
     rate: InterestRate,

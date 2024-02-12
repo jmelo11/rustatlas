@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     core::{
         meta::{DiscountFactorRequest, ExchangeRateRequest, MarketRequest},
@@ -22,7 +24,7 @@ use super::traits::{Expires, Payable};
 /// assert_eq!(cashflow.side(), Side::Receive);
 /// assert_eq!(cashflow.payment_date(), payment_date);
 /// ```
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimpleCashflow {
     payment_date: Date,
     currency: Currency,
