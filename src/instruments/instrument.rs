@@ -19,7 +19,7 @@ use super::{
 
 /// # PositionType
 /// This enum is used to differentiate between base and simulated positions
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum PositionType {
     Base,
     Simulated,
@@ -194,6 +194,13 @@ impl Instrument {
         match self {
             Instrument::FixedRateInstrument(_) => RateType::Fixed,
             Instrument::FloatingRateInstrument(_) => RateType::Floating,
+        }
+    }
+
+    pub fn rate(&self) -> f64 {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.rate().rate(),
+            Instrument::FloatingRateInstrument(fri) => fri.spread(),
         }
     }
 }

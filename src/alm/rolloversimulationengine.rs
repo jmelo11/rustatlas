@@ -113,7 +113,7 @@ impl<'a> RolloverSimulationEngine<'a> {
                         })?;
 
                         // add new positions to the vector
-                        simulated_instruments.append(&mut positions);
+                        simulated_instruments.append(&mut positions.clone());
 
                         // add new redemptions to the vector
                         let aggregator = CashflowsAggregatorConstVisitor::new()
@@ -123,18 +123,14 @@ impl<'a> RolloverSimulationEngine<'a> {
                             Ok(())
                         })?;
 
+                        
                         let new_redemptions = aggregator.redemptions();
-
-                        redemptions
-                            .iter_mut()
-                            .try_for_each(|(date, amount)| -> Result<()> {
-                                let new_amount = new_redemptions.get(date);
-                                match new_amount {
-                                    Some(new_amount) => *amount += new_amount,
-                                    None => {}
-                                }
-                                Ok(())
-                            })?;
+                        
+                        //println!("New redemptions: {:?}", new_redemptions);
+                        for (key , value) in new_redemptions {
+                            let entry = redemptions.entry(key).or_insert(0.0);
+                            *entry += value;
+                        }
                     }
                 }
                 None => {}

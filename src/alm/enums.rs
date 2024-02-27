@@ -19,7 +19,7 @@ pub struct Portfolio {
     postion_type: Option<PositionType>,
     rate_type: Option<RateType>,
     currency: Option<Currency>,
-    instruments: Vec<Instrument>,
+    pub instruments: Vec<Instrument>,
 }
 
 impl Portfolio {

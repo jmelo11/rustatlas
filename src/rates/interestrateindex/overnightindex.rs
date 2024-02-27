@@ -182,19 +182,21 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let mut seed = self.reference_date();
         let end_date = seed.advance(period.length(), period.units());
         let curve = self.term_structure()?;
+        let name = self.name()?;
 
         if !fixings.is_empty() {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
                 let last_fixing = fixings
                     .get(&seed)
-                    .expect("No fixing for this OvernightIndex"); // remove this expect
+                    .expect(format!("No fixing for {} and date {}", name, seed).as_str());
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;
                 let comp = last_fixing * first_df / second_df;
                 fixings.insert(seed, comp);
             }
         }
+        
         let new_curve = curve.advance_to_period(period)?;
 
         Ok(Box::new(
