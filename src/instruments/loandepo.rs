@@ -152,7 +152,7 @@ pub struct LoanDepo {
     pub first_rate_day_counter: DayCounter,
     pub first_rate_compounding: Compounding,
 
-    pub months_to_first_coupon: Option<i8>,
+    pub months_to_first_coupon: Option<i16>,
     pub second_rate_frequency: Option<Frequency>,
     pub second_rate_day_counter: Option<DayCounter>,
     pub second_rate_compounding: Option<Compounding>,
