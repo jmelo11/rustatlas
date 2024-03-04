@@ -187,16 +187,17 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         if !fixings.is_empty() {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
-                let last_fixing = fixings
-                    .get(&seed)
-                    .expect(format!("No fixing for {} and date {}", name, seed).as_str());
+                let last_fixing = fixings.get(&seed).ok_or(AtlasError::NotFoundErr(format!(
+                    "No fixing for {} and date {}",
+                    name, seed
+                )))?;
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;
                 let comp = last_fixing * first_df / second_df;
                 fixings.insert(seed, comp);
             }
         }
-        
+
         let new_curve = curve.advance_to_period(period)?;
 
         Ok(Box::new(
