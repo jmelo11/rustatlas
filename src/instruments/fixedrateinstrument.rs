@@ -113,6 +113,17 @@ impl FixedRateInstrument {
     pub fn yield_rate(&self) -> Option<InterestRate> {
         self.yield_rate
     }
+
+    pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
+        self.discount_curve_id = Some(discount_curve_id);
+        self.mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_discount_curve_id(discount_curve_id));
+
+        self
+    }
+
+
 }
 
 impl HasCurrency for FixedRateInstrument {

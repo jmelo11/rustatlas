@@ -203,6 +203,29 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.spread(),
         }
     }
+
+    pub fn forecast_curve_id
+        (&self) -> Option<usize> {
+        match self {
+            Instrument::FixedRateInstrument(fri) => None,
+            Instrument::FloatingRateInstrument(fri) => fri.forecast_curve_id(),
+        }
+    }
+
+    pub fn set_discount_curve_id(&mut self, id: usize) {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.set_discount_curve_id(id),
+            Instrument::FloatingRateInstrument(fri) => fri.set_discount_curve_id(id),
+        }
+    }
+
+    pub fn set_forecast_curve_id(&mut self, id: usize) {
+        match self {
+            Instrument::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
+            _ => {}
+        }
+    }
+
 }
 
 impl HasCurrency for Instrument {

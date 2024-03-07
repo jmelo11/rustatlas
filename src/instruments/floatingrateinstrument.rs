@@ -1,3 +1,5 @@
+use std::collections::btree_set;
+
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -126,6 +128,23 @@ impl FloatingRateInstrument {
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
+
+    pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
+        self.discount_curve_id = Some(discount_curve_id);
+        self.mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_discount_curve_id(discount_curve_id));
+        self
+    }
+
+    pub fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
+        self.forecast_curve_id = Some(forecast_curve_id);
+        self.mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_forecast_curve_id(forecast_curve_id));
+        self
+    }
+
 }
 
 impl HasCurrency for FloatingRateInstrument {
