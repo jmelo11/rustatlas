@@ -85,6 +85,10 @@ impl FloatingRateCoupon {
         self.forecast_curve_id = Some(id);
     }
 
+    pub fn set_spread(&mut self, spread: f64) {
+        self.spread = spread;
+    }
+
     pub fn notional(&self) -> f64 {
         self.notional
     }

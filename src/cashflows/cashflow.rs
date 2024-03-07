@@ -66,7 +66,7 @@ impl From<Side> for String {
 
 /// # Cashflow
 /// Enum that represents a cashflow.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Cashflow {
     Redemption(SimpleCashflow),
     Disbursement(SimpleCashflow),
@@ -262,4 +262,24 @@ pub enum CashflowType {
     Disbursement,
     FixedRateCoupon,
     FloatingRateCoupon,
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn serialization_test() {
+        let cashflow = Cashflow::Redemption(SimpleCashflow::new(
+            Date::new(2024, 1, 1),
+            Currency::USD,
+            Side::Receive,
+        ));
+        let serialized = serde_json::to_string(&cashflow).unwrap();
+        println!("{}", serialized);
+
+        let deserialized: Cashflow = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(cashflow, deserialized);
+    }
 }

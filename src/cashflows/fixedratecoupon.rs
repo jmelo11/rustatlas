@@ -63,24 +63,29 @@ impl FixedRateCoupon {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    pub fn set_rate(&mut self, rate: InterestRate) {
+        self.rate = rate;
+        self.cashflow.set_amount(self.notional * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0));
+    }
+
     pub fn notional(&self) -> f64 {
-        return self.notional;
+        self.notional
     }
 
     pub fn rate(&self) -> InterestRate {
-        return self.rate;
+        self.rate
     }
 }
 
 impl HasCurrency for FixedRateCoupon {
     fn currency(&self) -> Result<Currency> {
-        return self.cashflow.currency();
+        self.cashflow.currency()
     }
 }
 
 impl HasDiscountCurveId for FixedRateCoupon {
     fn discount_curve_id(&self) -> Result<usize> {
-        return self.cashflow.discount_curve_id();
+        self.cashflow.discount_curve_id()
     }
 }
 
