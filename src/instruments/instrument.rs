@@ -212,6 +212,13 @@ impl Instrument {
         }
     }
 
+    pub fn discount_curve_id(&self) -> Option<usize> {
+        match self {
+            Instrument::FixedRateInstrument(fri) => fri.discount_curve_id(),
+            Instrument::FloatingRateInstrument(fri) => fri.discount_curve_id(),
+        }
+    }
+
     pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.set_discount_curve_id(id),
