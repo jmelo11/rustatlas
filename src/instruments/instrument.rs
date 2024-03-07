@@ -57,7 +57,6 @@ pub enum RateType {
     Floating,
     FixedThenFloating,
     FloatingThenFixed,
-
 }
 
 impl TryFrom<String> for RateType {
@@ -204,10 +203,9 @@ impl Instrument {
         }
     }
 
-    pub fn forecast_curve_id
-        (&self) -> Option<usize> {
+    pub fn forecast_curve_id(&self) -> Option<usize> {
         match self {
-            Instrument::FixedRateInstrument(fri) => None,
+            Instrument::FixedRateInstrument(_) => None,
             Instrument::FloatingRateInstrument(fri) => fri.forecast_curve_id(),
         }
     }
@@ -225,7 +223,6 @@ impl Instrument {
             _ => {}
         }
     }
-
 }
 
 impl HasCurrency for Instrument {

@@ -1,5 +1,3 @@
-use std::collections::btree_set;
-
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -144,7 +142,6 @@ impl FloatingRateInstrument {
             .for_each(|cf| cf.set_forecast_curve_id(forecast_curve_id));
         self
     }
-
 }
 
 impl HasCurrency for FloatingRateInstrument {
