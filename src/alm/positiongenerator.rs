@@ -228,6 +228,9 @@ impl<'a> PositionGenerator<'a> {
             RateType::FloatingThenFixed => {
                 unimplemented!("Not implemented")
             }
+            RateType::FixedThenFixed => {
+                unimplemented!("Not implemented")
+            }
         }
     }
 

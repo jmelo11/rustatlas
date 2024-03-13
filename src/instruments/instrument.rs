@@ -4,18 +4,15 @@ use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
-    },
-    core::traits::HasCurrency,
-    currencies::enums::Currency,
-    time::{date::Date, enums::Frequency},
-    utils::errors::{AtlasError, Result},
-    visitors::traits::HasCashflows,
+    }, core::traits::HasCurrency, currencies::enums::Currency, prelude::RateDefinition, time::{date::Date, enums::Frequency}, utils::errors::{AtlasError, Result}, visitors::traits::HasCashflows
 };
 
 use super::{
     fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
     traits::Structure,
 };
+
+
 
 /// # PositionType
 /// This enum is used to differentiate between base and simulated positions
@@ -57,6 +54,7 @@ pub enum RateType {
     Floating,
     FixedThenFloating,
     FloatingThenFixed,
+    FixedThenFixed,
 }
 
 impl TryFrom<String> for RateType {
@@ -66,6 +64,9 @@ impl TryFrom<String> for RateType {
         match s.as_str() {
             "Fixed" => Ok(RateType::Fixed),
             "Floating" => Ok(RateType::Floating),
+            "FixedThenFloating" => Ok(RateType::FixedThenFloating),
+            "FloatingThenFixed" => Ok(RateType::FloatingThenFixed),
+            "FixedThenFixed" => Ok(RateType::FixedThenFixed),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid rate type: {}",
                 s
@@ -81,6 +82,7 @@ impl From<RateType> for String {
             RateType::Floating => "Floating".to_string(),
             RateType::FixedThenFloating => "FixedThenFloating".to_string(),
             RateType::FloatingThenFixed => "FloatingThenFixed".to_string(),
+            RateType::FixedThenFixed => "FixedThenFixed".to_string(),
         }
     }
 }
@@ -228,6 +230,20 @@ impl Instrument {
         match self {
             Instrument::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
             _ => {}
+        }
+    }
+
+    pub fn first_rate_definition(&self) -> RateDefinition {
+        match self {
+            Instrument::FixedRateInstrument(fri) => *fri.rate().rate_definition(),
+            Instrument::FloatingRateInstrument(fri) => fri.rate_definition(),
+        }
+    }
+    
+    pub fn second_rate_definition(&self) -> Option<RateDefinition> {
+        match self {
+            Instrument::FixedRateInstrument(_) => None,
+            Instrument::FloatingRateInstrument(_) => None,
         }
     }
 }
