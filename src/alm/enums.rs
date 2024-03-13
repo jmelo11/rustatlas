@@ -16,6 +16,7 @@ pub struct Portfolio {
     client_id: Option<usize>,
     segment: Option<Segment>,
     product_family: Option<ProductFamily>,
+    area: Option<String>,
     postion_type: Option<PositionType>,
     rate_type: Option<RateType>,
     currency: Option<Currency>,
@@ -28,6 +29,7 @@ impl Portfolio {
             client_id: None,
             segment: None,
             product_family: None,
+            area: None,
             postion_type: None,
             rate_type: None,
             currency: None,
@@ -45,6 +47,10 @@ impl Portfolio {
 
     pub fn product_family(&self) -> Option<ProductFamily> {
         self.product_family
+    }
+
+    pub fn area(&self) -> Option<&String> {
+        self.area.as_ref()
     }
 
     pub fn position_type(&self) -> Option<PositionType> {
@@ -81,6 +87,11 @@ impl Portfolio {
 
     pub fn with_product_family(mut self, product_family: ProductFamily) -> Self {
         self.product_family = Some(product_family);
+        self
+    }
+
+    pub fn with_area(mut self, area: String) -> Self {
+        self.area = Some(area);
         self
     }
 
