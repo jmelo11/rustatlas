@@ -10,7 +10,14 @@ use crate::{
     core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
-    time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    time::{
+        calendar::Calendar,
+        calendars::nullcalendar::NullCalendar,
+        date::Date,
+        enums::{BusinessDayConvention, Frequency},
+        period::Period,
+        schedule::MakeSchedule,
+    },
     utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
@@ -42,6 +49,8 @@ pub struct MakeFloatingRateInstrument {
     discount_curve_id: Option<usize>,
     id: Option<usize>,
     issue_date: Option<Date>,
+    calendar: Option<Calendar>,
+    business_day_convention: Option<BusinessDayConvention>,
 }
 
 /// Constructor, setters and getters.
@@ -66,7 +75,22 @@ impl MakeFloatingRateInstrument {
             additional_coupon_dates: None,
             id: None,
             issue_date: None,
+            calendar: None,
+            business_day_convention: None,
         }
+    }
+
+    pub fn with_calendar(mut self, calendar: Calendar) -> MakeFloatingRateInstrument {
+        self.calendar = Some(calendar);
+        self
+    }
+
+    pub fn with_business_day_convention(
+        mut self,
+        business_day_convention: BusinessDayConvention,
+    ) -> MakeFloatingRateInstrument {
+        self.business_day_convention = Some(business_day_convention);
+        self
     }
 
     pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateInstrument {
@@ -243,8 +267,16 @@ impl MakeFloatingRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => schedule_builder.with_first_date(date).build()?,
@@ -334,6 +366,14 @@ impl MakeFloatingRateInstrument {
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
                     .build()?;
                 let notional = self
                     .notional
@@ -416,8 +456,16 @@ impl MakeFloatingRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => schedule_builder.with_first_date(date).build()?,

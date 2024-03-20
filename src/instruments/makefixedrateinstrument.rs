@@ -15,7 +15,14 @@ use crate::{
     core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
-    time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    time::{
+        calendar::Calendar,
+        calendars::nullcalendar::NullCalendar,
+        date::Date,
+        enums::{BusinessDayConvention, Frequency},
+        period::Period,
+        schedule::MakeSchedule,
+    },
     utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
@@ -47,6 +54,8 @@ pub struct MakeFixedRateInstrument {
     rate_value: Option<f64>,
     id: Option<usize>,
     issue_date: Option<Date>,
+    calendar: Option<Calendar>,
+    business_day_convention: Option<BusinessDayConvention>,
     yield_rate: Option<InterestRate>,
 }
 
@@ -73,6 +82,8 @@ impl MakeFixedRateInstrument {
             id: None,
             issue_date: None,
             yield_rate: None,
+            business_day_convention: None,
+            calendar: None,
         }
     }
 
@@ -113,6 +124,19 @@ impl MakeFixedRateInstrument {
 
     pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
         self.yield_rate = Some(yield_rate);
+        self
+    }
+
+    pub fn with_calendar(mut self, calendar: Calendar) -> MakeFixedRateInstrument {
+        self.calendar = Some(calendar);
+        self
+    }
+
+    pub fn with_business_day_convention(
+        mut self,
+        business_day_convention: BusinessDayConvention,
+    ) -> MakeFixedRateInstrument {
+        self.business_day_convention = Some(business_day_convention);
         self
     }
 
@@ -305,8 +329,16 @@ impl MakeFixedRateInstrument {
 
                 // this logic should go into a separate function/ Schedule should have accessing methods
                 // to first and last date and other attributes
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
@@ -466,8 +498,16 @@ impl MakeFixedRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
@@ -559,6 +599,14 @@ impl MakeFixedRateInstrument {
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
                     .build()?;
 
                 let notional = self
@@ -633,8 +681,16 @@ impl MakeFixedRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
@@ -1295,7 +1351,6 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn build_equal_payment_with_delay() -> Result<()> {
         let start_date = Date::new(2023, 2, 24);
@@ -1332,5 +1387,4 @@ mod tests {
         //    .for_each(|cf| println!("{}", cf));
         Ok(())
     }
-
 }
