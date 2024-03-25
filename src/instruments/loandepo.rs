@@ -24,10 +24,9 @@ use super::{
 /// Struct that represents a serialized loan or deposit. Used for serialization purposes.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoanDepo {
-    pub id: usize,
-    pub mis_id: String,
-
-    pub process_date: Date,
+    pub id: Option<usize>,
+    pub mis_id: Option<String>,
+    pub process_date: Option<Date>,
     pub loandepo_configuration_id: usize,
     pub notional: f64,
     pub issue_date: Date,
@@ -45,6 +44,22 @@ pub struct LoanDepo {
     pub first_client_rate: f64,
     pub second_ftp_rate: Option<f64>,
     pub second_client_rate: Option<f64>,
+
+    // pre-calculated fields
+    pub notional_local_ccy: Option<f64>,
+    pub outstanding: Option<f64>,
+    pub outstanding_local_ccy: Option<f64>,
+    pub avg_outstanding: Option<f64>,
+    pub avg_outstanding_local_ccy: Option<f64>,
+    pub avg_readjustment: Option<f64>,
+    pub avg_interest: Option<f64>,
+    pub avg_interest_local_ccy: Option<f64>,
+    pub ftp_interest: Option<f64>,
+    pub ftp_interest_local_ccy: Option<f64>,
+    pub earned_interest: Option<f64>,
+    pub earned_interest_local_ccy: Option<f64>,
+    pub margin: Option<f64>,
+    pub margin_local_ccy: Option<f64>,
 
     pub rate_type: RateType,
     pub first_rate_frequency: Frequency,
