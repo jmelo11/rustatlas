@@ -260,7 +260,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.side,
                     value.currency,
                     Some(value.discount_curve_id),
-                    Some(value.mis_id),
+                    value.mis_id,
                     Some(value.issue_date),
                     None,
                 );
@@ -300,7 +300,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.currency,
                     Some(value.discount_curve_id),
                     value.forecast_curve_id,
-                    Some(value.mis_id),
+                    value.mis_id,
                     Some(value.issue_date),
                 );
                 Ok(Instrument::FloatingRateInstrument(instrument))
