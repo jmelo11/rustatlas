@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    alm::enums::{AccountType, EvaluationMode, ProductFamily, Segment},
+    alm::enums::{AccountType, EvaluationMode, ProductFamily},
     cashflows::cashflow::{Cashflow, Side},
     currencies::enums::Currency,
     prelude::InterestAccrual,
@@ -35,8 +35,9 @@ pub struct LoanDepo {
     pub credit_status: String,
     pub structure: Structure,
     pub side: Side,
-    pub segment: Segment,
     pub account_type: AccountType,
+    pub segment: String,
+    pub area: String,
     pub product_family: ProductFamily,
     pub payment_frequency: Frequency,
 
