@@ -52,7 +52,7 @@ pub struct MakeFixedRateInstrument {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
-    id: Option<usize>,
+    id: Option<String>,
     issue_date: Option<Date>,
     calendar: Option<Calendar>,
     business_day_convention: Option<BusinessDayConvention>,
@@ -117,7 +117,7 @@ impl MakeFixedRateInstrument {
         self
     }
 
-    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
+    pub fn with_id(mut self, id: Option<String>) -> MakeFixedRateInstrument {
         self.id = id;
         self
     }

@@ -47,7 +47,7 @@ pub struct MakeFloatingRateInstrument {
     additional_coupon_dates: Option<HashSet<Date>>,
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
-    id: Option<usize>,
+    id: Option<String>,
     issue_date: Option<Date>,
     calendar: Option<Calendar>,
     business_day_convention: Option<BusinessDayConvention>,
@@ -98,7 +98,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
-    pub fn with_id(mut self, id: Option<usize>) -> MakeFloatingRateInstrument {
+    pub fn with_id(mut self, id: Option<String>) -> MakeFloatingRateInstrument {
         self.id = id;
         self
     }

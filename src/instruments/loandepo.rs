@@ -20,102 +20,6 @@ use super::{
     traits::Structure,
 };
 
-/// # LoanDepoCashflow
-/// Struct that represents a serialized cashflow. Used for serialization purposes.
-// #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-// pub struct LoanDepoCashflow {
-//     cashflow_type: CashflowType,
-//     payment_date: Date,
-//     notional: Option<f64>,
-//     amount: Option<f64>,
-//     accrual_start_date: Option<Date>,
-//     accrual_end_date: Option<Date>,
-// }
-
-// impl LoanDepoCashflow {
-//     pub fn new(
-//         cashflow_type: CashflowType,
-//         payment_date: Date,
-//         notional: Option<f64>,
-//         amount: Option<f64>,
-//         accrual_start_date: Option<Date>,
-//         accrual_end_date: Option<Date>,
-//     ) -> Self {
-//         LoanDepoCashflow {
-//             cashflow_type,
-//             payment_date,
-//             notional,
-//             amount,
-//             accrual_start_date,
-//             accrual_end_date,
-//         }
-//     }
-
-//     pub fn cashflow_type(&self) -> CashflowType {
-//         self.cashflow_type
-//     }
-
-//     pub fn payment_date(&self) -> Date {
-//         self.payment_date
-//     }
-
-//     pub fn notional(&self) -> Option<f64> {
-//         self.notional
-//     }
-
-//     pub fn amount(&self) -> Option<f64> {
-//         self.amount
-//     }
-
-//     pub fn accrual_start_date(&self) -> Option<Date> {
-//         self.accrual_start_date
-//     }
-
-//     pub fn accrual_end_date(&self) -> Option<Date> {
-//         self.accrual_end_date
-//     }
-// }
-
-// impl From<Cashflow> for LoanDepoCashflow {
-//     /// Converts a Cashflow into a LoanDepoCashflow
-//     fn from(cashflow: Cashflow) -> Self {
-//         match cashflow {
-//             Cashflow::Disbursement(cf) => LoanDepoCashflow::new(
-//                 CashflowType::Disbursement,
-//                 cf.payment_date(),
-//                 None,
-//                 Some(cf.amount().unwrap()),
-//                 None,
-//                 None,
-//             ),
-//             Cashflow::Redemption(cf) => LoanDepoCashflow::new(
-//                 CashflowType::Redemption,
-//                 cf.payment_date(),
-//                 None,
-//                 Some(cf.amount().unwrap()),
-//                 None,
-//                 None,
-//             ),
-//             Cashflow::FixedRateCoupon(cf) => LoanDepoCashflow::new(
-//                 CashflowType::FixedRateCoupon,
-//                 cf.payment_date(),
-//                 Some(cf.notional()),
-//                 Some(cf.amount().unwrap()),
-//                 Some(cf.accrual_start_date()),
-//                 Some(cf.accrual_end_date()),
-//             ),
-//             Cashflow::FloatingRateCoupon(cf) => LoanDepoCashflow::new(
-//                 CashflowType::FloatingRateCoupon,
-//                 cf.payment_date(),
-//                 Some(cf.notional()),
-//                 None,
-//                 Some(cf.accrual_start_date()),
-//                 Some(cf.accrual_end_date()),
-//             ),
-//         }
-//     }
-// }
-
 /// # LoanDepo
 /// Struct that represents a serialized loan or deposit. Used for serialization purposes.
 #[derive(Serialize, Deserialize, Clone)]
@@ -341,7 +245,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.side,
                     value.currency,
                     Some(value.discount_curve_id),
-                    Some(value.id),
+                    Some(value.mis_id),
                     Some(value.issue_date),
                     None,
                 );
@@ -381,7 +285,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.currency,
                     Some(value.discount_curve_id),
                     value.forecast_curve_id,
-                    Some(value.id),
+                    Some(value.mis_id),
                     Some(value.issue_date),
                 );
                 Ok(Instrument::FloatingRateInstrument(instrument))

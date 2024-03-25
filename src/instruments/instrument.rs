@@ -156,7 +156,7 @@ impl Instrument {
         }
     }
 
-    pub fn id(&self) -> Option<usize> {
+    pub fn id(&self) -> Option<String> {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.id(),
             Instrument::FloatingRateInstrument(fri) => fri.id(),

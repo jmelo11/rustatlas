@@ -40,7 +40,7 @@ pub struct FloatingRateInstrument {
     currency: Currency,
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
-    id: Option<usize>,
+    id: Option<String>,
     issue_date: Option<Date>,
 }
 
@@ -58,7 +58,7 @@ impl FloatingRateInstrument {
         currency: Currency,
         discount_curve_id: Option<usize>,
         forecast_curve_id: Option<usize>,
-        id: Option<usize>,
+        id: Option<String>,
         issue_date: Option<Date>,
     ) -> Self {
         FloatingRateInstrument {
@@ -83,8 +83,8 @@ impl FloatingRateInstrument {
         self.issue_date
     }
 
-    pub fn id(&self) -> Option<usize> {
-        self.id
+    pub fn id(&self) -> Option<String> {
+        self.id.clone()
     }
 
     pub fn start_date(&self) -> Date {
