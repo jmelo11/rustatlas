@@ -111,4 +111,13 @@ impl IndexStore {
         let days = (date - self.reference_date) as i32;
         self.advance_to_period(Period::new(days, TimeUnit::Days))
     }
+
+    /// # swaps the index with the given id to the given index
+    pub fn swap_index_by_id(&mut self, from: usize, to: usize) {
+        let index = self.index_map.remove(&from).unwrap();
+        self.index_map.insert(to, index);
+
+        
+
+    }
 }

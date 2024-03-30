@@ -29,7 +29,7 @@ pub struct LoanDepo {
     pub process_date: Option<Date>,
     pub loandepo_configuration_id: usize,
     pub notional: f64,
-    pub issue_date: Date,
+    pub issue_date: Option<Date>,
     pub start_date: Date,
     pub end_date: Date,
     pub credit_status: String,
@@ -262,7 +262,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.currency,
                     Some(value.discount_curve_id),
                     value.mis_id,
-                    Some(value.issue_date),
+                    value.issue_date,
                     None,
                 );
 
@@ -302,7 +302,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     Some(value.discount_curve_id),
                     value.forecast_curve_id,
                     value.mis_id,
-                    Some(value.issue_date),
+                    value.issue_date,
                 );
                 Ok(Instrument::FloatingRateInstrument(instrument))
             }

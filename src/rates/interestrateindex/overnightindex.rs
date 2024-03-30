@@ -21,7 +21,7 @@ use super::traits::{
 };
 
 /// # OvernightIndex
-/// Overnight index.
+/// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
 #[derive(Clone)]
 pub struct OvernightIndex {
     name: Option<String>,
@@ -91,8 +91,9 @@ impl FixingProvider for OvernightIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {}",
-                date
+                "No fixing for date {} for index {:?}",
+                date,
+                self.name
             )))
     }
 

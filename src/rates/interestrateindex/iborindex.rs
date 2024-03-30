@@ -97,8 +97,8 @@ impl FixingProvider for IborIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {}",
-                date
+                "No fixing for date {} for index {:?}",
+                date, self.name
             )))
     }
 
