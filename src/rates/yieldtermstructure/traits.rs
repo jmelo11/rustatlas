@@ -47,6 +47,6 @@ pub trait AdvanceTermStructureInTime {
 ///
 /// Send is required to be able to send the trait to another thread.
 pub trait YieldTermStructureTrait:
-    YieldProvider + HasReferenceDate + AdvanceTermStructureInTime
+    YieldProvider + HasReferenceDate + AdvanceTermStructureInTime + Send + Sync
 {
 }

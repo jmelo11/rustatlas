@@ -114,5 +114,7 @@ pub trait InterestRateIndexTrait:
     + RelinkableTermStructure
     + HasTenor
     + HasName
+    + Send
+    + Sync
 {
 }
