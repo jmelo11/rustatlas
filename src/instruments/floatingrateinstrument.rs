@@ -26,7 +26,7 @@ use crate::utils::errors::Result;
 /// * `payment_frequency` - The payment frequency.
 /// * `rate_definition` - The rate definition.
 /// * `structure` - The structure.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,

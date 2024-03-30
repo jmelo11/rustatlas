@@ -20,7 +20,7 @@ use crate::visitors::traits::HasCashflows;
 /// * `cashflows` - The cashflows.
 /// * `structure` - The structure.
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FixedRateInstrument {
     start_date: Date,
     end_date: Date,

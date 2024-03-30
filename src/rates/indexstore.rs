@@ -49,6 +49,25 @@ impl IndexStore {
         Ok(())
     }
 
+    pub fn replace_index(&mut self, id: usize, index: Box<dyn InterestRateIndexTrait>) -> Result<()> {
+        if self.reference_date != index.reference_date() {
+            return Err(AtlasError::InvalidValueErr(
+                "Index reference date does not match store reference date".to_string(),
+            ));
+        }
+        // check if name already exists
+        if !self.index_map.contains_key(&id) {
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Index with id {} does not exist",
+                id
+            )));
+        }
+
+        self.index_map.insert(id, index);
+
+        Ok(())
+    }
+
     pub fn get_index(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
         self.index_map
             .get(&id)

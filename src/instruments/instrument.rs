@@ -89,7 +89,7 @@ impl From<RateType> for String {
 
 /// # Instrument
 /// Represents an instrument. This is a wrapper around the FixedRateInstrument and FloatingRateInstrument.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Instrument {
     FixedRateInstrument(FixedRateInstrument),
     FloatingRateInstrument(FloatingRateInstrument),

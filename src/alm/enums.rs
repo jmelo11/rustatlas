@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// # Portfolio
 /// A struct that contains the information needed to define a portfolio.
 /// Optional fields are used to filter the portfolio.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Portfolio {
     client_id: Option<usize>,
     segment: Option<String>,
