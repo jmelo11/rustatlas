@@ -17,7 +17,7 @@ use crate::{
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
-    InterestRateIndexTrait,
+    InterestRateIndexTrait, RelinkableTermStructure,
 };
 
 /// # OvernightIndex
@@ -222,6 +222,12 @@ impl HasTermStructure for OvernightIndex {
             .ok_or(AtlasError::ValueNotSetErr(
                 "Term structure not set".to_string(),
             ))
+    }
+}
+
+impl RelinkableTermStructure for OvernightIndex {
+    fn link_to(&mut self, term_structure: Box<dyn YieldTermStructureTrait>) {
+        self.term_structure = Some(term_structure);
     }
 }
 

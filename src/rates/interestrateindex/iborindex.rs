@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
-    InterestRateIndexTrait,
+    InterestRateIndexTrait, RelinkableTermStructure,
 };
 
 /// # IborIndex
@@ -172,6 +172,12 @@ impl HasTermStructure for IborIndex {
     }
 }
 
+impl RelinkableTermStructure for IborIndex {
+    fn link_to(&mut self, term_structure: Box<dyn YieldTermStructureTrait>) {
+        self.term_structure = Some(term_structure);
+    }
+}
+
 impl InterestRateIndexTrait for IborIndex {}
 
 impl AdvanceInterestRateIndexInTime for IborIndex {
@@ -220,6 +226,7 @@ mod tests {
     use super::*;
     use crate::{
         math::interpolation::enums::Interpolator,
+        prelude::{CompositeTermStructure, FlatForwardTermStructure},
         time::{daycounter::DayCounter, enums::TimeUnit},
     };
 
@@ -262,5 +269,59 @@ mod tests {
         ibor_index.fill_missing_fixings(Interpolator::Linear);
         assert!(ibor_index.fixings().get(&Date::new(2023, 6, 3)).unwrap() - 21952.4266666 < 0.001);
         Ok(())
+    }
+
+    #[test]
+    fn test_relink_term_structure() {
+        let ref_date = Date::new(2021, 1, 1);
+        let eval_date = ref_date + Period::new(1, TimeUnit::Years);
+        let tenor = Period::new(1, TimeUnit::Months);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Simple,
+            Frequency::Annual,
+        );
+        let mut ibor_index = IborIndex::new(ref_date)
+            .with_tenor(tenor)
+            .with_rate_definition(rate_definition);
+
+        let base_term_structure = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.05,
+            RateDefinition::default(),
+        ));
+
+        let spread_term_structure = Box::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.01,
+            RateDefinition::default(),
+        ));
+
+        let new_term_structure = Box::new(CompositeTermStructure::new(
+            spread_term_structure.clone(),
+            base_term_structure.clone(),
+        ));
+
+        ibor_index.link_to(base_term_structure.clone());
+        let df = ibor_index
+            .term_structure()
+            .unwrap()
+            .discount_factor(eval_date)
+            .unwrap();
+
+        assert_eq!(df, base_term_structure.discount_factor(eval_date).unwrap());
+
+        ibor_index.link_to(new_term_structure.clone());
+
+        let df = ibor_index
+            .term_structure()
+            .unwrap()
+            .discount_factor(eval_date)
+            .unwrap();
+
+        assert_eq!(
+            df,
+            new_term_structure.discount_factor(eval_date).unwrap()
+        );
     }
 }

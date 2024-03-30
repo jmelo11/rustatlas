@@ -10,13 +10,14 @@ use crate::{
     utils::errors::Result,
 };
 
-/// # FloatingRateProvider
-/// Implement this trait for a struct that holds floating rate information.
-/// This trait is implemented by IborIndex and OvernightIndex.
+/// # FixingProvider
+/// Implement this trait for a struct that provides fixing information.
 pub trait FixingProvider {
     fn fixing(&self, date: Date) -> Result<f64>;
     fn fixings(&self) -> &HashMap<Date, f64>;
     fn add_fixing(&mut self, date: Date, rate: f64);
+
+    /// Fill missing fixings using interpolation.
     fn fill_missing_fixings(&mut self, interpolator: Interpolator) {
         if !self.fixings().is_empty() {
             let first_date = self.fixings().keys().min().unwrap().clone();
@@ -95,6 +96,12 @@ pub trait HasName {
     fn name(&self) -> Result<String>;
 }
 
+pub trait RelinkableTermStructure {
+    fn link_to(&mut self, term_structure: Box<dyn YieldTermStructureTrait>);
+}
+
+/// # InterestRateIndexTrait
+/// Implement this trait for a struct that holds interest rate index information.
 pub trait InterestRateIndexTrait:
     FixingProvider
     + YieldProvider
@@ -102,6 +109,7 @@ pub trait InterestRateIndexTrait:
     + AdvanceInterestRateIndexInTime
     + InterestRateIndexClone
     + HasTermStructure
+    + RelinkableTermStructure
     + HasTenor
     + HasName
     + Send
