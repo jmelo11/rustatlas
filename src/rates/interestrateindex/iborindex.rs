@@ -12,7 +12,7 @@ use crate::{
     },
     utils::errors::{AtlasError, Result},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
@@ -40,7 +40,7 @@ pub struct IborIndex {
     tenor: Period,
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
-    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
+    term_structure: Option<Arc<dyn YieldTermStructureTrait>>,
     reference_date: Date,
 }
 
@@ -85,7 +85,7 @@ impl IborIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
@@ -163,9 +163,9 @@ impl YieldProvider for IborIndex {
 }
 
 impl HasTermStructure for IborIndex {
-    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>> {
+    fn term_structure(&self) -> Result<Arc<dyn YieldTermStructureTrait>> {
         self.term_structure
-            .as_ref()
+            .clone()
             .ok_or(AtlasError::ValueNotSetErr(
                 "Term structure not set".to_string(),
             ))
@@ -173,7 +173,7 @@ impl HasTermStructure for IborIndex {
 }
 
 impl RelinkableTermStructure for IborIndex {
-    fn link_to(&mut self, term_structure: Box<dyn YieldTermStructureTrait>) {
+    fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>) {
         self.term_structure = Some(term_structure);
     }
 }
@@ -181,7 +181,7 @@ impl RelinkableTermStructure for IborIndex {
 impl InterestRateIndexTrait for IborIndex {}
 
 impl AdvanceInterestRateIndexInTime for IborIndex {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn InterestRateIndexTrait>> {
         let curve = self.term_structure()?;
 
         let mut fixings = self.fixings().clone();
@@ -198,7 +198,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
             seed = seed.advance(1, TimeUnit::Days);
         }
         let new_curve = curve.advance_to_period(period)?;
-        Ok(Box::new(
+        Ok(Arc::new(
             IborIndex::new(new_curve.reference_date())
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
@@ -207,7 +207,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
         ))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn InterestRateIndexTrait>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
@@ -285,19 +285,19 @@ mod tests {
             .with_tenor(tenor)
             .with_rate_definition(rate_definition);
 
-        let base_term_structure = Box::new(FlatForwardTermStructure::new(
+        let base_term_structure = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.05,
             RateDefinition::default(),
         ));
 
-        let spread_term_structure = Box::new(FlatForwardTermStructure::new(
+        let spread_term_structure = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.01,
             RateDefinition::default(),
         ));
 
-        let new_term_structure = Box::new(CompositeTermStructure::new(
+        let new_term_structure = Arc::new(CompositeTermStructure::new(
             spread_term_structure.clone(),
             base_term_structure.clone(),
         ));
@@ -319,9 +319,6 @@ mod tests {
             .discount_factor(eval_date)
             .unwrap();
 
-        assert_eq!(
-            df,
-            new_term_structure.discount_factor(eval_date).unwrap()
-        );
+        assert_eq!(df, new_term_structure.discount_factor(eval_date).unwrap());
     }
 }

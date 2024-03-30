@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::Arc,
+};
 
 use crate::{
     math::interpolation::enums::Interpolator,
@@ -50,33 +53,33 @@ pub trait FixingProvider {
     }
 }
 
-/// # InterestRateIndexClone
-/// Trait for cloning a given object.
-pub trait InterestRateIndexClone {
-    fn clone_box(&self) -> Box<dyn InterestRateIndexTrait>;
-}
+// /// # InterestRateIndexClone
+// /// Trait for cloning a given object.
+// pub trait InterestRateIndexClone {
+//     fn clone_box(&self) -> Box<dyn InterestRateIndexTrait>;
+// }
 
-/// # InterestRateIndexClone for T
-impl<T: 'static + InterestRateIndexTrait + Clone> InterestRateIndexClone for T {
-    fn clone_box(&self) -> Box<dyn InterestRateIndexTrait> {
-        Box::new(self.clone())
-    }
-}
+// /// # InterestRateIndexClone for T
+// impl<T: 'static + InterestRateIndexTrait + Clone> InterestRateIndexClone for T {
+//     fn clone_box(&self) -> Box<dyn InterestRateIndexTrait> {
+//         Box::new(self.clone())
+//     }
+// }
 
-/// # Clone for Box<dyn InterestRateIndexTrait>
-/// Implementation of Clone for Box<dyn InterestRateIndexTrait>.
-impl Clone for Box<dyn InterestRateIndexTrait> {
-    fn clone(&self) -> Self {
-        self.clone_box()
-    }
-}
+// /// # Clone for Box<dyn InterestRateIndexTrait>
+// /// Implementation of Clone for Box<dyn InterestRateIndexTrait>.
+// impl Clone for Box<dyn InterestRateIndexTrait> {
+//     fn clone(&self) -> Self {
+//         self.clone_box()
+//     }
+// }
 
 /// # AdvanceInterestRateIndexInTime
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period/time.
 pub trait AdvanceInterestRateIndexInTime {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>>;
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>>;
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn InterestRateIndexTrait>>;
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn InterestRateIndexTrait>>;
 }
 /// # HasTenor
 /// Implement this trait for a struct that holds a tenor.
@@ -87,7 +90,7 @@ pub trait HasTenor {
 /// # HasTermStructure
 /// Implement this trait for a struct that holds a term structure.
 pub trait HasTermStructure {
-    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>>;
+    fn term_structure(&self) -> Result<Arc<dyn YieldTermStructureTrait>>;
 }
 
 /// # HasName
@@ -97,7 +100,7 @@ pub trait HasName {
 }
 
 pub trait RelinkableTermStructure {
-    fn link_to(&mut self, term_structure: Box<dyn YieldTermStructureTrait>);
+    fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>);
 }
 
 /// # InterestRateIndexTrait
@@ -107,11 +110,9 @@ pub trait InterestRateIndexTrait:
     + YieldProvider
     + HasReferenceDate
     + AdvanceInterestRateIndexInTime
-    + InterestRateIndexClone
     + HasTermStructure
     + RelinkableTermStructure
     + HasTenor
     + HasName
-    + Send
 {
 }

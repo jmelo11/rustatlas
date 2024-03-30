@@ -21,7 +21,7 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -83,19 +83,19 @@ pub fn create_store() -> Result<MarketStore> {
     let local_currency = Currency::USD;
     let mut market_store = MarketStore::new(ref_date, local_currency);
 
-    let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
+    let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
         0.02,
         RateDefinition::default(),
     ));
 
-    let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
+    let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
         0.03,
         RateDefinition::default(),
     ));
 
-    let discount_curve = Box::new(FlatForwardTermStructure::new(
+    let discount_curve = Arc::new(FlatForwardTermStructure::new(
         ref_date,
         0.05,
         RateDefinition::default(),
@@ -118,18 +118,18 @@ pub fn create_store() -> Result<MarketStore> {
 
     market_store
         .mut_index_store()
-        .add_index(0, Box::new(ibor_index))?;
+        .add_index(0, Arc::new(ibor_index))?;
 
     market_store
         .mut_index_store()
-        .add_index(1, Box::new(overnigth_index))?;
+        .add_index(1, Arc::new(overnigth_index))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store
         .mut_index_store()
-        .add_index(2, Box::new(discount_index))?;
+        .add_index(2, Arc::new(discount_index))?;
     return Ok(market_store);
 }
 

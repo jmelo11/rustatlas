@@ -141,6 +141,8 @@ where
 #[cfg(test)]
 mod tests {
 
+    use std::sync::Arc;
+
     use crate::{
         cashflows::cashflow::Side,
         core::marketstore::MarketStore,
@@ -175,7 +177,7 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let discount_curve = Box::new(FlatForwardTermStructure::new(
+        let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.05,
             RateDefinition::new(
@@ -191,7 +193,7 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index(0, Box::new(ibor_index))?;
+            .add_index(0, Arc::new(ibor_index))?;
         Ok(market_store)
     }
 

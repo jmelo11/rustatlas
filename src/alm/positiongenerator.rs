@@ -246,6 +246,8 @@ impl<'a> PositionGenerator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{
         rates::{
             interestrate::RateDefinition, interestrateindex::iborindex::IborIndex,
@@ -261,13 +263,13 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let discount_curve = Box::new(FlatForwardTermStructure::new(
+        let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.5,
             RateDefinition::default(),
         ));
 
-        let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
+        let discount_index = Arc::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
         market_store
             .mut_index_store()
             .add_index(0, discount_index)?;

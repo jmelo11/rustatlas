@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     rates::{
         enums::Compounding,
@@ -18,6 +20,7 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
+/// use std::sync::Arc;
 /// let ref_date = Date::new(2021, 1, 1);
 ///
 /// let spread_curve = FlatForwardTermStructure::new(
@@ -32,20 +35,20 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 ///     RateDefinition::default()
 /// );
 ///
-/// let spreaded_curve = CompositeTermStructure::new(Box::new(spread_curve), Box::new(base_curve));
+/// let spreaded_curve = CompositeTermStructure::new(Arc::new(spread_curve), Arc::new(base_curve));
 /// assert_eq!(spreaded_curve.reference_date(), ref_date);
 /// ```
 #[derive(Clone)]
 pub struct CompositeTermStructure {
     date_reference: Date, // reference_date
-    spread_curve: Box<dyn YieldTermStructureTrait>,
-    base_curve: Box<dyn YieldTermStructureTrait>,
+    spread_curve: Arc<dyn YieldTermStructureTrait>,
+    base_curve: Arc<dyn YieldTermStructureTrait>,
 }
 
 impl CompositeTermStructure {
     pub fn new(
-        spread_curve: Box<dyn YieldTermStructureTrait>,
-        base_curve: Box<dyn YieldTermStructureTrait>,
+        spread_curve: Arc<dyn YieldTermStructureTrait>,
+        base_curve: Arc<dyn YieldTermStructureTrait>,
     ) -> CompositeTermStructure {
         CompositeTermStructure {
             date_reference: base_curve.reference_date(),
@@ -96,16 +99,16 @@ impl YieldProvider for CompositeTermStructure {
 
 /// # AdvanceTermStructureInTime for CompositeTermStructure
 impl AdvanceTermStructureInTime for CompositeTermStructure {
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
-        Ok(Box::new(CompositeTermStructure::new(spread, base)))
+        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
     }
 
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
-        Ok(Box::new(CompositeTermStructure::new(spread, base)))
+        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
     }
 }
 
@@ -113,6 +116,8 @@ impl YieldTermStructureTrait for CompositeTermStructure {}
 
 #[cfg(test)]
 mod test {
+    use std::sync::Arc;
+
     use crate::{
         rates::{
             enums::Compounding,
@@ -128,7 +133,7 @@ mod test {
 
     #[test]
     fn test_reference_date() {
-        let spread_curve = Box::new(FlatForwardTermStructure::new(
+        let spread_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.1,
             RateDefinition::new(
@@ -138,7 +143,7 @@ mod test {
             ),
         ));
 
-        let base_curve = Box::new(FlatForwardTermStructure::new(
+        let base_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.2,
             RateDefinition::new(
@@ -153,7 +158,7 @@ mod test {
 
     #[test]
     fn test_forward_rate() {
-        let spread_curve = Box::new(FlatForwardTermStructure::new(
+        let spread_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.01,
             RateDefinition::new(
@@ -163,7 +168,7 @@ mod test {
             ),
         ));
 
-        let base_curve = Box::new(FlatForwardTermStructure::new(
+        let base_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.02,
             RateDefinition::new(
@@ -185,7 +190,7 @@ mod test {
 
     #[test]
     fn test_discount_factor() {
-        let spread_curve = Box::new(FlatForwardTermStructure::new(
+        let spread_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.1,
             RateDefinition::new(
@@ -195,7 +200,7 @@ mod test {
             ),
         ));
 
-        let base_curve = Box::new(FlatForwardTermStructure::new(
+        let base_curve = Arc::new(FlatForwardTermStructure::new(
             Date::new(2020, 1, 1),
             0.2,
             RateDefinition::new(
@@ -212,7 +217,4 @@ mod test {
 
         assert!(df.unwrap() - 0.9702040771633191 < 0.00001);
     }
-
-
-
 }

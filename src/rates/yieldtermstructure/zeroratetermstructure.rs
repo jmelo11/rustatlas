@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
@@ -169,7 +171,7 @@ impl YieldProvider for ZeroRateTermStructure {
 
 /// # AdvanceTermStructureInTime for ZeroRateTermStructure
 impl AdvanceTermStructureInTime for ZeroRateTermStructure {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
@@ -189,7 +191,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             })
             .collect();
 
-        Ok(Box::new(ZeroRateTermStructure::new(
+        Ok(Arc::new(ZeroRateTermStructure::new(
             new_reference_date,
             new_dates,
             shifted_dfs?,
@@ -199,7 +201,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
         )?))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(

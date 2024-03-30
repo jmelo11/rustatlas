@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     rates::{
         enums::Compounding,
@@ -91,19 +93,19 @@ impl YieldProvider for FlatForwardTermStructure {
 
 /// # AdvanceTermStructureInTime for FlatForwardTermStructure
 impl AdvanceTermStructureInTime for FlatForwardTermStructure {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
-        return Ok(Box::new(FlatForwardTermStructure::new(
+        return Ok(Arc::new(FlatForwardTermStructure::new(
             new_reference_date,
             self.value(),
             self.rate_definition(),
         )));
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
-        return Ok(Box::new(FlatForwardTermStructure::new(
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
+        return Ok(Arc::new(FlatForwardTermStructure::new(
             date,
             self.value(),
             self.rate_definition(),
