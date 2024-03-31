@@ -65,7 +65,21 @@ impl FixedRateCoupon {
 
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
-        self.cashflow.set_amount(self.notional * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0));
+        self.cashflow.set_amount(
+            self.notional
+                * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0),
+        );
+    }
+
+    pub fn set_notional(&mut self, notional: f64) {
+        self.notional = notional;
+        self.cashflow.set_amount(
+            self.notional
+                * (self
+                    .rate
+                    .compound_factor(self.accrual_start_date, self.accrual_end_date)
+                    - 1.0),
+        );
     }
 
     pub fn notional(&self) -> f64 {
