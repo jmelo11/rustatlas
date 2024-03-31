@@ -38,6 +38,7 @@ pub struct FloatingRateCoupon {
     spread: f64,
     accrual_start_date: Date,
     accrual_end_date: Date,
+    fixing_date: Date,
     rate_definition: RateDefinition,
     cashflow: SimpleCashflow,
     fixing_rate: Option<f64>,
@@ -51,6 +52,7 @@ impl FloatingRateCoupon {
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
+        fixing_date: Date,
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
@@ -61,6 +63,7 @@ impl FloatingRateCoupon {
             fixing_rate: None,
             accrual_start_date,
             accrual_end_date,
+            fixing_date,
             rate_definition,
             forecast_curve_id: None,
             cashflow: SimpleCashflow::new(payment_date, currency, side),
@@ -89,6 +92,10 @@ impl FloatingRateCoupon {
         self.spread = spread;
     }
 
+    pub fn set_notional(&mut self, notional: f64) {
+        self.notional = notional;
+    }
+
     pub fn notional(&self) -> f64 {
         self.notional
     }
@@ -99,6 +106,10 @@ impl FloatingRateCoupon {
 
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
+    }
+
+    pub fn fixing_date(&self) -> Date {
+        self.fixing_date
     }
 }
 
@@ -180,6 +191,7 @@ impl Registrable for FloatingRateCoupon {
         let forecast_curve_id = self.forecast_curve_id()?;
         let forecast = ForwardRateRequest::new(
             forecast_curve_id,
+            self.fixing_date,
             self.accrual_start_date,
             self.accrual_end_date,
             self.rate_definition.compounding(),
