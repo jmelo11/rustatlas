@@ -146,8 +146,8 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                     Cashflow::FixedRateCoupon(cf) => {
                         let group = FixedRateCashflowGroup {
                             currency: cf.currency()?,
-                            accrual_start_date: cf.accrual_start_date(),
-                            accrual_end_date: cf.accrual_end_date(),
+                            accrual_start_date: cf.accrual_start_date().unwrap(),
+                            accrual_end_date: cf.accrual_end_date().unwrap(),
                             discount_curve_id: cf.discount_curve_id()?,
                             rate_definition: cf.rate().rate_definition(),
                         };
@@ -160,8 +160,8 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                                     let notional = pos.notional() + cf.notional();
                                     let compound_factor = (notional + interest) / notional;
                                     let t = cf.rate().day_counter().year_fraction(
-                                        cf.accrual_start_date(),
-                                        cf.accrual_end_date(),
+                                        cf.accrual_start_date().unwrap(),
+                                        cf.accrual_end_date().unwrap(),
                                     );
                                     let new_rate = InterestRate::implied_rate(
                                         compound_factor,
@@ -180,8 +180,8 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                     Cashflow::FloatingRateCoupon(cf) => {
                         let group = FloatingRateCashflowGroup {
                             currency: cf.currency()?,
-                            accrual_start_date: cf.accrual_start_date(),
-                            accrual_end_date: cf.accrual_end_date(),
+                            accrual_start_date: cf.accrual_start_date().unwrap(),
+                            accrual_end_date: cf.accrual_end_date().unwrap(),
                             fixing_date: cf.fixing_date(),
                             discount_curve_id: cf.discount_curve_id()?,
                             forecast_curve_id: cf.forecast_curve_id()?,
@@ -196,8 +196,8 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                                     let notional = pos.notional() + cf.notional();
                                     let compound_factor = (notional + interest) / notional;
                                     let t = cf.rate_definition().day_counter().year_fraction(
-                                        cf.accrual_start_date(),
-                                        cf.accrual_end_date(),
+                                        cf.accrual_start_date().unwrap(),
+                                        cf.accrual_end_date().unwrap(),
                                     );
                                     let new_rate = InterestRate::implied_rate(
                                         compound_factor,

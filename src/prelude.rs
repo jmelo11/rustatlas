@@ -33,6 +33,7 @@ pub use crate::{
         period::*,
         schedule::*,
     },
+    utils::errors::*,
     visitors::{
         accruedamountconstvisitor::*, cashflowaggregationvisitor::*, fixingvisitor::*,
         indexingvisitor::*, npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
