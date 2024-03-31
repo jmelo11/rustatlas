@@ -7,5 +7,5 @@ pub mod makefixedrateinstrument;
 pub mod makefixfloatswap;
 pub mod makefloatingrateinstrument;
 pub mod makemixedrateinstrument;
-pub mod mixedrateinstrument;
+pub mod hybridrateinstrument;
 pub mod traits;

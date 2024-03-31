@@ -226,7 +226,10 @@ mod tests {
     use super::*;
     use crate::{
         math::interpolation::enums::Interpolator,
-        prelude::{CompositeTermStructure, FlatForwardTermStructure},
+        rates::yieldtermstructure::{
+            compositetermstructure::CompositeTermStructure,
+            flatforwardtermstructure::FlatForwardTermStructure,
+        },
         time::{daycounter::DayCounter, enums::TimeUnit},
     };
 

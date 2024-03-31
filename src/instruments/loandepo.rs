@@ -2,9 +2,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     alm::enums::{AccountType, EvaluationMode, ProductFamily},
-    cashflows::cashflow::{Cashflow, Side},
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::InterestAccrual,
+    },
     currencies::enums::Currency,
-    prelude::InterestAccrual,
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},

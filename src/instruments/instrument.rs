@@ -4,15 +4,19 @@ use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
-    }, core::traits::HasCurrency, currencies::enums::Currency, prelude::RateDefinition, time::{date::Date, enums::Frequency}, utils::errors::{AtlasError, Result}, visitors::traits::HasCashflows
+    },
+    core::traits::HasCurrency,
+    currencies::enums::Currency,
+    rates::interestrate::RateDefinition,
+    time::{date::Date, enums::Frequency},
+    utils::errors::{AtlasError, Result},
+    visitors::traits::HasCashflows,
 };
 
 use super::{
     fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
     traits::Structure,
 };
-
-
 
 /// # PositionType
 /// This enum is used to differentiate between base and simulated positions
@@ -239,7 +243,7 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.rate_definition(),
         }
     }
-    
+
     pub fn second_rate_definition(&self) -> Option<RateDefinition> {
         match self {
             Instrument::FixedRateInstrument(_) => None,

@@ -8,3 +8,4 @@ pub mod parvaluevisitor;
 pub mod traits;
 pub mod zspreadconstvisitor;
 pub mod durationconstvisitor;
+pub mod cashflowcompressorconstvisitor;
