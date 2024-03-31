@@ -10,7 +10,7 @@ use crate::time::enums::Frequency;
 use crate::utils::errors::Result;
 use crate::visitors::traits::HasCashflows;
 
-pub struct MixedRateInstrument {
+pub struct HybridRateInstrument {
     start_date: Date,
     end_date: Date,
     notional: f64,
@@ -34,7 +34,7 @@ pub struct MixedRateInstrument {
     cashflows: Vec<Cashflow>,
 }
 
-impl MixedRateInstrument {
+impl HybridRateInstrument {
     pub fn new(
         start_date: Date,
         end_date: Date,
@@ -143,13 +143,13 @@ impl MixedRateInstrument {
     }
 }
 
-impl HasCurrency for MixedRateInstrument {
+impl HasCurrency for HybridRateInstrument {
     fn currency(&self) -> Result<Currency> {
         Ok(self.currency)
     }
 }
 
-impl InterestAccrual for MixedRateInstrument {
+impl InterestAccrual for HybridRateInstrument {
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {
             acc + cf.accrued_amount(start_date, end_date).unwrap_or(0.0)
@@ -165,7 +165,7 @@ impl InterestAccrual for MixedRateInstrument {
     }
 }
 
-impl HasCashflows for MixedRateInstrument {
+impl HasCashflows for HybridRateInstrument {
     fn cashflows(&self) -> &[Cashflow] {
         &self.cashflows
     }

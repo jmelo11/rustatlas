@@ -226,7 +226,10 @@ mod tests {
     use super::*;
     use crate::{
         math::interpolation::enums::Interpolator,
-        prelude::{CompositeTermStructure, FlatForwardTermStructure},
+        rates::yieldtermstructure::{
+            compositetermstructure::CompositeTermStructure,
+            flatforwardtermstructure::FlatForwardTermStructure,
+        },
         time::{daycounter::DayCounter, enums::TimeUnit},
     };
 
@@ -319,9 +322,6 @@ mod tests {
             .discount_factor(eval_date)
             .unwrap();
 
-        assert_eq!(
-            df,
-            new_term_structure.discount_factor(eval_date).unwrap()
-        );
+        assert_eq!(df, new_term_structure.discount_factor(eval_date).unwrap());
     }
 }
