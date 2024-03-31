@@ -239,7 +239,7 @@ impl Instrument {
 
     pub fn first_rate_definition(&self) -> RateDefinition {
         match self {
-            Instrument::FixedRateInstrument(fri) => *fri.rate().rate_definition(),
+            Instrument::FixedRateInstrument(fri) => fri.rate().rate_definition(),
             Instrument::FloatingRateInstrument(fri) => fri.rate_definition(),
         }
     }
