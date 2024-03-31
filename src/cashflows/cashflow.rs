@@ -184,19 +184,29 @@ impl Registrable for Cashflow {
 }
 
 impl InterestAccrual for Cashflow {
-    fn accrual_end_date(&self) -> Date {
+    fn accrual_end_date(&self) -> Result<Date> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrual_end_date(),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_end_date(),
-            _ => panic!("Not implemented"),
+            Cashflow::Disbursement(_) | Cashflow::Redemption(_) => {
+                Err(AtlasError::InvalidValueErr(
+                    "Disbursement and Redemption cashflows do not have an accrual end date"
+                        .to_string(),
+                ))
+            }
         }
     }
 
-    fn accrual_start_date(&self) -> Date {
+    fn accrual_start_date(&self) -> Result<Date> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrual_start_date(),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_start_date(),
-            _ => panic!("Not implemented"),
+            Cashflow::Disbursement(_) | Cashflow::Redemption(_) => {
+                Err(AtlasError::InvalidValueErr(
+                    "Disbursement and Redemption cashflows do not have an accrual start date"
+                        .to_string(),
+                ))
+            }
         }
     }
 

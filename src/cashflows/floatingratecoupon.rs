@@ -114,11 +114,11 @@ impl FloatingRateCoupon {
 }
 
 impl InterestAccrual for FloatingRateCoupon {
-    fn accrual_start_date(&self) -> Date {
-        return self.accrual_start_date;
+    fn accrual_start_date(&self) -> Result<Date> {
+        return Ok(self.accrual_start_date);
     }
-    fn accrual_end_date(&self) -> Date {
-        return self.accrual_end_date;
+    fn accrual_end_date(&self) -> Result<Date> {
+        return Ok(self.accrual_end_date);
     }
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let fixing = self
@@ -126,10 +126,10 @@ impl InterestAccrual for FloatingRateCoupon {
             .ok_or(AtlasError::ValueNotSetErr("Fixing rate".to_string()))?;
         let rate = InterestRate::from_rate_definition(fixing + self.spread, self.rate_definition);
 
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (rate.compound_factor(d1, d2) - 1.0);
 
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date)?;
         let acc_2 = self.notional * (rate.compound_factor(d1, d2) - 1.0);
 
         return Ok(acc_1 - acc_2);

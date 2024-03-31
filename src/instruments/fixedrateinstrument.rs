@@ -147,11 +147,11 @@ impl InterestAccrual for FixedRateInstrument {
             }
         }
     }
-    fn accrual_start_date(&self) -> Date {
-        self.start_date
+    fn accrual_start_date(&self) -> Result<Date> {
+        Ok(self.start_date)
     }
-    fn accrual_end_date(&self) -> Date {
-        self.end_date
+    fn accrual_end_date(&self) -> Result<Date> {
+        Ok(self.end_date)
     }
 }
 
