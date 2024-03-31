@@ -1,9 +1,41 @@
 use crate::utils::errors::{AtlasError, Result};
 use crate::{
     currencies::enums::Currency,
-    instruments::instrument::{Instrument, PositionType, RateType},
+    instruments::instrument::{Instrument, RateType},
 };
 use serde::{Deserialize, Serialize};
+
+/// # PositionType
+/// This enum is used to differentiate between base and simulated positions
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+pub enum PositionType {
+    Base,
+    Simulated,
+}
+
+impl TryFrom<String> for PositionType {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "Base" => Ok(PositionType::Base),
+            "Simulated" => Ok(PositionType::Simulated),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid position type: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<PositionType> for String {
+    fn from(position_type: PositionType) -> Self {
+        match position_type {
+            PositionType::Base => "Base".to_string(),
+            PositionType::Simulated => "Simulated".to_string(),
+        }
+    }
+}
 
 /// # Portfolio
 /// A struct that contains the information needed to define a portfolio.

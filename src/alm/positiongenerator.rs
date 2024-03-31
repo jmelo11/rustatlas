@@ -231,6 +231,9 @@ impl<'a> PositionGenerator<'a> {
             RateType::FixedThenFixed => {
                 unimplemented!("Not implemented")
             }
+            RateType::Suffled => {
+                unimplemented!("Not implemented")
+            }
         }
     }
 
