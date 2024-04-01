@@ -7,7 +7,10 @@ use crate::{
     },
     core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
     currencies::enums::Currency,
-    instruments::fixedrateinstrument::FixedRateInstrument,
+    instruments::{
+        fixedrateinstrument::FixedRateInstrument, hybridrateinstrument::HybridRateInstrument,
+    },
+    prelude::{AtlasError, Frequency, Instrument, RateType, Structure},
     rates::interestrate::{InterestRate, RateDefinition},
     time::date::Date,
 };
@@ -95,7 +98,57 @@ impl CashflowCompressorConstVisitor {
         }
     }
 
-    pub fn compress() {}
+    pub fn as_instrument(&self) -> Result<Instrument> {
+        let mut cashflows = Vec::new();
+
+        cashflows.extend(self.disbursements.borrow().values().cloned());
+        cashflows.extend(self.redemptions.borrow().values().cloned());
+        cashflows.extend(self.fixed_rate_coupons.borrow().values().cloned());
+        cashflows.extend(self.floating_rate_coupons.borrow().values().cloned());
+
+        // Sort cashflows chronologically based on payment dates
+        cashflows.sort_by_key(|cf| cf.payment_date());
+
+        let first_coupon = cashflows
+            .first()
+            .ok_or(AtlasError::ValueNotSetErr("No cashflows found".to_string()))?;
+
+        let last_coupon = cashflows
+            .last()
+            .ok_or(AtlasError::ValueNotSetErr("No cashflows found".to_string()))?;
+
+        let notional = first_coupon.amount()?;
+
+        let forecast_curve_id = self
+            .floating_rate_coupons
+            .borrow()
+            .values()
+            .next()
+            .and_then(|cf| cf.forecast_curve_id().ok());
+        let discount_curve_id = first_coupon.discount_curve_id().ok();
+
+        let instrument = Instrument::HybridRateInstrument(HybridRateInstrument::new(
+            first_coupon.accrual_start_date()?,
+            last_coupon.accrual_end_date()?,
+            notional,
+            Frequency::OtherFrequency,
+            Structure::Other,
+            None,
+            None,
+            None,
+            None,
+            RateType::Suffled,
+            None,
+            None,
+            None,
+            None,
+            forecast_curve_id,
+            discount_curve_id,
+            cashflows,
+        ));
+
+        Ok(instrument)
+    }
 }
 
 impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {

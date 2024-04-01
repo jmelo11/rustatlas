@@ -129,9 +129,11 @@ impl InterestAccrual for FixedRateCoupon {
     fn accrual_start_date(&self) -> Result<Date> {
         return Ok(self.accrual_start_date);
     }
+
     fn accrual_end_date(&self) -> Result<Date> {
         return Ok(self.accrual_end_date);
     }
+
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
@@ -147,9 +149,11 @@ impl Payable for FixedRateCoupon {
     fn amount(&self) -> Result<f64> {
         return self.cashflow.amount();
     }
+
     fn side(&self) -> Side {
         return self.cashflow.side();
     }
+    
     fn payment_date(&self) -> Date {
         return self.cashflow.payment_date();
     }

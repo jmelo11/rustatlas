@@ -1,10 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cashflows::{
-        cashflow::{Cashflow, Side},
-        traits::InterestAccrual,
-    },
+    cashflows::cashflow::{Cashflow, Side},
     core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
@@ -32,7 +29,6 @@ pub enum RateType {
 
 impl TryFrom<String> for RateType {
     type Error = AtlasError;
-
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
             "Fixed" => Ok(RateType::Fixed),
@@ -71,31 +67,31 @@ pub enum Instrument {
     HybridRateInstrument(HybridRateInstrument),
 }
 
-impl InterestAccrual for Instrument {
-    fn accrual_start_date(&self) -> Result<Date> {
-        match self {
-            Instrument::FixedRateInstrument(fri) => fri.accrual_start_date(),
-            Instrument::FloatingRateInstrument(fri) => fri.accrual_start_date(),
-            Instrument::HybridRateInstrument(_) => unimplemented!(),
-        }
-    }
+// impl InterestAccrual for Instrument {
+//     fn accrual_start_date(&self) -> Result<Date> {
+//         match self {
+//             Instrument::FixedRateInstrument(fri) => fri.accrual_start_date(),
+//             Instrument::FloatingRateInstrument(fri) => fri.accrual_start_date(),
+//             Instrument::HybridRateInstrument(_) => unimplemented!(),
+//         }
+//     }
 
-    fn accrual_end_date(&self) -> Result<Date> {
-        match self {
-            Instrument::FixedRateInstrument(fri) => fri.accrual_end_date(),
-            Instrument::FloatingRateInstrument(fri) => fri.accrual_end_date(),
-            Instrument::HybridRateInstrument(_) => unimplemented!(),
-        }
-    }
+//     fn accrual_end_date(&self) -> Result<Date> {
+//         match self {
+//             Instrument::FixedRateInstrument(fri) => fri.accrual_end_date(),
+//             Instrument::FloatingRateInstrument(fri) => fri.accrual_end_date(),
+//             Instrument::HybridRateInstrument(_) => unimplemented!(),
+//         }
+//     }
 
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        match self {
-            Instrument::FixedRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
-            Instrument::FloatingRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
-            Instrument::HybridRateInstrument(_) => unimplemented!(),
-        }
-    }
-}
+//     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
+//         match self {
+//             Instrument::FixedRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
+//             Instrument::FloatingRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
+//             Instrument::HybridRateInstrument(_) => unimplemented!(),
+//         }
+//     }
+// }
 
 impl HasCashflows for Instrument {
     fn cashflows(&self) -> &[Cashflow] {
@@ -164,10 +160,10 @@ impl Instrument {
         }
     }
 
-    pub fn side(&self) -> Side {
+    pub fn side(&self) -> Option<Side> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.side(),
-            Instrument::FloatingRateInstrument(fri) => fri.side(),
+            Instrument::FixedRateInstrument(fri) => Some(fri.side()),
+            Instrument::FloatingRateInstrument(fri) => Some(fri.side()),
             Instrument::HybridRateInstrument(hri) => hri.side(),
         }
     }

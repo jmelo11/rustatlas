@@ -4,6 +4,7 @@ use crate::{
     cashflows::cashflow::{Cashflow, Side},
     core::traits::HasCurrency,
     currencies::enums::Currency,
+    prelude::AtlasError,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
     utils::errors::Result,
@@ -16,11 +17,11 @@ pub struct HybridRateInstrument {
     notional: f64,
     payment_frequency: Frequency,
     structure: Structure,
-    side: Side,
-    currency: Currency,
+    rate_type: RateType,
+    side: Option<Side>,
+    currency: Option<Currency>,
     id: Option<String>,
     issue_date: Option<Date>,
-    rate_type: RateType,
     first_rate_definition: Option<RateDefinition>,
     first_rate: Option<f64>,
     second_rate_definition: Option<RateDefinition>,
@@ -37,8 +38,8 @@ impl HybridRateInstrument {
         notional: f64,
         payment_frequency: Frequency,
         structure: Structure,
-        side: Side,
-        currency: Currency,
+        side: Option<Side>,
+        currency: Option<Currency>,
         id: Option<String>,
         issue_date: Option<Date>,
         rate_type: RateType,
@@ -83,7 +84,7 @@ impl HybridRateInstrument {
         self.structure
     }
 
-    pub fn side(&self) -> Side {
+    pub fn side(&self) -> Option<Side> {
         self.side
     }
 
@@ -144,7 +145,10 @@ impl HybridRateInstrument {
 
 impl HasCurrency for HybridRateInstrument {
     fn currency(&self) -> Result<Currency> {
-        Ok(self.currency)
+        match self.currency {
+            Some(currency) => Ok(currency),
+            None => Err(AtlasError::NotFoundErr("Currency not found".to_string())),
+        }
     }
 }
 
