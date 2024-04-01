@@ -38,7 +38,7 @@ pub struct FloatingRateCoupon {
     spread: f64,
     accrual_start_date: Date,
     accrual_end_date: Date,
-    fixing_date: Date,
+    fixing_date: Option<Date>,
     rate_definition: RateDefinition,
     cashflow: SimpleCashflow,
     fixing_rate: Option<f64>,
@@ -52,7 +52,7 @@ impl FloatingRateCoupon {
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
-        fixing_date: Date,
+        fixing_date: Option<Date>,
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
@@ -109,7 +109,10 @@ impl FloatingRateCoupon {
     }
 
     pub fn fixing_date(&self) -> Date {
-        self.fixing_date
+        match self.fixing_date {
+            Some(date) => date,
+            None => self.accrual_start_date,
+        }
     }
 }
 
@@ -189,9 +192,10 @@ impl Registrable for FloatingRateCoupon {
     fn market_request(&self) -> Result<MarketRequest> {
         let tmp = self.cashflow.market_request()?;
         let forecast_curve_id = self.forecast_curve_id()?;
+        let fixing_date = self.fixing_date();
         let forecast = ForwardRateRequest::new(
             forecast_curve_id,
-            self.fixing_date,
+            fixing_date,
             self.accrual_start_date,
             self.accrual_end_date,
             self.rate_definition.compounding(),
