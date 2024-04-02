@@ -249,7 +249,7 @@ impl<'a> PositionGenerator<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::sync::{Arc, RwLock};
 
     use crate::{
         rates::{
@@ -272,7 +272,9 @@ mod tests {
             RateDefinition::default(),
         ));
 
-        let discount_index = Arc::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
+        let discount_index = Arc::new(RwLock::new(
+            IborIndex::new(ref_date).with_term_structure(discount_curve),
+        ));
         market_store
             .mut_index_store()
             .add_index(0, discount_index)?;

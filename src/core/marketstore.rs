@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::{
     currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
@@ -70,7 +70,7 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency);
     }
 
-    pub fn get_index(&self, id: usize) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         return self.index_store.get_index(id);
     }
 

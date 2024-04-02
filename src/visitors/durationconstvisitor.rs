@@ -71,7 +71,10 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
 #[cfg(test)]
 mod tests {
 
-    use std::{collections::HashMap, sync::Arc};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, RwLock},
+    };
 
     use rayon::{
         prelude::{IntoParallelIterator, ParallelIterator},
@@ -144,18 +147,18 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index(0, Arc::new(ibor_index))?;
+            .add_index(0, Arc::new(RwLock::new(ibor_index)))?;
 
         market_store
             .mut_index_store()
-            .add_index(1, Arc::new(overnigth_index))?;
+            .add_index(1, Arc::new(RwLock::new(overnigth_index)))?;
 
         let discount_index =
             IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
         market_store
             .mut_index_store()
-            .add_index(2, Arc::new(discount_index))?;
+            .add_index(2, Arc::new(RwLock::new(discount_index)))?;
         return Ok(market_store);
     }
 

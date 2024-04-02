@@ -141,7 +141,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    use std::sync::Arc;
+    use std::sync::{Arc, RwLock};
 
     use crate::{
         cashflows::cashflow::Side,
@@ -193,7 +193,7 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index(0, Arc::new(ibor_index))?;
+            .add_index(0, Arc::new(RwLock::new(ibor_index)))?;
         Ok(market_store)
     }
 

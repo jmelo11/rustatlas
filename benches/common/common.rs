@@ -21,7 +21,12 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::{collections::HashMap, ops::Deref, rc::Rc, sync::Arc};
+use std::{
+    collections::HashMap,
+    ops::Deref,
+    rc::Rc,
+    sync::{Arc, RwLock},
+};
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -118,18 +123,18 @@ pub fn create_store() -> Result<MarketStore> {
 
     market_store
         .mut_index_store()
-        .add_index(0, Arc::new(ibor_index))?;
+        .add_index(0, Arc::new(RwLock::new(ibor_index)))?;
 
     market_store
         .mut_index_store()
-        .add_index(1, Arc::new(overnigth_index))?;
+        .add_index(1, Arc::new(RwLock::new(overnigth_index)))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
     market_store
         .mut_index_store()
-        .add_index(2, Arc::new(discount_index))?;
+        .add_index(2, Arc::new(RwLock::new(discount_index)))?;
     return Ok(market_store);
 }
 

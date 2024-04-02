@@ -1,6 +1,6 @@
 use std::{
     collections::{BTreeMap, HashMap},
-    sync::Arc,
+    sync::{Arc, RwLock},
 };
 
 use crate::{
@@ -78,8 +78,8 @@ pub trait FixingProvider {
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period/time.
 pub trait AdvanceInterestRateIndexInTime {
-    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn InterestRateIndexTrait>>;
-    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn InterestRateIndexTrait>>;
+    fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>>;
+    fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>>;
 }
 /// # HasTenor
 /// Implement this trait for a struct that holds a tenor.
@@ -99,6 +99,8 @@ pub trait HasName {
     fn name(&self) -> Result<String>;
 }
 
+/// # RelinkableTermStructure
+/// Allows to link a term structure to another.
 pub trait RelinkableTermStructure {
     fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>);
 }

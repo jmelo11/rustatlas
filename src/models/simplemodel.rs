@@ -3,6 +3,7 @@ use crate::{
         marketstore::MarketStore,
         meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest},
     },
+    prelude::ReadIndex,
     rates::traits::HasReferenceDate,
     time::date::Date,
     utils::errors::Result,
@@ -56,7 +57,7 @@ impl<'a> Model for SimpleModel<'a> {
 
         let id = df.provider_id();
         let index = self.market_store.get_index(id)?;
-        let curve = index.term_structure()?;
+        let curve = index.read_index()?.term_structure()?;
         Ok(curve.discount_factor(date)?)
     }
 
@@ -69,8 +70,14 @@ impl<'a> Model for SimpleModel<'a> {
         }
 
         let index = self.market_store.get_index(id)?;
+        let fwd_rate_provider = index.read_index()?;
         let start_date = fwd.start_date();
-        Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
+        Ok(fwd_rate_provider.forward_rate(
+            start_date,
+            end_date,
+            fwd.compounding(),
+            fwd.frequency(),
+        )?)
     }
 
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
@@ -106,8 +113,8 @@ impl<'a> Model for SimpleModel<'a> {
                 let first_curve = self.market_store.get_index(first_id)?;
                 let second_curve = self.market_store.get_index(second_id)?;
 
-                let first_df = first_curve.discount_factor(date)?;
-                let second_df = second_curve.discount_factor(date)?;
+                let first_df = first_curve.read_index()?.discount_factor(date)?;
+                let second_df = second_curve.read_index()?.discount_factor(date)?;
 
                 Ok(spot * first_df / second_df)
             }

@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     rates::{
@@ -177,7 +180,7 @@ impl YieldProvider for OvernightIndex {
 }
 
 impl AdvanceInterestRateIndexInTime for OvernightIndex {
-    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut fixings = self.fixings().clone();
         let mut seed = self.reference_date();
         let end_date = seed.advance(period.length(), period.units());
@@ -200,15 +203,15 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
 
         let new_curve = curve.advance_to_period(period)?;
 
-        Ok(Arc::new(
+        Ok(Arc::new(RwLock::new(
             OvernightIndex::new(new_curve.reference_date())
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
                 .with_term_structure(new_curve),
-        ))
+        )))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let days = (date - self.reference_date()) as i32;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)

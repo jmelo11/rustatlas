@@ -1,6 +1,10 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock, RwLockReadGuard},
+};
 
 use crate::{
+    prelude::YieldTermStructureTrait,
     time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::{AtlasError, Result},
 };
@@ -15,7 +19,18 @@ use super::interestrateindex::traits::InterestRateIndexTrait;
 #[derive(Clone)]
 pub struct IndexStore {
     reference_date: Date,
-    index_map: HashMap<usize, Arc<dyn InterestRateIndexTrait>>,
+    index_map: HashMap<usize, Arc<RwLock<dyn InterestRateIndexTrait>>>,
+}
+
+pub trait ReadIndex {
+    fn read_index(&self) -> Result<RwLockReadGuard<dyn InterestRateIndexTrait>>;
+}
+
+impl ReadIndex for Arc<RwLock<dyn InterestRateIndexTrait>> {
+    fn read_index(&self) -> Result<RwLockReadGuard<dyn InterestRateIndexTrait>> {
+        self.read()
+            .map_err(|_| AtlasError::InvalidValueErr("Could not read index".to_string()))
+    }
 }
 
 impl IndexStore {
@@ -30,8 +45,29 @@ impl IndexStore {
         self.reference_date
     }
 
-    pub fn add_index(&mut self, id: usize, index: Arc<dyn InterestRateIndexTrait>) -> Result<()> {
-        if self.reference_date != index.reference_date() {
+    pub fn link_term_structure(
+        &self,
+        id: usize,
+        term_structure: Arc<dyn YieldTermStructureTrait>,
+    ) -> Result<()> {
+        self.index_map
+            .get(&id)
+            .ok_or(AtlasError::NotFoundErr(format!(
+                "Index with id {} not found",
+                id
+            )))?
+            .write()
+            .map_err(|_| AtlasError::InvalidValueErr("Could not write index".to_string()))?
+            .link_to(term_structure);
+        Ok(())
+    }
+
+    pub fn add_index(
+        &mut self,
+        id: usize,
+        index: Arc<RwLock<dyn InterestRateIndexTrait>>,
+    ) -> Result<()> {
+        if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 "Index reference date does not match store reference date".to_string(),
             ));
@@ -49,8 +85,12 @@ impl IndexStore {
         Ok(())
     }
 
-    pub fn replace_index(&mut self, id: usize, index: Box<dyn InterestRateIndexTrait>) -> Result<()> {
-        if self.reference_date != index.reference_date() {
+    pub fn replace_index(
+        &mut self,
+        id: usize,
+        index: Arc<RwLock<dyn InterestRateIndexTrait>>,
+    ) -> Result<()> {
+        if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 "Index reference date does not match store reference date".to_string(),
             ));
@@ -68,19 +108,22 @@ impl IndexStore {
         Ok(())
     }
 
-    pub fn get_index(&self, id: usize) -> Result<&Box<dyn InterestRateIndexTrait>> {
+    pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         self.index_map
             .get(&id)
+            .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "Index with id {} not found",
                 id
             )))
-            .cloned()
     }
 
-    pub fn get_index_by_name(&self, name: String) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    pub fn get_index_by_name(
+        &self,
+        name: String,
+    ) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         for (id, index) in self.index_map.iter() {
-            if index.name()? == name {
+            if index.read_index()?.name()? == name {
                 return self.get_index(*id);
             }
         }
@@ -90,46 +133,23 @@ impl IndexStore {
         )))
     }
 
-    // pub fn mut_get_index_by_name(
-    //     &mut self,
-    //     name: String,
-    // ) -> Result<&mut Box<dyn InterestRateIndexTrait>> {
-    //     let id = self
-    //         .index_map
-    //         .iter()
-    //         .find(|(_, index)| index.name().unwrap() == name)
-    //         .unwrap()
-    //         .0;
-
-    //     self.mut_get_index(*id)
-    // }
-
-    // pub fn mut_get_index(&mut self, id: usize) -> Result<&mut Box<dyn InterestRateIndexTrait>> {
-    //     self.index_map
-    //         .get_mut(&id)
-    //         .ok_or(AtlasError::NotFoundErr(format!(
-    //             "Index with id {} not found",
-    //             id
-    //         )))
-    // }
-
-    pub fn get_index_names(&self) -> Vec<String> {
+    pub fn get_index_names(&self) -> Result<Vec<String>> {
         let mut names = Vec::new();
         for index in self.index_map.values() {
-            names.push(index.name().unwrap());
+            names.push(index.read_index()?.name().unwrap());
         }
-        names
+        Ok(names)
     }
 
-    pub fn get_index_map(&self) -> HashMap<String, usize> {
+    pub fn get_index_map(&self) -> Result<HashMap<String, usize>> {
         let mut map = HashMap::new();
         for (id, index) in self.index_map.iter() {
-            map.insert(index.name().unwrap(), *id);
+            map.insert(index.read_index()?.name().unwrap(), *id);
         }
-        map
+        Ok(map)
     }
 
-    pub fn get_all_indices(&self) -> Vec<Arc<dyn InterestRateIndexTrait>> {
+    pub fn get_all_indices(&self) -> Vec<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut indices = Vec::new();
         for index in self.index_map.values() {
             indices.push(index.clone());
@@ -152,7 +172,7 @@ impl IndexStore {
         let reference_date = self.reference_date + period;
         let mut store = IndexStore::new(reference_date);
         for (id, index) in self.index_map.iter() {
-            let new_index = index.advance_to_period(period)?;
+            let new_index = index.read_index()?.advance_to_period(period)?;
             store.add_index(*id, new_index)?;
         }
         Ok(store)

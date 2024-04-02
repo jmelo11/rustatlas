@@ -1,6 +1,6 @@
 use std::{
-    cell::RefCell,
     collections::{HashMap, HashSet, VecDeque},
+    sync::{Arc, Mutex},
 };
 
 use super::enums::Currency;
@@ -10,14 +10,14 @@ use crate::utils::errors::{AtlasError, Result};
 /// # ExchangeRateStore
 /// A store for exchange rates.
 /// Exchange rates are stored as a map of pairs of currencies to rates.
-/// 
+///
 /// ## Details
 /// - Exchange rates are stored as a map of pairs of currencies to rates.
 /// - The exchange rate between two currencies is calculated by traversing the graph of exchange rates.
 #[derive(Clone)]
 pub struct ExchangeRateStore {
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
-    exchange_rate_cache: RefCell<HashMap<(Currency, Currency), f64>>,
+    exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), f64>>>,
     currency_curve: HashMap<Currency, usize>,
 }
 
@@ -25,7 +25,7 @@ impl ExchangeRateStore {
     pub fn new() -> ExchangeRateStore {
         ExchangeRateStore {
             exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: RefCell::new(HashMap::new()),
+            exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
             currency_curve: HashMap::new(),
         }
     }
@@ -65,7 +65,7 @@ impl ExchangeRateStore {
         }
 
         let cache_key = (first_ccy, second_ccy);
-        if let Some(cached_rate) = self.exchange_rate_cache.borrow().get(&cache_key) {
+        if let Some(cached_rate) = self.exchange_rate_cache.lock().unwrap().get(&cache_key) {
             return Ok(*cached_rate);
         }
 
@@ -74,7 +74,7 @@ impl ExchangeRateStore {
         q.push_back((first_ccy, 1.0));
         visited.insert(first_ccy);
 
-        let mut mutable_cache = self.exchange_rate_cache.borrow_mut();
+        let mut mutable_cache = self.exchange_rate_cache.lock().unwrap();
         while let Some((current_ccy, rate)) = q.pop_front() {
             for (&(source, dest), &map_rate) in &self.exchange_rate_map {
                 if source == current_ccy && !visited.contains(&dest) {
@@ -124,7 +124,7 @@ mod tests {
                 map.insert((USD, EUR), 0.85);
                 map
             },
-            exchange_rate_cache: RefCell::new(HashMap::new()),
+            exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
             currency_curve: HashMap::new(),
         };
 
@@ -132,7 +132,8 @@ mod tests {
         assert_eq!(
             manager
                 .exchange_rate_cache
-                .borrow()
+                .lock()
+                .unwrap()
                 .get(&(USD, EUR))
                 .unwrap(),
             &0.85
@@ -143,7 +144,7 @@ mod tests {
     fn test_nonexistent_rate() {
         let manager = ExchangeRateStore {
             exchange_rate_map: HashMap::new(),
-            exchange_rate_cache: RefCell::new(HashMap::new()),
+            exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
             currency_curve: HashMap::new(),
         };
 
@@ -160,7 +161,7 @@ mod tests {
                 map.insert((EUR, USD), 1.0 / 0.85);
                 map
             },
-            exchange_rate_cache: RefCell::new(HashMap::new()),
+            exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
             currency_curve: HashMap::new(),
         };
 

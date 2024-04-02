@@ -12,7 +12,10 @@ use crate::{
     },
     utils::errors::{AtlasError, Result},
 };
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
@@ -181,7 +184,7 @@ impl RelinkableTermStructure for IborIndex {
 impl InterestRateIndexTrait for IborIndex {}
 
 impl AdvanceInterestRateIndexInTime for IborIndex {
-    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let curve = self.term_structure()?;
 
         let mut fixings = self.fixings().clone();
@@ -198,16 +201,16 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
             seed = seed.advance(1, TimeUnit::Days);
         }
         let new_curve = curve.advance_to_period(period)?;
-        Ok(Arc::new(
+        Ok(Arc::new(RwLock::new(
             IborIndex::new(new_curve.reference_date())
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
                 .with_term_structure(new_curve),
-        ))
+        )))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn InterestRateIndexTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
