@@ -16,7 +16,7 @@ use super::{
 };
 
 /// # RateType
-/// Represents the type of rate. It can be either fixed or floating.
+/// Represents the type of rate.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
     Fixed,
