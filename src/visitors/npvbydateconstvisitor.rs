@@ -31,12 +31,12 @@ impl<'a> NPVByDateConstVisitor<'a> {
 impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
     type Output = Result<BTreeMap<Date, f64>>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let npv_result = visitable
+        let mut npv_result = BTreeMap::new();
+        visitable
             .cashflows()
             .iter()
-            .try_fold(BTreeMap::new(), |mut acc, cf| {
+            .try_for_each(|cf| -> Result<()> {
                 let id = cf.id()?;
-
                 let cf_market_data =
                     self.market_data
                         .get(id)
@@ -49,7 +49,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
                     && !self.include_today_cashflows
                     || cf.payment_date() < cf_market_data.reference_date()
                 {
-                    return Ok(acc);
+                    return Ok(());
                 }
 
                 let df = cf_market_data.df()?;
@@ -59,11 +59,12 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
                     Side::Receive => 1.0,
                 };
                 let amount = cf.amount()?;
-                acc.insert(cf.payment_date(), df * amount / fx * flag);
-                Ok(acc)
-            });
-
-        return npv_result;
+                let npv = amount * df * fx * flag;
+                let acc = npv_result.entry(cf.payment_date()).or_insert(0.0);
+                *acc += npv;
+                Ok(())
+            })?;
+        Ok(npv_result)
     }
 }
 

@@ -6,6 +6,6 @@ pub mod loandepo;
 pub mod makefixedrateinstrument;
 pub mod makefixfloatswap;
 pub mod makefloatingrateinstrument;
-pub mod makemixedrateinstrument;
+pub mod makehybridrateinstrument;
 pub mod hybridrateinstrument;
 pub mod traits;

@@ -575,6 +575,7 @@ impl MakeFloatingRateInstrument {
                         *start_date,
                         *end_date,
                         *end_date,
+                        Some(*start_date),
                         rate_definition,
                         currency,
                         side,
@@ -654,6 +655,7 @@ fn build_coupons_from_notionals(
             d1,
             d2,
             d2,
+            Some(d1),
             rate_definition,
             currency,
             side,
@@ -678,8 +680,8 @@ impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
                             redemptions.insert(c.payment_date(), c.amount().unwrap());
                         }
                         Cashflow::FloatingRateCoupon(c) => {
-                            additional_coupon_dates.insert(c.accrual_start_date());
-                            additional_coupon_dates.insert(c.accrual_end_date());
+                            additional_coupon_dates.insert(c.accrual_start_date().unwrap());
+                            additional_coupon_dates.insert(c.accrual_end_date().unwrap());
                         }
                         _ => (),
                     }

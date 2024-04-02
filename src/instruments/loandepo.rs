@@ -93,7 +93,7 @@ impl TryFrom<LoanDepo> for Instrument {
             match cf {
                 Cashflow::FixedRateCoupon(coupon) => {
                     if let Some(date) = value.rate_change_date {
-                        let rate = if coupon.accrual_start_date() < date {
+                        let rate = if coupon.accrual_start_date()? < date {
                             match value.evaluation_mode {
                                 Some(EvaluationMode::FTPRate) => InterestRate::new(
                                     value.first_ftp_rate,
@@ -189,7 +189,7 @@ impl TryFrom<LoanDepo> for Instrument {
                 }
                 Cashflow::FloatingRateCoupon(coupon) => {
                     if let Some(date) = value.rate_change_date {
-                        let rate = if coupon.accrual_start_date() < date {
+                        let rate = if coupon.accrual_start_date()? < date {
                             match value.evaluation_mode {
                                 Some(EvaluationMode::FTPRate) => value.first_ftp_rate,
                                 Some(EvaluationMode::ClientRate) => value.first_client_rate,

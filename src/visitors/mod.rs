@@ -1,5 +1,7 @@
 pub mod accruedamountconstvisitor;
 pub mod cashflowaggregationvisitor;
+pub mod cashflowcompressorconstvisitor;
+pub mod durationconstvisitor;
 pub mod fixingvisitor;
 pub mod indexingvisitor;
 pub mod npvbydateconstvisitor;
@@ -7,5 +9,3 @@ pub mod npvconstvisitor;
 pub mod parvaluevisitor;
 pub mod traits;
 pub mod zspreadconstvisitor;
-pub mod durationconstvisitor;
-pub mod cashflowcompressorconstvisitor;

@@ -99,13 +99,23 @@ impl<'a> NPVEngine<'a> {
                             .unwrap();
                         npv_map
                     })
-                    .flatten()
-                    .collect::<BTreeMap<Date, f64>>();
+                    .fold(BTreeMap::new(), |mut acc, npv_map| {
+                        npv_map.iter().for_each(|(date, npv)| {
+                            let acc_npv = acc.entry(*date).or_insert(0.0);
+                            *acc_npv += npv;
+                        });
+                        acc
+                    });
                 chunk_npv
             })
-            .flatten()
-            .collect::<BTreeMap<Date, f64>>();
-
+            .reduce(BTreeMap::new, |mut acc, chunk_npv| {
+                chunk_npv.iter().for_each(|(date, npv)| {
+                    let acc_npv = acc.entry(*date).or_insert(0.0);
+                    *acc_npv += npv;
+                });
+                acc
+            });
+        
         Ok(npv_date_map)
     }
 }

@@ -17,7 +17,7 @@ use super::enums::Compounding;
 /// assert_eq!(rate_definition.frequency(), Frequency::Annual);
 /// assert_eq!(rate_definition.day_counter(), DayCounter::Actual360);
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RateDefinition {
     day_counter: DayCounter,
     compounding: Compounding,
@@ -102,8 +102,8 @@ impl InterestRate {
         return self.rate;
     }
 
-    pub fn rate_definition(&self) -> &RateDefinition {
-        return &self.rate_definition;
+    pub fn rate_definition(&self) -> RateDefinition {
+        return self.rate_definition;
     }
 
     pub fn compounding(&self) -> Compounding {

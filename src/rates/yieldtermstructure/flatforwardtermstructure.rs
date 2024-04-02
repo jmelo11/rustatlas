@@ -50,7 +50,7 @@ impl FlatForwardTermStructure {
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        *self.rate.rate_definition()
+        self.rate.rate_definition()
     }
 }
 

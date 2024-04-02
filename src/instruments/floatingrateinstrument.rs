@@ -26,7 +26,7 @@ use crate::utils::errors::Result;
 /// * `payment_frequency` - The payment frequency.
 /// * `rate_definition` - The rate definition.
 /// * `structure` - The structure.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
@@ -151,11 +151,11 @@ impl HasCurrency for FloatingRateInstrument {
 }
 
 impl InterestAccrual for FloatingRateInstrument {
-    fn accrual_start_date(&self) -> Date {
-        self.start_date
+    fn accrual_start_date(&self) -> Result<Date> {
+        Ok(self.start_date)
     }
-    fn accrual_end_date(&self) -> Date {
-        self.end_date
+    fn accrual_end_date(&self) -> Result<Date> {
+        Ok(self.end_date)
     }
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {

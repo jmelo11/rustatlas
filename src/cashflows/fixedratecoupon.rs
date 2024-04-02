@@ -65,7 +65,21 @@ impl FixedRateCoupon {
 
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
-        self.cashflow.set_amount(self.notional * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0));
+        self.cashflow.set_amount(
+            self.notional
+                * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0),
+        );
+    }
+
+    pub fn set_notional(&mut self, notional: f64) {
+        self.notional = notional;
+        self.cashflow.set_amount(
+            self.notional
+                * (self
+                    .rate
+                    .compound_factor(self.accrual_start_date, self.accrual_end_date)
+                    - 1.0),
+        );
     }
 
     pub fn notional(&self) -> f64 {
@@ -112,17 +126,19 @@ impl Registrable for FixedRateCoupon {
 }
 
 impl InterestAccrual for FixedRateCoupon {
-    fn accrual_start_date(&self) -> Date {
-        return self.accrual_start_date;
+    fn accrual_start_date(&self) -> Result<Date> {
+        return Ok(self.accrual_start_date);
     }
-    fn accrual_end_date(&self) -> Date {
-        return self.accrual_end_date;
+
+    fn accrual_end_date(&self) -> Result<Date> {
+        return Ok(self.accrual_end_date);
     }
+
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date)?;
         let acc_2 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
         return Ok(acc_1 - acc_2);
@@ -133,9 +149,11 @@ impl Payable for FixedRateCoupon {
     fn amount(&self) -> Result<f64> {
         return self.cashflow.amount();
     }
+
     fn side(&self) -> Side {
         return self.cashflow.side();
     }
+    
     fn payment_date(&self) -> Date {
         return self.cashflow.payment_date();
     }
@@ -159,7 +177,7 @@ mod tests {
     use crate::time::enums::Frequency;
 
     #[test]
-    fn test_fixed_rate_coupon_creation() {
+    fn test_fixed_rate_coupon_creation() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -182,8 +200,10 @@ mod tests {
             Side::Pay,
         );
 
-        assert_eq!(coupon.accrual_start_date(), accrual_start_date);
-        assert_eq!(coupon.accrual_end_date(), accrual_end_date);
+        assert_eq!(coupon.accrual_start_date()?, accrual_start_date);
+        assert_eq!(coupon.accrual_end_date()?, accrual_end_date);
+
+        Ok(())
     }
 
     #[test]
