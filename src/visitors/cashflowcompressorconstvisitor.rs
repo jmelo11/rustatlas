@@ -7,9 +7,7 @@ use crate::{
     },
     core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
     currencies::enums::Currency,
-    instruments::{
-        fixedrateinstrument::FixedRateInstrument, hybridrateinstrument::HybridRateInstrument,
-    },
+    instruments::hybridrateinstrument::HybridRateInstrument,
     prelude::{AtlasError, Frequency, Instrument, RateType, Structure},
     rates::interestrate::{InterestRate, RateDefinition},
     time::date::Date,
@@ -22,14 +20,12 @@ use crate::utils::errors::Result;
 /// Struct that defines a cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SimpleCashlowGroup {
-    pub currency: Currency,
     pub discount_curve_id: Option<usize>,
     pub payment_date: Date,
 }
 
 impl Hash for SimpleCashlowGroup {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.currency.hash(state);
         self.discount_curve_id.hash(state);
     }
 }
@@ -37,7 +33,6 @@ impl Hash for SimpleCashlowGroup {
 /// # FixedRateCashflowGroup
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FixedRateCashflowGroup {
-    pub currency: Currency,
     pub accrual_start_date: Date,
     pub accrual_end_date: Date,
     pub discount_curve_id: usize,
@@ -46,7 +41,6 @@ pub struct FixedRateCashflowGroup {
 
 impl Hash for FixedRateCashflowGroup {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.currency.hash(state);
         self.accrual_start_date.hash(state);
         self.accrual_end_date.hash(state);
         self.discount_curve_id.hash(state);
@@ -58,7 +52,6 @@ impl Hash for FixedRateCashflowGroup {
 /// Struct that defines a floating rate cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FloatingRateCashflowGroup {
-    pub currency: Currency,
     pub accrual_start_date: Date,
     pub accrual_end_date: Date,
     pub fixing_date: Date,
@@ -69,7 +62,6 @@ pub struct FloatingRateCashflowGroup {
 
 impl Hash for FloatingRateCashflowGroup {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.currency.hash(state);
         self.accrual_start_date.hash(state);
         self.accrual_end_date.hash(state);
         self.fixing_date.hash(state);
@@ -81,20 +73,39 @@ impl Hash for FloatingRateCashflowGroup {
 
 /// # CashflowCompressorConstVisitor
 /// This visitor is used to compress cashflows into groups to reduce the number of cashflows that need to be processed.
+///
+/// ## Details
+/// The visitor compresses cashflows into groups based on the following criteria:
+/// - Disbursements: Cashflows are grouped based on the discount curve id and payment date.
+/// - Redemptions: Cashflows are grouped based on the discount curve id and payment date.
+/// - Fixed Rate Coupons: Cashflows are grouped based on the accrual start date, accrual end date, discount curve id, and rate definition.
+/// - Floating Rate Coupons: Cashflows are grouped based on the accrual start date, accrual end date, fixing date, discount curve id, forecast curve id, and rate definition.
+///
+/// The visitor also calculates the estimated notional, start date, and end date of the instrument.
+/// Rates are recalculated for fixed rate coupons based on interest paid and notional. If its a floating rate coupon,
+/// the spread is calculated as a weighted average of the spreads.
 pub struct CashflowCompressorConstVisitor {
     disbursements: RefCell<HashMap<SimpleCashlowGroup, Cashflow>>,
     redemptions: RefCell<HashMap<SimpleCashlowGroup, Cashflow>>,
     fixed_rate_coupons: RefCell<HashMap<FixedRateCashflowGroup, Cashflow>>,
     floating_rate_coupons: RefCell<HashMap<FloatingRateCashflowGroup, Cashflow>>,
+    estimated_notional: RefCell<f64>,
+    estimaded_start_date: RefCell<Option<Date>>,
+    estimaded_end_date: RefCell<Option<Date>>,
+    currency: Currency,
 }
 
 impl CashflowCompressorConstVisitor {
-    pub fn new() -> Self {
+    pub fn new(currency: Currency) -> Self {
         Self {
             disbursements: RefCell::new(HashMap::new()),
             redemptions: RefCell::new(HashMap::new()),
             fixed_rate_coupons: RefCell::new(HashMap::new()),
             floating_rate_coupons: RefCell::new(HashMap::new()),
+            estimated_notional: RefCell::new(0.0),
+            estimaded_start_date: RefCell::new(None),
+            estimaded_end_date: RefCell::new(None),
+            currency,
         }
     }
 
@@ -109,32 +120,19 @@ impl CashflowCompressorConstVisitor {
         // Sort cashflows chronologically based on payment dates
         cashflows.sort_by_key(|cf| cf.payment_date());
 
-        let first_coupon = cashflows
-            .first()
-            .ok_or(AtlasError::ValueNotSetErr("No cashflows found".to_string()))?;
-
-        let last_coupon = cashflows
-            .last()
-            .ok_or(AtlasError::ValueNotSetErr("No cashflows found".to_string()))?;
-
-        let notional = first_coupon.amount()?;
-
-        let forecast_curve_id = self
-            .floating_rate_coupons
-            .borrow()
-            .values()
-            .next()
-            .and_then(|cf| cf.forecast_curve_id().ok());
-        let discount_curve_id = first_coupon.discount_curve_id().ok();
-
+        // most of the fields do not make sense in this context
         let instrument = Instrument::HybridRateInstrument(HybridRateInstrument::new(
-            first_coupon.accrual_start_date()?,
-            last_coupon.accrual_end_date()?,
-            notional,
+            self.estimaded_start_date
+                .borrow()
+                .ok_or(AtlasError::ValueNotSetErr("Start date".to_string()))?,
+            self.estimaded_end_date
+                .borrow()
+                .ok_or(AtlasError::ValueNotSetErr("End date".to_string()))?,
+            *self.estimated_notional.borrow(),
             Frequency::OtherFrequency,
             Structure::Other,
             None,
-            None,
+            Some(self.currency),
             None,
             None,
             RateType::Suffled,
@@ -142,8 +140,8 @@ impl CashflowCompressorConstVisitor {
             None,
             None,
             None,
-            forecast_curve_id,
-            discount_curve_id,
+            None,
+            None,
             cashflows,
         ));
 
@@ -151,18 +149,45 @@ impl CashflowCompressorConstVisitor {
     }
 }
 
-impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
+impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
     type Output = Result<()>;
 
-    fn visit(&self, visitable: &FixedRateInstrument) -> Self::Output {
+    fn visit(&self, visitable: &T) -> Self::Output {
         visitable
             .cashflows()
             .iter()
             .try_for_each(|&cf| -> Result<()> {
+                // validate that the cashflow currency is the same as the instrument currency
+                if cf.currency()? != self.currency {
+                    return Err(AtlasError::InvalidValueErr(format!(
+                        "Cashflow currency {} does not match instrument currency {}",
+                        String::from(cf.currency()?),
+                        String::from(self.currency)
+                    )));
+                }
+
+                let payment_date = cf.payment_date();
+                let mut estimated_start_date = self.estimaded_start_date.borrow_mut();
+                let mut estimated_end_date = self.estimaded_end_date.borrow_mut();
+                if let Some(end_date) = *estimated_end_date {
+                    if payment_date > end_date {
+                        *estimated_end_date = Some(payment_date);
+                    }
+                } else {
+                    *estimated_end_date = Some(payment_date);
+                }
+
+                if let Some(start_date) = *estimated_start_date {
+                    if payment_date < start_date {
+                        *estimated_start_date = Some(payment_date);
+                    }
+                } else {
+                    *estimated_start_date = Some(payment_date);
+                }
+
                 match cf {
                     Cashflow::Disbursement(disbursement) => {
                         let group = SimpleCashlowGroup {
-                            currency: disbursement.currency()?,
                             discount_curve_id: Some(disbursement.discount_curve_id()?),
                             payment_date: disbursement.payment_date(),
                         };
@@ -180,7 +205,6 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                     }
                     Cashflow::Redemption(redemption) => {
                         let group = SimpleCashlowGroup {
-                            currency: redemption.currency()?,
                             discount_curve_id: Some(redemption.discount_curve_id()?),
                             payment_date: redemption.payment_date(),
                         };
@@ -195,10 +219,13 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                                 }
                             })
                             .or_insert(Cashflow::Redemption(redemption.clone()));
+
+                        let mut estimated_notional = self.estimated_notional.borrow_mut();
+                        *estimated_notional +=
+                            redemption.amount().unwrap() * redemption.side().sign();
                     }
                     Cashflow::FixedRateCoupon(cf) => {
                         let group = FixedRateCashflowGroup {
-                            currency: cf.currency()?,
                             accrual_start_date: cf.accrual_start_date().unwrap(),
                             accrual_end_date: cf.accrual_end_date().unwrap(),
                             discount_curve_id: cf.discount_curve_id()?,
@@ -229,10 +256,18 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                                 }
                             })
                             .or_insert(Cashflow::FixedRateCoupon(cf.clone()));
+
+                        // check if start_accrual_date is less than the current estimated start date
+                        if let Some(start_date) = *estimated_start_date {
+                            if cf.accrual_start_date().unwrap() < start_date {
+                                *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            }
+                        } else {
+                            *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                        }
                     }
                     Cashflow::FloatingRateCoupon(cf) => {
                         let group = FloatingRateCashflowGroup {
-                            currency: cf.currency()?,
                             accrual_start_date: cf.accrual_start_date().unwrap(),
                             accrual_end_date: cf.accrual_end_date().unwrap(),
                             fixing_date: cf.fixing_date(),
@@ -245,30 +280,306 @@ impl ConstVisit<FixedRateInstrument> for CashflowCompressorConstVisitor {
                             .entry(group)
                             .and_modify(|pos| {
                                 if let Cashflow::FloatingRateCoupon(pos) = pos {
-                                    let interest = pos.amount().unwrap() + cf.amount().unwrap();
-                                    let notional = pos.notional() + cf.notional();
-                                    let compound_factor = (notional + interest) / notional;
-                                    let t = cf.rate_definition().day_counter().year_fraction(
-                                        cf.accrual_start_date().unwrap(),
-                                        cf.accrual_end_date().unwrap(),
-                                    );
-                                    let new_rate = InterestRate::implied_rate(
-                                        compound_factor,
-                                        cf.rate_definition().day_counter(),
-                                        cf.rate_definition().compounding(),
-                                        cf.rate_definition().frequency(),
-                                        t,
-                                    )
-                                    .unwrap();
-                                    pos.set_spread(new_rate.rate());
-                                    pos.set_notional(notional);
+                                    let total = pos.notional() + cf.notional();
+                                    let w1 = pos.notional() / total;
+                                    let w2 = cf.notional() / total;
+                                    let spread = w1 * pos.spread() + w2 * cf.spread();
+                                    pos.set_spread(spread);
+                                    pos.set_notional(total);
                                 }
                             })
                             .or_insert(Cashflow::FloatingRateCoupon(cf.clone()));
+
+                        // check if start_accrual_date is less than the current estimated start date
+                        if let Some(start_date) = *estimated_start_date {
+                            if cf.accrual_start_date().unwrap() < start_date {
+                                *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            }
+                        } else {
+                            *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                        }
                     }
                 }
                 Ok(())
             })?;
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::*;
+    use crate::utils::errors::Result;
+
+    #[test]
+    fn test_two_fixed_bullet() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let instrument_a = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let instrument_b = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let visitor = CashflowCompressorConstVisitor::new(Currency::USD);
+        visitor.visit(&instrument_a)?;
+        visitor.visit(&instrument_b)?;
+
+        let instrument = visitor.as_instrument()?;
+        assert_eq!(instrument.notional(), 200.0);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+        assert_eq!(instrument.currency()?, Currency::USD);
+        assert_eq!(instrument.cashflows().len(), instrument_a.cashflows().len());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_fixed_and_floating_bullet() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let instrument_a = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let instrument_b = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate_definition(RateDefinition::default())
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_forecast_curve_id(Some(1))
+            .with_spread(0.0)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let visitor = CashflowCompressorConstVisitor::new(Currency::USD);
+        visitor.visit(&instrument_a)?;
+        visitor.visit(&instrument_b)?;
+
+        let instrument = visitor.as_instrument()?;
+        assert_eq!(instrument.notional(), 200.0);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+        assert_eq!(instrument.currency()?, Currency::USD);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_fixed_rates() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate1 = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let rate2 = InterestRate::new(
+            0.06,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let instrument_a = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate1)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let instrument_b = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate2)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let visitor = CashflowCompressorConstVisitor::new(Currency::USD);
+        visitor.visit(&instrument_a)?;
+        visitor.visit(&instrument_b)?;
+
+        let instrument = visitor.as_instrument()?;
+        assert_eq!(instrument.notional(), 200.0);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+        assert_eq!(instrument.currency()?, Currency::USD);
+        assert_eq!(instrument.cashflows().len(), instrument_a.cashflows().len());
+
+        instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FixedRateCoupon(cf) = cf {
+                assert!((cf.rate().rate() - 0.055).abs() < 0.01);
+            }
+        });
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_floating_spreads() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let instrument_a = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate_definition(RateDefinition::default())
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_forecast_curve_id(Some(1))
+            .with_spread(0.01)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let instrument_b = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate_definition(RateDefinition::default())
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_forecast_curve_id(Some(1))
+            .with_spread(0.02)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let visitor = CashflowCompressorConstVisitor::new(Currency::USD);
+        visitor.visit(&instrument_a)?;
+        visitor.visit(&instrument_b)?;
+
+        let instrument = visitor.as_instrument()?;
+        assert_eq!(instrument.notional(), 200.0);
+        assert_eq!(instrument.start_date(), start_date);
+        assert_eq!(instrument.end_date(), end_date);
+        assert_eq!(instrument.currency()?, Currency::USD);
+
+        instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FloatingRateCoupon(cf) = cf {
+                assert!((cf.spread() - 0.015).abs() < 1e-2);
+            }
+        });
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_different_rate_definitions() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate1 = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let rate2 = InterestRate::new(
+            0.06,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+        let instrument_a = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate1)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let instrument_b = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_rate(rate2)
+            .with_notional(100.0)
+            .with_discount_curve_id(Some(0))
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let visitor = CashflowCompressorConstVisitor::new(Currency::USD);
+        visitor.visit(&instrument_a)?;
+        visitor.visit(&instrument_b)?;
+
+        let instrument = visitor.as_instrument()?;
+        assert_eq!(instrument.notional(), 200.0);
+        assert_eq!(instrument.start_date(), start_date);
+
+        instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FixedRateCoupon(cf) = cf {
+                if cf.rate().rate_definition().day_counter() == DayCounter::Thirty360 {
+                    assert!((cf.rate().rate() - 0.05).abs() < 1e-2);
+                } else {
+                    assert!((cf.rate().rate() - 0.06).abs() < 1e-2);
+                }
+            }
+        });
+
         Ok(())
     }
 }
