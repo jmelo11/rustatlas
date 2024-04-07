@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -26,7 +28,7 @@ use crate::utils::errors::Result;
 /// * `payment_frequency` - The payment frequency.
 /// * `rate_definition` - The rate definition.
 /// * `structure` - The structure.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,

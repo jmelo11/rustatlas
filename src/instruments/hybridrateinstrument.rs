@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::instrument::RateType;
 use super::traits::Structure;
 use crate::{
@@ -10,7 +12,7 @@ use crate::{
     utils::errors::Result,
     visitors::traits::HasCashflows,
 };
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HybridRateInstrument {
     start_date: Date,
     end_date: Date,

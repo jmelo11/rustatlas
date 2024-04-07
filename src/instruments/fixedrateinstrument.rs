@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::traits::Structure;
 use crate::cashflows::cashflow::{Cashflow, Side};
 use crate::core::traits::HasCurrency;
@@ -19,8 +21,7 @@ use crate::visitors::traits::HasCashflows;
 /// * `rate` - The rate.
 /// * `cashflows` - The cashflows.
 /// * `structure` - The structure.
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FixedRateInstrument {
     start_date: Date,
     end_date: Date,
@@ -130,7 +131,6 @@ impl HasCurrency for FixedRateInstrument {
 /// Implements fixed rate bond accrual using a yield rate.  
 /// The yield rate is used to discount the cashflows to between the start and end dates and calculate the accrued amount.
 pub trait BondAccrual: HasCashflows {
-    
     fn yield_rate(&self) -> Option<InterestRate>;
 
     fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {

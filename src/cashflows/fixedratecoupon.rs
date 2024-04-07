@@ -153,7 +153,7 @@ impl Payable for FixedRateCoupon {
     fn side(&self) -> Side {
         return self.cashflow.side();
     }
-    
+
     fn payment_date(&self) -> Date {
         return self.cashflow.payment_date();
     }

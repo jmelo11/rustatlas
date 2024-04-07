@@ -60,38 +60,12 @@ impl From<RateType> for String {
 
 /// # Instrument
 /// Represents an instrument. This is a wrapper around the FixedRateInstrument and FloatingRateInstrument.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Instrument {
     FixedRateInstrument(FixedRateInstrument),
     FloatingRateInstrument(FloatingRateInstrument),
     HybridRateInstrument(HybridRateInstrument),
 }
-
-// impl InterestAccrual for Instrument {
-//     fn accrual_start_date(&self) -> Result<Date> {
-//         match self {
-//             Instrument::FixedRateInstrument(fri) => fri.accrual_start_date(),
-//             Instrument::FloatingRateInstrument(fri) => fri.accrual_start_date(),
-//             Instrument::HybridRateInstrument(_) => unimplemented!(),
-//         }
-//     }
-
-//     fn accrual_end_date(&self) -> Result<Date> {
-//         match self {
-//             Instrument::FixedRateInstrument(fri) => fri.accrual_end_date(),
-//             Instrument::FloatingRateInstrument(fri) => fri.accrual_end_date(),
-//             Instrument::HybridRateInstrument(_) => unimplemented!(),
-//         }
-//     }
-
-//     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-//         match self {
-//             Instrument::FixedRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
-//             Instrument::FloatingRateInstrument(fri) => fri.accrued_amount(start_date, end_date),
-//             Instrument::HybridRateInstrument(_) => unimplemented!(),
-//         }
-//     }
-// }
 
 impl HasCashflows for Instrument {
     fn cashflows(&self) -> &[Cashflow] {
