@@ -3,8 +3,7 @@ use crate::{
         marketstore::MarketStore,
         meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest},
     },
-    prelude::ReadIndex,
-    rates::traits::HasReferenceDate,
+    rates::{indexstore::ReadIndex, traits::HasReferenceDate},
     time::date::Date,
     utils::errors::Result,
 };

@@ -4,12 +4,14 @@ use std::{
 };
 
 use crate::{
-    prelude::YieldTermStructureTrait,
     time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::{AtlasError, Result},
 };
 
-use super::interestrateindex::traits::InterestRateIndexTrait;
+use super::{
+    interestrateindex::traits::InterestRateIndexTrait,
+    yieldtermstructure::traits::YieldTermStructureTrait,
+};
 
 /// # IndexStore
 /// A store for interest rate indices.

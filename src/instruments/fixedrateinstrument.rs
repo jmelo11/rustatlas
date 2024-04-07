@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 
 use super::traits::Structure;
 use crate::cashflows::cashflow::{Cashflow, Side};
+use crate::cashflows::traits::Payable;
 use crate::core::traits::HasCurrency;
 use crate::currencies::enums::Currency;
-use crate::prelude::{AtlasError, Payable};
 use crate::rates::interestrate::InterestRate;
 use crate::time::date::Date;
 use crate::time::enums::Frequency;
-use crate::utils::errors::Result;
+use crate::utils::errors::{AtlasError, Result};
 use crate::visitors::traits::HasCashflows;
 
 /// # FixedRateInstrument
@@ -205,8 +205,9 @@ mod tests {
     use crate::{
         cashflows::cashflow::Side,
         currencies::enums::Currency,
-        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
-        prelude::BondAccrual,
+        instruments::{
+            fixedrateinstrument::BondAccrual, makefixedrateinstrument::MakeFixedRateInstrument,
+        },
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -269,79 +270,4 @@ mod tests {
 
         Ok(())
     }
-
-    // #[test]
-    // fn bond_accrual_other_instrument_with_tir() -> Result<()> {
-    //     let start_date = Date::new(2024, 1, 1);
-    //     let end_date = start_date + Period::new(5, TimeUnit::Years);
-
-    //     let mut disbursements = HashMap::new();
-    //     disbursements.insert(start_date, 5000000.0);
-
-    //     let mut redemptions = HashMap::new();
-    //     redemptions.insert(start_date + Period::new(1, TimeUnit::Years), 1000000.0);
-    //     redemptions.insert(start_date + Period::new(3, TimeUnit::Years), 1000000.0);
-    //     redemptions.insert(end_date, 3000000.0);
-
-    //     let mut additional_coupon_dates = HashSet::new();
-
-    //     additional_coupon_dates.insert(start_date + Period::new(6, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(12, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(18, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(24, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(30, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(36, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(42, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(48, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(54, TimeUnit::Months));
-    //     additional_coupon_dates.insert(start_date + Period::new(60, TimeUnit::Months));
-
-    //     let rate = InterestRate::new(
-    //         0.06,
-    //         Compounding::Simple,
-    //         Frequency::Annual,
-    //         DayCounter::Thirty360,
-    //     );
-
-    //     let yield_rate = InterestRate::new(
-    //         0.07,
-    //         Compounding::Compounded,
-    //         Frequency::Annual,
-    //         DayCounter::Thirty360,
-    //     );
-
-    //     let instrument = MakeFixedRateInstrument::new()
-    //         .with_start_date(start_date)
-    //         .with_disbursements(disbursements)
-    //         .with_redemptions(redemptions)
-    //         .with_additional_coupon_dates(additional_coupon_dates)
-    //         .with_rate(rate)
-    //         .with_side(Side::Receive)
-    //         .with_currency(Currency::USD)
-    //         .with_yield_rate(yield_rate)
-    //         .other()
-    //         .build()?;
-
-    //     let date = start_date + Period::new(1, TimeUnit::Months);
-    //     let mut accrual_aux =
-    //         instrument.bond_accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
-    //     assert!((accrual_aux - 27621.871414).abs() < 1e-6);
-
-    //     let date = start_date + Period::new(2, TimeUnit::Months);
-    //     accrual_aux =
-    //         instrument.bond_accrued_amount(date, date + Period::new(1, TimeUnit::Months))?;
-    //     assert!((accrual_aux - 27778.049491).abs() < 1e-6);
-
-    //     let date = start_date + Period::new(3, TimeUnit::Months);
-    //     accrual_aux =
-    //         instrument.bond_accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
-    //     assert!((accrual_aux - 167439.059899).abs() < 1e-6);
-
-    //     let date = start_date + Period::new(54, TimeUnit::Months);
-    //     accrual_aux =
-    //         instrument.bond_accrued_amount(date, date + Period::new(6, TimeUnit::Months))?;
-    //     assert!((accrual_aux - 102784.2488489).abs() < 1e-6);
-
-    //     Ok(())
-    // }
 }

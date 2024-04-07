@@ -1,10 +1,9 @@
 use std::{collections::BTreeMap, sync::Mutex};
 
 use crate::{
-    cashflows::traits::InterestAccrual,
+    cashflows::{cashflow::Cashflow, traits::InterestAccrual},
     core::traits::HasCurrency,
     currencies::enums::Currency,
-    prelude::Cashflow,
     time::{date::Date, enums::TimeUnit, period::Period, schedule::MakeSchedule},
     utils::errors::{AtlasError, Result},
 };

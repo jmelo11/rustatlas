@@ -1,6 +1,9 @@
 use crate::{
-    cashflows::cashflow::Cashflow,
-    prelude::{CashflowType, Date, Payable},
+    cashflows::{
+        cashflow::{Cashflow, CashflowType},
+        traits::Payable,
+    },
+    time::date::Date,
 };
 
 pub trait Visit<T> {

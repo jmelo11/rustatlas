@@ -35,7 +35,8 @@ pub use crate::{
     },
     utils::errors::*,
     visitors::{
-        accruedamountconstvisitor::*, cashflowaggregationvisitor::*, fixingvisitor::*,
-        indexingvisitor::*, npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
+        accruedamountconstvisitor::*, cashflowaggregationvisitor::*,
+        cashflowcompressorconstvisitor::*, fixingvisitor::*, indexingvisitor::*,
+        npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
     },
 };

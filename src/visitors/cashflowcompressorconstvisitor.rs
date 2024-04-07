@@ -2,15 +2,19 @@ use std::{cell::RefCell, collections::HashMap, hash::Hash};
 
 use crate::{
     cashflows::{
-        cashflow::Cashflow,
+        cashflow::{Cashflow, Side},
         traits::{InterestAccrual, Payable},
     },
     core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
     currencies::enums::Currency,
-    instruments::hybridrateinstrument::HybridRateInstrument,
-    prelude::{AtlasError, Frequency, Instrument, RateType, Structure},
+    instruments::{
+        hybridrateinstrument::HybridRateInstrument,
+        instrument::{Instrument, RateType},
+        traits::Structure,
+    },
     rates::interestrate::{InterestRate, RateDefinition},
-    time::date::Date,
+    time::{date::Date, enums::Frequency},
+    utils::errors::AtlasError,
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -22,11 +26,13 @@ use crate::utils::errors::Result;
 pub struct SimpleCashlowGroup {
     pub discount_curve_id: Option<usize>,
     pub payment_date: Date,
+    pub side: Side,
 }
 
 impl Hash for SimpleCashlowGroup {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.discount_curve_id.hash(state);
+        self.side.hash(state);
     }
 }
 
@@ -37,6 +43,7 @@ pub struct FixedRateCashflowGroup {
     pub accrual_end_date: Date,
     pub discount_curve_id: usize,
     pub rate_definition: RateDefinition,
+    pub side: Side,
 }
 
 impl Hash for FixedRateCashflowGroup {
@@ -45,6 +52,7 @@ impl Hash for FixedRateCashflowGroup {
         self.accrual_end_date.hash(state);
         self.discount_curve_id.hash(state);
         self.rate_definition.hash(state);
+        self.side.hash(state);
     }
 }
 
@@ -58,6 +66,7 @@ pub struct FloatingRateCashflowGroup {
     pub discount_curve_id: usize,
     pub forecast_curve_id: usize,
     pub rate_definition: RateDefinition,
+    pub side: Side,
 }
 
 impl Hash for FloatingRateCashflowGroup {
@@ -68,6 +77,7 @@ impl Hash for FloatingRateCashflowGroup {
         self.discount_curve_id.hash(state);
         self.forecast_curve_id.hash(state);
         self.rate_definition.hash(state);
+        self.side.hash(state);
     }
 }
 
@@ -190,6 +200,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                         let group = SimpleCashlowGroup {
                             discount_curve_id: Some(disbursement.discount_curve_id()?),
                             payment_date: disbursement.payment_date(),
+                            side: disbursement.side(),
                         };
                         let mut disbursements = self.disbursements.borrow_mut();
                         disbursements
@@ -207,6 +218,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                         let group = SimpleCashlowGroup {
                             discount_curve_id: Some(redemption.discount_curve_id()?),
                             payment_date: redemption.payment_date(),
+                            side: redemption.side(),
                         };
                         let mut redemptions = self.redemptions.borrow_mut();
                         redemptions
@@ -230,6 +242,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                             accrual_end_date: cf.accrual_end_date().unwrap(),
                             discount_curve_id: cf.discount_curve_id()?,
                             rate_definition: cf.rate().rate_definition(),
+                            side: cf.side(),
                         };
                         let mut fixed_rate_coupons = self.fixed_rate_coupons.borrow_mut();
                         fixed_rate_coupons
@@ -274,6 +287,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                             discount_curve_id: cf.discount_curve_id()?,
                             forecast_curve_id: cf.forecast_curve_id()?,
                             rate_definition: cf.rate_definition(),
+                            side: cf.side(),
                         };
                         let mut floating_rate_coupons = self.floating_rate_coupons.borrow_mut();
                         floating_rate_coupons
@@ -310,8 +324,16 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::*;
-    use crate::utils::errors::Result;
+
+    use crate::{
+        instruments::{
+            makefixedrateinstrument::MakeFixedRateInstrument,
+            makefloatingrateinstrument::MakeFloatingRateInstrument,
+        },
+        rates::enums::Compounding,
+        time::{daycounter::DayCounter, enums::TimeUnit, period::Period},
+        utils::errors::Result,
+    };
 
     #[test]
     fn test_two_fixed_bullet() -> Result<()> {

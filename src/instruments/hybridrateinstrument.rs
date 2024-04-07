@@ -6,10 +6,9 @@ use crate::{
     cashflows::cashflow::{Cashflow, Side},
     core::traits::HasCurrency,
     currencies::enums::Currency,
-    prelude::AtlasError,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
-    utils::errors::Result,
+    utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
 #[derive(Clone, Debug, Serialize, Deserialize)]

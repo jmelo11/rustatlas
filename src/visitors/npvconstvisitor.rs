@@ -82,9 +82,9 @@ mod tests {
         instruments::{
             fixedrateinstrument::FixedRateInstrument,
             makefixedrateinstrument::MakeFixedRateInstrument,
+            makefloatingrateinstrument::MakeFloatingRateInstrument,
         },
         models::{simplemodel::SimpleModel, traits::Model},
-        prelude::MakeFloatingRateInstrument,
         rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
