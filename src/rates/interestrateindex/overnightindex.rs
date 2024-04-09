@@ -47,8 +47,8 @@ impl OvernightIndex {
         }
     }
 
-    pub fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
+    pub fn with_name(mut self, name: Option<String>) -> Self {
+        self.name = name;
         self
     }
 
@@ -207,7 +207,8 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
             OvernightIndex::new(new_curve.reference_date())
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
-                .with_term_structure(new_curve),
+                .with_term_structure(new_curve)
+                .with_name(self.name.clone()),
         )))
     }
 
