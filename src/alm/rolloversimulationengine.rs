@@ -70,7 +70,6 @@ impl<'a> RolloverSimulationEngine<'a> {
         }
     }
 
-
     pub fn run(&self, strategies: Vec<RolloverStrategy>) -> Result<Vec<Instrument>> {
         let mut redemptions = self.base_redemptions.clone();
         // vector of new positions
@@ -84,8 +83,14 @@ impl<'a> RolloverSimulationEngine<'a> {
                 Some(amount) => {
                     if *amount != 0.0 {
                         let amount_abs = amount.abs();
+                        
                         // relevant data for new positions
-                        let tmp_store = self.market_store.advance_to_date(*date)?;
+                        let tmp_store = if self.market_store.reference_date() != *date {
+                            self.market_store.advance_to_date(*date)?
+                        } else {
+                            self.market_store.clone()
+                        };
+                        
                         let new_generator = generator
                             .clone()
                             .with_market_store(&tmp_store)
@@ -123,11 +128,10 @@ impl<'a> RolloverSimulationEngine<'a> {
                             Ok(())
                         })?;
 
-                        
                         let new_redemptions = aggregator.redemptions();
-                        
+
                         //println!("New redemptions: {:?}", new_redemptions);
-                        for (key , value) in new_redemptions {
+                        for (key, value) in new_redemptions {
                             let entry = redemptions.entry(key).or_insert(0.0);
                             *entry += value;
                         }
@@ -142,102 +146,140 @@ impl<'a> RolloverSimulationEngine<'a> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
 
-//     use crate::{
-//         currencies::enums::Currency,
-//         math::interpolation::enums::Interpolator,
-//         rates::{
-//             interestrate::RateDefinition,
-//             interestrateindex::iborindex::IborIndex,
-//             yieldtermstructure::{
-//                 compositetermstructure::CompositeTermStructure,
-//                 discounttermstructure::DiscountTermStructure,
-//                 flatforwardtermstructure::FlatForwardTermStructure,
-//                 tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
-//             },
-//         },
-//         time::daycounter::DayCounter,
-//     };
+    use std::sync::{Arc, RwLock};
 
-//     use super::*;
+    use crate::{
+        cashflows::cashflow::Side,
+        currencies::enums::Currency,
+        instruments::{instrument::RateType, traits::Structure},
+        math::interpolation::enums::Interpolator,
+        rates::{
+            interestrate::RateDefinition,
+            interestrateindex::iborindex::IborIndex,
+            yieldtermstructure::{
+                compositetermstructure::CompositeTermStructure,
+                discounttermstructure::DiscountTermStructure,
+                flatforwardtermstructure::FlatForwardTermStructure,
+                tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
+            },
+        },
+        time::{daycounter::DayCounter, enums::Frequency},
+    };
 
-//     fn create_store() -> Result<MarketStore> {
-//         let ref_date = Date::new(2021, 9, 1);
-//         let local_currency = Currency::USD;
-//         let mut market_store = MarketStore::new(ref_date, local_currency);
+    use super::*;
 
-//         let base_curve = Box::new(FlatForwardTermStructure::new(
-//             ref_date,
-//             0.02,
-//             RateDefinition::default(),
-//         ));
+    fn create_store() -> Result<MarketStore> {
+        let ref_date = Date::new(2021, 9, 1);
+        let local_currency = Currency::USD;
+        let mut market_store = MarketStore::new(ref_date, local_currency);
 
-//         let spread_curve = Box::new(TenorBasedZeroRateTermStructure::new(
-//             ref_date,
-//             vec![
-//                 Period::new(1, TimeUnit::Days),
-//                 Period::new(3, TimeUnit::Months),
-//                 Period::new(6, TimeUnit::Months),
-//                 Period::new(1, TimeUnit::Years),
-//             ],
-//             vec![0.01, 0.03, 0.04, 0.05],
-//             RateDefinition::default(),
-//             Interpolator::Linear,
-//             true,
-//         )?);
+        let base_curve = Arc::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.02,
+            RateDefinition::default(),
+        ));
 
-//         // with this curve, we shouldn't see rate changes since the spread endsup being constant and the base is flatforward
-//         let composite_curve = Box::new(CompositeTermStructure::new(spread_curve, base_curve));
-//         let composite_index =
-//             IborIndex::new(composite_curve.reference_date()).with_term_structure(composite_curve);
+        let spread_curve = Arc::new(TenorBasedZeroRateTermStructure::new(
+            ref_date,
+            vec![
+                Period::new(1, TimeUnit::Days),
+                Period::new(3, TimeUnit::Months),
+                Period::new(6, TimeUnit::Months),
+                Period::new(1, TimeUnit::Years),
+            ],
+            vec![0.01, 0.03, 0.04, 0.05],
+            RateDefinition::default(),
+            Interpolator::Linear,
+            true,
+        )?);
 
-//         market_store
-//             .mut_index_store()
-//             .add_index(0, Box::new(composite_index))?;
+        // with this curve, we shouldn't see rate changes since the spread endsup being constant and the base is flatforward
+        let composite_curve = Arc::new(CompositeTermStructure::new(spread_curve, base_curve));
+        let composite_index =
+            IborIndex::new(composite_curve.reference_date()).with_term_structure(composite_curve);
 
-//         let discount_factors = vec![1.0, 0.99, 0.978, 0.956, 0.934];
-//         let dates = vec![
-//             ref_date,
-//             ref_date + Period::new(1, TimeUnit::Months),
-//             ref_date + Period::new(3, TimeUnit::Months),
-//             ref_date + Period::new(6, TimeUnit::Months),
-//             ref_date + Period::new(1, TimeUnit::Years),
-//         ];
+        market_store
+            .mut_index_store()
+            .add_index(0, Arc::new(RwLock::new(composite_index)))?;
 
-//         let spread_curve_2 = Box::new(TenorBasedZeroRateTermStructure::new(
-//             ref_date,
-//             vec![
-//                 Period::new(1, TimeUnit::Days),
-//                 Period::new(3, TimeUnit::Months),
-//                 Period::new(6, TimeUnit::Months),
-//                 Period::new(1, TimeUnit::Years),
-//             ],
-//             vec![0.01, 0.03, 0.04, 0.05],
-//             RateDefinition::default(),
-//             Interpolator::Linear,
-//             true,
-//         )?);
+        let discount_factors = vec![1.0, 0.99, 0.978, 0.956, 0.934];
+        let dates = vec![
+            ref_date,
+            ref_date + Period::new(1, TimeUnit::Months),
+            ref_date + Period::new(3, TimeUnit::Months),
+            ref_date + Period::new(6, TimeUnit::Months),
+            ref_date + Period::new(1, TimeUnit::Years),
+        ];
 
-//         let discount_curve = Box::new(DiscountTermStructure::new(
-//             dates,
-//             discount_factors,
-//             DayCounter::Actual360,
-//             Interpolator::Linear,
-//             true,
-//         )?);
+        let spread_curve_2 = Arc::new(TenorBasedZeroRateTermStructure::new(
+            ref_date,
+            vec![
+                Period::new(1, TimeUnit::Days),
+                Period::new(3, TimeUnit::Months),
+                Period::new(6, TimeUnit::Months),
+                Period::new(1, TimeUnit::Years),
+            ],
+            vec![0.01, 0.03, 0.04, 0.05],
+            RateDefinition::default(),
+            Interpolator::Linear,
+            true,
+        )?);
 
-//         let composite_curve_2 =
-//             Box::new(CompositeTermStructure::new(spread_curve_2, discount_curve));
+        let discount_curve = Arc::new(DiscountTermStructure::new(
+            dates,
+            discount_factors,
+            DayCounter::Actual360,
+            Interpolator::Linear,
+            true,
+        )?);
 
-//         let composite_index_2 = IborIndex::new(composite_curve_2.reference_date())
-//             .with_term_structure(composite_curve_2);
+        let composite_curve_2 =
+            Arc::new(CompositeTermStructure::new(spread_curve_2, discount_curve));
 
-//         market_store
-//             .mut_index_store()
-//             .add_index(1, Box::new(composite_index_2))?;
+        let composite_index_2 = IborIndex::new(composite_curve_2.reference_date())
+            .with_term_structure(composite_curve_2);
 
-//         return Ok(market_store);
-//     }
-// }
+        market_store
+            .mut_index_store()
+            .add_index(1, Arc::new(RwLock::new(composite_index_2)))?;
+
+        return Ok(market_store);
+    }
+
+    #[test]
+    fn test_rollover_simulation_engine() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let horizon = Period::new(1, TimeUnit::Years);
+
+        let base_redemptions = [
+            (Date::new(2021, 9, 1), 100.0),
+            (Date::new(2021, 10, 1), 100.0),
+            (Date::new(2022, 9, 1), 100.0),
+        ]
+        .iter()
+        .map(|&(date, value)| (date, value))
+        .collect::<BTreeMap<_, _>>();
+
+        let engine =
+            RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon);
+
+        let strategies = vec![RolloverStrategy::new(
+            0.5,
+            Structure::Bullet,
+            Frequency::Semiannual,
+            Period::new(1, TimeUnit::Years),
+            Side::Receive,
+            RateType::Fixed,
+            RateDefinition::default(),
+            0,
+            None,
+        )];
+
+        let _ = engine.run(strategies)?;
+
+        Ok(())
+    }
+}

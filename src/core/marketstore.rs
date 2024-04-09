@@ -75,9 +75,9 @@ impl MarketStore {
     }
 
     pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
-        if period.length() < 1 {
+        if period.length() < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Negative periods are not allowed: {:?}",
+                "Negative periods are not allowed when advancing market store in time ({:?})",
                 period
             )));
         }
