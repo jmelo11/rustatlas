@@ -9,6 +9,7 @@ use crate::{
     core::marketstore::MarketStore,
     instruments::instrument::Instrument,
     models::{simplemodel::SimpleModel, traits::Model},
+    rates::traits::HasReferenceDate,
     time::date::Date,
     utils::errors::{AtlasError, Result},
     visitors::{
@@ -79,7 +80,8 @@ impl<'a> NPVEngine<'a> {
             })?;
 
         // npv
-        let npv_by_date_visitor = NPVByDateConstVisitor::new(&data, false);
+        let npv_by_date_visitor =
+            NPVByDateConstVisitor::new(self.market_store.reference_date(), &data, false);
         let npv_date_map = self
             .instruments
             .par_rchunks(self.chunk_size)
@@ -115,7 +117,7 @@ impl<'a> NPVEngine<'a> {
                 });
                 acc
             });
-        
+
         Ok(npv_date_map)
     }
 }

@@ -1,5 +1,8 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable}, core::{meta::MarketData, traits::Registrable}, prelude::HasReferenceDate, time::date::Date, utils::errors::{AtlasError, Result}
+    cashflows::{cashflow::Side, traits::Payable},
+    core::{meta::MarketData, traits::Registrable},
+    time::date::Date,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -11,11 +14,17 @@ use std::collections::BTreeMap;
 pub struct NPVByDateConstVisitor<'a> {
     market_data: &'a [MarketData],
     include_today_cashflows: bool,
+    reference_date: Date,
 }
 
 impl<'a> NPVByDateConstVisitor<'a> {
-    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
+    pub fn new(
+        reference_date: Date,
+        market_data: &'a [MarketData],
+        include_today_cashflows: bool,
+    ) -> Self {
         NPVByDateConstVisitor {
+            reference_date,
             market_data: market_data,
             include_today_cashflows,
         }
@@ -29,10 +38,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
     type Output = Result<BTreeMap<Date, f64>>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let mut npv_result = BTreeMap::new();
-        
-        let referent_date = self.market_data[0].reference_date();
-        npv_result.insert(referent_date, 0.0);
-        
+        npv_result.insert(self.reference_date, 0.0);
         visitable
             .cashflows()
             .iter()
@@ -71,10 +77,31 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::{Arc, RwLock}};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, RwLock},
+    };
 
-    use crate::{prelude::{Compounding, Currency, DayCounter, FlatForwardTermStructure, Frequency, HasReferenceDate, IborIndex, InterestRate, MakeFixedRateInstrument, MarketStore, Model, OvernightIndex, Period, RateDefinition, SimpleModel, TimeUnit}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
     use super::*;
+    use crate::{
+        core::marketstore::MarketStore,
+        currencies::enums::Currency,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
+        models::{simplemodel::SimpleModel, traits::Model},
+        rates::{
+            enums::Compounding,
+            interestrate::{InterestRate, RateDefinition},
+            interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
+            traits::HasReferenceDate,
+            yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+        },
+        time::{
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+            period::Period,
+        },
+        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+    };
 
     pub fn create_store() -> Result<MarketStore> {
         let ref_date = Date::new(2021, 9, 1);
@@ -183,12 +210,12 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()?;
-        let _ =  indexer.visit(&mut instrument_2);
- 
+        let _ = indexer.visit(&mut instrument_2);
+
         let model = SimpleModel::new(&market_store);
         let data = model.gen_market_data(&indexer.request())?;
 
-        let npv_visitor = NPVByDateConstVisitor::new(&data, false);
+        let npv_visitor = NPVByDateConstVisitor::new(market_store.reference_date(), &data, false);
         let npv_result_inst_1 = npv_visitor.visit(&instrument_1)?;
         let npv_result_inst_2 = npv_visitor.visit(&instrument_2)?;
 
@@ -198,7 +225,6 @@ mod tests {
         Ok(())
     }
 
-    
     #[test]
     fn test_npv_by_date_const_visitor() -> Result<()> {
         let market_store = create_store().unwrap();
@@ -239,19 +265,18 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()?;
-        let _ =  indexer.visit(&mut instrument_2);
- 
+        let _ = indexer.visit(&mut instrument_2);
+
         let model = SimpleModel::new(&market_store);
         let data = model.gen_market_data(&indexer.request())?;
 
-        let npv_visitor = NPVByDateConstVisitor::new(&data, false);
+        let npv_visitor = NPVByDateConstVisitor::new(market_store.reference_date(), &data, false);
         let npv_result_inst_1 = npv_visitor.visit(&instrument_1)?;
         let npv_result_inst_2 = npv_visitor.visit(&instrument_2)?;
-        
+
         assert_eq!(npv_result_inst_1.len(), 8);
         assert_eq!(npv_result_inst_2.len(), 41);
 
         Ok(())
     }
-
 }
