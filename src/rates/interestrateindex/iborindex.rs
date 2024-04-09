@@ -63,8 +63,8 @@ impl IborIndex {
         self.rate_definition
     }
 
-    pub fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
+    pub fn with_name(mut self, name: Option<String>) -> Self {
+        self.name = name;
         self
     }
 
@@ -206,7 +206,8 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
-                .with_term_structure(new_curve),
+                .with_term_structure(new_curve)
+                .with_name(self.name.clone()),
         )))
     }
 

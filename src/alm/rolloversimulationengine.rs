@@ -83,14 +83,14 @@ impl<'a> RolloverSimulationEngine<'a> {
                 Some(amount) => {
                     if *amount != 0.0 {
                         let amount_abs = amount.abs();
-                        
+
                         // relevant data for new positions
                         let tmp_store = if self.market_store.reference_date() != *date {
                             self.market_store.advance_to_date(*date)?
                         } else {
                             self.market_store.clone()
                         };
-                        
+
                         let new_generator = generator
                             .clone()
                             .with_market_store(&tmp_store)

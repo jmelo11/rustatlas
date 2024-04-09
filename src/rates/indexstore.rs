@@ -71,7 +71,13 @@ impl IndexStore {
     ) -> Result<()> {
         if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
-                "Index reference date does not match store reference date".to_string(),
+                format!(
+                    "Index ({:?}) reference date ({}) does not match index store reference date ({})",
+                    index.read_index()?.name(),
+                    index.read_index()?.reference_date(),
+                    self.reference_date
+                )
+                .to_string(),
             ));
         }
         // check if name already exists
@@ -94,7 +100,13 @@ impl IndexStore {
     ) -> Result<()> {
         if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
-                "Index reference date does not match store reference date".to_string(),
+                format!(
+                    "Index ({:?}) reference date ({}) does not match index store reference date ({})",
+                    index.read_index()?.name(),
+                    index.read_index()?.reference_date(),
+                    self.reference_date
+                )
+                .to_string(),
             ));
         }
         // check if name already exists
