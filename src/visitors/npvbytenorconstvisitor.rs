@@ -10,12 +10,12 @@ use std::collections::BTreeMap;
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByTenorConstVisitor<'a> {
     market_data: &'a [MarketData],
-    tenors: Vec<Period>,
+    tenors: Vec<(Period,Period)>,
     include_today_cashflows: bool,
 }
 
 impl<'a> NPVByTenorConstVisitor<'a> {
-    pub fn new(market_data: &'a [MarketData], tenors : Vec<Period>, include_today_cashflows: bool) -> Self {
+    pub fn new(market_data: &'a [MarketData], tenors : Vec<(Period,Period)>, include_today_cashflows: bool) -> Self {
         NPVByTenorConstVisitor {
             market_data: market_data,
             tenors: tenors,
@@ -26,11 +26,11 @@ impl<'a> NPVByTenorConstVisitor<'a> {
         self.include_today_cashflows = include_today_cashflows;
     }
 
-    pub fn set_tenors(&mut self, tenors: Vec<Period>) {
+    pub fn set_tenors(&mut self, tenors: Vec<(Period,Period)>) {
         self.tenors = tenors;
     }
 
-    pub fn tenors(&self) -> Vec<Period> {
+    pub fn tenors(&self) -> Vec<(Period,Period)> {
         self.tenors.clone()
     }
 }
@@ -44,9 +44,8 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
         let mut npv_result: BTreeMap<(Period,Period), f64> = BTreeMap::new();
         let tenors = self.tenors();
         
-        npv_result.insert((Period::new(0, TimeUnit::Days), tenors[0]), 0.0);
-        for i in 0..tenors.len()-1 {
-            npv_result.insert((tenors[i], tenors[i+1]), 0.0);
+        for tenor in tenors.iter() {
+            npv_result.insert(tenor.clone(), 0.0);
         }
 
         visitable
@@ -198,13 +197,13 @@ mod tests {
         let data = model.gen_market_data(&indexer.request())?;
 
         let mut tenors = Vec::new();
-        tenors.push(Period::new(1, TimeUnit::Months));
-        tenors.push(Period::new(3, TimeUnit::Months));
-        tenors.push(Period::new(6, TimeUnit::Months));
-        tenors.push(Period::new(1, TimeUnit::Years));
-        tenors.push(Period::new(2, TimeUnit::Years));
-        tenors.push(Period::new(3, TimeUnit::Years));
-        tenors.push(Period::new(5, TimeUnit::Years));
+        tenors.push((Period::new(0, TimeUnit::Days),Period::new(1, TimeUnit::Months)));        
+        tenors.push((Period::new(1, TimeUnit::Months),Period::new(2, TimeUnit::Months)));
+        tenors.push((Period::new(2, TimeUnit::Months),Period::new(3, TimeUnit::Months)));
+        tenors.push((Period::new(6, TimeUnit::Months),Period::new(12, TimeUnit::Months)));
+        tenors.push((Period::new(1, TimeUnit::Years),Period::new(2, TimeUnit::Years)));
+        tenors.push((Period::new(2, TimeUnit::Years),Period::new(3, TimeUnit::Years)));
+        tenors.push((Period::new(3, TimeUnit::Years),Period::new(5, TimeUnit::Years)));
 
         let npv_visitor = NPVByTenorConstVisitor::new(&data, tenors, false);
         let npv_result_inst_1 = npv_visitor.visit(&instrument_1)?;
