@@ -42,7 +42,7 @@ impl From<PositionType> for String {
 /// Optional fields are used to filter the portfolio.
 #[derive(Clone, Debug)]
 pub struct Portfolio {
-    client_id: Option<usize>,
+    id: Option<usize>,
     segment: Option<String>,
     area: Option<String>,
     product_family: Option<ProductFamily>,
@@ -55,7 +55,7 @@ pub struct Portfolio {
 impl Portfolio {
     pub fn new() -> Self {
         Portfolio {
-            client_id: None,
+            id: None,
             segment: None,
             product_family: None,
             area: None,
@@ -66,8 +66,8 @@ impl Portfolio {
         }
     }
 
-    pub fn client_id(&self) -> Option<usize> {
-        self.client_id
+    pub fn id(&self) -> Option<usize> {
+        self.id
     }
 
     pub fn segment(&self) -> Option<String> {
@@ -104,8 +104,8 @@ impl Portfolio {
         self
     }
 
-    pub fn with_client_id(mut self, client_id: usize) -> Self {
-        self.client_id = Some(client_id);
+    pub fn with_id(mut self, id: usize) -> Self {
+        self.id = Some(id);
         self
     }
 
