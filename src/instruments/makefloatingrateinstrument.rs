@@ -6,20 +6,14 @@ use crate::{
         floatingratecoupon::FloatingRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
-    },
-    core::traits::HasCurrency,
-    currencies::enums::Currency,
-    rates::interestrate::RateDefinition,
-    time::{
+    }, core::traits::HasCurrency, currencies::enums::Currency, prelude::DateGenerationRule, rates::interestrate::RateDefinition, time::{
         calendar::Calendar,
         calendars::nullcalendar::NullCalendar,
         date::Date,
         enums::{BusinessDayConvention, Frequency},
         period::Period,
         schedule::MakeSchedule,
-    },
-    utils::errors::{AtlasError, Result},
-    visitors::traits::HasCashflows,
+    }, utils::errors::{AtlasError, Result}, visitors::traits::HasCashflows
 };
 
 use super::{
@@ -51,6 +45,7 @@ pub struct MakeFloatingRateInstrument {
     issue_date: Option<Date>,
     calendar: Option<Calendar>,
     business_day_convention: Option<BusinessDayConvention>,
+    date_generation_rule: Option<DateGenerationRule>,
 }
 
 /// Constructor, setters and getters.
@@ -77,6 +72,7 @@ impl MakeFloatingRateInstrument {
             issue_date: None,
             calendar: None,
             business_day_convention: None,
+            date_generation_rule: None,
         }
     }
 
@@ -85,11 +81,13 @@ impl MakeFloatingRateInstrument {
         self
     }
 
-    pub fn with_business_day_convention(
-        mut self,
-        business_day_convention: BusinessDayConvention,
-    ) -> MakeFloatingRateInstrument {
+    pub fn with_business_day_convention(mut self, business_day_convention: BusinessDayConvention) -> MakeFloatingRateInstrument {
         self.business_day_convention = Some(business_day_convention);
+        self
+    }
+
+    pub fn with_date_generation_rule(mut self, date_generation_rule: DateGenerationRule) -> MakeFloatingRateInstrument {
+        self.date_generation_rule = Some(date_generation_rule);
         self
     }
 
@@ -103,16 +101,8 @@ impl MakeFloatingRateInstrument {
         self
     }
 
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFloatingRateInstrument {
-        self.first_coupon_date = Some(first_coupon_date);
-        self
-    }
-
-    pub fn with_option_first_date(
-        mut self,
-        first_date: Option<Date>,
-    ) -> MakeFloatingRateInstrument {
-        self.first_coupon_date = first_date;
+    pub fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> MakeFloatingRateInstrument {
+        self.first_coupon_date = first_coupon_date;
         self
     }
 
@@ -276,10 +266,21 @@ impl MakeFloatingRateInstrument {
                     .with_convention(
                         self.business_day_convention
                             .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_rule(self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward)
                     );
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => {
+                        if date > start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            Err(AtlasError::InvalidValueErr(
+                                "First coupon date must be after start date".into(),
+                            ))?
+                        }
+                    }
                     None => schedule_builder.build()?,
                 };
 
@@ -288,7 +289,6 @@ impl MakeFloatingRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
 
                 // end common
-
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
                 let first_date = vec![*schedule.dates().first().unwrap()];
@@ -373,6 +373,9 @@ impl MakeFloatingRateInstrument {
                     .with_convention(
                         self.business_day_convention
                             .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_rule(self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward)
                     )
                     .build()?;
                 let notional = self
@@ -465,10 +468,21 @@ impl MakeFloatingRateInstrument {
                     .with_convention(
                         self.business_day_convention
                             .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_rule(self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward)
                     );
 
                 let schedule = match self.first_coupon_date {
-                    Some(date) => schedule_builder.with_first_date(date).build()?,
+                    Some(date) => {
+                        if date > start_date {
+                            schedule_builder.with_first_date(date).build()?
+                        } else {
+                            Err(AtlasError::InvalidValueErr(
+                                "First coupon date must be after start date".into(),
+                            ))?
+                        }
+                    },
                     None => schedule_builder.build()?,
                 };
 
