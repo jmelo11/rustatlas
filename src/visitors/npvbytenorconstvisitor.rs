@@ -1,5 +1,5 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable}, core::{meta::MarketData, traits::Registrable}, prelude::{HasReferenceDate, Period, TimeUnit}, rates::yieldtermstructure::tenorbasedzeroratetermstructure::{self, TenorBasedZeroRateTermStructure}, time::date::Date, utils::errors::{AtlasError, Result}
+    cashflows::{cashflow::Side, traits::Payable}, core::{meta::MarketData, traits::Registrable}, prelude::Period, utils::errors::{AtlasError, Result}
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -93,7 +93,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
 mod tests {
     use std::{collections::HashMap, sync::{Arc, RwLock}};
 
-    use crate::{prelude::{Compounding, Currency, DayCounter, FlatForwardTermStructure, Frequency, HasReferenceDate, IborIndex, InterestRate, MakeFixedRateInstrument, MarketStore, Model, OvernightIndex, Period, RateDefinition, SimpleModel, TimeUnit}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
+    use crate::{prelude::{Compounding, Currency, Date, DayCounter, FlatForwardTermStructure, Frequency, HasReferenceDate, IborIndex, InterestRate, MakeFixedRateInstrument, MarketStore, Model, OvernightIndex, Period, RateDefinition, SimpleModel, TimeUnit}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
     use super::*;
 
     pub fn create_store() -> Result<MarketStore> {
