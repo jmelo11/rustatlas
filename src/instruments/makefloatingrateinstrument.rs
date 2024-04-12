@@ -564,7 +564,7 @@ impl MakeFloatingRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
-                if redemption != notional {
+                if (notional-redemption).abs() > 0.000001 {
                     Err(AtlasError::InvalidValueErr(
                         "Redemption amount must equal disbursement amount".into(),
                     ))?;

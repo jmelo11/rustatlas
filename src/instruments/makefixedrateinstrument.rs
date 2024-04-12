@@ -422,7 +422,7 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
-                if notional != redemption {
+                if (notional-redemption).abs() > 0.000001 {
                     return Err(AtlasError::InvalidValueErr(
                         "Notional and redemption must be equal".into(),
                     ));
