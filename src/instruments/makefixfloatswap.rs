@@ -1,262 +1,398 @@
-// use crate::{
-//     cashflows::{
-//         cashflow::{Cashflow, Side},
-//         fixedratecoupon::FixedRateCoupon,
-//         floatingratecoupon::FloatingRateCoupon,
-//         simplecashflow::SimpleCashflow,
-//     },
-//     currencies::enums::Currency,
-//     rates::interestrate::{InterestRate, RateDefinition},
-//     time::{date::Date, enums::Frequency, schedule::MakeSchedule},
-//     utils::errors::{AtlasError, Result},
-// };
+use std::collections::{HashMap, HashSet};
 
-// use super::fixfloatswap::FixFloatSwap;
+use crate::{
+    cashflows::cashflow::Side,
+    currencies::enums::Currency,
+    rates::interestrate::{InterestRate, RateDefinition},
+    time::{
+        calendar::Calendar,
+        date::Date,
+        enums::{BusinessDayConvention, Frequency},
+        period::Period,
+    },
+    utils::errors::{AtlasError, Result},
+    visitors::traits::HasCashflows,
+};
 
-// pub struct MakeFixFloatSwap {
-//     fixed_rate: Option<InterestRate>,
-//     spread: Option<f64>,
+use super::{
+    fixfloatswap::FixFloatSwap, makefixedrateinstrument::MakeFixedRateInstrument,
+    makefloatingrateinstrument::MakeFloatingRateInstrument, traits::Structure,
+};
 
-//     currency: Option<Currency>,
-//     notional: Option<f64>,
-//     start_date: Option<Date>,
-//     end_date: Option<Date>,
-//     fix_leg_frequency: Option<Frequency>,
-//     floating_leg_frequency: Option<Frequency>,
-//     rate_definition: Option<RateDefinition>,
-//     side: Option<Side>,
-//     forecast_curve: Option<usize>,
-//     discount_curve: Option<usize>,
-//     id: Option<usize>,
-// }
+pub struct MakeFixFloatSwap {
+    start_date: Option<Date>,
+    end_date: Option<Date>,
+    fixed_first_coupon_date: Option<Date>,
+    floating_first_coupon_date: Option<Date>,
+    fixed_leg_payment_frequency: Option<Frequency>,
+    floating_leg_payment_frequency: Option<Frequency>,
+    fixed_leg_tenor: Option<Period>,
+    floating_leg_tenor: Option<Period>,
+    currency: Option<Currency>,
+    side: Option<Side>,
+    notional: Option<f64>,
+    structure: Option<Structure>,
+    rate: Option<InterestRate>,
+    spread: Option<f64>,
+    discount_curve_id: Option<usize>,
+    forecast_curve_id: Option<usize>,
 
-// impl MakeFixFloatSwap {
-//     pub fn new() -> Self {
-//         Self {
-//             fixed_rate: None,
-//             currency: None,
-//             notional: None,
-//             start_date: None,
-//             end_date: None,
-//             fix_leg_frequency: None,
-//             floating_leg_frequency: None,
-//             rate_definition: None,
-//             spread: None,
-//             side: None,
-//             forecast_curve: None,
-//             discount_curve: None,
-//             id: None,
-//         }
-//     }
+    fixed_leg_disbursements: Option<HashMap<Date, f64>>,
+    fixed_leg_redemptions: Option<HashMap<Date, f64>>,
+    fixed_leg_additional_coupon_dates: Option<HashSet<Date>>,
 
-//     pub fn with_id(mut self, id: Option<usize>) -> Self {
-//         self.id = id;
-//         self
-//     }
+    floating_leg_disbursements: Option<HashMap<Date, f64>>,
+    floating_leg_redemptions: Option<HashMap<Date, f64>>,
+    floating_leg_additional_coupon_dates: Option<HashSet<Date>>,
 
-//     pub fn with_spread(mut self, spread: f64) -> Self {
-//         self.spread = Some(spread);
-//         self
-//     }
+    spread_rate_definition: Option<RateDefinition>,
 
-//     pub fn with_fixed_rate(mut self, fixed_rate: InterestRate) -> Self {
-//         self.fixed_rate = Some(fixed_rate);
-//         self
-//     }
+    id: Option<String>,
+    issue_date: Option<Date>,
+    calendar: Option<Calendar>,
+    business_day_convention: Option<BusinessDayConvention>,
+}
 
-//     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
-//         self.rate_definition = Some(rate_definition);
-//         self
-//     }
+impl MakeFixFloatSwap {
+    pub fn new() -> Self {
+        MakeFixFloatSwap {
+            start_date: None,
+            end_date: None,
+            fixed_first_coupon_date: None,
+            floating_first_coupon_date: None,
+            fixed_leg_payment_frequency: None,
+            floating_leg_payment_frequency: None,
+            fixed_leg_tenor: None,
+            floating_leg_tenor: None,
+            currency: None,
+            side: None,
+            notional: None,
+            structure: None,
+            rate: None,
+            spread: None,
+            discount_curve_id: None,
+            forecast_curve_id: None,
+            fixed_leg_disbursements: None,
+            fixed_leg_redemptions: None,
+            fixed_leg_additional_coupon_dates: None,
+            floating_leg_disbursements: None,
+            floating_leg_redemptions: None,
+            floating_leg_additional_coupon_dates: None,
+            spread_rate_definition: None,
+            id: None,
+            issue_date: None,
+            calendar: None,
+            business_day_convention: None,
+        }
+    }
 
-//     pub fn with_currency(mut self, currency: Currency) -> Self {
-//         self.currency = Some(currency);
-//         self
-//     }
+    pub fn with_start_date(mut self, start_date: Date) -> Self {
+        self.start_date = Some(start_date);
+        self
+    }
 
-//     pub fn with_notional(mut self, notional: f64) -> Self {
-//         self.notional = Some(notional);
-//         self
-//     }
+    pub fn with_end_date(mut self, end_date: Date) -> Self {
+        self.end_date = Some(end_date);
+        self
+    }
 
-//     pub fn with_start_date(mut self, start_date: Date) -> Self {
-//         self.start_date = Some(start_date);
-//         self
-//     }
+    pub fn with_fixed_first_coupon_date(mut self, fixed_first_coupon_date: Date) -> Self {
+        self.fixed_first_coupon_date = Some(fixed_first_coupon_date);
+        self
+    }
 
-//     pub fn with_end_date(mut self, end_date: Date) -> Self {
-//         self.end_date = Some(end_date);
-//         self
-//     }
+    pub fn with_floating_first_coupon_date(mut self, floating_first_coupon_date: Date) -> Self {
+        self.floating_first_coupon_date = Some(floating_first_coupon_date);
+        self
+    }
 
-//     pub fn with_fixed_leg_frequency(mut self, fix_leg_frequency: Frequency) -> Self {
-//         self.fix_leg_frequency = Some(fix_leg_frequency);
-//         self
-//     }
+    pub fn with_fixed_leg_payment_frequency(
+        mut self,
+        fixed_leg_payment_frequency: Frequency,
+    ) -> Self {
+        self.fixed_leg_payment_frequency = Some(fixed_leg_payment_frequency);
+        self
+    }
 
-//     pub fn with_floating_leg_frequency(mut self, floating_leg_frequency: Frequency) -> Self {
-//         self.floating_leg_frequency = Some(floating_leg_frequency);
-//         self
-//     }
+    pub fn with_floating_leg_payment_frequency(
+        mut self,
+        floating_leg_payment_frequency: Frequency,
+    ) -> Self {
+        self.floating_leg_payment_frequency = Some(floating_leg_payment_frequency);
+        self
+    }
 
-//     pub fn with_side(mut self, side: Side) -> Self {
-//         self.side = Some(side);
-//         self
-//     }
+    pub fn with_fixed_leg_tenor(mut self, fixed_leg_tenor: Period) -> Self {
+        self.fixed_leg_tenor = Some(fixed_leg_tenor);
+        self
+    }
 
-//     pub fn with_forecast_curve(mut self, forecast_curve: usize) -> Self {
-//         self.forecast_curve = Some(forecast_curve);
-//         self
-//     }
+    pub fn with_floating_leg_tenor(mut self, floating_leg_tenor: Period) -> Self {
+        self.floating_leg_tenor = Some(floating_leg_tenor);
+        self
+    }
 
-//     pub fn with_discount_curve(mut self, discount_curve: usize) -> Self {
-//         self.discount_curve = Some(discount_curve);
-//         self
-//     }
+    pub fn with_currency(mut self, currency: Currency) -> Self {
+        self.currency = Some(currency);
+        self
+    }
 
-//     pub fn build(self) -> Result<FixFloatSwap> {
-//         let fixed_rate = self
-//             .fixed_rate
-//             .ok_or(AtlasError::ValueNotSetErr("Fixed rate".into()))?;
-//         let currency = self
-//             .currency
-//             .ok_or(AtlasError::ValueNotSetErr("Currency".into()))?;
-//         let notional = self
-//             .notional
-//             .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
-//         let start_date = self
-//             .start_date
-//             .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-//         let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
+    pub fn with_side(mut self, side: Side) -> Self {
+        self.side = Some(side);
+        self
+    }
 
-//         let fix_leg_frequency = self
-//             .fix_leg_frequency
-//             .ok_or(AtlasError::ValueNotSetErr("Fixed leg frequency".into()))?;
+    pub fn with_notional(mut self, notional: f64) -> Self {
+        self.notional = Some(notional);
+        self
+    }
 
-//         let floating_leg_frequency = self
-//             .floating_leg_frequency
-//             .ok_or(AtlasError::ValueNotSetErr("Floating leg frequency".into()))?;
+    pub fn with_structure(mut self, structure: Structure) -> Self {
+        self.structure = Some(structure);
+        self
+    }
 
-//         let end_date = self
-//             .end_date
-//             .ok_or(AtlasError::ValueNotSetErr("End date".into()))?;
+    pub fn with_rate(mut self, rate: InterestRate) -> Self {
+        self.rate = Some(rate);
+        self
+    }
 
-//         let fix_leg_schedule = MakeSchedule::new(start_date, end_date)
-//             .with_frequency(fix_leg_frequency)
-//             .build()?;
+    pub fn with_spread(mut self, spread: f64) -> Self {
+        self.spread = Some(spread);
+        self
+    }
 
-//         let floating_leg_schedule = MakeSchedule::new(start_date, end_date)
-//             .with_frequency(floating_leg_frequency)
-//             .build()?;
+    pub fn with_discount_curve_id(mut self, discount_curve_id: Option<usize>) -> Self {
+        self.discount_curve_id = discount_curve_id;
+        self
+    }
 
-//         let spread = self.spread.unwrap_or(0.0);
+    pub fn with_forecast_curve_id(mut self, forecast_curve_id: Option<usize>) -> Self {
+        self.forecast_curve_id = forecast_curve_id;
+        self
+    }
 
-//         let rate_definition = self
-//             .rate_definition
-//             .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
+    pub fn with_fixed_leg_disbursements(
+        mut self,
+        fixed_leg_disbursements: HashMap<Date, f64>,
+    ) -> Self {
+        self.fixed_leg_disbursements = Some(fixed_leg_disbursements);
+        self
+    }
 
-//         let mut fix_cashflows = Vec::new();
+    pub fn with_fixed_leg_redemptions(mut self, fixed_leg_redemptions: HashMap<Date, f64>) -> Self {
+        self.fixed_leg_redemptions = Some(fixed_leg_redemptions);
+        self
+    }
 
-//         for date_pair in fix_leg_schedule.dates().windows(2) {
-//             let accrual_start_date = date_pair[0];
-//             let accrual_end_date = date_pair[1];
-//             let coupon = FixedRateCoupon::new(
-//                 notional,
-//                 fixed_rate,
-//                 accrual_start_date,
-//                 accrual_end_date,
-//                 accrual_end_date,
-//                 currency,
-//                 side,
-//             );
-//             fix_cashflows.push(Cashflow::FixedRateCoupon(coupon));
-//         }
+    pub fn with_fixed_leg_additional_coupon_dates(
+        mut self,
+        fixed_leg_additional_coupon_dates: HashSet<Date>,
+    ) -> Self {
+        self.fixed_leg_additional_coupon_dates = Some(fixed_leg_additional_coupon_dates);
+        self
+    }
 
-//         let redemption = SimpleCashflow::new(end_date, currency, side).with_amount(notional);
-//         fix_cashflows.push(Cashflow::Redemption(redemption));
+    pub fn with_floating_leg_disbursements(
+        mut self,
+        floating_leg_disbursements: HashMap<Date, f64>,
+    ) -> Self {
+        self.floating_leg_disbursements = Some(floating_leg_disbursements);
+        self
+    }
 
-//         let mut float_cashflows = Vec::new();
+    pub fn with_floating_leg_redemptions(
+        mut self,
+        floating_leg_redemptions: HashMap<Date, f64>,
+    ) -> Self {
+        self.floating_leg_redemptions = Some(floating_leg_redemptions);
+        self
+    }
 
-//         let inv_side = match side {
-//             Side::Pay => Side::Receive,
-//             Side::Receive => Side::Pay,
-//         };
+    pub fn with_floating_leg_additional_coupon_dates(
+        mut self,
+        floating_leg_additional_coupon_dates: HashSet<Date>,
+    ) -> Self {
+        self.floating_leg_additional_coupon_dates = Some(floating_leg_additional_coupon_dates);
+        self
+    }
 
-//         match self.discount_curve {
-//             Some(id) => fix_cashflows.iter_mut().for_each(|cf| {
-//                 cf.set_discount_curve_id(id);
-//             }),
-//             None => (),
-//         }
+    pub fn with_spread_rate_definition(mut self, spread_rate_definition: RateDefinition) -> Self {
+        self.spread_rate_definition = Some(spread_rate_definition);
+        self
+    }
 
-//         for date_pair in floating_leg_schedule.dates().windows(2) {
-//             let accrual_start_date = date_pair[0];
-//             let accrual_end_date = date_pair[1];
-//             let coupon = FloatingRateCoupon::new(
-//                 notional,
-//                 spread,
-//                 accrual_start_date,
-//                 accrual_end_date,
-//                 accrual_end_date,
-//                 rate_definition,
-//                 currency,
-//                 inv_side,
-//             );
-//             float_cashflows.push(Cashflow::FloatingRateCoupon(coupon));
-//         }
+    pub fn with_id(mut self, id: String) -> Self {
+        self.id = Some(id);
+        self
+    }
 
-//         match self.forecast_curve {
-//             Some(id) => float_cashflows.iter_mut().for_each(|cf| {
-//                 cf.set_forecast_curve_id(id);
-//             }),
-//             None => (),
-//         }
+    pub fn with_issue_date(mut self, issue_date: Date) -> Self {
+        self.issue_date = Some(issue_date);
+        self
+    }
 
-//         let redemption = SimpleCashflow::new(end_date, currency, side).with_amount(notional);
-//         float_cashflows.push(Cashflow::Redemption(redemption));
+    pub fn with_calendar(mut self, calendar: Calendar) -> Self {
+        self.calendar = Some(calendar);
+        self
+    }
 
-//         Ok(FixFloatSwap::new(fix_cashflows, float_cashflows))
-//     }
-// }
+    pub fn with_business_day_convention(
+        mut self,
+        business_day_convention: BusinessDayConvention,
+    ) -> Self {
+        self.business_day_convention = Some(business_day_convention);
+        self
+    }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::{
-//         currencies::enums::Currency,
-//         rates::{enums::Compounding, interestrate::InterestRate},
-//         time::{date::Date, daycounter::DayCounter, enums::Frequency},
-//     };
+    pub fn build(self) -> Result<FixFloatSwap> {
+        let start_date = self
+            .start_date
+            .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
+        let end_date = self
+            .end_date
+            .ok_or(AtlasError::ValueNotSetErr("End date".into()))?;
+        let fixed_leg_payment_frequency =
+            self.fixed_leg_payment_frequency
+                .ok_or(AtlasError::ValueNotSetErr(
+                    "Fixed leg payment frequency".into(),
+                ))?;
+        let floating_leg_payment_frequency =
+            self.floating_leg_payment_frequency
+                .ok_or(AtlasError::ValueNotSetErr(
+                    "Floating leg payment frequency".into(),
+                ))?;
+        let currency = self
+            .currency
+            .ok_or(AtlasError::ValueNotSetErr("Currency".into()))?;
+        let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
+        let notional = self
+            .notional
+            .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+        let structure = self
+            .structure
+            .ok_or(AtlasError::ValueNotSetErr("Structure".into()))?;
+        let rate = self.rate.ok_or(AtlasError::ValueNotSetErr("Rate".into()))?;
+        let spread = self
+            .spread
+            .ok_or(AtlasError::ValueNotSetErr("Spread".into()))?;
+        let spread_rate_definition = self
+            .spread_rate_definition
+            .ok_or(AtlasError::ValueNotSetErr("Spread rate definition".into()))?;
 
-//     #[test]
-//     fn test_make_fix_float_swap() -> Result<()> {
-//         let start_date = Date::new(2021, 1, 1);
-//         let end_date = Date::new(2025, 1, 1);
-//         let notional = 100.0;
-//         let fixed_rate = InterestRate::new(
-//             0.05,
-//             Compounding::Compounded,
-//             Frequency::Annual,
-//             DayCounter::Actual360,
-//         );
-//         let rate_definition = RateDefinition::default();
-//         let currency = Currency::USD;
+        let fixed_leg = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(fixed_leg_payment_frequency)
+            .with_rate(rate)
+            .with_notional(notional)
+            .with_side(side)
+            .with_currency(currency)
+            .with_structure(structure)
+            .with_discount_curve_id(self.discount_curve_id)
+            .with_first_coupon_date(self.fixed_first_coupon_date)
+            .with_issue_date(self.issue_date.unwrap_or(start_date))
+            .with_calendar(self.calendar.clone())
+            .with_business_day_convention(self.business_day_convention)
+            .build()?;
 
-//         let fix_leg_frequency = Frequency::Semiannual;
-//         let floating_leg_frequency = Frequency::Quarterly;
+        let floating_leg = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_payment_frequency(floating_leg_payment_frequency)
+            .with_rate_definition(spread_rate_definition)
+            .with_notional(notional)
+            .with_spread(spread)
+            .with_side(side.inverse())
+            .with_currency(currency)
+            .with_structure(structure)
+            .with_discount_curve_id(self.discount_curve_id)
+            .with_forecast_curve_id(self.forecast_curve_id)
+            .with_first_coupon_date(self.floating_first_coupon_date.unwrap_or(start_date))
+            .with_issue_date(self.issue_date.unwrap_or(start_date))
+            .with_calendar(self.calendar.clone())
+            .with_business_day_convention(self.business_day_convention)
+            .build()?;
 
-//         let _ = MakeFixFloatSwap::new()
-//             .with_start_date(start_date)
-//             .with_end_date(end_date)
-//             .with_fixed_rate(fixed_rate)
-//             .with_currency(currency)
-//             .with_notional(notional)
-//             .with_fixed_leg_frequency(fix_leg_frequency)
-//             .with_floating_leg_frequency(floating_leg_frequency)
-//             .with_side(Side::Pay)
-//             .with_rate_definition(rate_definition)
-//             .build()?;
+        Ok(FixFloatSwap::new(
+            fixed_leg.cashflows().to_vec(),
+            floating_leg.cashflows().to_vec(),
+            structure,
+            currency,
+            side,
+            rate,
+            spread,
+            notional,
+            start_date,
+            end_date,
+            Some(self.issue_date.unwrap_or(start_date)),
+            spread_rate_definition,
+            self.discount_curve_id,
+            self.forecast_curve_id,
+            self.id,
+        ))
+    }
+}
 
-//         Ok(())
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        cashflows::cashflow::Side,
+        currencies::enums::Currency,
+        rates::{enums::Compounding, interestrate::InterestRate},
+        time::daycounter::DayCounter,
+    };
+
+    #[test]
+    fn test_make_fix_float_swap() -> Result<()> {
+        let start_date = Date::new(2023, 6, 1);
+        let end_date = Date::new(2028, 6, 1);
+        let fixed_rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Semiannual,
+            DayCounter::Thirty360,
+        );
+        let spread_rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Compounded,
+            Frequency::Quarterly,
+        );
+        let notional = 1_000_000.0;
+        let spread = 0.01;
+
+        let fix_float_swap = MakeFixFloatSwap::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_fixed_leg_payment_frequency(Frequency::Semiannual)
+            .with_floating_leg_payment_frequency(Frequency::Quarterly)
+            .with_currency(Currency::USD)
+            .with_side(Side::Receive)
+            .with_notional(notional)
+            .with_structure(Structure::Bullet)
+            .with_rate(fixed_rate)
+            .with_spread(spread)
+            .with_spread_rate_definition(spread_rate_definition)
+            .with_discount_curve_id(Some(1))
+            .with_forecast_curve_id(Some(2))
+            .build()?;
+
+        assert_eq!(fix_float_swap.start_date(), start_date);
+        assert_eq!(fix_float_swap.end_date(), end_date);
+        assert_eq!(fix_float_swap.currency(), Currency::USD);
+        assert_eq!(fix_float_swap.side(), Side::Receive);
+        assert_eq!(fix_float_swap.notional(), notional);
+        assert_eq!(fix_float_swap.structure(), Structure::Bullet);
+        assert_eq!(fix_float_swap.rate(), fixed_rate);
+        assert_eq!(fix_float_swap.spread(), spread);
+        assert_eq!(
+            fix_float_swap.spread_rate_definition(),
+            spread_rate_definition
+        );
+        assert_eq!(fix_float_swap.discount_curve_id(), Some(1));
+        assert_eq!(fix_float_swap.forecast_curve_id(), Some(2));
+
+        Ok(())
+    }
+}
