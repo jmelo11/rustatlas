@@ -308,7 +308,7 @@ impl MakeFixFloatSwap {
             .with_structure(structure)
             .with_discount_curve_id(self.discount_curve_id)
             .with_forecast_curve_id(self.forecast_curve_id)
-            .with_first_coupon_date(self.floating_first_coupon_date.unwrap_or(start_date))
+            .with_first_coupon_date(self.floating_first_coupon_date)
             .with_issue_date(self.issue_date.unwrap_or(start_date))
             .with_calendar(self.calendar.clone())
             .with_business_day_convention(self.business_day_convention)

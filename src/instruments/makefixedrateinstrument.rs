@@ -11,14 +11,21 @@ use crate::{
         fixedratecoupon::FixedRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
-    }, core::traits::HasCurrency, currencies::enums::Currency, prelude::DateGenerationRule, rates::interestrate::{InterestRate, RateDefinition}, time::{
+    },
+    core::traits::HasCurrency,
+    currencies::enums::Currency,
+    prelude::DateGenerationRule,
+    rates::interestrate::{InterestRate, RateDefinition},
+    time::{
         calendar::Calendar,
         calendars::nullcalendar::NullCalendar,
         date::Date,
         enums::{BusinessDayConvention, Frequency},
         period::Period,
         schedule::MakeSchedule,
-    }, utils::errors::{AtlasError, Result}, visitors::traits::HasCashflows
+    },
+    utils::errors::{AtlasError, Result},
+    visitors::traits::HasCashflows,
 };
 
 use super::{
@@ -90,7 +97,10 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> MakeFixedRateInstrument {
+    pub fn with_first_coupon_date(
+        mut self,
+        first_coupon_date: Option<Date>,
+    ) -> MakeFixedRateInstrument {
         self.first_coupon_date = first_coupon_date;
         self
     }
@@ -123,18 +133,24 @@ impl MakeFixedRateInstrument {
         self
     }
 
-    pub fn with_calendar(mut self, calendar: Calendar) -> MakeFixedRateInstrument {
-        self.calendar = Some(calendar);
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateInstrument {
+        self.calendar = calendar;
         self
     }
 
-    pub fn with_business_day_convention(mut self, business_day_convention: BusinessDayConvention) -> MakeFixedRateInstrument {
-        self.business_day_convention = Some(business_day_convention);
+    pub fn with_business_day_convention(
+        mut self,
+        business_day_convention: Option<BusinessDayConvention>,
+    ) -> MakeFixedRateInstrument {
+        self.business_day_convention = business_day_convention;
         self
     }
 
-    pub fn with_date_generation_rule(mut self, date_generation_rule: DateGenerationRule) -> MakeFixedRateInstrument {
-        self.date_generation_rule = Some(date_generation_rule);
+    pub fn with_date_generation_rule(
+        mut self,
+        date_generation_rule: Option<DateGenerationRule>,
+    ) -> MakeFixedRateInstrument {
+        self.date_generation_rule = date_generation_rule;
         self
     }
 
@@ -339,7 +355,7 @@ impl MakeFixedRateInstrument {
                     )
                     .with_rule(
                         self.date_generation_rule
-                        .unwrap_or(DateGenerationRule::Backward)
+                            .unwrap_or(DateGenerationRule::Backward),
                     );
 
                 let schedule = match self.first_coupon_date {
@@ -422,7 +438,7 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
-                if (notional-redemption).abs() > 0.000001 {
+                if (notional - redemption).abs() > 0.000001 {
                     return Err(AtlasError::InvalidValueErr(
                         "Notional and redemption must be equal".into(),
                     ));
@@ -514,7 +530,7 @@ impl MakeFixedRateInstrument {
                     )
                     .with_rule(
                         self.date_generation_rule
-                        .unwrap_or(DateGenerationRule::Backward)
+                            .unwrap_or(DateGenerationRule::Backward),
                     );
 
                 let schedule = match self.first_coupon_date {
@@ -619,7 +635,7 @@ impl MakeFixedRateInstrument {
                     )
                     .with_rule(
                         self.date_generation_rule
-                        .unwrap_or(DateGenerationRule::Backward)
+                            .unwrap_or(DateGenerationRule::Backward),
                     )
                     .build()?;
 
@@ -707,7 +723,7 @@ impl MakeFixedRateInstrument {
                     )
                     .with_rule(
                         self.date_generation_rule
-                        .unwrap_or(DateGenerationRule::Backward)
+                            .unwrap_or(DateGenerationRule::Backward),
                     );
 
                 let schedule = match self.first_coupon_date {
