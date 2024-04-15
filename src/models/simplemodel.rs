@@ -94,28 +94,18 @@ impl<'a> Model for SimpleModel<'a> {
 
         match fx.reference_date() {
             Some(date) => {
-                let first_id = self
-                    .market_store
-                    .exchange_rate_store()
-                    .get_currency_curve(first_currency)?;
 
-                let second_id = self
-                    .market_store
-                    .exchange_rate_store()
-                    .get_currency_curve(second_currency)?;
+                let currency_forescast_factor = self.market_store
+                    .index_store()
+                    .currency_forescast_factor(first_currency, second_currency, date)?;
 
                 let spot = self
                     .market_store
                     .exchange_rate_store()
                     .get_exchange_rate(first_currency, second_currency)?;
 
-                let first_curve = self.market_store.get_index(first_id)?;
-                let second_curve = self.market_store.get_index(second_id)?;
 
-                let first_df = first_curve.read_index()?.discount_factor(date)?;
-                let second_df = second_curve.read_index()?.discount_factor(date)?;
-
-                Ok(spot * first_df / second_df)
+                Ok(spot * currency_forescast_factor)
             }
             None => Ok(self
                 .market_store

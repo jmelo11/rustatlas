@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use crate::{
-    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore},
+    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore, traits::AdvanceExchangeRateStoreInTime},
     rates::{
         indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
         traits::HasReferenceDate,
@@ -31,7 +31,7 @@ impl MarketStore {
         MarketStore {
             reference_date,
             local_currency,
-            exchange_rate_store: ExchangeRateStore::new(),
+            exchange_rate_store: ExchangeRateStore::new(reference_date),
             index_store: IndexStore::new(reference_date),
         }
     }
@@ -82,11 +82,13 @@ impl MarketStore {
             )));
         }
         let new_reference_date = self.reference_date + period;
+        let new_exchange_rate_store = self.exchange_rate_store.advance_to_period(period, &self.index_store)?;
         let new_index_store = self.index_store.advance_to_period(period)?;
+        
         Ok(MarketStore {
             reference_date: new_reference_date,
             local_currency: self.local_currency,
-            exchange_rate_store: self.exchange_rate_store.clone(),
+            exchange_rate_store: new_exchange_rate_store,
             index_store: new_index_store,
         })
     }

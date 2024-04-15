@@ -3,9 +3,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::enums::Currency;
+use super::{enums::Currency, traits::AdvanceExchangeRateStoreInTime};
 
-use crate::utils::errors::{AtlasError, Result};
+use crate::{rates::indexstore::IndexStore, time::{date::Date, period::Period}, utils::errors::{AtlasError, Result}};
 
 /// # ExchangeRateStore
 /// A store for exchange rates.
@@ -16,17 +16,17 @@ use crate::utils::errors::{AtlasError, Result};
 /// - The exchange rate between two currencies is calculated by traversing the graph of exchange rates.
 #[derive(Clone)]
 pub struct ExchangeRateStore {
+    reference_date: Date,
     exchange_rate_map: HashMap<(Currency, Currency), f64>,
     exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), f64>>>,
-    currency_curve: HashMap<Currency, usize>,
 }
 
 impl ExchangeRateStore {
-    pub fn new() -> ExchangeRateStore {
+    pub fn new(date : Date) -> ExchangeRateStore {
         ExchangeRateStore {
+            reference_date: date,
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
-            currency_curve: HashMap::new(),
         }
     }
 
@@ -38,22 +38,12 @@ impl ExchangeRateStore {
         self
     }
 
-    pub fn add_currency_curve(&mut self, currency: Currency, fx_curve: usize) {
-        self.currency_curve.insert(currency, fx_curve);
-    }
-
     pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: f64) {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
-    pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
-        self.currency_curve
-            .get(&currency)
-            .cloned()
-            .ok_or(AtlasError::NotFoundErr(format!(
-                "Currency curve for currency {:?}",
-                currency
-            )))
+    pub fn reference_date(&self) -> Date {
+        self.reference_date
     }
 
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
@@ -103,6 +93,36 @@ impl ExchangeRateStore {
             first_ccy, second_ccy
         )))
     }
+
+}
+
+
+impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
+    fn advance_to_period(&self, period: Period, index_store: &IndexStore) -> Result<ExchangeRateStore> { 
+        let new_date = self.reference_date + period;
+        self.advance_to_date(new_date, index_store)
+    }
+
+    fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<ExchangeRateStore> {
+        if self.reference_date() != index_store.reference_date() {
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Reference date of exchange rate store and index store do not match"
+            )));
+        }
+
+        let mut new_store = ExchangeRateStore::new(date);
+        for ((ccy1, ccy2), fx) in self.exchange_rate_map.iter() {
+            let compound_factor = index_store.currency_forescast_factor(*ccy1, *ccy2, date);
+            match compound_factor {
+                Ok(cf) => new_store.add_exchange_rate(*ccy1, *ccy2, fx * cf),
+                Err(_) => {
+                    // If the compound factor is not available, we use the last fx rate
+                    new_store.add_exchange_rate(*ccy1, *ccy2, *fx);
+                }
+            }    
+        }
+        Ok(new_store)
+    }
 }
 
 #[cfg(test)]
@@ -112,20 +132,22 @@ mod tests {
 
     #[test]
     fn test_same_currency() {
-        let manager = ExchangeRateStore::new();
+        let ref_date = Date::new(2021, 1, 1);
+        let manager = ExchangeRateStore::new(ref_date);
         assert_eq!(manager.get_exchange_rate(USD, USD).unwrap(), 1.0);
     }
 
     #[test]
     fn test_cache() {
+        let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
+            reference_date: ref_date,
             exchange_rate_map: {
                 let mut map = HashMap::new();
                 map.insert((USD, EUR), 0.85);
                 map
             },
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
-            currency_curve: HashMap::new(),
         };
 
         assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
@@ -142,10 +164,11 @@ mod tests {
 
     #[test]
     fn test_nonexistent_rate() {
+        let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
+            reference_date: ref_date,
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
-            currency_curve: HashMap::new(),
         };
 
         let result = manager.get_exchange_rate(USD, EUR);
@@ -154,7 +177,9 @@ mod tests {
 
     #[test]
     fn test_complex_case() {
+        let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
+            reference_date: ref_date,
             exchange_rate_map: {
                 let mut map = HashMap::new();
                 map.insert((USD, EUR), 0.85);
@@ -162,7 +187,6 @@ mod tests {
                 map
             },
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
-            currency_curve: HashMap::new(),
         };
 
         assert_eq!(manager.get_exchange_rate(EUR, USD).unwrap(), 1.0 / 0.85);
@@ -171,7 +195,8 @@ mod tests {
 
     #[test]
     fn test_triangulation_case() {
-        let mut manager = ExchangeRateStore::new();
+        let ref_date = Date::new(2021, 1, 1);
+        let mut manager = ExchangeRateStore::new(ref_date);
         manager.add_exchange_rate(CLP, USD, 800.0);
         manager.add_exchange_rate(USD, EUR, 1.1);
 
