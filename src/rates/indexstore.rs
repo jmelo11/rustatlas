@@ -4,8 +4,9 @@ use std::{
 };
 
 use crate::{
-    time::{date::Date, enums::TimeUnit, period::Period},
-    utils::errors::{AtlasError, Result},
+    currencies::enums::Currency, 
+    time::{date::Date, enums::TimeUnit, period::Period}, 
+    utils::errors::{AtlasError, Result}
 };
 
 use super::{
@@ -22,6 +23,7 @@ use super::{
 pub struct IndexStore {
     reference_date: Date,
     index_map: HashMap<usize, Arc<RwLock<dyn InterestRateIndexTrait>>>,
+    currency_curve: HashMap<Currency, usize>,
 }
 
 pub trait ReadIndex {
@@ -40,11 +42,26 @@ impl IndexStore {
         IndexStore {
             reference_date,
             index_map: HashMap::new(),
+            currency_curve: HashMap::new(),
         }
     }
 
     pub fn reference_date(&self) -> Date {
         self.reference_date
+    }
+
+    pub fn add_currency_curve(&mut self, currency: Currency, fx_curve: usize) {
+        self.currency_curve.insert(currency, fx_curve);
+    }
+    
+    pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
+        self.currency_curve
+            .get(&currency)
+            .cloned()
+            .ok_or(AtlasError::NotFoundErr(format!(
+                "Currency curve for currency {:?}",
+                currency
+            )))
     }
 
     pub fn link_term_structure(
@@ -189,6 +206,11 @@ impl IndexStore {
             let new_index = index.read_index()?.advance_to_period(period)?;
             store.add_index(*id, new_index)?;
         }
+
+        for (currency, curve) in self.currency_curve.iter() {
+            store.add_currency_curve(*currency, *curve);
+        }
+        
         Ok(store)
     }
 
@@ -201,5 +223,18 @@ impl IndexStore {
     pub fn swap_index_by_id(&mut self, from: usize, to: usize) {
         let index = self.index_map.remove(&from).unwrap();
         self.index_map.insert(to, index);
+    }
+
+    pub fn currency_forescast_factor (&self,first_currency: Currency, second_currency: Currency, date: Date) -> Result<f64> {
+        let first_id = self.get_currency_curve(first_currency)?;
+        let second_id = self.get_currency_curve(second_currency)?;
+
+        let first_curve = self.get_index(first_id)?;
+        let second_curve = self.get_index(second_id)?;
+
+        let first_df = first_curve.read_index()?.discount_factor(date)?;
+        let second_df = second_curve.read_index()?.discount_factor(date)?;
+
+        Ok(second_df/ first_df)
     }
 }
