@@ -89,23 +89,22 @@ pub fn build_cashflows(
 ) {
     for (date, amount) in dates.iter().zip(amounts) {
 
-        //let (amount, cashflow_type,side) = if amount.is_sign_negative() {
-        //    (
-        //        -amount, 
-        //        match cashflow_type
-        //        {
-        //            CashflowType::Redemption => CashflowType::Disbursement,
-        //            CashflowType::Disbursement => CashflowType::Redemption,
-        //            _ => cashflow_type
-        //        },
-        //        side.inverse()
-        //    ) 
-        //} else {
-        //    (*amount, cashflow_type,side)
-        //};
+        let (amount, cashflow_type, side) = if amount.is_sign_negative() {
+            (
+                -amount, 
+                match cashflow_type
+                {
+                    CashflowType::Redemption => CashflowType::Disbursement,
+                    CashflowType::Disbursement => CashflowType::Redemption,
+                    _ => cashflow_type
+                },
+                side.inverse()
+            ) 
+        } else {
+            (*amount, cashflow_type, side)
+        };
 
-
-        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
+        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(amount);
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
