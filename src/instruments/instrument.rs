@@ -158,10 +158,18 @@ impl Instrument {
         }
     }
 
-    pub fn rate(&self) -> f64 {
+    pub fn rate(&self) -> Option<f64> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.rate().rate(),
-            Instrument::FloatingRateInstrument(fri) => fri.spread(),
+            Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate()),
+            Instrument::FloatingRateInstrument(_) => None,
+            Instrument::HybridRateInstrument(_) => todo!(),
+        }
+    }
+
+    pub fn spread(&self) -> Option<f64> {
+        match self {
+            Instrument::FixedRateInstrument(_) => None,
+            Instrument::FloatingRateInstrument(fri) => Some(fri.spread()),
             Instrument::HybridRateInstrument(_) => todo!(),
         }
     }
