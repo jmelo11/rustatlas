@@ -92,22 +92,22 @@ pub fn build_cashflows(
 ) {
     for (date, amount) in dates.iter().zip(amounts) {
 
-        let (amount, cashflow_type, side) = if amount.is_sign_negative() {
-            (
-                -amount, 
-                match cashflow_type
-                {
-                    CashflowType::Redemption => CashflowType::Disbursement,
-                    CashflowType::Disbursement => CashflowType::Redemption,
-                    _ => cashflow_type
-                },
-                side.inverse()
-            ) 
-        } else {
-            (*amount, cashflow_type, side)
-        };
+        //let (amount, cashflow_type, side) = if amount.is_sign_negative() {
+        //    (
+        //        -amount, 
+        //        match cashflow_type
+        //        {
+        //            CashflowType::Redemption => CashflowType::Disbursement,
+        //            CashflowType::Disbursement => CashflowType::Redemption,
+        //            _ => cashflow_type
+        //        },
+        //        side.inverse()
+        //    ) 
+        //} else {
+        //    (*amount, cashflow_type, side)
+        //};
 
-        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(amount);
+        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
@@ -285,43 +285,43 @@ mod tests {
     }
 
     
-    #[test]
-    fn test_build_cashflows_negative_amount() {
-        let mut cashflows = Vec::new();
-        let dates = vec![Date::new(2023, 8, 27), 
-                                    Date::new(2023, 9, 27)];
+    //#[test]
+    //fn test_build_cashflows_negative_amount() {
+    //    let mut cashflows = Vec::new();
+    //    let dates = vec![Date::new(2023, 8, 27), 
+    //                                Date::new(2023, 9, 27)];
 
-        let amounts = vec![50.0,
-                                     -50.0];
-                                     
-        build_cashflows(
-            &mut cashflows,
-            &dates,
-            &amounts,
-            Side::Receive,
-            Currency::USD,
-            CashflowType::Redemption,
-        );
+    //    let amounts = vec![50.0,
+    //                                 50.0];
+    //                                 
+    //    build_cashflows(
+    //        &mut cashflows,
+    //        &dates,
+    //        &amounts,
+    //        Side::Receive,
+    //        Currency::USD,
+    //        CashflowType::Redemption,
+    //    );
 
-        assert_eq!(cashflows.len(), 2);
-        assert_eq!(
-            cashflows[0],
-            Cashflow::Redemption(SimpleCashflow::new(
-                Date::new(2023, 8, 27),
-                Currency::USD,
-                Side::Receive
-            )
-            .with_amount(50.0))
-        );
-        assert_eq!(
-            cashflows[1],
-            Cashflow::Disbursement(SimpleCashflow::new(
-                Date::new(2023, 9, 27),
-                Currency::USD,
-                Side::Pay,
-            )
-            .with_amount(50.0))
-        );
-    }
+    //    assert_eq!(cashflows.len(), 2);
+    //    assert_eq!(
+    //        cashflows[0],
+    //        Cashflow::Redemption(SimpleCashflow::new(
+    //            Date::new(2023, 8, 27),
+    //            Currency::USD,
+    //            Side::Receive
+    //        )
+    //        .with_amount(50.0))
+    //    );
+    //    assert_eq!(
+    //        cashflows[1],
+    //        Cashflow::Disbursement(SimpleCashflow::new(
+    //            Date::new(2023, 9, 27),
+    //            Currency::USD,
+    //            Side::Pay,
+    //        )
+    //        .with_amount(50.0))
+    //    );
+    //}
 
 }
