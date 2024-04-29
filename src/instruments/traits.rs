@@ -79,6 +79,9 @@ impl From<CashflowType> for String {
     }
 }
 
+
+/// This function add cashflows from a vector of dates and amounts of the given side, currency and cashflow type
+/// this requires a mutable reference to a vector of cashflows.
 pub fn build_cashflows(
     cashflows: &mut Vec<Cashflow>,
     dates: &[Date],
