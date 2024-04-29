@@ -241,4 +241,84 @@ mod tests {
             (Date::new(2023, 10, 27), Date::new(2023, 11, 27), 50.0)
         );
     }
+
+    #[test]
+    fn test_build_cashflows() {
+        let mut cashflows = Vec::new();
+        let dates = vec![Date::new(2023, 8, 27), 
+                                    Date::new(2023, 9, 27)];
+
+        let amounts = vec![50.0,
+                                     50.0];
+                                     
+        build_cashflows(
+            &mut cashflows,
+            &dates,
+            &amounts,
+            Side::Receive,
+            Currency::USD,
+            CashflowType::Redemption,
+        );
+
+        assert_eq!(cashflows.len(), 2);
+        assert_eq!(
+            cashflows[0],
+            Cashflow::Redemption(SimpleCashflow::new(
+                Date::new(2023, 8, 27),
+                Currency::USD,
+                Side::Receive
+            )
+            .with_amount(50.0))
+        );
+        assert_eq!(
+            cashflows[1],
+            Cashflow::Redemption(SimpleCashflow::new(
+                Date::new(2023, 9, 27),
+                Currency::USD,
+                Side::Receive,
+            )
+            .with_amount(50.0))
+        );
+    }
+
+    
+    #[test]
+    fn test_build_cashflows_negative_amount() {
+        let mut cashflows = Vec::new();
+        let dates = vec![Date::new(2023, 8, 27), 
+                                    Date::new(2023, 9, 27)];
+
+        let amounts = vec![50.0,
+                                     -50.0];
+                                     
+        build_cashflows(
+            &mut cashflows,
+            &dates,
+            &amounts,
+            Side::Receive,
+            Currency::USD,
+            CashflowType::Redemption,
+        );
+
+        assert_eq!(cashflows.len(), 2);
+        assert_eq!(
+            cashflows[0],
+            Cashflow::Redemption(SimpleCashflow::new(
+                Date::new(2023, 8, 27),
+                Currency::USD,
+                Side::Receive
+            )
+            .with_amount(50.0))
+        );
+        assert_eq!(
+            cashflows[1],
+            Cashflow::Disbursement(SimpleCashflow::new(
+                Date::new(2023, 9, 27),
+                Currency::USD,
+                Side::Pay,
+            )
+            .with_amount(50.0))
+        );
+    }
+
 }
