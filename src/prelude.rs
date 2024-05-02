@@ -8,8 +8,9 @@ pub use crate::{
     core::{marketstore::MarketStore, traits::*},
     currencies::{enums::*, structs::*, traits::*},
     instruments::{
-        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*, loandepo::*,
-        makefixedrateinstrument::*, makefloatingrateinstrument::*, traits::*,
+        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*, leg::*, loandepo::*,
+        makefixedrateinstrument::*, makefixedrateleg::*, makefloatingrateinstrument::*,
+        makefloatingrateleg::*, traits::*,
     },
     math::interpolation::{enums::*, linear::*, loglinear::*, traits::*},
     models::{simplemodel::*, traits::*},

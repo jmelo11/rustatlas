@@ -1,15 +1,18 @@
 use serde::{Deserialize, Serialize};
 
 use super::traits::Structure;
-use crate::cashflows::cashflow::{Cashflow, Side};
-use crate::cashflows::traits::Payable;
-use crate::core::traits::HasCurrency;
-use crate::currencies::enums::Currency;
-use crate::rates::interestrate::InterestRate;
-use crate::time::date::Date;
-use crate::time::enums::Frequency;
-use crate::utils::errors::{AtlasError, Result};
-use crate::visitors::traits::HasCashflows;
+use crate::{
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::Payable,
+    },
+    core::traits::HasCurrency,
+    currencies::enums::Currency,
+    rates::interestrate::InterestRate,
+    time::{date::Date, enums::Frequency},
+    utils::errors::{AtlasError, Result},
+    visitors::traits::HasCashflows,
+};
 
 /// # FixedRateInstrument
 /// A fixed rate instrument.
@@ -129,7 +132,8 @@ impl HasCurrency for FixedRateInstrument {
 
 /// # BondAccrual
 /// Implements fixed rate bond accrual using a yield rate.  
-/// The yield rate is used to discount the cashflows to between the start and end dates and calculate the accrued amount.
+/// The yield rate is used to discount the cashflows to between the start and
+/// end dates and calculate the accrued amount.
 pub trait BondAccrual: HasCashflows {
     fn yield_rate(&self) -> Option<InterestRate>;
 
