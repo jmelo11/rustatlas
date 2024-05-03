@@ -4,6 +4,7 @@ use super::calendars::{
     nullcalendar::NullCalendar,
     target::TARGET,
     traits::{ImplCalendar, IsCalendar},
+    unitedstates::UnitedStates,
     weekendsonly::WeekendsOnly,
 };
 use crate::{
@@ -19,11 +20,13 @@ use std::collections::HashSet;
 /// * `NullCalendar` - A calendar that considers all days as business days.
 /// * `WeekendsOnly` - A calendar that considers only weekends as business days.
 /// * `TARGET` - A calendar that considers only TARGET business days as business days.
+/// * `UnitedStates` - A calendar for the United States.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Calendar {
     NullCalendar(NullCalendar),
     WeekendsOnly(WeekendsOnly),
     TARGET(TARGET),
+    UnitedStates(UnitedStates),
 }
 
 impl Serialize for Calendar {
@@ -35,6 +38,7 @@ impl Serialize for Calendar {
             Calendar::NullCalendar(cal) => cal.impl_name(),
             Calendar::WeekendsOnly(cal) => cal.impl_name(),
             Calendar::TARGET(cal) => cal.impl_name(),
+            Calendar::UnitedStates(cal) => cal.impl_name(),
         };
         serializer.serialize_str(&s)
     }
@@ -50,6 +54,7 @@ impl<'de> serde::Deserialize<'de> for Calendar {
             "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
             "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
             "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
+            "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
             _ => Err(serde::de::Error::custom(format!("Invalid calendar: {}", s))),
         }
     }
@@ -63,6 +68,7 @@ impl TryFrom<String> for Calendar {
             "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
             "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
             "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
+            "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid calendar: {}",
                 s
@@ -77,6 +83,7 @@ impl From<Calendar> for String {
             Calendar::NullCalendar(_) => "NullCalendar".to_string(),
             Calendar::WeekendsOnly(_) => "WeekendsOnly".to_string(),
             Calendar::TARGET(_) => "TARGET".to_string(),
+            Calendar::UnitedStates(_) => "UnitedStates".to_string(),
         }
     }
 }
@@ -87,6 +94,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.impl_name(),
             Calendar::WeekendsOnly(cal) => cal.impl_name(),
             Calendar::TARGET(cal) => cal.impl_name(),
+            Calendar::UnitedStates(cal) => cal.impl_name(),
         }
     }
 
@@ -95,6 +103,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.impl_is_business_day(date),
             Calendar::WeekendsOnly(cal) => cal.impl_is_business_day(date),
             Calendar::TARGET(cal) => cal.impl_is_business_day(date),
+            Calendar::UnitedStates(cal) => cal.impl_is_business_day(date),
         }
     }
 
@@ -103,6 +112,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.added_holidays(),
             Calendar::WeekendsOnly(cal) => cal.added_holidays(),
             Calendar::TARGET(cal) => cal.added_holidays(),
+            Calendar::UnitedStates(cal) => cal.added_holidays(),
         }
     }
 
@@ -111,6 +121,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.removed_holidays(),
             Calendar::WeekendsOnly(cal) => cal.removed_holidays(),
             Calendar::TARGET(cal) => cal.removed_holidays(),
+            Calendar::UnitedStates(cal) => cal.removed_holidays(),
         }
     }
 
@@ -119,6 +130,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.add_holiday(date),
             Calendar::WeekendsOnly(cal) => cal.add_holiday(date),
             Calendar::TARGET(cal) => cal.add_holiday(date),
+            Calendar::UnitedStates(cal) => cal.add_holiday(date),
         }
     }
 
@@ -127,6 +139,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.remove_holiday(date),
             Calendar::WeekendsOnly(cal) => cal.remove_holiday(date),
             Calendar::TARGET(cal) => cal.remove_holiday(date),
+            Calendar::UnitedStates(cal) => cal.remove_holiday(date),
         }
     }
 
@@ -135,6 +148,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.holiday_list(from, to, include_weekends),
             Calendar::WeekendsOnly(cal) => cal.holiday_list(from, to, include_weekends),
             Calendar::TARGET(cal) => cal.holiday_list(from, to, include_weekends),
+            Calendar::UnitedStates(cal) => cal.holiday_list(from, to, include_weekends),
         }
     }
 
@@ -143,6 +157,7 @@ impl ImplCalendar for Calendar {
             Calendar::NullCalendar(cal) => cal.business_day_list(from, to),
             Calendar::WeekendsOnly(cal) => cal.business_day_list(from, to),
             Calendar::TARGET(cal) => cal.business_day_list(from, to),
+            Calendar::UnitedStates(cal) => cal.business_day_list(from, to),
         }
     }
 }

@@ -27,7 +27,7 @@ pub use crate::{
     },
     time::{
         calendar::*,
-        calendars::{nullcalendar::*, target::*, weekendsonly::*},
+        calendars::{nullcalendar::*, target::*, unitedstates::*, weekendsonly::*},
         date::*,
         daycounter::*,
         daycounters::{actual360::*, actual365::*, thirty360::*, traits::*},
