@@ -9,6 +9,7 @@ use crate::{
     core::marketstore::MarketStore,
     instruments::instrument::Instrument,
     models::{simplemodel::SimpleModel, traits::Model},
+    rates::traits::HasReferenceDate,
     time::date::Date,
     utils::errors::{AtlasError, Result},
     visitors::{
@@ -79,7 +80,8 @@ impl<'a> NPVEngine<'a> {
             })?;
 
         // npv
-        let npv_by_date_visitor = NPVByDateConstVisitor::new(&data, false);
+        let npv_by_date_visitor =
+            NPVByDateConstVisitor::new(self.market_store.reference_date(), &data, false);
         let npv_date_map = self
             .instruments
             .par_rchunks(self.chunk_size)
@@ -99,109 +101,23 @@ impl<'a> NPVEngine<'a> {
                             .unwrap();
                         npv_map
                     })
-                    .flatten()
-                    .collect::<BTreeMap<Date, f64>>();
+                    .fold(BTreeMap::new(), |mut acc, npv_map| {
+                        npv_map.iter().for_each(|(date, npv)| {
+                            let acc_npv = acc.entry(*date).or_insert(0.0);
+                            *acc_npv += npv;
+                        });
+                        acc
+                    });
                 chunk_npv
             })
-            .flatten()
-            .collect::<BTreeMap<Date, f64>>();
+            .reduce(BTreeMap::new, |mut acc, chunk_npv| {
+                chunk_npv.iter().for_each(|(date, npv)| {
+                    let acc_npv = acc.entry(*date).or_insert(0.0);
+                    *acc_npv += npv;
+                });
+                acc
+            });
 
         Ok(npv_date_map)
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use std::collections::HashMap;
-
-//     use crate::{
-//         cashflows::cashflow::Side,
-//         currencies::enums::Currency,
-//         instruments::{
-//             instrument::{Instrument, RateType},
-//             makefixedrateinstrument::MakeFixedRateInstrument,
-//         },
-//         rates::{
-//             enums::Compounding,
-//             interestrate::{InterestRate, RateDefinition},
-//             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
-//             traits::HasReferenceDate,
-//             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-//         },
-//         time::{
-//             daycounter::DayCounter,
-//             enums::{Frequency, TimeUnit},
-//             period::Period,
-//         },
-//     };
-
-//     use super::*;
-
-//     fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
-//         let mut fixings = HashMap::new();
-//         let mut seed = start;
-//         let mut init = 100.0;
-//         while seed <= end {
-//             fixings.insert(seed, init);
-//             seed = seed + Period::new(1, TimeUnit::Days);
-//             init = init * (1.0 + rate * 1.0 / 360.0);
-//         }
-//         return fixings;
-//     }
-
-//     fn create_store() -> Result<MarketStore> {
-//         let ref_date = Date::new(2021, 9, 1);
-//         let local_currency = Currency::USD;
-//         let mut market_store = MarketStore::new(ref_date, local_currency);
-
-//         let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
-//             ref_date,
-//             0.02,
-//             RateDefinition::default(),
-//         ));
-
-//         let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
-//             ref_date,
-//             0.03,
-//             RateDefinition::default(),
-//         ));
-
-//         let discount_curve = Box::new(FlatForwardTermStructure::new(
-//             ref_date,
-//             0.05,
-//             RateDefinition::default(),
-//         ));
-
-//         let mut ibor_fixings = HashMap::new();
-//         ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
-//         ibor_fixings.insert(Date::new(2021, 8, 31), 0.02); // yesterday
-
-//         let ibor_index = IborIndex::new(forecast_curve_1.reference_date())
-//             .with_fixings(ibor_fixings)
-//             .with_term_structure(forecast_curve_1)
-//             .with_frequency(Frequency::Annual);
-
-//         let overnight_fixings =
-//             make_fixings(ref_date - Period::new(1, TimeUnit::Years), ref_date, 0.06);
-
-//         let overnigth_index = OvernightIndex::new(forecast_curve_2.reference_date())
-//             .with_term_structure(forecast_curve_2)
-//             .with_fixings(overnight_fixings);
-
-//         market_store
-//             .mut_index_store()
-//             .add_index(0, Box::new(ibor_index))?;
-
-//         market_store
-//             .mut_index_store()
-//             .add_index(1, Box::new(overnigth_index))?;
-
-//         let discount_index =
-//             IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
-
-//         market_store
-//             .mut_index_store()
-//             .add_index(2, Box::new(discount_index))?;
-//         return Ok(market_store);
-//     }
-// }

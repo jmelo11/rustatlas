@@ -3,7 +3,7 @@ use crate::{
         marketstore::MarketStore,
         meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest},
     },
-    rates::traits::HasReferenceDate,
+    rates::{indexstore::ReadIndex, traits::HasReferenceDate},
     time::date::Date,
     utils::errors::Result,
 };
@@ -56,7 +56,7 @@ impl<'a> Model for SimpleModel<'a> {
 
         let id = df.provider_id();
         let index = self.market_store.get_index(id)?;
-        let curve = index.term_structure()?;
+        let curve = index.read_index()?.term_structure()?;
         Ok(curve.discount_factor(date)?)
     }
 
@@ -69,8 +69,14 @@ impl<'a> Model for SimpleModel<'a> {
         }
 
         let index = self.market_store.get_index(id)?;
+        let fwd_rate_provider = index.read_index()?;
         let start_date = fwd.start_date();
-        Ok(index.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())?)
+        Ok(fwd_rate_provider.forward_rate(
+            start_date,
+            end_date,
+            fwd.compounding(),
+            fwd.frequency(),
+        )?)
     }
 
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
@@ -88,28 +94,18 @@ impl<'a> Model for SimpleModel<'a> {
 
         match fx.reference_date() {
             Some(date) => {
-                let first_id = self
-                    .market_store
-                    .exchange_rate_store()
-                    .get_currency_curve(first_currency)?;
 
-                let second_id = self
-                    .market_store
-                    .exchange_rate_store()
-                    .get_currency_curve(second_currency)?;
+                let currency_forescast_factor = self.market_store
+                    .index_store()
+                    .currency_forescast_factor(first_currency, second_currency, date)?;
 
                 let spot = self
                     .market_store
                     .exchange_rate_store()
                     .get_exchange_rate(first_currency, second_currency)?;
 
-                let first_curve = self.market_store.get_index(first_id)?;
-                let second_curve = self.market_store.get_index(second_id)?;
 
-                let first_df = first_curve.discount_factor(date)?;
-                let second_df = second_curve.discount_factor(date)?;
-
-                Ok(spot * first_df / second_df)
+                Ok(spot * currency_forescast_factor)
             }
             None => Ok(self
                 .market_store

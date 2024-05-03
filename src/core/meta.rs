@@ -86,6 +86,7 @@ impl DiscountFactorRequest {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ForwardRateRequest {
     provider_id: usize,
+    fixing_date: Date,
     start_date: Date,
     end_date: Date,
     compounding: Compounding,
@@ -95,6 +96,7 @@ pub struct ForwardRateRequest {
 impl ForwardRateRequest {
     pub fn new(
         provider_id: usize,
+        fixing_date: Date,
         start_date: Date,
         end_date: Date,
         compounding: Compounding,
@@ -102,6 +104,7 @@ impl ForwardRateRequest {
     ) -> ForwardRateRequest {
         ForwardRateRequest {
             provider_id,
+            fixing_date,
             start_date,
             end_date,
             compounding,

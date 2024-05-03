@@ -1,20 +1,50 @@
+use crate::utils::errors::{AtlasError, Result};
 use crate::{
     currencies::enums::Currency,
-    instruments::{
-        instrument::{Instrument, PositionType, RateType},
-        traits::Structure,
-    },
+    instruments::instrument::{Instrument, RateType},
 };
-use crate::utils::errors::{AtlasError, Result};
 use serde::{Deserialize, Serialize};
+
+/// # PositionType
+/// This enum is used to differentiate between base and simulated positions
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
+pub enum PositionType {
+    Base,
+    Simulated,
+}
+
+impl TryFrom<String> for PositionType {
+    type Error = AtlasError;
+
+    fn try_from(s: String) -> Result<Self> {
+        match s.as_str() {
+            "Base" => Ok(PositionType::Base),
+            "Simulated" => Ok(PositionType::Simulated),
+            _ => Err(AtlasError::InvalidValueErr(format!(
+                "Invalid position type: {}",
+                s
+            ))),
+        }
+    }
+}
+
+impl From<PositionType> for String {
+    fn from(position_type: PositionType) -> Self {
+        match position_type {
+            PositionType::Base => "Base".to_string(),
+            PositionType::Simulated => "Simulated".to_string(),
+        }
+    }
+}
 
 /// # Portfolio
 /// A struct that contains the information needed to define a portfolio.
 /// Optional fields are used to filter the portfolio.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Portfolio {
-    client_id: Option<usize>,
-    segment: Option<Segment>,
+    id: Option<usize>,
+    segment: Option<String>,
+    area: Option<String>,
     product_family: Option<ProductFamily>,
     postion_type: Option<PositionType>,
     rate_type: Option<RateType>,
@@ -25,9 +55,10 @@ pub struct Portfolio {
 impl Portfolio {
     pub fn new() -> Self {
         Portfolio {
-            client_id: None,
+            id: None,
             segment: None,
             product_family: None,
+            area: None,
             postion_type: None,
             rate_type: None,
             currency: None,
@@ -35,16 +66,20 @@ impl Portfolio {
         }
     }
 
-    pub fn client_id(&self) -> Option<usize> {
-        self.client_id
+    pub fn id(&self) -> Option<usize> {
+        self.id
     }
 
-    pub fn segment(&self) -> Option<Segment> {
-        self.segment
+    pub fn segment(&self) -> Option<String> {
+        self.segment.clone()
     }
 
     pub fn product_family(&self) -> Option<ProductFamily> {
         self.product_family
+    }
+
+    pub fn area(&self) -> Option<String> {
+        self.area.clone()
     }
 
     pub fn position_type(&self) -> Option<PositionType> {
@@ -69,18 +104,23 @@ impl Portfolio {
         self
     }
 
-    pub fn with_client_id(mut self, client_id: usize) -> Self {
-        self.client_id = Some(client_id);
+    pub fn with_id(mut self, id: usize) -> Self {
+        self.id = Some(id);
         self
     }
 
-    pub fn with_segment(mut self, segment: Segment) -> Self {
+    pub fn with_segment(mut self, segment: String) -> Self {
         self.segment = Some(segment);
         self
     }
 
     pub fn with_product_family(mut self, product_family: ProductFamily) -> Self {
         self.product_family = Some(product_family);
+        self
+    }
+
+    pub fn with_area(mut self, area: String) -> Self {
+        self.area = Some(area);
         self
     }
 
@@ -104,98 +144,6 @@ impl Portfolio {
 
     pub fn instruments_mut(&mut self) -> &mut [Instrument] {
         &mut self.instruments
-    }
-}
-
-/// # PortfolioFilter
-/// A struct that contains the information needed to define a portfolio filter.
-/// Optional fields are used to filter the portfolio.
-#[derive(Clone)]
-pub struct PortfolioFilter {
-    client_id: Option<usize>,
-    segment: Option<Segment>,
-    product_family: Option<ProductFamily>,
-
-    currency: Option<Currency>,
-    rate_type: Option<RateType>,
-    structure: Option<Structure>,
-    position_type: Option<PositionType>,
-}
-
-impl PortfolioFilter {
-    pub fn new() -> Self {
-        PortfolioFilter {
-            client_id: None,
-            segment: None,
-            product_family: None,
-            currency: None,
-            rate_type: None,
-            structure: None,
-            position_type: None,
-        }
-    }
-
-    pub fn with_client_id(mut self, client_id: usize) -> Self {
-        self.client_id = Some(client_id);
-        self
-    }
-
-    pub fn with_segment(mut self, segment: Segment) -> Self {
-        self.segment = Some(segment);
-        self
-    }
-
-    pub fn with_product_family(mut self, product_family: ProductFamily) -> Self {
-        self.product_family = Some(product_family);
-        self
-    }
-
-    pub fn with_currency(mut self, currency: Currency) -> Self {
-        self.currency = Some(currency);
-        self
-    }
-
-    pub fn with_rate_type(mut self, rate_type: RateType) -> Self {
-        self.rate_type = Some(rate_type);
-        self
-    }
-
-    pub fn with_structure(mut self, structure: Structure) -> Self {
-        self.structure = Some(structure);
-        self
-    }
-
-    pub fn with_position_type(mut self, position_type: PositionType) -> Self {
-        self.position_type = Some(position_type);
-        self
-    }
-
-    pub fn client_id(&self) -> Option<usize> {
-        self.client_id
-    }
-
-    pub fn segment(&self) -> Option<Segment> {
-        self.segment
-    }
-
-    pub fn product_family(&self) -> Option<ProductFamily> {
-        self.product_family
-    }
-
-    pub fn currency(&self) -> Option<Currency> {
-        self.currency
-    }
-
-    pub fn rate_type(&self) -> Option<RateType> {
-        self.rate_type
-    }
-
-    pub fn structure(&self) -> Option<Structure> {
-        self.structure
-    }
-
-    pub fn position_type(&self) -> Option<PositionType> {
-        self.position_type
     }
 }
 
@@ -236,18 +184,14 @@ impl From<AccountType> for String {
             AccountType::Equity => "Equity".to_string(),
             AccountType::Revenue => "Revenue".to_string(),
             AccountType::Expense => "Expense".to_string(),
-
         }
     }
 }
 
-
-
-
 /// # EvaluationMode
 /// A struct that contains the information needed to define
 /// an evaluation mode when running simulations and building instruments.
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum EvaluationMode {
     FTPRate,
     ClientRate,
@@ -326,7 +270,7 @@ pub enum ProductFamily {
     Leasing,
     Fogape,
     Corfo,
-    Factoring
+    Factoring,
 }
 
 impl TryFrom<String> for ProductFamily {

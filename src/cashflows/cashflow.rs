@@ -66,7 +66,7 @@ impl From<Side> for String {
 
 /// # Cashflow
 /// Enum that represents a cashflow.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Cashflow {
     Redemption(SimpleCashflow),
     Disbursement(SimpleCashflow),
@@ -184,19 +184,29 @@ impl Registrable for Cashflow {
 }
 
 impl InterestAccrual for Cashflow {
-    fn accrual_end_date(&self) -> Date {
+    fn accrual_end_date(&self) -> Result<Date> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrual_end_date(),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_end_date(),
-            _ => panic!("Not implemented"),
+            Cashflow::Disbursement(_) | Cashflow::Redemption(_) => {
+                Err(AtlasError::InvalidValueErr(
+                    "Disbursement and Redemption cashflows do not have an accrual end date"
+                        .to_string(),
+                ))
+            }
         }
     }
 
-    fn accrual_start_date(&self) -> Date {
+    fn accrual_start_date(&self) -> Result<Date> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrual_start_date(),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrual_start_date(),
-            _ => panic!("Not implemented"),
+            Cashflow::Disbursement(_) | Cashflow::Redemption(_) => {
+                Err(AtlasError::InvalidValueErr(
+                    "Disbursement and Redemption cashflows do not have an accrual start date"
+                        .to_string(),
+                ))
+            }
         }
     }
 
@@ -251,5 +261,35 @@ impl Display for Cashflow {
                 coupon.side()
             ),
         }
+    }
+}
+
+/// # CashflowType
+/// Enum that represents the type of a cashflow.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum CashflowType {
+    Redemption,
+    Disbursement,
+    FixedRateCoupon,
+    FloatingRateCoupon,
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn serialization_test() {
+        let cashflow = Cashflow::Redemption(SimpleCashflow::new(
+            Date::new(2024, 1, 1),
+            Currency::USD,
+            Side::Receive,
+        ));
+        let serialized = serde_json::to_string(&cashflow).unwrap();
+        println!("{}", serialized);
+
+        let deserialized: Cashflow = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(cashflow, deserialized);
     }
 }

@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
@@ -26,7 +28,7 @@ use crate::utils::errors::Result;
 /// * `payment_frequency` - The payment frequency.
 /// * `rate_definition` - The rate definition.
 /// * `structure` - The structure.
-#[derive(Clone)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
@@ -40,7 +42,7 @@ pub struct FloatingRateInstrument {
     currency: Currency,
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
-    id: Option<usize>,
+    id: Option<String>,
     issue_date: Option<Date>,
 }
 
@@ -58,7 +60,7 @@ impl FloatingRateInstrument {
         currency: Currency,
         discount_curve_id: Option<usize>,
         forecast_curve_id: Option<usize>,
-        id: Option<usize>,
+        id: Option<String>,
         issue_date: Option<Date>,
     ) -> Self {
         FloatingRateInstrument {
@@ -83,8 +85,8 @@ impl FloatingRateInstrument {
         self.issue_date
     }
 
-    pub fn id(&self) -> Option<usize> {
-        self.id
+    pub fn id(&self) -> Option<String> {
+        self.id.clone()
     }
 
     pub fn start_date(&self) -> Date {
@@ -126,6 +128,22 @@ impl FloatingRateInstrument {
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
+
+    pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
+        self.discount_curve_id = Some(discount_curve_id);
+        self.mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_discount_curve_id(discount_curve_id));
+        self
+    }
+
+    pub fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
+        self.forecast_curve_id = Some(forecast_curve_id);
+        self.mut_cashflows()
+            .iter_mut()
+            .for_each(|cf| cf.set_forecast_curve_id(forecast_curve_id));
+        self
+    }
 }
 
 impl HasCurrency for FloatingRateInstrument {
@@ -135,11 +153,11 @@ impl HasCurrency for FloatingRateInstrument {
 }
 
 impl InterestAccrual for FloatingRateInstrument {
-    fn accrual_start_date(&self) -> Date {
-        self.start_date
+    fn accrual_start_date(&self) -> Result<Date> {
+        Ok(self.start_date)
     }
-    fn accrual_end_date(&self) -> Date {
-        self.end_date
+    fn accrual_end_date(&self) -> Result<Date> {
+        Ok(self.end_date)
     }
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {

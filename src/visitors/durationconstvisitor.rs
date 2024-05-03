@@ -1,7 +1,8 @@
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{meta::MarketData, traits::Registrable},
-    utils::errors::{AtlasError, Result}, time::daycounter::DayCounter,
+    time::daycounter::DayCounter,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -9,7 +10,7 @@ use super::traits::{ConstVisit, HasCashflows};
 /// # DurationConstVisitor
 /// DurationConstVisitor is a visitor that calculates the Duration of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
-/// 
+///
 /// ## Parameters
 /// * `market_data` - The market data to use for Duration calculation
 /// * `include_today_cashflows` - Flag to include cashflows with payment date equal to the reference date
@@ -28,46 +29,52 @@ impl<'a> DurationConstVisitor<'a> {
 impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let duration = visitable.cashflows().iter().try_fold((0.0, 0.0), |mut acc, cf| {
-            let id = cf.id()?;
+        let duration = visitable
+            .cashflows()
+            .iter()
+            .try_fold((0.0, 0.0), |mut acc, cf| {
+                let id = cf.id()?;
 
-            let cf_market_data =
-                self.market_data
-                    .get(id)
-                    .ok_or(AtlasError::NotFoundErr(format!(
-                        "Market data for cashflow with id {}",
-                        id
-                    )))?;
+                let cf_market_data =
+                    self.market_data
+                        .get(id)
+                        .ok_or(AtlasError::NotFoundErr(format!(
+                            "Market data for cashflow with id {}",
+                            id
+                        )))?;
 
-            let year_fraction =  DayCounter::Actual365.year_fraction(cf_market_data.reference_date(), cf.payment_date());
-            
-            let df = cf_market_data.df()?;
-            let fx = cf_market_data.fx()?;
-            let flag = match cf.side() {
-                Side::Pay => -1.0,
-                Side::Receive => 1.0,
-            };
+                let year_fraction = DayCounter::Actual365
+                    .year_fraction(cf_market_data.reference_date(), cf.payment_date());
 
-            let aux_amount = cf.amount()?* df / fx * flag;
-            
-            acc.0 += aux_amount.clone() * year_fraction;
-            acc.1 += aux_amount.clone();
-            
-            Ok(acc)    
-        });
+                let df = cf_market_data.df()?;
+                let fx = cf_market_data.fx()?;
+                let flag = match cf.side() {
+                    Side::Pay => -1.0,
+                    Side::Receive => 1.0,
+                };
+
+                let aux_amount = cf.amount()? * df / fx * flag;
+
+                acc.0 += aux_amount.clone() * year_fraction;
+                acc.1 += aux_amount.clone();
+
+                Ok(acc)
+            });
 
         match duration {
-            Ok((d1, d2)) => Ok(d1/d2),
+            Ok((d1, d2)) => Ok(d1 / d2),
             Err(e) => Err(e),
         }
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        sync::{Arc, RwLock},
+    };
 
     use rayon::{
         prelude::{IntoParallelIterator, ParallelIterator},
@@ -105,19 +112,19 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
+        let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.02,
             RateDefinition::default(),
         ));
 
-        let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
+        let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.03,
             RateDefinition::default(),
         ));
 
-        let discount_curve = Box::new(FlatForwardTermStructure::new(
+        let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.05,
             RateDefinition::default(),
@@ -140,18 +147,18 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index(0, Box::new(ibor_index))?;
+            .add_index(0, Arc::new(RwLock::new(ibor_index)))?;
 
         market_store
             .mut_index_store()
-            .add_index(1, Box::new(overnigth_index))?;
+            .add_index(1, Arc::new(RwLock::new(overnigth_index)))?;
 
         let discount_index =
             IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
         market_store
             .mut_index_store()
-            .add_index(2, Box::new(discount_index))?;
+            .add_index(2, Arc::new(RwLock::new(discount_index)))?;
         return Ok(market_store);
     }
 
@@ -226,4 +233,3 @@ mod tests {
         Ok(())
     }
 }
-

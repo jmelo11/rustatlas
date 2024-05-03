@@ -1,6 +1,6 @@
 use crate::{
     cashflows::{
-        cashflow::{Cashflow, Side},
+        cashflow::{Cashflow, CashflowType, Side},
         simplecashflow::SimpleCashflow,
     },
     currencies::enums::Currency,
@@ -51,15 +51,6 @@ impl From<Structure> for String {
     }
 }
 
-/// # CashflowType
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum CashflowType {
-    Redemption,
-    Disbursement,
-    FixedRateCoupon,
-    FloatingRateCoupon,
-}
-
 impl TryFrom<String> for CashflowType {
     type Error = AtlasError;
 
@@ -88,7 +79,34 @@ impl From<CashflowType> for String {
     }
 }
 
-pub fn build_cashflows(
+// Infer cashflows from amounts to handle negative amounts and sides.
+pub fn infer_cashflows_from_amounts(    
+    dates: &[Date],
+    amounts: &[f64],
+    side: Side,
+    currency: Currency,
+) -> Vec<Cashflow> {
+    let mut cashflows = Vec::new();
+    dates.iter().zip(amounts).for_each(|(date, amount)| {
+        if *amount < 0.0 {
+            let cashflow = SimpleCashflow::new(*date, currency, side.inverse()).with_amount(amount.abs());
+            match side.inverse() {
+                Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
+                Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
+            }
+        } else {
+            let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
+            match side {
+                Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
+                Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
+            }
+        }
+    });
+    cashflows
+}
+
+/// This function add cashflows of the given type and side to a vector.
+pub fn add_cashflows_to_vec(
     cashflows: &mut Vec<Cashflow>,
     dates: &[Date],
     amounts: &[f64],
@@ -96,16 +114,18 @@ pub fn build_cashflows(
     currency: Currency,
     cashflow_type: CashflowType,
 ) {
-    for (date, amount) in dates.iter().zip(amounts) {
+    dates.iter().zip(amounts).for_each(|(date, amount)| {
         let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
             _ => (),
         }
-    }
+    });
 }
 
+
+// Calculate the notionals for a given structure
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
     match structure {
         Structure::Bullet => vec![notional; n],
@@ -124,6 +144,7 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
     }
 }
 
+// Calculate the outstanding amounts for a given set of disbursements and redemptions
 pub fn calculate_outstanding(
     disbursements: &HashMap<Date, f64>,
     redemptions: &HashMap<Date, f64>,
@@ -165,7 +186,6 @@ pub fn calculate_outstanding(
         current_amount += amount;
         period_start = period_end;
     }
-
     outstanding
 }
 
@@ -234,4 +254,76 @@ mod tests {
             (Date::new(2023, 10, 27), Date::new(2023, 11, 27), 50.0)
         );
     }
+
+    #[test]
+    fn test_add_cashflows_to_vec() {
+        let mut cashflows = Vec::new();
+        let dates = vec![Date::new(2023, 8, 27), Date::new(2023, 9, 27)];
+
+        let amounts = vec![50.0, 50.0];
+
+        add_cashflows_to_vec(
+            &mut cashflows,
+            &dates,
+            &amounts,
+            Side::Receive,
+            Currency::USD,
+            CashflowType::Redemption,
+        );
+
+        assert_eq!(cashflows.len(), 2);
+        assert_eq!(
+            cashflows[0],
+            Cashflow::Redemption(
+                SimpleCashflow::new(Date::new(2023, 8, 27), Currency::USD, Side::Receive)
+                    .with_amount(50.0)
+            )
+        );
+        assert_eq!(
+            cashflows[1],
+            Cashflow::Redemption(
+                SimpleCashflow::new(Date::new(2023, 9, 27), Currency::USD, Side::Receive,)
+                    .with_amount(50.0)
+            )
+        );
+    }
+
+    //#[test]
+    //fn test_add_cashflows_to_vec_negative_amount() {
+    //    let mut cashflows = Vec::new();
+    //    let dates = vec![Date::new(2023, 8, 27),
+    //                                Date::new(2023, 9, 27)];
+
+    //    let amounts = vec![50.0,
+    //                                 50.0];
+    //
+    //    add_cashflows_to_vec(
+    //        &mut cashflows,
+    //        &dates,
+    //        &amounts,
+    //        Side::Receive,
+    //        Currency::USD,
+    //        CashflowType::Redemption,
+    //    );
+
+    //    assert_eq!(cashflows.len(), 2);
+    //    assert_eq!(
+    //        cashflows[0],
+    //        Cashflow::Redemption(SimpleCashflow::new(
+    //            Date::new(2023, 8, 27),
+    //            Currency::USD,
+    //            Side::Receive
+    //        )
+    //        .with_amount(50.0))
+    //    );
+    //    assert_eq!(
+    //        cashflows[1],
+    //        Cashflow::Disbursement(SimpleCashflow::new(
+    //            Date::new(2023, 9, 27),
+    //            Currency::USD,
+    //            Side::Pay,
+    //        )
+    //        .with_amount(50.0))
+    //    );
+    //}
 }

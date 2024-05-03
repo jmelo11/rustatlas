@@ -36,6 +36,33 @@ pub struct BRL;
 /// Struct for COP currency
 pub struct COP;
 
+/// # AUD
+/// Struct for AUD currency
+pub struct AUD;
+
+/// # CAD
+/// Struct for CAD currency
+pub struct CAD;
+
+/// # CNY
+/// Struct for CNY currency
+pub struct CNY;
+
+/// # GBP
+/// Struct for GBP currency
+pub struct GBP;
+
+/// # MXN
+/// Struct for MXN currency
+pub struct MXN;
+
+/// # NZD
+/// Struct for NZD currency
+pub struct NZD;
+
+/// # PEN
+/// Struct for PEN currency
+pub struct PEN;
 
 impl CurrencyDetails for USD {
     fn code(&self) -> String {
@@ -163,8 +190,7 @@ impl CurrencyDetails for CHF {
     }
 }
 
-
-impl  CurrencyDetails for BRL {
+impl CurrencyDetails for BRL {
     fn code(&self) -> String {
         return "BRL".to_string();
     }
@@ -197,5 +223,131 @@ impl CurrencyDetails for COP {
     }
     fn numeric_code(&self) -> u16 {
         return 170;
+    }
+}
+
+impl CurrencyDetails for AUD {
+    fn code(&self) -> String {
+        return "AUD".to_string();
+    }
+    fn name(&self) -> String {
+        return "Australian Dollar".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "A$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 36;
+    }
+}
+
+impl CurrencyDetails for NZD {
+    fn code(&self) -> String {
+        return "NZD".to_string();
+    }
+    fn name(&self) -> String {
+        return "New Zealand Dollar".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "NZ$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 554;
+    }
+}
+
+impl CurrencyDetails for CAD {
+    fn code(&self) -> String {
+        return "CAD".to_string();
+    }
+    fn name(&self) -> String {
+        return "Canadian Dollar".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "Can$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 124;
+    }
+}
+
+impl CurrencyDetails for MXN {
+    fn code(&self) -> String {
+        return "MXN".to_string();
+    }
+    fn name(&self) -> String {
+        return "Mexican Peso".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "Mex$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 484;
+    }
+}
+
+impl CurrencyDetails for PEN {
+    fn code(&self) -> String {
+        return "PEN".to_string();
+    }
+    fn name(&self) -> String {
+        return "Peruvian Sol".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "S/.".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 604;
+    }
+}
+
+impl CurrencyDetails for GBP {
+    fn code(&self) -> String {
+        return "GBP".to_string();
+    }
+    fn name(&self) -> String {
+        return "British Pound".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "£".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 826;
+    }
+}
+
+impl CurrencyDetails for CNY {
+    fn code(&self) -> String {
+        return "CNY".to_string();
+    }
+    fn name(&self) -> String {
+        return "Chinese Yuan".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "¥".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 156;
     }
 }

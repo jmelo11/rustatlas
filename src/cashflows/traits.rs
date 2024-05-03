@@ -5,13 +5,12 @@ use super::cashflow::Side;
 /// # InterestAccrual
 /// A trait that defines the accrual period of an instrument.
 pub trait InterestAccrual {
-    fn accrual_start_date(&self) -> Date;
-    fn accrual_end_date(&self) -> Date;
+    fn accrual_start_date(&self) -> Result<Date>;
+    fn accrual_end_date(&self) -> Result<Date>;
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64>;
-
-    fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> (Date, Date) {
-        let accrual_start = self.accrual_start_date();
-        let accrual_end = self.accrual_end_date();
+    fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> Result<(Date, Date)> {
+        let accrual_start = self.accrual_start_date()?;
+        let accrual_end = self.accrual_end_date()?;
 
         // Check if the ranges intersect
         if start_date <= accrual_end && end_date >= accrual_start {
@@ -28,10 +27,10 @@ pub trait InterestAccrual {
                 end_date
             };
 
-            (relevant_start, relevant_end)
+            Ok((relevant_start, relevant_end))
         } else {
             // The ranges do not intersect, so return Date::empty()
-            (Date::empty(), Date::empty())
+            Ok((Date::empty(), Date::empty()))
         }
     }
 }

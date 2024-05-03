@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::traits::HasReferenceDate,
@@ -177,7 +179,7 @@ impl YieldProvider for DiscountTermStructure {
 
 /// # AdvanceTermStructureInTime for DiscountTermStructure
 impl AdvanceTermStructureInTime for DiscountTermStructure {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_dates: Vec<Date> = self
             .dates()
             .iter()
@@ -193,7 +195,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             })
             .collect();
 
-        Ok(Box::new(DiscountTermStructure::new(
+        Ok(Arc::new(DiscountTermStructure::new(
             new_dates,
             shifted_dfs?,
             self.day_counter(),
@@ -202,7 +204,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
         )?))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(

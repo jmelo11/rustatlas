@@ -9,7 +9,7 @@ use super::traits::{ConstVisit, HasCashflows};
 /// # NPVConstVisitor
 /// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
-/// 
+///
 /// ## Parameters
 /// * `market_data` - The market data to use for NPV calculation
 /// * `include_today_cashflows` - Flag to include cashflows with payment date equal to the reference date
@@ -66,7 +66,10 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        sync::{Arc, RwLock},
+    };
 
     use rayon::{
         prelude::{IntoParallelIterator, ParallelIterator},
@@ -79,6 +82,7 @@ mod tests {
         instruments::{
             fixedrateinstrument::FixedRateInstrument,
             makefixedrateinstrument::MakeFixedRateInstrument,
+            makefloatingrateinstrument::MakeFloatingRateInstrument,
         },
         models::{simplemodel::SimpleModel, traits::Model},
         rates::{
@@ -94,7 +98,7 @@ mod tests {
             enums::{Frequency, TimeUnit},
             period::Period,
         },
-        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+        visitors::{fixingvisitor::FixingVisitor, indexingvisitor::IndexingVisitor, traits::Visit},
     };
 
     use super::*;
@@ -104,19 +108,19 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let forecast_curve_1 = Box::new(FlatForwardTermStructure::new(
+        let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.02,
             RateDefinition::default(),
         ));
 
-        let forecast_curve_2 = Box::new(FlatForwardTermStructure::new(
+        let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.03,
             RateDefinition::default(),
         ));
 
-        let discount_curve = Box::new(FlatForwardTermStructure::new(
+        let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.05,
             RateDefinition::default(),
@@ -139,18 +143,18 @@ mod tests {
 
         market_store
             .mut_index_store()
-            .add_index(0, Box::new(ibor_index))?;
+            .add_index(0, Arc::new(RwLock::new(ibor_index)))?;
 
         market_store
             .mut_index_store()
-            .add_index(1, Box::new(overnigth_index))?;
+            .add_index(1, Arc::new(RwLock::new(overnigth_index)))?;
 
         let discount_index =
             IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
 
         market_store
             .mut_index_store()
-            .add_index(2, Box::new(discount_index))?;
+            .add_index(2, Arc::new(RwLock::new(discount_index)))?;
         return Ok(market_store);
     }
 
@@ -164,6 +168,88 @@ mod tests {
             init = init * (1.0 + rate * 1.0 / 360.0);
         }
         return fixings;
+    }
+
+    #[test]
+    fn test_npv_fixed_bullet() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Simple,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+
+        let mut instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate(rate)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .with_discount_curve_id(Some(2))
+            .with_notional(notional)
+            .build()?;
+
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let npv_visitor = NPVConstVisitor::new(&data, true);
+        let npv = npv_visitor.visit(&instrument)?;
+        assert_ne!(npv, 0.0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_npv_floating_bullet() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate_definition = RateDefinition::new(
+            DayCounter::Thirty360,
+            Compounding::Simple,
+            Frequency::Annual,
+        );
+
+        let mut instrument = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate_definition(rate_definition)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .with_spread(0.0)
+            .bullet()
+            .with_discount_curve_id(Some(0))
+            .with_forecast_curve_id(Some(0))
+            .with_notional(notional)
+            .build()?;
+
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let fixing_visitor = FixingVisitor::new(&data);
+        fixing_visitor.visit(&mut instrument)?;
+
+        let npv_visitor = NPVConstVisitor::new(&data, true);
+        let npv = npv_visitor.visit(&instrument)?;
+        assert_ne!(npv, 0.0);
+        Ok(())
     }
 
     #[test]

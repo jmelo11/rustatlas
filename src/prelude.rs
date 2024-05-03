@@ -8,8 +8,9 @@ pub use crate::{
     core::{marketstore::MarketStore, traits::*},
     currencies::{enums::*, structs::*, traits::*},
     instruments::{
-        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*,
-        makefixedrateinstrument::*, makefloatingrateinstrument::*, traits::*,
+        fixedrateinstrument::*, floatingrateinstrument::*, instrument::*, leg::*, loandepo::*,
+        makefixedrateinstrument::*, makefixedrateleg::*, makefloatingrateinstrument::*,
+        makefloatingrateleg::*, traits::*,
     },
     math::interpolation::{enums::*, linear::*, loglinear::*, traits::*},
     models::{simplemodel::*, traits::*},
@@ -17,7 +18,7 @@ pub use crate::{
         enums::*,
         indexstore::*,
         interestrate::*,
-        interestrateindex::{iborindex::*, overnightindex::*, traits::*, traits::*},
+        interestrateindex::{iborindex::*, overnightindex::*, traits::*},
         traits::*,
         yieldtermstructure::{
             compositetermstructure::*, discounttermstructure::*, flatforwardtermstructure::*,
@@ -26,6 +27,7 @@ pub use crate::{
     },
     time::{
         calendar::*,
+        calendars::{nullcalendar::*, target::*, unitedstates::*, weekendsonly::*},
         date::*,
         daycounter::*,
         daycounters::{actual360::*, actual365::*, thirty360::*, traits::*},
@@ -33,8 +35,10 @@ pub use crate::{
         period::*,
         schedule::*,
     },
+    utils::errors::*,
     visitors::{
-        accruedamountconstvisitor::*, cashflowaggregationvisitor::*, fixingvisitor::*,
-        indexingvisitor::*, npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
+        accruedamountconstvisitor::*, cashflowaggregationvisitor::*,
+        cashflowcompressorconstvisitor::*, fixingvisitor::*, indexingvisitor::*,
+        npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
     },
 };

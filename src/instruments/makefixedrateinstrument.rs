@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     cashflows::{
-        cashflow::{Cashflow, Side},
+        cashflow::{Cashflow, CashflowType, Side},
         fixedratecoupon::FixedRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
@@ -15,18 +15,26 @@ use crate::{
     core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
-    time::{date::Date, enums::Frequency, period::Period, schedule::MakeSchedule},
+    time::{
+        calendar::Calendar,
+        calendars::nullcalendar::NullCalendar,
+        date::Date,
+        enums::{BusinessDayConvention, DateGenerationRule, Frequency},
+        period::Period,
+        schedule::MakeSchedule,
+    },
     utils::errors::{AtlasError, Result},
     visitors::traits::HasCashflows,
 };
 
 use super::{
     fixedrateinstrument::FixedRateInstrument,
-    traits::{build_cashflows, calculate_outstanding, notionals_vector, CashflowType, Structure},
+    traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
 /// # MakeFixedRateInstrument
 /// MakeFixedRateInstrument is a builder for FixedRateInstrument. Uses the builder pattern.
+// TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
 pub struct MakeFixedRateInstrument {
     start_date: Option<Date>,
@@ -45,8 +53,11 @@ pub struct MakeFixedRateInstrument {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
-    id: Option<usize>,
+    id: Option<String>,
     issue_date: Option<Date>,
+    calendar: Option<Calendar>,
+    business_day_convention: Option<BusinessDayConvention>,
+    date_generation_rule: Option<DateGenerationRule>,
     yield_rate: Option<InterestRate>,
 }
 
@@ -73,6 +84,9 @@ impl MakeFixedRateInstrument {
             id: None,
             issue_date: None,
             yield_rate: None,
+            business_day_convention: None,
+            date_generation_rule: None,
+            calendar: None,
         }
     }
 
@@ -83,8 +97,11 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeFixedRateInstrument {
-        self.first_coupon_date = Some(first_coupon_date);
+    pub fn with_first_coupon_date(
+        mut self,
+        first_coupon_date: Option<Date>,
+    ) -> MakeFixedRateInstrument {
+        self.first_coupon_date = first_coupon_date;
         self
     }
 
@@ -101,18 +118,42 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the notional.
+    ///
+    /// ### Details
+    /// Currently does not handle negative amounts.
     pub fn with_notional(mut self, notional: f64) -> MakeFixedRateInstrument {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
+    pub fn with_id(mut self, id: Option<String>) -> MakeFixedRateInstrument {
         self.id = id;
         self
     }
 
     pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
         self.yield_rate = Some(yield_rate);
+        self
+    }
+
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateInstrument {
+        self.calendar = calendar;
+        self
+    }
+
+    pub fn with_business_day_convention(
+        mut self,
+        business_day_convention: Option<BusinessDayConvention>,
+    ) -> MakeFixedRateInstrument {
+        self.business_day_convention = business_day_convention;
+        self
+    }
+
+    pub fn with_date_generation_rule(
+        mut self,
+        date_generation_rule: Option<DateGenerationRule>,
+    ) -> MakeFixedRateInstrument {
+        self.date_generation_rule = date_generation_rule;
         self
     }
 
@@ -305,15 +346,29 @@ impl MakeFixedRateInstrument {
 
                 // this logic should go into a separate function/ Schedule should have accessing methods
                 // to first and last date and other attributes
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_rule(
+                        self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
-                        if date != start_date {
+                        if date > start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
-                            schedule_builder.build()?
+                            Err(AtlasError::InvalidValueErr(
+                                "First coupon date must be after start date".into(),
+                            ))?
                         }
                     }
                     None => schedule_builder.build()?,
@@ -329,7 +384,7 @@ impl MakeFixedRateInstrument {
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
@@ -345,7 +400,7 @@ impl MakeFixedRateInstrument {
                     side,
                     currency,
                 )?;
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
                     &vec![notional],
@@ -386,7 +441,7 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
-                if notional != redemption {
+                if (notional - redemption).abs() > 0.000001 {
                     return Err(AtlasError::InvalidValueErr(
                         "Notional and redemption must be equal".into(),
                     ));
@@ -466,15 +521,29 @@ impl MakeFixedRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_rule(
+                        self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
-                        if date != start_date {
+                        if date > start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
-                            schedule_builder.build()?
+                            Err(AtlasError::InvalidValueErr(
+                                "First coupon date must be after start date".into(),
+                            ))?
                         }
                     }
                     None => schedule_builder.build()?,
@@ -483,25 +552,24 @@ impl MakeFixedRateInstrument {
                 let notional = self
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
+
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let redemptions =
-                    calculate_redemptions(schedule.dates().clone(), rate, notional, side)?;
+                let redemptions = calculate_equal_payment_redemptions(
+                    schedule.dates().clone(),
+                    rate,
+                    notional,
+                    side,
+                )?;
+
                 let mut notionals = redemptions.iter().fold(vec![notional], |mut acc, x| {
                     acc.push(acc.last().unwrap() - x);
                     acc
                 });
-                notionals.pop();
-                let first_date = vec![*schedule.dates().first().unwrap()];
 
-                build_cashflows(
-                    &mut cashflows,
-                    &first_date,
-                    &vec![notional],
-                    side.inverse(),
-                    currency,
-                    CashflowType::Disbursement,
-                );
+                notionals.pop();
+
+                // create coupon cashflows
                 build_coupons_from_notionals(
                     &mut cashflows,
                     schedule.dates(),
@@ -510,9 +578,20 @@ impl MakeFixedRateInstrument {
                     side,
                     currency,
                 )?;
+
+                let first_date = vec![*schedule.dates().first().unwrap()];
+                add_cashflows_to_vec(
+                    &mut cashflows,
+                    &first_date,
+                    &vec![notional],
+                    side.inverse(),
+                    currency,
+                    CashflowType::Disbursement,
+                );
+
                 let redemption_dates: Vec<Date> =
                     schedule.dates().iter().skip(1).cloned().collect();
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
                     &redemptions,
@@ -520,6 +599,9 @@ impl MakeFixedRateInstrument {
                     currency,
                     CashflowType::Redemption,
                 );
+
+                //let infered_cashflows = infer_cashflows_from_amounts(dates, amounts, side, currency);
+                //cashflows.extend(infered_cashflows);
 
                 match self.discount_curve_id {
                     Some(id) => cashflows
@@ -559,6 +641,18 @@ impl MakeFixedRateInstrument {
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_rule(
+                        self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward),
+                    )
                     .build()?;
 
                 let notional = self
@@ -572,7 +666,7 @@ impl MakeFixedRateInstrument {
                 let first_date = vec![*schedule.dates().first().unwrap()];
                 let last_date = vec![*schedule.dates().last().unwrap()];
 
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
@@ -588,7 +682,7 @@ impl MakeFixedRateInstrument {
                     side,
                     currency,
                 )?;
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
                     &vec![notional],
@@ -633,15 +727,29 @@ impl MakeFixedRateInstrument {
                         start_date + tenor
                     }
                 };
-                let mut schedule_builder =
-                    MakeSchedule::new(start_date, end_date).with_frequency(payment_frequency);
+                let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .with_frequency(payment_frequency)
+                    .with_convention(
+                        self.business_day_convention
+                            .unwrap_or(BusinessDayConvention::Unadjusted),
+                    )
+                    .with_calendar(
+                        self.calendar
+                            .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+                    )
+                    .with_rule(
+                        self.date_generation_rule
+                            .unwrap_or(DateGenerationRule::Backward),
+                    );
 
                 let schedule = match self.first_coupon_date {
                     Some(date) => {
-                        if date != start_date {
+                        if date > start_date {
                             schedule_builder.with_first_date(date).build()?
                         } else {
-                            schedule_builder.build()?
+                            Err(AtlasError::InvalidValueErr(
+                                "First coupon date must be after start date".into(),
+                            ))?
                         }
                     }
                     None => schedule_builder.build()?,
@@ -658,7 +766,7 @@ impl MakeFixedRateInstrument {
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
                 let redemptions = vec![notional / n as f64; n];
 
-                build_cashflows(
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
                     &vec![notional],
@@ -666,6 +774,7 @@ impl MakeFixedRateInstrument {
                     currency,
                     CashflowType::Disbursement,
                 );
+
                 build_coupons_from_notionals(
                     &mut cashflows,
                     schedule.dates(),
@@ -674,9 +783,11 @@ impl MakeFixedRateInstrument {
                     side,
                     currency,
                 )?;
+
                 let redemption_dates: Vec<Date> =
                     schedule.dates().iter().skip(1).cloned().collect();
-                build_cashflows(
+
+                add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
                     &redemptions,
@@ -758,7 +869,8 @@ impl CostFunction for EqualPaymentCost {
         Ok(total_amount)
     }
 }
-fn calculate_redemptions(
+
+fn calculate_equal_payment_redemptions(
     dates: Vec<Date>,
     rate: InterestRate,
     notional: f64,
@@ -795,6 +907,7 @@ fn calculate_redemptions(
     Ok(redemptions)
 }
 
+/// Implementations for FixedRateInstrument
 impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
     fn into(self) -> MakeFixedRateInstrument {
         match self.structure() {
@@ -811,8 +924,8 @@ impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
                             redemptions.insert(c.payment_date(), c.amount().unwrap());
                         }
                         Cashflow::FixedRateCoupon(c) => {
-                            additional_coupon_dates.insert(c.accrual_start_date());
-                            additional_coupon_dates.insert(c.accrual_end_date());
+                            additional_coupon_dates.insert(c.accrual_start_date().unwrap());
+                            additional_coupon_dates.insert(c.accrual_end_date().unwrap());
                         }
                         _ => (),
                     }
@@ -852,7 +965,6 @@ impl From<&FixedRateInstrument> for MakeFixedRateInstrument {
 
 #[cfg(test)]
 mod tests {
-
     use crate::{
         cashflows::{
             cashflow::{Cashflow, Side},
@@ -984,7 +1096,7 @@ mod tests {
         let instrument = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
             .with_end_date(end_date)
-            .with_first_coupon_date(first_coupon_date)
+            .with_first_coupon_date(Some(first_coupon_date))
             .with_payment_frequency(Frequency::Monthly)
             .with_rate(rate)
             .with_notional(notional)
@@ -1059,11 +1171,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
-
         Ok(())
     }
 
@@ -1092,11 +1199,6 @@ mod tests {
         assert_eq!(instrument.rate(), rate);
         assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
         assert_eq!(instrument.start_date(), start_date);
-
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
 
         Ok(())
     }
@@ -1127,11 +1229,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
-
         Ok(())
     }
 
@@ -1159,11 +1256,6 @@ mod tests {
         assert_eq!(instrument.notional(), 100.0);
         assert_eq!(instrument.rate(), rate);
         assert_eq!(instrument.start_date(), start_date);
-
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
 
         Ok(())
     }
@@ -1207,11 +1299,6 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        // instrument
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
-
         Ok(())
     }
 
@@ -1245,11 +1332,6 @@ mod tests {
         assert_eq!(instrument2.payment_frequency(), Frequency::Monthly);
         assert_eq!(instrument2.start_date(), start_date);
         assert_eq!(instrument2.end_date(), end_date);
-
-        // instrument2
-        //     .cashflows()
-        //     .iter()
-        //     .for_each(|cf| println!("{}", cf));
 
         Ok(())
     }
@@ -1292,6 +1374,41 @@ mod tests {
             .iter()
             .for_each(|cf| println!("{}", cf));
 
+        Ok(())
+    }
+
+    #[test]
+    fn build_equal_payment_with_grace_period() -> Result<()> {
+        let start_date = Date::new(2023, 2, 24);
+
+        let rate = InterestRate::new(
+            0.1116,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Actual360,
+        );
+
+        let grace_period = start_date.clone() + Period::new(12, TimeUnit::Months);
+
+        let instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_tenor(Period::new(8, TimeUnit::Years))
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(100.0)
+            .with_side(Side::Receive)
+            .with_currency(Currency::CLP)
+            .with_first_coupon_date(Some(grace_period))
+            .equal_payments()
+            .build()?;
+
+        assert_eq!(instrument.notional(), 100.0);
+
+        // no negative cashflows
+        instrument
+            .cashflows()
+            .iter()
+            .for_each(|cf| assert!(cf.amount().unwrap() > 0.0));
         Ok(())
     }
 }

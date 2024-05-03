@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
@@ -22,7 +24,7 @@ use crate::{
 /// * `payment_date` - The date on which the coupon is paid
 /// * `currency` - The currency of the coupon
 /// * `side` - The side of the coupon (Pay or Receive)
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FixedRateCoupon {
     notional: f64,
     rate: InterestRate,
@@ -61,20 +63,43 @@ impl FixedRateCoupon {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    pub fn set_rate(&mut self, rate: InterestRate) {
+        self.rate = rate;
+        self.cashflow.set_amount(
+            self.notional
+                * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0),
+        );
+    }
+
+    pub fn set_notional(&mut self, notional: f64) {
+        self.notional = notional;
+        self.cashflow.set_amount(
+            self.notional
+                * (self
+                    .rate
+                    .compound_factor(self.accrual_start_date, self.accrual_end_date)
+                    - 1.0),
+        );
+    }
+
     pub fn notional(&self) -> f64 {
-        return self.notional;
+        self.notional
+    }
+
+    pub fn rate(&self) -> InterestRate {
+        self.rate
     }
 }
 
 impl HasCurrency for FixedRateCoupon {
     fn currency(&self) -> Result<Currency> {
-        return self.cashflow.currency();
+        self.cashflow.currency()
     }
 }
 
 impl HasDiscountCurveId for FixedRateCoupon {
     fn discount_curve_id(&self) -> Result<usize> {
-        return self.cashflow.discount_curve_id();
+        self.cashflow.discount_curve_id()
     }
 }
 
@@ -101,17 +126,19 @@ impl Registrable for FixedRateCoupon {
 }
 
 impl InterestAccrual for FixedRateCoupon {
-    fn accrual_start_date(&self) -> Date {
-        return self.accrual_start_date;
+    fn accrual_start_date(&self) -> Result<Date> {
+        return Ok(self.accrual_start_date);
     }
-    fn accrual_end_date(&self) -> Date {
-        return self.accrual_end_date;
+
+    fn accrual_end_date(&self) -> Result<Date> {
+        return Ok(self.accrual_end_date);
     }
+
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
-        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date);
+        let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date)?;
         let acc_2 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
         return Ok(acc_1 - acc_2);
@@ -122,9 +149,11 @@ impl Payable for FixedRateCoupon {
     fn amount(&self) -> Result<f64> {
         return self.cashflow.amount();
     }
+
     fn side(&self) -> Side {
         return self.cashflow.side();
     }
+
     fn payment_date(&self) -> Date {
         return self.cashflow.payment_date();
     }
@@ -148,7 +177,7 @@ mod tests {
     use crate::time::enums::Frequency;
 
     #[test]
-    fn test_fixed_rate_coupon_creation() {
+    fn test_fixed_rate_coupon_creation() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -171,8 +200,10 @@ mod tests {
             Side::Pay,
         );
 
-        assert_eq!(coupon.accrual_start_date(), accrual_start_date);
-        assert_eq!(coupon.accrual_end_date(), accrual_end_date);
+        assert_eq!(coupon.accrual_start_date()?, accrual_start_date);
+        assert_eq!(coupon.accrual_end_date()?, accrual_end_date);
+
+        Ok(())
     }
 
     #[test]
@@ -222,7 +253,7 @@ mod tests {
             DayCounter::Thirty360,
         );
         let accrual_start_date = Date::new(2023, 12, 10);
-        let accrual_end_date = Date::new(2024, 3,  30 );
+        let accrual_end_date = Date::new(2024, 3, 30);
         let payment_date = Date::new(2024, 1, 10);
         let id = 1;
         let currency = Currency::USD;
@@ -240,11 +271,12 @@ mod tests {
         coupon.set_discount_curve_id(id);
 
         let star_date = Date::new(2024, 2, 28);
-        let end_date = Date::new(2024, 3 , 1);
+        let end_date = Date::new(2024, 3, 1);
         let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
 
-        print!("Accrued amount between {} and {} is {}", star_date, end_date, accrued_amount);
-
-    
+        print!(
+            "Accrued amount between {} and {} is {}",
+            star_date, end_date, accrued_amount
+        );
     }
 }

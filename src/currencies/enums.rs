@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::utils::errors::{AtlasError, Result};
 
 use super::{
-    structs::{CHF, CLF, CLP, EUR, JPY, USD, ZAR, BRL, COP},
+    structs::{AUD, BRL, CAD, CHF, CLF, CLP, CNY, COP, EUR, GBP, JPY, MXN, NZD, USD, ZAR},
     traits::CurrencyDetails,
 };
 
@@ -18,8 +18,14 @@ pub enum Currency {
     CLP,
     CLF,
     CHF,
-    BRL, 
+    BRL,
     COP,
+    MXN,
+    AUD,
+    CAD,
+    CNY,
+    GBP,
+    NZD,
 }
 
 impl TryFrom<String> for Currency {
@@ -36,6 +42,12 @@ impl TryFrom<String> for Currency {
             "CHF" => Ok(Currency::CHF),
             "BRL" => Ok(Currency::BRL),
             "COP" => Ok(Currency::COP),
+            "MXN" => Ok(Currency::MXN),
+            "AUD" => Ok(Currency::AUD),
+            "CAD" => Ok(Currency::CAD),
+            "CNY" => Ok(Currency::CNY),
+            "GBP" => Ok(Currency::GBP),
+            "NZD" => Ok(Currency::NZD),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid currency: {}",
                 s
@@ -56,6 +68,12 @@ impl From<Currency> for String {
             Currency::CHF => "CHF".to_string(),
             Currency::BRL => "BRL".to_string(),
             Currency::COP => "COP".to_string(),
+            Currency::MXN => "MXN".to_string(),
+            Currency::AUD => "AUD".to_string(),
+            Currency::CAD => "CAD".to_string(),
+            Currency::CNY => "CNY".to_string(),
+            Currency::GBP => "GBP".to_string(),
+            Currency::NZD => "NZD".to_string(),
         }
     }
 }
@@ -72,6 +90,12 @@ impl CurrencyDetails for Currency {
             Currency::CHF => CHF.code(),
             Currency::BRL => BRL.code(),
             Currency::COP => COP.code(),
+            Currency::MXN => MXN.code(),
+            Currency::AUD => AUD.code(),
+            Currency::CAD => CAD.code(),
+            Currency::CNY => CNY.code(),
+            Currency::GBP => GBP.code(),
+            Currency::NZD => NZD.code(),
         }
     }
     fn name(&self) -> String {
@@ -85,6 +109,12 @@ impl CurrencyDetails for Currency {
             Currency::CHF => CHF.name(),
             Currency::BRL => BRL.name(),
             Currency::COP => COP.name(),
+            Currency::MXN => MXN.name(),
+            Currency::AUD => AUD.name(),
+            Currency::CAD => CAD.name(),
+            Currency::CNY => CNY.name(),
+            Currency::GBP => GBP.name(),
+            Currency::NZD => NZD.name(),
         }
     }
     fn symbol(&self) -> String {
@@ -98,6 +128,12 @@ impl CurrencyDetails for Currency {
             Currency::CHF => CHF.symbol(),
             Currency::BRL => BRL.symbol(),
             Currency::COP => COP.symbol(),
+            Currency::MXN => MXN.symbol(),
+            Currency::AUD => AUD.symbol(),
+            Currency::CAD => CAD.symbol(),
+            Currency::CNY => CNY.symbol(),
+            Currency::GBP => GBP.symbol(),
+            Currency::NZD => NZD.symbol(),
         }
     }
     fn precision(&self) -> u8 {
@@ -111,6 +147,12 @@ impl CurrencyDetails for Currency {
             Currency::CHF => CHF.precision(),
             Currency::BRL => BRL.precision(),
             Currency::COP => COP.precision(),
+            Currency::MXN => MXN.precision(),
+            Currency::AUD => AUD.precision(),
+            Currency::CAD => CAD.precision(),
+            Currency::CNY => CNY.precision(),
+            Currency::GBP => GBP.precision(),
+            Currency::NZD => NZD.precision(),
         }
     }
     fn numeric_code(&self) -> u16 {
@@ -124,6 +166,12 @@ impl CurrencyDetails for Currency {
             Currency::CHF => CHF.numeric_code(),
             Currency::BRL => BRL.numeric_code(),
             Currency::COP => COP.numeric_code(),
+            Currency::MXN => MXN.numeric_code(),
+            Currency::AUD => AUD.numeric_code(),
+            Currency::CAD => CAD.numeric_code(),
+            Currency::CNY => CNY.numeric_code(),
+            Currency::GBP => GBP.numeric_code(),
+            Currency::NZD => NZD.numeric_code(),
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     math::interpolation::enums::Interpolator,
     rates::{
@@ -125,9 +127,9 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
 }
 
 impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self.reference_date + period;
-        Ok(Box::new(TenorBasedZeroRateTermStructure::new(
+        Ok(Arc::new(TenorBasedZeroRateTermStructure::new(
             new_reference_date,
             self.tenors.clone(),
             self.spreads.clone(),
@@ -137,7 +139,7 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
         )?))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn YieldTermStructureTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let days = (date - self.reference_date) as i32;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)

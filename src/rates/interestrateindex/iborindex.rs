@@ -12,11 +12,14 @@ use crate::{
     },
     utils::errors::{AtlasError, Result},
 };
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
-    InterestRateIndexTrait,
+    InterestRateIndexTrait, RelinkableTermStructure,
 };
 
 /// # IborIndex
@@ -40,7 +43,7 @@ pub struct IborIndex {
     tenor: Period,
     rate_definition: RateDefinition,
     fixings: HashMap<Date, f64>,
-    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
+    term_structure: Option<Arc<dyn YieldTermStructureTrait>>,
     reference_date: Date,
 }
 
@@ -60,8 +63,8 @@ impl IborIndex {
         self.rate_definition
     }
 
-    pub fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
+    pub fn with_name(mut self, name: Option<String>) -> Self {
+        self.name = name;
         self
     }
 
@@ -85,7 +88,7 @@ impl IborIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
@@ -97,8 +100,8 @@ impl FixingProvider for IborIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {}",
-                date
+                "No fixing for date {} for index {:?}",
+                date, self.name
             )))
     }
 
@@ -163,19 +166,25 @@ impl YieldProvider for IborIndex {
 }
 
 impl HasTermStructure for IborIndex {
-    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>> {
+    fn term_structure(&self) -> Result<Arc<dyn YieldTermStructureTrait>> {
         self.term_structure
-            .as_ref()
+            .clone()
             .ok_or(AtlasError::ValueNotSetErr(
                 "Term structure not set".to_string(),
             ))
     }
 }
 
+impl RelinkableTermStructure for IborIndex {
+    fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>) {
+        self.term_structure = Some(term_structure);
+    }
+}
+
 impl InterestRateIndexTrait for IborIndex {}
 
 impl AdvanceInterestRateIndexInTime for IborIndex {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let curve = self.term_structure()?;
 
         let mut fixings = self.fixings().clone();
@@ -192,16 +201,17 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
             seed = seed.advance(1, TimeUnit::Days);
         }
         let new_curve = curve.advance_to_period(period)?;
-        Ok(Box::new(
+        Ok(Arc::new(RwLock::new(
             IborIndex::new(new_curve.reference_date())
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
-                .with_term_structure(new_curve),
-        ))
+                .with_term_structure(new_curve)
+                .with_name(self.name.clone()),
+        )))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
@@ -220,6 +230,10 @@ mod tests {
     use super::*;
     use crate::{
         math::interpolation::enums::Interpolator,
+        rates::yieldtermstructure::{
+            compositetermstructure::CompositeTermStructure,
+            flatforwardtermstructure::FlatForwardTermStructure,
+        },
         time::{daycounter::DayCounter, enums::TimeUnit},
     };
 
@@ -262,5 +276,56 @@ mod tests {
         ibor_index.fill_missing_fixings(Interpolator::Linear);
         assert!(ibor_index.fixings().get(&Date::new(2023, 6, 3)).unwrap() - 21952.4266666 < 0.001);
         Ok(())
+    }
+
+    #[test]
+    fn test_relink_term_structure() {
+        let ref_date = Date::new(2021, 1, 1);
+        let eval_date = ref_date + Period::new(1, TimeUnit::Years);
+        let tenor = Period::new(1, TimeUnit::Months);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Simple,
+            Frequency::Annual,
+        );
+        let mut ibor_index = IborIndex::new(ref_date)
+            .with_tenor(tenor)
+            .with_rate_definition(rate_definition);
+
+        let base_term_structure = Arc::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.05,
+            RateDefinition::default(),
+        ));
+
+        let spread_term_structure = Arc::new(FlatForwardTermStructure::new(
+            ref_date,
+            0.01,
+            RateDefinition::default(),
+        ));
+
+        let new_term_structure = Arc::new(CompositeTermStructure::new(
+            spread_term_structure.clone(),
+            base_term_structure.clone(),
+        ));
+
+        ibor_index.link_to(base_term_structure.clone());
+        let df = ibor_index
+            .term_structure()
+            .unwrap()
+            .discount_factor(eval_date)
+            .unwrap();
+
+        assert_eq!(df, base_term_structure.discount_factor(eval_date).unwrap());
+
+        ibor_index.link_to(new_term_structure.clone());
+
+        let df = ibor_index
+            .term_structure()
+            .unwrap()
+            .discount_factor(eval_date)
+            .unwrap();
+
+        assert_eq!(df, new_term_structure.discount_factor(eval_date).unwrap());
     }
 }

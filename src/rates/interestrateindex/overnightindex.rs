@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     rates::{
@@ -17,16 +20,16 @@ use crate::{
 
 use super::traits::{
     AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
-    InterestRateIndexTrait,
+    InterestRateIndexTrait, RelinkableTermStructure,
 };
 
 /// # OvernightIndex
-/// Overnight index.
+/// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
 #[derive(Clone)]
 pub struct OvernightIndex {
     name: Option<String>,
     fixings: HashMap<Date, f64>,
-    term_structure: Option<Box<dyn YieldTermStructureTrait>>,
+    term_structure: Option<Arc<dyn YieldTermStructureTrait>>,
     rate_definition: RateDefinition,
     tenor: Period,
     reference_date: Date,
@@ -44,8 +47,8 @@ impl OvernightIndex {
         }
     }
 
-    pub fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
+    pub fn with_name(mut self, name: Option<String>) -> Self {
+        self.name = name;
         self
     }
 
@@ -63,7 +66,7 @@ impl OvernightIndex {
         self
     }
 
-    pub fn with_term_structure(mut self, term_structure: Box<dyn YieldTermStructureTrait>) -> Self {
+    pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
@@ -91,8 +94,8 @@ impl FixingProvider for OvernightIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {}",
-                date
+                "No fixing for date {} for index {:?}",
+                date, self.name
             )))
     }
 
@@ -177,35 +180,39 @@ impl YieldProvider for OvernightIndex {
 }
 
 impl AdvanceInterestRateIndexInTime for OvernightIndex {
-    fn advance_to_period(&self, period: Period) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut fixings = self.fixings().clone();
         let mut seed = self.reference_date();
         let end_date = seed.advance(period.length(), period.units());
         let curve = self.term_structure()?;
+        let name = self.name()?;
 
         if !fixings.is_empty() {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
-                let last_fixing = fixings
-                    .get(&seed)
-                    .expect("No fixing for this OvernightIndex"); // remove this expect
+                let last_fixing = fixings.get(&seed).ok_or(AtlasError::NotFoundErr(format!(
+                    "No fixing for {} and date {}",
+                    name, seed
+                )))?;
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;
                 let comp = last_fixing * first_df / second_df;
                 fixings.insert(seed, comp);
             }
         }
+
         let new_curve = curve.advance_to_period(period)?;
 
-        Ok(Box::new(
+        Ok(Arc::new(RwLock::new(
             OvernightIndex::new(new_curve.reference_date())
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
-                .with_term_structure(new_curve),
-        ))
+                .with_term_structure(new_curve)
+                .with_name(self.name.clone()),
+        )))
     }
 
-    fn advance_to_date(&self, date: Date) -> Result<Box<dyn InterestRateIndexTrait>> {
+    fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let days = (date - self.reference_date()) as i32;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
@@ -213,12 +220,18 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
 }
 
 impl HasTermStructure for OvernightIndex {
-    fn term_structure(&self) -> Result<&Box<dyn YieldTermStructureTrait>> {
+    fn term_structure(&self) -> Result<Arc<dyn YieldTermStructureTrait>> {
         self.term_structure
-            .as_ref()
+            .clone()
             .ok_or(AtlasError::ValueNotSetErr(
                 "Term structure not set".to_string(),
             ))
+    }
+}
+
+impl RelinkableTermStructure for OvernightIndex {
+    fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>) {
+        self.term_structure = Some(term_structure);
     }
 }
 
@@ -298,7 +311,7 @@ mod tests {
         fixings.insert(ref_date, 100.0);
         let overnight_index = OvernightIndex::new(date)
             .with_fixings(fixings.clone())
-            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+            .with_term_structure(Arc::new(FlatForwardTermStructure::new(
                 ref_date,
                 0.2,
                 RateDefinition::default(),
@@ -309,7 +322,7 @@ mod tests {
         let next_date_2 = Date::new(2021, 1, 3);
         fixings.insert(next_date_2, 100.0);
         let overnight_index = OvernightIndex::new(next_date_2)
-            .with_term_structure(Box::new(FlatForwardTermStructure::new(
+            .with_term_structure(Arc::new(FlatForwardTermStructure::new(
                 next_date_2,
                 0.2,
                 RateDefinition::default(),

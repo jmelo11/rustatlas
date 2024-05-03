@@ -222,6 +222,18 @@ impl<'a> PositionGenerator<'a> {
                     builder.with_rate_value(rate).build()?,
                 ))
             }
+            RateType::FixedThenFloating => {
+                unimplemented!("Not implemented")
+            }
+            RateType::FloatingThenFixed => {
+                unimplemented!("Not implemented")
+            }
+            RateType::FixedThenFixed => {
+                unimplemented!("Not implemented")
+            }
+            RateType::Suffled => {
+                unimplemented!("Not implemented")
+            }
         }
     }
 
@@ -237,6 +249,8 @@ impl<'a> PositionGenerator<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, RwLock};
+
     use crate::{
         rates::{
             interestrate::RateDefinition, interestrateindex::iborindex::IborIndex,
@@ -252,13 +266,15 @@ mod tests {
         let local_currency = Currency::USD;
         let mut market_store = MarketStore::new(ref_date, local_currency);
 
-        let discount_curve = Box::new(FlatForwardTermStructure::new(
+        let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.5,
             RateDefinition::default(),
         ));
 
-        let discount_index = Box::new(IborIndex::new(ref_date).with_term_structure(discount_curve));
+        let discount_index = Arc::new(RwLock::new(
+            IborIndex::new(ref_date).with_term_structure(discount_curve),
+        ));
         market_store
             .mut_index_store()
             .add_index(0, discount_index)?;

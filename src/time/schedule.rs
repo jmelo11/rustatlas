@@ -161,17 +161,28 @@ impl Schedule {
 /// # MakeSchedule
 /// This struct is used to build a schedule.
 ///
-/// ## Parameters
-/// * `effective_date` - The effective date of the schedule
-/// * `termination_date` - The termination date of the schedule
-/// * `tenor` - The tenor of the schedule
-/// * `calendar` - The calendar of the schedule
-/// * `convention` - The business day convention of the schedule
-/// * `termination_date_convention` - The business day convention of the termination date
-/// * `rule` - The date generation rule
-/// * `end_of_month` - The end of month flag
-/// * `first_date` - The first date of the schedule
-/// * `next_to_last_date` - The next to last date of the schedule
+/// ## Example
+///
+/// ```
+/// use rustatlas::prelude::*;
+///
+/// let from = Date::new(2022, 1, 1);
+/// let to = Date::new(2022, 6, 1);
+/// let tenor = Period::new(1, TimeUnit::Months);
+///
+/// let schedule = MakeSchedule::new(from, to).with_tenor(tenor).build().unwrap();
+///
+/// let dates = vec![
+///    Date::new(2022, 1, 1),
+///    Date::new(2022, 2, 1),
+///    Date::new(2022, 3, 1),
+///    Date::new(2022, 4, 1),
+///    Date::new(2022, 5, 1),
+///    Date::new(2022, 6, 1),
+/// ];
+///
+/// assert_eq!(schedule.dates(), &dates);
+/// ```
 pub struct MakeSchedule {
     effective_date: Date,
     termination_date: Date,
@@ -1017,5 +1028,4 @@ mod tests {
 
         Ok(())
     }
-
 }
