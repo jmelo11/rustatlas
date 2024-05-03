@@ -64,6 +64,134 @@ pub struct NZD;
 /// Struct for PEN currency
 pub struct PEN;
 
+/// # NOK
+/// Struct for NOK currency
+pub struct NOK;
+
+/// # SEK
+/// Struct for SEK currency
+pub struct SEK;
+
+/// # CNH
+/// Struct for CNH currency
+pub struct CNH;
+
+/// # INR
+/// Struct for INR currency
+pub struct INR;
+
+/// # TWD
+/// Struct for TWD currency
+pub struct TWD;
+
+/// # KRW
+/// Struct for KRW currency
+pub struct KRW;
+
+/// # HKD
+/// Struct for HKD currency
+pub struct HKD;
+
+/// # DKK
+/// Struct for DKK currency
+pub struct DKK;
+
+/// # IDR
+/// Struct for IDR currency
+pub struct IDR;
+
+
+impl CurrencyDetails for IDR {
+    fn code(&self) -> String {
+        return "IDR".to_string();
+    }
+    fn name(&self) -> String {
+        return "Indonesian Rupiah".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "Rp".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 360;
+    }
+}
+
+
+impl CurrencyDetails for HKD {
+    fn code(&self) -> String {
+        return "HKD".to_string();
+    }
+    fn name(&self) -> String {
+        return "Hong Kong Dollar".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "HK$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 344;
+    }
+}
+
+impl CurrencyDetails for KRW {
+    fn code(&self) -> String {
+        return "KRW".to_string();
+    }
+    fn name(&self) -> String {
+        return "South Korean Won".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "₩".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 0;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 410;
+    }
+}
+
+impl CurrencyDetails for TWD {
+    fn code(&self) -> String {
+        return "TWD".to_string();
+    }
+    fn name(&self) -> String {
+        return "New Taiwan Dollar".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "NT$".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 901;
+    }
+}
+
+impl CurrencyDetails for INR {
+    fn code(&self) -> String {
+        return "INR".to_string();
+    }
+    fn name(&self) -> String {
+        return "Indian Rupee".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "₹".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 356;
+    }
+}
+
 impl CurrencyDetails for USD {
     fn code(&self) -> String {
         return "USD".to_string();
@@ -340,6 +468,60 @@ impl CurrencyDetails for CNY {
     }
     fn name(&self) -> String {
         return "Chinese Yuan".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "¥".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 156;
+    }
+}
+
+impl CurrencyDetails for NOK {
+    fn code(&self) -> String {
+        return "NOK".to_string();
+    }
+    fn name(&self) -> String {
+        return "Norwegian Krone".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "kr".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 578;
+    }
+}
+
+impl CurrencyDetails for SEK {
+    fn code(&self) -> String {
+        return "SEK".to_string();
+    }
+    fn name(&self) -> String {
+        return "Swedish Krona".to_string();
+    }
+    fn symbol(&self) -> String {
+        return "kr".to_string();
+    }
+    fn precision(&self) -> u8 {
+        return 2;
+    }
+    fn numeric_code(&self) -> u16 {
+        return 752;
+    }
+}
+
+impl CurrencyDetails for CNH {
+    fn code(&self) -> String {
+        return "CNH".to_string();
+    }
+    fn name(&self) -> String {
+        return "Chinese Yuan (offshore)".to_string();
     }
     fn symbol(&self) -> String {
         return "¥".to_string();

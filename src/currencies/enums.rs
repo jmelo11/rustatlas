@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use crate::utils::errors::{AtlasError, Result};
 
 use super::{
-    structs::{AUD, BRL, CAD, CHF, CLF, CLP, CNY, COP, EUR, GBP, JPY, MXN, NZD, USD, ZAR},
+    structs::{
+        AUD, BRL, CAD, CHF, CLF, CLP, CNH, CNY, COP, DKK, EUR, GBP, HKD, IDR, INR, JPY, KRW, MXN,
+        NOK, NZD, PEN, SEK, TWD, USD, ZAR,
+    },
     traits::CurrencyDetails,
 };
 
@@ -26,6 +29,16 @@ pub enum Currency {
     CNY,
     GBP,
     NZD,
+    NOK,
+    SEK,
+    PEN,
+    CNH,
+    INR,
+    TWD,
+    HKD,
+    KRW,
+    DKK,
+    IDR,
 }
 
 impl TryFrom<String> for Currency {
@@ -48,6 +61,16 @@ impl TryFrom<String> for Currency {
             "CNY" => Ok(Currency::CNY),
             "GBP" => Ok(Currency::GBP),
             "NZD" => Ok(Currency::NZD),
+            "NOK" => Ok(Currency::NOK),
+            "SEK" => Ok(Currency::SEK),
+            "PEN" => Ok(Currency::PEN),
+            "CNH" => Ok(Currency::CNH),
+            "INR" => Ok(Currency::INR),
+            "TWD" => Ok(Currency::TWD),
+            "HKD" => Ok(Currency::HKD),
+            "KRW" => Ok(Currency::KRW),
+            "DKK" => Ok(Currency::DKK),
+            "IDR" => Ok(Currency::IDR),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid currency: {}",
                 s
@@ -74,6 +97,16 @@ impl From<Currency> for String {
             Currency::CNY => "CNY".to_string(),
             Currency::GBP => "GBP".to_string(),
             Currency::NZD => "NZD".to_string(),
+            Currency::NOK => "NOK".to_string(),
+            Currency::SEK => "SEK".to_string(),
+            Currency::PEN => "PEN".to_string(),
+            Currency::CNH => "CNH".to_string(),
+            Currency::INR => "INR".to_string(),
+            Currency::TWD => "TWD".to_string(),
+            Currency::HKD => "HKD".to_string(),
+            Currency::KRW => "KRW".to_string(),
+            Currency::DKK => "DKK".to_string(),
+            Currency::IDR => "IDR".to_string(),
         }
     }
 }
@@ -96,6 +129,16 @@ impl CurrencyDetails for Currency {
             Currency::CNY => CNY.code(),
             Currency::GBP => GBP.code(),
             Currency::NZD => NZD.code(),
+            Currency::NOK => NOK.code(),
+            Currency::SEK => SEK.code(),
+            Currency::PEN => PEN.code(),
+            Currency::CNH => CNH.code(),
+            Currency::INR => INR.code(),
+            Currency::TWD => TWD.code(),
+            Currency::HKD => HKD.code(),
+            Currency::KRW => KRW.code(),
+            Currency::DKK => DKK.code(),
+            Currency::IDR => IDR.code(),
         }
     }
     fn name(&self) -> String {
@@ -115,6 +158,16 @@ impl CurrencyDetails for Currency {
             Currency::CNY => CNY.name(),
             Currency::GBP => GBP.name(),
             Currency::NZD => NZD.name(),
+            Currency::NOK => NOK.name(),
+            Currency::SEK => SEK.name(),
+            Currency::PEN => PEN.name(),
+            Currency::CNH => CNH.name(),
+            Currency::INR => INR.name(),
+            Currency::TWD => TWD.name(),
+            Currency::HKD => HKD.name(),
+            Currency::KRW => KRW.name(),
+            Currency::DKK => DKK.name(),
+            Currency::IDR => IDR.name(),
         }
     }
     fn symbol(&self) -> String {
@@ -134,6 +187,16 @@ impl CurrencyDetails for Currency {
             Currency::CNY => CNY.symbol(),
             Currency::GBP => GBP.symbol(),
             Currency::NZD => NZD.symbol(),
+            Currency::NOK => NOK.symbol(),
+            Currency::SEK => SEK.symbol(),
+            Currency::PEN => PEN.symbol(),
+            Currency::CNH => CNH.symbol(),
+            Currency::INR => INR.symbol(),
+            Currency::TWD => TWD.symbol(),
+            Currency::HKD => HKD.symbol(),
+            Currency::KRW => KRW.symbol(),
+            Currency::DKK => DKK.symbol(),
+            Currency::IDR => IDR.symbol(),
         }
     }
     fn precision(&self) -> u8 {
@@ -153,6 +216,16 @@ impl CurrencyDetails for Currency {
             Currency::CNY => CNY.precision(),
             Currency::GBP => GBP.precision(),
             Currency::NZD => NZD.precision(),
+            Currency::NOK => NOK.precision(),
+            Currency::SEK => SEK.precision(),
+            Currency::PEN => PEN.precision(),
+            Currency::CNH => CNH.precision(),
+            Currency::INR => INR.precision(),
+            Currency::TWD => TWD.precision(),
+            Currency::HKD => HKD.precision(),
+            Currency::KRW => KRW.precision(),
+            Currency::DKK => DKK.precision(),
+            Currency::IDR => IDR.precision(),
         }
     }
     fn numeric_code(&self) -> u16 {
@@ -172,6 +245,16 @@ impl CurrencyDetails for Currency {
             Currency::CNY => CNY.numeric_code(),
             Currency::GBP => GBP.numeric_code(),
             Currency::NZD => NZD.numeric_code(),
+            Currency::NOK => NOK.numeric_code(),
+            Currency::SEK => SEK.numeric_code(),
+            Currency::PEN => PEN.numeric_code(),
+            Currency::CNH => CNH.numeric_code(),
+            Currency::INR => INR.numeric_code(),
+            Currency::TWD => TWD.numeric_code(),
+            Currency::HKD => HKD.numeric_code(),
+            Currency::KRW => KRW.numeric_code(),
+            Currency::DKK => DKK.numeric_code(),
+            Currency::IDR => IDR.numeric_code(),
         }
     }
 }

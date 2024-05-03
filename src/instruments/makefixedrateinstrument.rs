@@ -53,12 +53,13 @@ pub struct MakeFixedRateInstrument {
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
-    id: Option<String>,
     issue_date: Option<Date>,
     calendar: Option<Calendar>,
     business_day_convention: Option<BusinessDayConvention>,
     date_generation_rule: Option<DateGenerationRule>,
     yield_rate: Option<InterestRate>,
+    
+    id: Option<String>,
 }
 
 /// New, setters and getters
