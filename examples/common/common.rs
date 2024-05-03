@@ -153,6 +153,7 @@ pub trait Mock {
 
     fn random_currency() -> Currency;
 
+    #[allow(unused)]
     fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
 }
 
