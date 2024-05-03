@@ -48,6 +48,7 @@ pub struct MakeFixedRateLeg {
     discount_curve_id: Option<usize>,
     disbursements: Option<HashMap<Date, f64>>,
     redemptions: Option<HashMap<Date, f64>>,
+    end_of_month: Option<bool>,
     additional_coupon_dates: Option<HashSet<Date>>,
     rate_definition: Option<RateDefinition>,
     rate_value: Option<f64>,
@@ -72,6 +73,7 @@ impl MakeFixedRateLeg {
             side: None,
             currency: None,
             structure: None,
+            end_of_month: None,
             discount_curve_id: None,
             disbursements: None,
             redemptions: None,
@@ -84,6 +86,11 @@ impl MakeFixedRateLeg {
             date_generation_rule: None,
             calendar: None,
         }
+    }
+
+    pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFixedRateLeg {
+        self.end_of_month = end_of_month;
+        self
     }
 
     /// Sets the issue date.
@@ -330,6 +337,7 @@ impl MakeFixedRateLeg {
                 // to first and last date and other attributes
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .end_of_month(self.end_of_month.unwrap_or(false))
                     .with_calendar(
                         self.calendar
                             .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
@@ -491,6 +499,7 @@ impl MakeFixedRateLeg {
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .end_of_month(self.end_of_month.unwrap_or(false))
                     .with_calendar(
                         self.calendar
                             .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
@@ -689,6 +698,7 @@ impl MakeFixedRateLeg {
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
+                    .end_of_month(self.end_of_month.unwrap_or(false))
                     .with_convention(
                         self.business_day_convention
                             .unwrap_or(BusinessDayConvention::Unadjusted),
@@ -862,5 +872,3 @@ fn calculate_equal_payment_redemptions(
     }
     Ok(redemptions)
 }
-
-

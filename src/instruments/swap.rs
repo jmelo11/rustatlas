@@ -11,11 +11,11 @@ pub struct Swap {
 
 impl Swap {
     /// Create a new swap.
-    pub fn new() -> Self {
+    pub fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
         Swap {
-            cashflows: Vec::new(),
-            legs: Vec::new(),
-            id: None,
+            cashflows,
+            legs,
+            id,
         }
     }
 

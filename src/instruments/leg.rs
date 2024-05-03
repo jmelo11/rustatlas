@@ -81,4 +81,8 @@ impl Leg {
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
+
+    pub fn clear(&mut self) {
+        self.cashflows.clear();
+    }
 }

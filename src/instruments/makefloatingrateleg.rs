@@ -38,6 +38,7 @@ pub struct MakeFloatingRateLeg {
     notional: Option<f64>,
     currency: Option<Currency>,
     side: Option<Side>,
+    end_of_month: Option<bool>,
     spread: Option<f64>,
     structure: Option<Structure>,
     disbursements: Option<HashMap<Date, f64>>,
@@ -62,6 +63,7 @@ impl MakeFloatingRateLeg {
             tenor: None,
             rate_definition: None,
             notional: None,
+            end_of_month: None,
             spread: None,
             currency: None,
             side: None,
@@ -76,6 +78,11 @@ impl MakeFloatingRateLeg {
             business_day_convention: None,
             date_generation_rule: None,
         }
+    }
+
+    pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFloatingRateLeg {
+        self.end_of_month = end_of_month;
+        self
     }
 
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateLeg {
@@ -255,6 +262,7 @@ impl MakeFloatingRateLeg {
                     }
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .end_of_month(self.end_of_month.unwrap_or(false))
                     .with_frequency(payment_frequency)
                     .with_calendar(
                         self.calendar
@@ -449,6 +457,7 @@ impl MakeFloatingRateLeg {
                     }
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+                    .end_of_month(self.end_of_month.unwrap_or(false))
                     .with_frequency(payment_frequency)
                     .with_calendar(
                         self.calendar
