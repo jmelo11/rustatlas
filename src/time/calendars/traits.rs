@@ -6,7 +6,7 @@ use crate::{
 
 use std::collections::HashSet;
 
-fn easter_monday(y: i32) -> i32 {
+pub fn easter_monday(y: i32) -> i32 {
     let easter_monday = vec![
         98, 90, 103, 95, 114, 106, 91, 111, 102, // 1901-1909
         87, 107, 99, 83, 103, 95, 115, 99, 91, 111, // 1910-1919
