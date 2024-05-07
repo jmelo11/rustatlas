@@ -1,4 +1,4 @@
-use std::{collections::HashSet, marker};
+use std::collections::HashSet;
 
 use chrono::{Datelike, NaiveDate, Weekday};
 
@@ -97,27 +97,19 @@ impl Brazil {
     fn is_carnival(day: u32, month: u32, year: i32) -> bool {
         let em = easter_monday(year);
         let dd = Date::new(year, month, day).day_of_year();
-        if em-49 == dd || em-48 == dd {
-            return true;
-        }
-        false
+        em-49 == dd || em-48 == dd
     }
 
     fn is_corpus_christi(day: u32, month: u32, year: i32) -> bool {
         let em = easter_monday(year);
         let dd = Date::new(year, month, day).day_of_year();
-        if em+59 == dd {
-            return true;
-        }
-        false
+        em+59 == dd 
     }
 
     fn is_last_business_day_of_year(day: u32, month: u32, year: i32) -> bool {
         let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
-        if month == 12 && (day == 31 || (day >= 29 && w == Weekday::Fri )) {
-            return true;
-        }
-        false
+        month == 12 && (day == 31 || (day >= 29 && w == Weekday::Fri )) 
+        
     }
 
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
@@ -131,7 +123,7 @@ impl Brazil {
 
         match self.market {
             Market::Settlement => {
-                Brazil::is_new_years_day( day, month) 
+                if Brazil::is_new_years_day( day, month) 
                 || Brazil::is_tiradentes_day(day, month)
                 || Brazil::is_labor_day(day, month)
                 || Brazil::is_independence_day(day, month)
@@ -142,9 +134,13 @@ impl Brazil {
                 || Brazil::is_passion_of_christ(day, month, year)
                 || Brazil::is_carnival(day, month, year)
                 || Brazil::is_corpus_christi(day, month, year)
+                {
+                    return false;
+                }
+                return true;
             }
             Market::Exchange => {
-                Brazil::is_new_years_day( day, month) 
+                if Brazil::is_new_years_day( day, month) 
                 || Brazil::is_sao_paulo_city_day(day, month)
                 || Brazil::is_tiradentes_day(day, month)
                 || Brazil::is_labor_day(day, month)
@@ -160,7 +156,10 @@ impl Brazil {
                 || Brazil::is_carnival(day, month, year)
                 || Brazil::is_corpus_christi(day, month, year)
                 || Brazil::is_last_business_day_of_year(day, month, year)
-
+                {
+                    return false;
+                }
+                return true;
             }
 
         }
@@ -210,3 +209,41 @@ impl Default for Brazil {
     }
 }
 
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::time::date::Date;
+
+    #[test]
+    fn test_brazil_settlement() {
+        let c = Brazil::new(Market::Exchange);
+        let expected_hol = vec![
+            Date::new(2005,2,7),
+            Date::new(2005,2,8),
+            Date::new(2005,3,25),
+            Date::new(2005,4,21),
+            Date::new(2005,5,26),
+            Date::new(2005,9,7),
+            Date::new(2005,10,12),
+            Date::new(2005,11,2),
+            Date::new(2005,11,15),
+            Date::new(2006,2,27),
+            Date::new(2006,2,28),
+            Date::new(2006,4,14),
+            Date::new(2006,4,21),
+            Date::new(2006,5,1),
+            Date::new(2006,6,15),
+            Date::new(2006,9,7),
+            Date::new(2006,10,12),
+            Date::new(2006,11,2),
+            Date::new(2006,11,15),
+        ];
+
+        for d in expected_hol {
+            assert_eq!(c.is_business_day(d.base_date()), false);
+        }
+    }
+}
