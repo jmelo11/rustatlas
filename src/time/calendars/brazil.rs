@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn test_brazil_settlement() {
-        let c = Brazil::new(Market::Exchange);
+        let cal = Brazil::new(Market::Settlement);
         let expected_hol = vec![
             Date::new(2005,2,7),
             Date::new(2005,2,8),
@@ -243,7 +243,7 @@ mod tests {
         ];
 
         for d in expected_hol {
-            assert_eq!(c.is_business_day(d.base_date()), false);
+            assert_eq!(cal.is_business_day(d.base_date()), false);
         }
     }
 }

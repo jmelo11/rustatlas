@@ -118,6 +118,10 @@ impl Chile {
         day == 25 && month == 12
     }
 
+    fn is_bank_holiday(day: u32, month: u32) -> bool {
+        day == 31 && month == 12
+    }
+
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();
@@ -129,7 +133,7 @@ impl Chile {
         
         match self.market {
             Market::SSE => {
-                Chile::is_new_years_day(day, month, year)
+                    if Chile::is_new_years_day(day, month, year)
                     || Chile::is_good_friday(day, month, year)
                     || Chile::is_easter_saturday(day, month, year)
                     || Chile::is_labour_day(day, month)
@@ -145,6 +149,11 @@ impl Chile {
                     || Chile::is_all_saints_day(day, month)
                     || Chile::is_immaculate_conception(day, month)
                     || Chile::is_christmas_day(day, month)
+                    || Chile::is_bank_holiday(day, month)
+                    {
+                        return false;
+                    }
+                    true
             }
         }
     }
@@ -190,3 +199,37 @@ impl Default for Chile {
         Chile::new(Market::SSE)
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::time::date::Date;
+
+    #[test]
+    fn test_chile_settlement() {
+        let cal = Chile::new(Market::SSE);
+        let expected_hol = vec![
+            Date::new(2024, 1, 1),
+            Date::new(2024, 3, 29),
+            Date::new(2024, 5, 1),
+            Date::new(2024, 5, 21),
+            Date::new(2024, 6, 21),
+            Date::new(2024, 7, 16),
+            Date::new(2024, 8, 15),
+            Date::new(2024, 9, 18),
+            Date::new(2024, 9, 19),
+            Date::new(2024, 10, 31),
+            Date::new(2024, 11, 1),
+            Date::new(2024, 12, 25),
+            Date::new(2024, 12, 31),
+        ];
+        for d in expected_hol {
+            assert_eq!(cal.is_business_day(d.base_date()), false);
+        }
+            
+    }
+
+}
+
+
