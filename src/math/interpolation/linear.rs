@@ -2,6 +2,8 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
+/// # Linear Interpolator
+/// Basic linear interpolator.
 #[derive(Clone)]
 pub struct LinearInterpolator {}
 

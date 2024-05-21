@@ -2,6 +2,8 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
+/// # Log-Linear Interpolator
+/// Log-linear interpolator.
 #[derive(Clone)]
 pub struct LogLinearInterpolator {}
 
