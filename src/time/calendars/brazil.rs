@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use chrono::{Datelike, NaiveDate, Weekday};
 
 use crate::time::date::Date;
-use super::traits::{easter_monday, ImplCalendar};
+use super::traits::{easter_monday, ImplCalendar, IsCalendar};
 
 /// # Brazil     
 /// A calendar for Brazil 
@@ -192,24 +192,47 @@ impl ImplCalendar for Brazil {
         self.removed_holidays.insert(date);
     }
 
-    fn holiday_list(&self, _from: Date, _to: Date, _include_weekends: bool) -> Vec<Date> {
-        vec![]
+    fn holiday_list(&self, from: Date, to: Date, include_weekends: bool) -> Vec<Date> {
+        let mut holidays = vec![];
+        let mut d = from;
+        while d <= to {
+            if self.is_business_day(d.base_date()) {
+                holidays.push(d);
+            }
+            d = d + 1;
+        }
+        if include_weekends {
+            holidays
+        } else {
+            holidays
+                .into_iter()
+                .filter(|d| !self.is_weekend(&d.weekday()))
+                .collect()
+        }
     }
 
-    fn business_day_list(&self, _from: Date, _to: Date) -> Vec<Date> {
-        vec![]
+    fn business_day_list(&self, from: Date, to: Date) -> Vec<Date> {
+        let mut business_days = vec![];
+        let mut d = from;
+        while d <= to {
+            if self.is_business_day(d.base_date()) {
+                business_days.push(d);
+            }
+            d = d + 1;
+        }
+        business_days
     }
 
 }
 
+
+impl IsCalendar for Brazil {}
 
 impl Default for Brazil {
     fn default() -> Self {
         Brazil::new(Market::Settlement)
     }
 }
-
-
 
 
 #[cfg(test)]

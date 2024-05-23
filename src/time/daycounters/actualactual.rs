@@ -1,5 +1,3 @@
-use std::thread::panicking;
-
 use super::traits::DayCountProvider;
 use crate::time::date::Date;
 
@@ -7,9 +5,10 @@ use crate::time::date::Date;
 /// Actual/Actual day count convention.
 /// Calculates the day count fraction according to the formula:
 /// $$
-/// \frac{ActualDays}{365}
+/// \frac{ActualDays_of_leap_years}{366} + \frac{ActualDays_of_non_leap_years}{365}
 /// $$
-/// where ActualDays is the number of days between the start date and the end date.
+/// where ActualDays of leap years is the number of days between the start date and the end date in leap years 
+/// and ActualDays of non-leap years is the number of days between the start date and the end date in non-leap years.
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
@@ -17,7 +16,7 @@ use crate::time::date::Date;
 /// let start = Date::new(2020, 1, 1);
 /// let end = Date::new(2020, 2, 1);
 /// assert_eq!(ActualActual::day_count(start, end), 31);
-/// assert_eq!(ActualActual::year_fraction(start, end), 31.0 / 365.0);
+/// assert_eq!(ActualActual::year_fraction(start, end), 31.0 / 366.0);
 /// ```
 
 pub struct ActualActual;
@@ -74,8 +73,8 @@ impl DayCountProvider for ActualActual {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::DayCountProvider;
-
+    use crate::time::daycounters::traits::DayCountProvider;
+    
     #[test]
     fn test_actualactual_day_count() {
         use crate::time::date::Date;
