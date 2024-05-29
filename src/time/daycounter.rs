@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use super::{calendar::Calendar, daycounters::{
-    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, business252::Business252, thirty360::*, traits::DayCountProvider
-}};
+use super::daycounters::{
+    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, thirty360::*, traits::DayCountProvider
+};
 use crate::{
     time::date::Date,
     utils::errors::{AtlasError, Result}
@@ -78,7 +78,6 @@ impl From<DayCounter> for String {
 
 #[cfg(test)]
 mod tests {
-    use crate::{rates::yieldtermstructure::traits::YieldTermStructureTrait, time::date};
     use super::*;
 
     #[test]
@@ -131,7 +130,7 @@ mod tests {
         let year_fraction = DayCounter::Thirty360US.year_fraction(start, end);
         assert_eq!(year_fraction, 1.0 / 360.0);
         let year_fraction = DayCounter::ActualActual.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 365.0);
+        assert_eq!(year_fraction, 1.0 / 366.0);
     }
 
 
