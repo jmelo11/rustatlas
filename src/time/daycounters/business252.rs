@@ -1,7 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
-use super::traits::DayCountProvider;
-use crate::time::{calendar::{self, Calendar}, calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date, enums::TimeUnit, period::Period};
+use crate::time::{calendar::Calendar, calendars::traits::ImplCalendar, date::Date};
 
 /// # Business252
 /// Business/252 day count convention.
