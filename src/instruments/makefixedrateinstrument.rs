@@ -943,6 +943,7 @@ impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
                     .with_structure(self.structure())
                     .with_side(self.side())
                     .with_currency(self.currency().unwrap())
+                    .other()
             }
             _ => MakeFixedRateInstrument::new()
                 .with_start_date(self.start_date())
