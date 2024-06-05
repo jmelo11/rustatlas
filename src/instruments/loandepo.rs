@@ -27,8 +27,8 @@ use super::{
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoanDepo {
     pub id: Option<usize>,
-    pub mis_id: Option<String>,
-    pub process_date: Option<Date>,
+    pub mis_id: String,
+    pub reference_date: Date,
     pub loandepo_configuration_id: usize,
     pub notional: f64,
     pub issue_date: Option<Date>,
@@ -81,7 +81,7 @@ pub struct LoanDepo {
     pub cashflows: Vec<Cashflow>,
     pub evaluation_mode: Option<EvaluationMode>,
     pub rate_change_date: Option<Date>,
-    pub cashflows_source: Option<String>,
+    pub cashflows_source: String,
 }
 
 impl TryFrom<LoanDepo> for Instrument {
@@ -263,7 +263,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.side,
                     value.currency,
                     Some(value.discount_curve_id),
-                    value.mis_id,
+                    Some(value.mis_id),
                     value.issue_date,
                     None,
                 );
@@ -303,7 +303,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     value.currency,
                     Some(value.discount_curve_id),
                     value.forecast_curve_id,
-                    value.mis_id,
+                    Some(value.mis_id),
                     value.issue_date,
                 );
                 Ok(Instrument::FloatingRateInstrument(instrument))

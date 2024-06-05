@@ -191,7 +191,7 @@ impl From<AccountType> for String {
 /// # EvaluationMode
 /// A struct that contains the information needed to define
 /// an evaluation mode when running simulations and building instruments.
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum EvaluationMode {
     FTPRate,
     ClientRate,
