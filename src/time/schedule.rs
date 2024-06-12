@@ -1028,4 +1028,20 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_schedule_with_first_date() {
+        let from = Date::new(2022, 1, 1);
+        let to = Date::new(2024, 3, 1);
+        let tenor = Period::new(1, TimeUnit::Months);
+        let first_date = Date::new(2022, 4, 1);
+        let schedule = MakeSchedule::new(from, to)
+            .with_tenor(tenor)
+            .with_first_date(first_date)
+            .build()
+            .unwrap();
+        let dates = schedule.dates();   
+        assert_eq!(dates[0], from);
+        assert_eq!(dates[1], first_date);        
+    }
 }

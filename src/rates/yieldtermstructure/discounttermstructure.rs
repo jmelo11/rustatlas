@@ -84,7 +84,12 @@ impl DiscountTermStructure {
             ));
         }
 
-        // discount_factors[0] needs to be 1.0
+        // order dates y discount_factors
+        let mut zipped = dates.into_iter().zip(discount_factors.into_iter()).collect::<Vec<_>>();
+        zipped.sort_by(|a, b| a.0.cmp(&b.0));
+        let (dates, discount_factors) : (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
+
+        // discount_factors[0] needs to be 1.0 
         if discount_factors[0] != 1.0 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
@@ -380,5 +385,29 @@ mod tests {
                 .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
                 .unwrap()
         );
+    }
+
+
+    #[test]
+    fn order_dates() {
+        let dates = vec![
+            Date::new(2020, 1, 1),
+            Date::new(2020, 4, 1),
+            Date::new(2020, 7, 1),
+            Date::new(2020, 10, 1),
+            Date::new(2021, 1, 1),
+        ];
+        let discount_factors = vec![0.99, 0.98, 0.97, 0.96, 1.0];
+        let day_counter = DayCounter::Actual360;
+
+        let discount_term_structure = DiscountTermStructure::new(
+            dates,
+            discount_factors,
+            day_counter,
+            Interpolator::Linear,
+            true,
+        );
+
+        assert!(discount_term_structure.is_err());
     }
 }
