@@ -132,17 +132,10 @@ mod test {
         sync::{Arc, RwLock},
     };
 
-    use rayon::{
-        prelude::{IntoParallelIterator, ParallelIterator},
-        slice::ParallelSliceMut,
-    };
-
     use crate::{
-        core::marketstore::MarketStore, currencies::enums::Currency, instruments::{
-            fixedrateinstrument::FixedRateInstrument,
-            makefixedrateinstrument::MakeFixedRateInstrument,
-            makefloatingrateinstrument::MakeFloatingRateInstrument,
-        }, models::{simplemodel::SimpleModel, traits::Model}, prelude::Side, rates::{
+        core::marketstore::MarketStore, currencies::enums::Currency, instruments::
+            makefixedrateinstrument::MakeFixedRateInstrument
+        , models::{simplemodel::SimpleModel, traits::Model}, prelude::Side, rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
@@ -153,7 +146,7 @@ mod test {
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        }, visitors::{fixingvisitor::FixingVisitor, indexingvisitor::IndexingVisitor, traits::Visit}
+        }, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}
     };
     
     use super::*;

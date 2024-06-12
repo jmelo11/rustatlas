@@ -11,7 +11,7 @@ use crate::{
         fixedratecoupon::FixedRateCoupon,
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
-    }, core::traits::HasCurrency, currencies::enums::Currency, prelude::AdvanceInterestRateIndexInTime, rates::interestrate::{InterestRate, RateDefinition}, time::{
+    }, core::traits::HasCurrency, currencies::enums::Currency, rates::interestrate::{InterestRate, RateDefinition}, time::{
         calendar::Calendar,
         calendars::nullcalendar::NullCalendar,
         date::Date,
@@ -527,7 +527,7 @@ impl MakeFixedRateInstrument {
                             .cloned()
                             .collect::<Vec<Date>>();
 
-                        let mut redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
+                        let redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
                         // dates equal to disbursements dates an them redemption dates
                         dates.extend(disbursements_dates);
                         dates.extend(redemption_dates);
@@ -1360,12 +1360,10 @@ mod tests {
             .equal_payments()
             .build()?;
 
-            let builder: MakeFixedRateInstrument = MakeFixedRateInstrument::from(&instrument1).with_rate_value(0.06);
-            let instrument2 = builder.build()?;
+        let builder: MakeFixedRateInstrument = MakeFixedRateInstrument::from(&instrument1).with_rate_value(0.06);
+        let instrument2 = builder.build()?;
 
-            //instrument1.cashflows().iter().for_each(|cf| println!("1 {}", cf));
-            //instrument2.cashflows().iter().for_each(|cf| println!("2 {}", cf));
-
+        assert_eq!(instrument2.notional(), instrument1.notional());
 
         Ok(())
     }
@@ -1403,11 +1401,6 @@ mod tests {
         assert_eq!(instrument2.start_date(), start_date);
         assert_eq!(instrument2.end_date(), end_date);
 
-        instrument2
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{}", cf));
-
         Ok(())
     }
 }
@@ -1421,7 +1414,7 @@ mod tests_equal_payment {
             traits::Payable,
         },
         currencies::enums::Currency,
-        instruments::{instrument, makefixedrateinstrument::{calculate_equal_payment_redemptions, MakeFixedRateInstrument}},
+        instruments::makefixedrateinstrument::{calculate_equal_payment_redemptions, MakeFixedRateInstrument},
         rates::{enums::Compounding, interestrate::InterestRate},
         time::{
             date::Date,
@@ -1432,7 +1425,6 @@ mod tests_equal_payment {
         utils::errors::Result,
         visitors::traits::HasCashflows,
     };
-    use std::{collections::{HashMap, HashSet}, thread::Builder};
 
     #[test]
     fn test_calculate_equal_payment_redemptions(){

@@ -40,5 +40,6 @@ pub use crate::{
         accruedamountconstvisitor::*, cashflowaggregationvisitor::*,
         cashflowcompressorconstvisitor::*, fixingvisitor::*, indexingvisitor::*,
         npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
+        parvaluevisitor::*,
     },
 };

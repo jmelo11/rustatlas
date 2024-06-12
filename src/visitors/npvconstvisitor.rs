@@ -79,7 +79,7 @@ mod tests {
         core::marketstore::MarketStore,
         currencies::enums::Currency,
         instruments::{
-            fixedrateinstrument::FixedRateInstrument, instrument, makefixedrateinstrument::MakeFixedRateInstrument, makefloatingrateinstrument::MakeFloatingRateInstrument
+            fixedrateinstrument::FixedRateInstrument, makefixedrateinstrument::MakeFixedRateInstrument, makefloatingrateinstrument::MakeFloatingRateInstrument
         },
         models::{simplemodel::SimpleModel, traits::Model},
         rates::{
@@ -90,7 +90,7 @@ mod tests {
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
         },
         time::{
-            date::Date, daycounter::DayCounter, daycounters::actual360, enums::{Frequency, TimeUnit}, period::Period
+            date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}, period::Period
         },
         visitors::{fixingvisitor::FixingVisitor, indexingvisitor::IndexingVisitor, traits::Visit},
     };
@@ -249,7 +249,6 @@ mod tests {
         let npv_visitor = NPVConstVisitor::new(&data, true);
         let npv = npv_visitor.visit(&instrument)?;
 
-        print!("{:?}", npv);
         assert_ne!(npv, 0.0);
         Ok(())
     }
@@ -281,9 +280,6 @@ mod tests {
                 .equal_payments()
                 .build()?;
 
-        instrument.cashflows().iter().for_each(|cf| {
-            println!("{:?} - {:?}", cf.payment_date(), cf.amount());
-        });
 
         let builder = MakeFixedRateInstrument::from(&instrument.clone());
         let mut instrument_rebuilt = builder.build()?;
