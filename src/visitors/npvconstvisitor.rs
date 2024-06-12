@@ -65,7 +65,6 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
 
 #[cfg(test)]
 mod tests {
-
     use std::{
         collections::HashMap,
         sync::{Arc, RwLock},
@@ -80,9 +79,7 @@ mod tests {
         core::marketstore::MarketStore,
         currencies::enums::Currency,
         instruments::{
-            fixedrateinstrument::FixedRateInstrument,
-            makefixedrateinstrument::MakeFixedRateInstrument,
-            makefloatingrateinstrument::MakeFloatingRateInstrument,
+            fixedrateinstrument::FixedRateInstrument, instrument, makefixedrateinstrument::MakeFixedRateInstrument, makefloatingrateinstrument::MakeFloatingRateInstrument
         },
         models::{simplemodel::SimpleModel, traits::Model},
         rates::{
@@ -93,10 +90,7 @@ mod tests {
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
         },
         time::{
-            date::Date,
-            daycounter::DayCounter,
-            enums::{Frequency, TimeUnit},
-            period::Period,
+            date::Date, daycounter::DayCounter, daycounters::actual360, enums::{Frequency, TimeUnit}, period::Period
         },
         visitors::{fixingvisitor::FixingVisitor, indexingvisitor::IndexingVisitor, traits::Visit},
     };
@@ -123,7 +117,11 @@ mod tests {
         let discount_curve = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.05,
-            RateDefinition::default(),
+            RateDefinition::new(
+                DayCounter::Thirty360,
+                Compounding::Compounded,
+                Frequency::Annual,
+            )
         ));
 
         let mut ibor_fixings = HashMap::new();
@@ -180,7 +178,7 @@ mod tests {
         let notional = 100_000.0;
         let rate = InterestRate::new(
             0.05,
-            Compounding::Simple,
+            Compounding::Compounded,
             Frequency::Annual,
             DayCounter::Thirty360,
         );
@@ -205,7 +203,9 @@ mod tests {
 
         let npv_visitor = NPVConstVisitor::new(&data, true);
         let npv = npv_visitor.visit(&instrument)?;
-        assert_ne!(npv, 0.0);
+
+        assert!(npv.abs() < 1e-6);
+
         Ok(())
     }
 
@@ -219,7 +219,7 @@ mod tests {
         let notional = 100_000.0;
         let rate_definition = RateDefinition::new(
             DayCounter::Thirty360,
-            Compounding::Simple,
+            Compounding::Compounded,
             Frequency::Annual,
         );
 
@@ -248,8 +248,61 @@ mod tests {
 
         let npv_visitor = NPVConstVisitor::new(&data, true);
         let npv = npv_visitor.visit(&instrument)?;
+
+        print!("{:?}", npv);
         assert_ne!(npv, 0.0);
         Ok(())
+    }
+
+    #[test]
+    fn test_npv_fixed_equal_payment() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360
+        );
+
+        let mut instrument = MakeFixedRateInstrument::new()
+                .with_start_date(start_date)
+                .with_end_date(end_date)
+                .with_rate(rate)
+                .with_payment_frequency(Frequency::Semiannual)
+                .with_side(Side::Receive)
+                .with_currency(Currency::USD)
+                .with_discount_curve_id(Some(2))
+                .with_notional(notional)
+                .equal_payments()
+                .build()?;
+
+        instrument.cashflows().iter().for_each(|cf| {
+            println!("{:?} - {:?}", cf.payment_date(), cf.amount());
+        });
+
+        let builder = MakeFixedRateInstrument::from(&instrument.clone());
+        let mut instrument_rebuilt = builder.build()?;
+                    
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+        indexer.visit(&mut instrument_rebuilt)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let npv_visitor = NPVConstVisitor::new(&data, true);
+        let npv = npv_visitor.visit(&instrument)?;
+        let npv_rebuilt = npv_visitor.visit(&instrument_rebuilt)?;
+
+        assert!(npv.abs() < 1e-6);
+        assert!(npv_rebuilt.abs() < 1e-6);
+        
+        Ok(())  
     }
 
     #[test]
