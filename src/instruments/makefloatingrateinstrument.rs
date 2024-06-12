@@ -698,55 +698,41 @@ fn build_coupons_from_notionals(
 
 impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
     fn into(self) -> MakeFloatingRateInstrument {
-        match self.structure() {
-            Structure::Other => {
-                let mut disbursements = HashMap::new();
-                let mut redemptions = HashMap::new();
-                let mut additional_coupon_dates = HashSet::new();
-                for cashflow in self.cashflows() {
-                    match cashflow {
-                        Cashflow::Disbursement(c) => {
-                            disbursements.insert(c.payment_date(), c.amount().unwrap());
-                        }
-                        Cashflow::Redemption(c) => {
-                            redemptions.insert(c.payment_date(), c.amount().unwrap());
-                        }
-                        Cashflow::FloatingRateCoupon(c) => {
-                            additional_coupon_dates.insert(c.accrual_start_date().unwrap());
-                            additional_coupon_dates.insert(c.accrual_end_date().unwrap());
-                        }
-                        _ => (),
-                    }
+        let mut disbursements = HashMap::new();
+        let mut redemptions = HashMap::new();
+        let mut additional_coupon_dates = HashSet::new();
+        for cashflow in self.cashflows() {
+            match cashflow {
+                Cashflow::Disbursement(c) => {
+                    disbursements.insert(c.payment_date(), c.amount().unwrap());
                 }
-                MakeFloatingRateInstrument::new()
-                    .with_start_date(self.start_date())
-                    .with_end_date(self.end_date())
-                    .with_notional(self.notional())
-                    .with_spread(self.spread())
-                    .with_side(self.side())
-                    .with_rate_definition(self.rate_definition())
-                    .with_disbursements(disbursements)
-                    .with_redemptions(redemptions)
-                    .with_additional_coupon_dates(additional_coupon_dates)
-                    .with_forecast_curve_id(self.forecast_curve_id())
-                    .with_discount_curve_id(self.discount_curve_id())
-                    .with_payment_frequency(self.payment_frequency())
-                    .with_currency(self.currency().unwrap())
-                    .other()
+                Cashflow::Redemption(c) => {
+                    redemptions.insert(c.payment_date(), c.amount().unwrap());
+                }
+                Cashflow::FloatingRateCoupon(c) => {
+                    additional_coupon_dates.insert(c.accrual_start_date().unwrap());
+                    additional_coupon_dates.insert(c.accrual_end_date().unwrap());
+                }
+                _ => (),
             }
-            _ => MakeFloatingRateInstrument::new()
-                .with_start_date(self.start_date())
-                .with_end_date(self.end_date())
-                .with_notional(self.notional())
-                .with_spread(self.spread())
-                .with_side(self.side())
-                .with_payment_frequency(self.payment_frequency())
-                .with_rate_definition(self.rate_definition())
-                .with_forecast_curve_id(self.forecast_curve_id())
-                .with_discount_curve_id(self.discount_curve_id())
-                .with_currency(self.currency().unwrap())
-                .with_structure(self.structure()),
         }
+
+        MakeFloatingRateInstrument::new()
+            .with_start_date(self.start_date())
+            .with_end_date(self.end_date())
+            .with_notional(self.notional())
+            .with_spread(self.spread())
+            .with_side(self.side())
+            .with_rate_definition(self.rate_definition())
+            .with_forecast_curve_id(self.forecast_curve_id())
+            .with_discount_curve_id(self.discount_curve_id())
+            .with_payment_frequency(self.payment_frequency())
+            .with_currency(self.currency().unwrap())
+            .with_disbursements(disbursements)
+            .with_redemptions(redemptions)
+            .with_additional_coupon_dates(additional_coupon_dates)
+            .other()
+
     }
 }
 
@@ -761,18 +747,12 @@ mod tests {
     use std::collections::{HashMap, HashSet};
 
     use crate::{
-        cashflows::{cashflow::Side, traits::RequiresFixingRate},
-        currencies::enums::Currency,
-        instruments::makefloatingrateinstrument::MakeFloatingRateInstrument,
-        rates::{enums::Compounding, interestrate::RateDefinition},
-        time::{
+        cashflows::{cashflow::Side, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::makefloatingrateinstrument::MakeFloatingRateInstrument, prelude::{HasCurrency, Structure}, rates::{enums::Compounding, interestrate::RateDefinition}, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        },
-        utils::errors::Result,
-        visitors::traits::HasCashflows,
+        }, utils::errors::Result, visitors::traits::HasCashflows
     };
 
     #[test]
