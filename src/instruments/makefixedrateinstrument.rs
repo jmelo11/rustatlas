@@ -962,7 +962,8 @@ impl Into<MakeFixedRateInstrument> for FixedRateInstrument {
                     redemptions.insert(c.payment_date(), c.amount().unwrap());
                 }
                 Cashflow::FixedRateCoupon(c) => {
-                    additional_coupon_dates.insert(c.payment_date());
+                    additional_coupon_dates.insert(c.accrual_start_date().unwrap());
+                    additional_coupon_dates.insert(c.accrual_end_date().unwrap());
                 }
                 _ => (),
             }
