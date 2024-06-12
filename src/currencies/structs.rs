@@ -552,20 +552,3 @@ impl CurrencyDetails for DKK {
     }
 }
 
-impl CurrencyDetails for DKK {
-    fn code(&self) -> String {
-        return "DKK".to_string();
-    }
-    fn name(&self) -> String {
-        return "Danish Krone".to_string();
-    }
-    fn symbol(&self) -> String {
-        return "kr".to_string();
-    }
-    fn precision(&self) -> u8 {
-        return 2;
-    }
-    fn numeric_code(&self) -> u16 {
-        return 208;
-    }
-}
