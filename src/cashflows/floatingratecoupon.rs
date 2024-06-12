@@ -114,6 +114,10 @@ impl FloatingRateCoupon {
             None => self.accrual_start_date,
         }
     }
+
+    pub fn fixing_rate(&self) -> Option<f64> {
+        self.fixing_rate
+    }
 }
 
 impl InterestAccrual for FloatingRateCoupon {
