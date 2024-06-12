@@ -949,4 +949,48 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn into_test_1() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
+        let end_date = start_date + Period::new(5, TimeUnit::Years);
+        let rate_definition = RateDefinition::new(
+            DayCounter::Actual360,
+            Compounding::Compounded,
+            Frequency::Annual,
+        );
+        let notional = 100.0;
+
+        let instrument = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate_definition(rate_definition)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_spread(0.05)
+            .with_notional(notional)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .build()?;
+
+        let builder = MakeFloatingRateInstrument::from(&instrument);
+        let instrument2 = builder.build()?;
+
+        assert_eq!(instrument2.notional(), instrument.notional());
+        assert_eq!(instrument2.start_date(), instrument.start_date());
+        assert_eq!(instrument2.end_date(), instrument.end_date());
+        assert_eq!(instrument2.rate_definition(), instrument.rate_definition());
+        assert_ne!(instrument2.payment_frequency(), instrument.payment_frequency());
+        assert_eq!(instrument2.spread(), instrument.spread());
+        assert_eq!(instrument2.side(), instrument.side());
+        assert_eq!(instrument2.currency().unwrap(), instrument.currency().unwrap());
+        assert_eq!(instrument2.discount_curve_id(), instrument.discount_curve_id());
+        assert_eq!(instrument2.forecast_curve_id(), instrument.forecast_curve_id());
+        assert_eq!(instrument2.structure(), Structure::Other);
+        assert_eq!(instrument.structure(), Structure::Bullet);
+
+        Ok(())
+
+    }
+
 }
