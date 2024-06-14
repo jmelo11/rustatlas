@@ -4,13 +4,11 @@ use argmin::{
 };
 
 use crate::{
-    core::{meta::MarketData, traits::Registrable},
-    instruments::{
+    core::{meta::MarketData, traits::Registrable}, instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
         makefixedrateinstrument::MakeFixedRateInstrument,
         makefloatingrateinstrument::MakeFloatingRateInstrument,
-    },
-    utils::errors::Result,
+    }, prelude::{Payable, Structure}, utils::errors::Result
 };
 
 use super::{
@@ -43,13 +41,17 @@ impl<'a, T> ParValue<'a, T> {
     }
 }
 
+// cost function for fixed rate instrument
 impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
-
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
+
+        // create a new fixed rate instrument with the given rate value
         let builder = MakeFixedRateInstrument::from(self.eval);
         let mut inst = builder.with_rate_value(*param).build()?;
+
+        // set the id of the cashflows of the new instrument to the id of the cashflows of the old instrument
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
@@ -59,18 +61,21 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
                 Ok(())
             })?;
 
+        // visit the instrument to calculate the npv and return the result
         self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
     }
 }
 
+// cost function for floating rate instrument
 impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
     type Param = f64;
     type Output = f64;
-
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
+        // create a new floating rate instrument with the given spread value
         let builder = MakeFloatingRateInstrument::from(self.eval);
         let mut inst = builder.with_spread(*param).build()?;
 
+        // set the id of the cashflows of the new instrument to the id of the cashflows of the old instrument
         inst.mut_cashflows()
             .iter_mut()
             .zip(self.eval.cashflows().iter())
@@ -80,8 +85,12 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
                 Ok(())
             })?;
 
+        // visit the instrument to update the fixing values 
         let _ = self.fixing_visitor.visit(&mut inst);
+
+        // visit the instrument to calculate the npv and return the result
         self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
+
     }
 }
 
@@ -99,9 +108,12 @@ impl<'a> ParValueConstVisitor<'a> {
 
 impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
+    // visit fixed rate instrument
+    // use BrentRoot solver to find the par rate 
     fn visit(&self, instrument: &FixedRateInstrument) -> Self::Output {
+        let (min, max) = (-1.0, 1.0);
         let cost = ParValue::new(instrument, &self.market_data);
-        let solver = BrentRoot::new(-0.9, 0.9, 1e-6);
+        let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
@@ -112,9 +124,12 @@ impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
 
 impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
+    // visit floating rate instrument
+    // use BrentRoot solver to find the par spread
     fn visit(&self, instrument: &FloatingRateInstrument) -> Self::Output {
+        let (min, max) = (-1.0, 1.0);
         let cost = ParValue::new(instrument, &self.market_data);
-        let solver = BrentRoot::new(-0.9, 0.9, 1e-6);
+        let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
