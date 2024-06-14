@@ -920,7 +920,8 @@ fn calculate_equal_payment_redemptions(
         dates: dates.clone(),
         rate: rate,
     };
-    let solver = BrentRoot::new(0.0, 0.9, 1e-6);
+    let (min, max) = (-0.2 , 1.5 );
+    let solver = BrentRoot::new(min, max, 1e-6);
 
     let init_param = 1.0 / (dates.len() as f64);
     let res = Executor::new(cost, solver)
@@ -1427,7 +1428,7 @@ mod tests_equal_payment {
     };
 
     #[test]
-    fn test_calculate_equal_payment_redemptions(){
+    fn test_calculate_equal_payment_vector(){
         let notional = 100.0;
         let dates = vec![
             Date::new(2020, 1, 1), Date::new(2020, 12, 1), Date::new(2021, 1, 1),
@@ -1455,14 +1456,14 @@ mod tests_equal_payment {
     }
 
     #[test]
-    fn build_equal_payment_with_grace_period() -> Result<()> {
+    fn test_build_equal_payment_with_grace_period() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
 
         let rate = InterestRate::new(
-            0.1,
+            0.9,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Actual360,
+            DayCounter::Thirty360,
         );
 
         let grace_period = start_date.clone() + Period::new(12, TimeUnit::Months);
@@ -1498,8 +1499,7 @@ mod tests_equal_payment {
     }
 
     #[test]
-    fn  into_equal_payment_with_grace_period() -> Result<()> { 
-
+    fn test_into_equal_payment_with_grace_period() -> Result<()> { 
         let start_date = Date::new(2020, 1, 1);
 
         let rate = InterestRate::new(
@@ -1523,7 +1523,6 @@ mod tests_equal_payment {
             .equal_payments()
             .build()?;
 
-
         let builder = MakeFixedRateInstrument::from(&instrument_1);
         let instrument_2 = builder.build()?;
 
@@ -1544,6 +1543,4 @@ mod tests_equal_payment {
         assert!((notional_1-notional_2).abs() < 1e-6);
         Ok(())
     }
-
-
 }
