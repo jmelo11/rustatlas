@@ -8,8 +8,7 @@ use crate::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
         makefixedrateinstrument::MakeFixedRateInstrument,
         makefloatingrateinstrument::MakeFloatingRateInstrument,
-    },
-    utils::errors::Result
+    }, prelude::Structure, utils::errors::Result
 };
 
 use super::{
@@ -112,7 +111,12 @@ impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
     // visit fixed rate instrument
     // use BrentRoot solver to find the par rate 
     fn visit(&self, instrument: &FixedRateInstrument) -> Self::Output {
-        let (min, max) = (-1.0, 1.0);
+        
+        let (min, max) =  match instrument.structure() {
+            Structure::EqualPayments  => (-0.7, 0.7),
+            _ => (-1.0, 1.0)
+        };
+
         let cost = ParValue::new(instrument, &self.market_data);
         let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)

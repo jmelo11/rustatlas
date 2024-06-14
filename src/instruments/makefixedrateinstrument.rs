@@ -1414,13 +1414,14 @@ mod tests_equal_payment {
             cashflow::{Cashflow, Side},
             traits::Payable,
         }, currencies::enums::Currency, instruments::makefixedrateinstrument::{calculate_equal_payment_redemptions, MakeFixedRateInstrument}, 
-        rates::{enums::Compounding, interestrate::InterestRate}, time::{
+        rates::enums::Compounding, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
         }, utils::errors::Result, visitors::traits::HasCashflows
     };
+    use crate::rates::interestrate::InterestRate;
 
     #[test]
     fn test_calculate_equal_payment_vector(){
