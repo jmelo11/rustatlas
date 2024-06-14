@@ -8,7 +8,8 @@ use crate::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
         makefixedrateinstrument::MakeFixedRateInstrument,
         makefloatingrateinstrument::MakeFloatingRateInstrument,
-    }, prelude::{Payable, Structure}, utils::errors::Result
+    },
+    utils::errors::Result
 };
 
 use super::{
