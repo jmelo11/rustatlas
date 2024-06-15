@@ -94,8 +94,8 @@ impl<'a> Model for SimpleModel<'a> {
 
         match fx.reference_date() {
             Some(date) => {
-
-                let currency_forescast_factor = self.market_store
+                let currency_forescast_factor = self
+                    .market_store
                     .index_store()
                     .currency_forescast_factor(first_currency, second_currency, date)?;
 
@@ -104,7 +104,6 @@ impl<'a> Model for SimpleModel<'a> {
                     .exchange_rate_store()
                     .get_exchange_rate(first_currency, second_currency)?;
 
-
                 Ok(spot * currency_forescast_factor)
             }
             None => Ok(self
@@ -112,5 +111,9 @@ impl<'a> Model for SimpleModel<'a> {
                 .exchange_rate_store()
                 .get_exchange_rate(first_currency, second_currency)?),
         }
+    }
+
+    fn gen_numerarie(&self) -> f64 {
+        1.0
     }
 }

@@ -1,0 +1,41 @@
+2024-05-21 15:33:32,053 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:33:32,053 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:34:42,508 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:34:42,509 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:34:56,995 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:34:56,995 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:35:41,251 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:35:41,251 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:35:56,676 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:35:56,676 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:36:30,821 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:36:30,821 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:36:52,058 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:36:52,058 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:37:12,256 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:37:12,256 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:38:17,121 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:38:17,121 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:38:43,755 - cover_agent.main - INFO - Current Coverage: 28.98%
+2024-05-21 15:38:43,755 - cover_agent.main - INFO - Desired Coverage: 80%
+2024-05-21 15:39:18,846 - cover_agent.main - INFO - Reached maximum iteration limit without achieving desired coverage.
+- INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:35:56,676 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:35:56,695 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 14383
+2024-05-21 15:36:28,680 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:36:30,821 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:36:30,845 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 16390
+2024-05-21 15:36:50,177 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:36:52,057 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:36:52,079 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 17264
+2024-05-21 15:37:10,549 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:37:12,255 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:37:12,277 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 18003
+2024-05-21 15:38:14,608 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:38:17,121 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:38:17,147 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 20010
+2024-05-21 15:38:41,586 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:38:43,755 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back
+2024-05-21 15:38:43,780 - cover_agent.UnitTestGenerator - INFO - Token count for LLM model gpt-4o: 20991
+2024-05-21 15:39:16,255 - cover_agent.UnitTestGenerator - INFO - Running test with the following command: "cargo llvm-cov --lcov --output-path lcov.dat && lcov_cobertura lcov.dat --output coverage.xml --demangle "
+2024-05-21 15:39:18,846 - cover_agent.UnitTestGenerator - ERROR - Test failed. Rolling back

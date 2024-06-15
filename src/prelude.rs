@@ -12,7 +12,10 @@ pub use crate::{
         makefixedrateinstrument::*, makefixedrateleg::*, makefloatingrateinstrument::*,
         makefloatingrateleg::*, traits::*,
     },
-    math::interpolation::{enums::*, linear::*, loglinear::*, traits::*},
+    math::{
+        aad::{adnum::*, binary::*, expression::*, unary::*},
+        interpolation::{enums::*, linear::*, loglinear::*, traits::*},
+    },
     models::{simplemodel::*, traits::*},
     rates::{
         enums::*,
@@ -39,7 +42,6 @@ pub use crate::{
     visitors::{
         accruedamountconstvisitor::*, cashflowaggregationvisitor::*,
         cashflowcompressorconstvisitor::*, fixingvisitor::*, indexingvisitor::*,
-        npvbydateconstvisitor::*, npvconstvisitor::*, traits::*,
-        parvaluevisitor::*,
+        npvbydateconstvisitor::*, npvconstvisitor::*, parvaluevisitor::*, traits::*,
     },
 };

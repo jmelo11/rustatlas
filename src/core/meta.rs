@@ -191,6 +191,7 @@ pub struct MarketData {
     df: Option<f64>,
     fwd: Option<f64>,
     fx: Option<f64>,
+    numerarie: f64,
 }
 
 impl MarketData {
@@ -200,6 +201,7 @@ impl MarketData {
         df: Option<f64>,
         fwd: Option<f64>,
         fx: Option<f64>,
+        numerarie: f64,
     ) -> MarketData {
         MarketData {
             id,
@@ -207,6 +209,7 @@ impl MarketData {
             df,
             fwd,
             fx,
+            numerarie,
         }
     }
 
@@ -229,5 +232,9 @@ impl MarketData {
 
     pub fn fx(&self) -> Result<f64> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_string()))
+    }
+
+    pub fn numerarie(&self) -> f64 {
+        self.numerarie
     }
 }

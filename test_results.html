@@ -1,0 +1,2611 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Test Results</title>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 20px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+            }
+            th, td {
+                border: 1px solid #ddd;
+                text-align: left;
+                padding: 8px;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .status-pass {
+                color: green;
+            }
+            .status-fail {
+                color: red;
+            }
+            pre {
+                background-color: #000000 !important;
+                color: #ffffff !important;
+                padding: 5px;
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th>Status</th>
+                <th>Reason</th>
+                <th>Exit Code</th>
+                <th>Stderr</th>
+                <th>Stdout</th>
+                <th>Test</th>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:586:38
+    |
+586 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:595:38
+    |
+595 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:604:38
+    |
+604 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0277, E0369, E0428, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `rustatlas` (lib test) due to 10 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_evaluation_mode_try_from() {
+        // Test valid conversion from string to EvaluationMode
+        let evaluation_mode: EvaluationMode = "FTPRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+
+        let evaluation_mode: EvaluationMode = "ClientRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+
+        // Test invalid conversion from string to EvaluationMode
+        let evaluation_mode: Result<EvaluationMode> = "Invalid".to_string().try_into();
+        assert!(evaluation_mode.is_err());
+    }
+
+    #[test]
+    fn test_evaluation_mode_from() {
+        // Test conversion from EvaluationMode to string
+        let evaluation_mode: String = EvaluationMode::FTPRate.into();
+        assert_eq!(evaluation_mode, "FTPRate".to_string());
+
+        let evaluation_mode: String = EvaluationMode::ClientRate.into();
+        assert_eq!(evaluation_mode, "ClientRate".to_string());
+    }
+
+    #[test]
+    fn test_segment_try_from() {
+        // Test valid conversion from string to Segment
+        let segment: Segment = "Minorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Minorista);
+
+        let segment: Segment = "Mayorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Mayorista);
+
+        let segment: Segment = "Tesoreria".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Tesoreria);
+
+        // Test invalid conversion from string to Segment
+        let segment: Result<Segment> = "Invalid".to_string().try_into();
+        assert!(segment.is_err());
+    }
+
+    #[test]
+    fn test_segment_from() {
+        // Test conversion from Segment to string
+        let segment: String = Segment::Minorista.into();
+        assert_eq!(segment, "Minorista".to_string());
+
+        let segment: String = Segment::Mayorista.into();
+        assert_eq!(segment, "Mayorista".to_string());
+
+        let segment: String = Segment::Tesoreria.into();
+        assert_eq!(segment, "Tesoreria".to_string());
+    }
+
+    #[test]
+    fn test_product_family_try_from() {
+        // Test valid conversion from string to ProductFamily
+        let product_family: ProductFamily = "Comercial".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comercial);
+
+        let product_family: ProductFamily = "Comex".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comex);
+
+        let product_family: ProductFamily = "Consumo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Consumo);
+
+        let product_family: ProductFamily = "Deposito".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Deposito);
+
+        let product_family: ProductFamily = "Hipotecario".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Hipotecario);
+
+        let product_family: ProductFamily = "Bono".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Bono);
+
+        let product_family: ProductFamily = "CAE".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::CAE);
+
+        let product_family: ProductFamily = "Leasing".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Leasing);
+
+        let product_family: ProductFamily = "Fogape".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Fogape);
+
+        let product_family: ProductFamily = "Corfo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Corfo);
+
+        let product_family: ProductFamily = "Factoring".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Factoring);
+
+        // Test invalid conversion from string to ProductFamily
+        let product_family: Result<ProductFamily> = "Invalid".to_string().try_into();
+        assert!(product_family.is_err());
+    }
+
+    #[test]
+    fn test_product_family_from() {
+        // Test conversion from ProductFamily to string
+        let product_family: String = ProductFamily::Comercial.into();
+        assert_eq!(product_family, "Comercial".to_string());
+
+        let product_family: String = ProductFamily::Comex.into();
+        assert_eq!(product_family, "Comex".to_string());
+
+        let product_family: String = ProductFamily::Consumo.into();
+        assert_eq!(product_family, "Consumo".to_string());
+
+        let product_family: String = ProductFamily::Deposito.into();
+        assert_eq!(product_family, "Deposito".to_string());
+
+        let product_family: String = ProductFamily::Hipotecario.into();
+        assert_eq!(product_family, "Hipotecario".to_string());
+
+        let product_family: String = ProductFamily::Bono.into();
+        assert_eq!(product_family, "Bono".to_string());
+
+        let product_family: String = ProductFamily::CAE.into();
+        assert_eq!(product_family, "CAE".to_string());
+
+        let product_family: String = ProductFamily::Leasing.into();
+        assert_eq!(product_family, "Leasing".to_string());
+
+        let product_family: String = ProductFamily::Fogape.into();
+        assert_eq!(product_family, "Fogape".to_string());
+
+        let product_family: String = ProductFamily::Corfo.into();
+        assert_eq!(product_family, "Corfo".to_string());
+
+        let product_family: String = ProductFamily::Factoring.into();
+        assert_eq!(product_family, "Factoring".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:454:38
+    |
+454 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:463:38
+    |
+463 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:472:38
+    |
+472 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:586:38
+    |
+586 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:595:38
+    |
+595 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:604:38
+    |
+604 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0277, E0369, E0428, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `rustatlas` (lib test) due to 10 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_evaluation_mode_try_from() {
+        // Test valid conversion from string to EvaluationMode
+        let evaluation_mode: EvaluationMode = "FTPRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+
+        let evaluation_mode: EvaluationMode = "ClientRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+
+        // Test invalid conversion from string to EvaluationMode
+        let evaluation_mode: Result<EvaluationMode> = "Invalid".to_string().try_into();
+        assert!(evaluation_mode.is_err());
+    }
+
+    #[test]
+    fn test_evaluation_mode_from() {
+        // Test conversion from EvaluationMode to string
+        let evaluation_mode: String = EvaluationMode::FTPRate.into();
+        assert_eq!(evaluation_mode, "FTPRate".to_string());
+
+        let evaluation_mode: String = EvaluationMode::ClientRate.into();
+        assert_eq!(evaluation_mode, "ClientRate".to_string());
+    }
+
+    #[test]
+    fn test_segment_try_from() {
+        // Test valid conversion from string to Segment
+        let segment: Segment = "Minorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Minorista);
+
+        let segment: Segment = "Mayorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Mayorista);
+
+        let segment: Segment = "Tesoreria".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Tesoreria);
+
+        // Test invalid conversion from string to Segment
+        let segment: Result<Segment> = "Invalid".to_string().try_into();
+        assert!(segment.is_err());
+    }
+
+    #[test]
+    fn test_segment_from() {
+        // Test conversion from Segment to string
+        let segment: String = Segment::Minorista.into();
+        assert_eq!(segment, "Minorista".to_string());
+
+        let segment: String = Segment::Mayorista.into();
+        assert_eq!(segment, "Mayorista".to_string());
+
+        let segment: String = Segment::Tesoreria.into();
+        assert_eq!(segment, "Tesoreria".to_string());
+    }
+
+    #[test]
+    fn test_product_family_try_from() {
+        // Test valid conversion from string to ProductFamily
+        let product_family: ProductFamily = "Comercial".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comercial);
+
+        let product_family: ProductFamily = "Comex".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comex);
+
+        let product_family: ProductFamily = "Consumo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Consumo);
+
+        let product_family: ProductFamily = "Deposito".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Deposito);
+
+        let product_family: ProductFamily = "Hipotecario".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Hipotecario);
+
+        let product_family: ProductFamily = "Bono".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Bono);
+
+        let product_family: ProductFamily = "CAE".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::CAE);
+
+        let product_family: ProductFamily = "Leasing".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Leasing);
+
+        let product_family: ProductFamily = "Fogape".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Fogape);
+
+        let product_family: ProductFamily = "Corfo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Corfo);
+
+        let product_family: ProductFamily = "Factoring".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Factoring);
+
+        // Test invalid conversion from string to ProductFamily
+        let product_family: Result<ProductFamily> = "Invalid".to_string().try_into();
+        assert!(product_family.is_err());
+    }
+
+    #[test]
+    fn test_product_family_from() {
+        // Test conversion from ProductFamily to string
+        let product_family: String = ProductFamily::Comercial.into();
+        assert_eq!(product_family, "Comercial".to_string());
+
+        let product_family: String = ProductFamily::Comex.into();
+        assert_eq!(product_family, "Comex".to_string());
+
+        let product_family: String = ProductFamily::Consumo.into();
+        assert_eq!(product_family, "Consumo".to_string());
+
+        let product_family: String = ProductFamily::Deposito.into();
+        assert_eq!(product_family, "Deposito".to_string());
+
+        let product_family: String = ProductFamily::Hipotecario.into();
+        assert_eq!(product_family, "Hipotecario".to_string());
+
+        let product_family: String = ProductFamily::Bono.into();
+        assert_eq!(product_family, "Bono".to_string());
+
+        let product_family: String = ProductFamily::CAE.into();
+        assert_eq!(product_family, "CAE".to_string());
+
+        let product_family: String = ProductFamily::Leasing.into();
+        assert_eq!(product_family, "Leasing".to_string());
+
+        let product_family: String = ProductFamily::Fogape.into();
+        assert_eq!(product_family, "Fogape".to_string());
+
+        let product_family: String = ProductFamily::Corfo.into();
+        assert_eq!(product_family, "Corfo".to_string());
+
+        let product_family: String = ProductFamily::Factoring.into();
+        assert_eq!(product_family, "Factoring".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:454:38
+    |
+454 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:463:38
+    |
+463 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:472:38
+    |
+472 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:586:38
+    |
+586 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:595:38
+    |
+595 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:604:38
+    |
+604 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0277, E0369, E0428, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `rustatlas` (lib test) due to 10 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_evaluation_mode_try_from() {
+        // Test valid conversion from string to EvaluationMode
+        let evaluation_mode: EvaluationMode = "FTPRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+
+        let evaluation_mode: EvaluationMode = "ClientRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+
+        // Test invalid conversion from string to EvaluationMode
+        let evaluation_mode: Result<EvaluationMode> = "Invalid".to_string().try_into();
+        assert!(evaluation_mode.is_err());
+    }
+
+    #[test]
+    fn test_evaluation_mode_from() {
+        // Test conversion from EvaluationMode to string
+        let evaluation_mode: String = EvaluationMode::FTPRate.into();
+        assert_eq!(evaluation_mode, "FTPRate".to_string());
+
+        let evaluation_mode: String = EvaluationMode::ClientRate.into();
+        assert_eq!(evaluation_mode, "ClientRate".to_string());
+    }
+
+    #[test]
+    fn test_segment_try_from() {
+        // Test valid conversion from string to Segment
+        let segment: Segment = "Minorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Minorista);
+
+        let segment: Segment = "Mayorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Mayorista);
+
+        let segment: Segment = "Tesoreria".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Tesoreria);
+
+        // Test invalid conversion from string to Segment
+        let segment: Result<Segment> = "Invalid".to_string().try_into();
+        assert!(segment.is_err());
+    }
+
+    #[test]
+    fn test_segment_from() {
+        // Test conversion from Segment to string
+        let segment: String = Segment::Minorista.into();
+        assert_eq!(segment, "Minorista".to_string());
+
+        let segment: String = Segment::Mayorista.into();
+        assert_eq!(segment, "Mayorista".to_string());
+
+        let segment: String = Segment::Tesoreria.into();
+        assert_eq!(segment, "Tesoreria".to_string());
+    }
+
+    #[test]
+    fn test_product_family_try_from() {
+        // Test valid conversion from string to ProductFamily
+        let product_family: ProductFamily = "Comercial".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comercial);
+
+        let product_family: ProductFamily = "Comex".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comex);
+
+        let product_family: ProductFamily = "Consumo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Consumo);
+
+        let product_family: ProductFamily = "Deposito".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Deposito);
+
+        let product_family: ProductFamily = "Hipotecario".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Hipotecario);
+
+        let product_family: ProductFamily = "Bono".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Bono);
+
+        let product_family: ProductFamily = "CAE".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::CAE);
+
+        let product_family: ProductFamily = "Leasing".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Leasing);
+
+        let product_family: ProductFamily = "Fogape".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Fogape);
+
+        let product_family: ProductFamily = "Corfo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Corfo);
+
+        let product_family: ProductFamily = "Factoring".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Factoring);
+
+        // Test invalid conversion from string to ProductFamily
+        let product_family: Result<ProductFamily> = "Invalid".to_string().try_into();
+        assert!(product_family.is_err());
+    }
+
+    #[test]
+    fn test_product_family_from() {
+        // Test conversion from ProductFamily to string
+        let product_family: String = ProductFamily::Comercial.into();
+        assert_eq!(product_family, "Comercial".to_string());
+
+        let product_family: String = ProductFamily::Comex.into();
+        assert_eq!(product_family, "Comex".to_string());
+
+        let product_family: String = ProductFamily::Consumo.into();
+        assert_eq!(product_family, "Consumo".to_string());
+
+        let product_family: String = ProductFamily::Deposito.into();
+        assert_eq!(product_family, "Deposito".to_string());
+
+        let product_family: String = ProductFamily::Hipotecario.into();
+        assert_eq!(product_family, "Hipotecario".to_string());
+
+        let product_family: String = ProductFamily::Bono.into();
+        assert_eq!(product_family, "Bono".to_string());
+
+        let product_family: String = ProductFamily::CAE.into();
+        assert_eq!(product_family, "CAE".to_string());
+
+        let product_family: String = ProductFamily::Leasing.into();
+        assert_eq!(product_family, "Leasing".to_string());
+
+        let product_family: String = ProductFamily::Fogape.into();
+        assert_eq!(product_family, "Fogape".to_string());
+
+        let product_family: String = ProductFamily::Corfo.into();
+        assert_eq!(product_family, "Corfo".to_string());
+
+        let product_family: String = ProductFamily::Factoring.into();
+        assert_eq!(product_family, "Factoring".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:470:38
+    |
+470 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:479:38
+    |
+479 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:488:38
+    |
+488 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_currency_try_from() {
+        // Test valid conversion from string to Currency
+        let currency: Currency = "USD".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::USD);
+
+        let currency: Currency = "EUR".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::EUR);
+
+        let currency: Currency = "JPY".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::JPY);
+
+        // Test invalid conversion from string to Currency
+        let currency: Result<Currency> = "Invalid".to_string().try_into();
+        assert!(currency.is_err());
+    }
+
+    #[test]
+    fn test_currency_from() {
+        // Test conversion from Currency to string
+        let currency: String = Currency::USD.into();
+        assert_eq!(currency, "USD".to_string());
+
+        let currency: String = Currency::EUR.into();
+        assert_eq!(currency, "EUR".to_string());
+
+        let currency: String = Currency::JPY.into();
+        assert_eq!(currency, "JPY".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:454:38
+    |
+454 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:463:38
+    |
+463 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:472:38
+    |
+472 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:392:9
+    |
+392 |         assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |         |
+    |         alm::enums::EvaluationMode
+    |         alm::enums::EvaluationMode
+    |
+note: an implementation of `PartialEq` might be missing for `alm::enums::EvaluationMode`
+   --> src/alm/enums.rs:195:1
+    |
+195 | pub enum EvaluationMode {
+    | ^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(PartialEq)]`
+    |
+195 + #[derive(PartialEq)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0277]: `alm::enums::EvaluationMode` doesn't implement `Debug`
+   --> src/alm/enums.rs:395:9
+    |
+395 |         assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `alm::enums::EvaluationMode` cannot be formatted using `{:?}`
+    |
+    = help: the trait `Debug` is not implemented for `alm::enums::EvaluationMode`
+    = note: add `#[derive(Debug)]` to `alm::enums::EvaluationMode` or manually `impl Debug for alm::enums::EvaluationMode`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+help: consider annotating `alm::enums::EvaluationMode` with `#[derive(Debug)]`
+    |
+195 + #[derive(Debug)]
+196 | pub enum EvaluationMode {
+    |
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:586:38
+    |
+586 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:595:38
+    |
+595 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:604:38
+    |
+604 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0277, E0369, E0428, E0599.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `rustatlas` (lib test) due to 10 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_evaluation_mode_try_from() {
+        // Test valid conversion from string to EvaluationMode
+        let evaluation_mode: EvaluationMode = "FTPRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::FTPRate);
+
+        let evaluation_mode: EvaluationMode = "ClientRate".to_string().try_into().unwrap();
+        assert_eq!(evaluation_mode, EvaluationMode::ClientRate);
+
+        // Test invalid conversion from string to EvaluationMode
+        let evaluation_mode: Result<EvaluationMode> = "Invalid".to_string().try_into();
+        assert!(evaluation_mode.is_err());
+    }
+
+    #[test]
+    fn test_evaluation_mode_from() {
+        // Test conversion from EvaluationMode to string
+        let evaluation_mode: String = EvaluationMode::FTPRate.into();
+        assert_eq!(evaluation_mode, "FTPRate".to_string());
+
+        let evaluation_mode: String = EvaluationMode::ClientRate.into();
+        assert_eq!(evaluation_mode, "ClientRate".to_string());
+    }
+
+    #[test]
+    fn test_segment_try_from() {
+        // Test valid conversion from string to Segment
+        let segment: Segment = "Minorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Minorista);
+
+        let segment: Segment = "Mayorista".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Mayorista);
+
+        let segment: Segment = "Tesoreria".to_string().try_into().unwrap();
+        assert_eq!(segment, Segment::Tesoreria);
+
+        // Test invalid conversion from string to Segment
+        let segment: Result<Segment> = "Invalid".to_string().try_into();
+        assert!(segment.is_err());
+    }
+
+    #[test]
+    fn test_segment_from() {
+        // Test conversion from Segment to string
+        let segment: String = Segment::Minorista.into();
+        assert_eq!(segment, "Minorista".to_string());
+
+        let segment: String = Segment::Mayorista.into();
+        assert_eq!(segment, "Mayorista".to_string());
+
+        let segment: String = Segment::Tesoreria.into();
+        assert_eq!(segment, "Tesoreria".to_string());
+    }
+
+    #[test]
+    fn test_product_family_try_from() {
+        // Test valid conversion from string to ProductFamily
+        let product_family: ProductFamily = "Comercial".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comercial);
+
+        let product_family: ProductFamily = "Comex".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Comex);
+
+        let product_family: ProductFamily = "Consumo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Consumo);
+
+        let product_family: ProductFamily = "Deposito".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Deposito);
+
+        let product_family: ProductFamily = "Hipotecario".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Hipotecario);
+
+        let product_family: ProductFamily = "Bono".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Bono);
+
+        let product_family: ProductFamily = "CAE".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::CAE);
+
+        let product_family: ProductFamily = "Leasing".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Leasing);
+
+        let product_family: ProductFamily = "Fogape".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Fogape);
+
+        let product_family: ProductFamily = "Corfo".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Corfo);
+
+        let product_family: ProductFamily = "Factoring".to_string().try_into().unwrap();
+        assert_eq!(product_family, ProductFamily::Factoring);
+
+        // Test invalid conversion from string to ProductFamily
+        let product_family: Result<ProductFamily> = "Invalid".to_string().try_into();
+        assert!(product_family.is_err());
+    }
+
+    #[test]
+    fn test_product_family_from() {
+        // Test conversion from ProductFamily to string
+        let product_family: String = ProductFamily::Comercial.into();
+        assert_eq!(product_family, "Comercial".to_string());
+
+        let product_family: String = ProductFamily::Comex.into();
+        assert_eq!(product_family, "Comex".to_string());
+
+        let product_family: String = ProductFamily::Consumo.into();
+        assert_eq!(product_family, "Consumo".to_string());
+
+        let product_family: String = ProductFamily::Deposito.into();
+        assert_eq!(product_family, "Deposito".to_string());
+
+        let product_family: String = ProductFamily::Hipotecario.into();
+        assert_eq!(product_family, "Hipotecario".to_string());
+
+        let product_family: String = ProductFamily::Bono.into();
+        assert_eq!(product_family, "Bono".to_string());
+
+        let product_family: String = ProductFamily::CAE.into();
+        assert_eq!(product_family, "CAE".to_string());
+
+        let product_family: String = ProductFamily::Leasing.into();
+        assert_eq!(product_family, "Leasing".to_string());
+
+        let product_family: String = ProductFamily::Fogape.into();
+        assert_eq!(product_family, "Fogape".to_string());
+
+        let product_family: String = ProductFamily::Corfo.into();
+        assert_eq!(product_family, "Corfo".to_string());
+
+        let product_family: String = ProductFamily::Factoring.into();
+        assert_eq!(product_family, "Factoring".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:484:38
+    |
+484 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:493:38
+    |
+493 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:502:38
+    |
+502 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_currency_try_from() {
+        // Test valid conversion from string to Currency
+        let currency: Currency = "USD".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::USD);
+
+        let currency: Currency = "EUR".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::EUR);
+
+        let currency: Currency = "JPY".to_string().try_into().unwrap();
+        assert_eq!(currency, Currency::JPY);
+
+        // Test invalid conversion from string to Currency
+        let currency: Result<Currency> = "Invalid".to_string().try_into();
+        assert!(currency.is_err());
+    }
+
+    #[test]
+    fn test_currency_from() {
+        // Test conversion from Currency to string
+        let currency: String = Currency::USD.into();
+        assert_eq!(currency, "USD".to_string());
+
+        let currency: String = Currency::EUR.into();
+        assert_eq!(currency, "EUR".to_string());
+
+        let currency: String = Currency::JPY.into();
+        assert_eq!(currency, "JPY".to_string());
+    }
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+            <tr>
+                <td class="status-FAIL">FAIL</td>
+                <td>Test failed</td>
+                <td>1</td>
+                <td><pre><code class="language-shell">info: cargo-llvm-cov currently setting cfg(coverage); you can opt-out it by passing --no-cfg-coverage
+   Compiling rustatlas v0.1.0 (/Users/josemelo/Desktop/dev/libs/rustatlas)
+error[E0428]: the name `tests` is defined multiple times
+   --> src/alm/enums.rs:385:1
+    |
+319 | mod tests {
+    | --------- previous definition of the module `tests` here
+...
+385 | mod tests {
+    | ^^^^^^^^^ `tests` redefined here
+    |
+    = note: `tests` must be defined only once in the type namespace of this module
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:454:38
+    |
+454 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:463:38
+    |
+463 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+error[E0599]: no variant or associated item named `new` found for enum `instrument::Instrument` in the current scope
+   --> src/alm/enums.rs:472:38
+    |
+472 |         let instrument = Instrument::new(); // Assuming Instrument has a new() method
+    |                                      ^^^ variant or associated item not found in `Instrument`
+    |
+   ::: src/instruments/instrument.rs:64:1
+    |
+64  | pub enum Instrument {
+    | ------------------- variant or associated item `new` not found for this enum
+    |
+    = help: items from traits can only be used if the trait is implemented and in scope
+    = note: the following traits define an item `new`, perhaps you need to implement one of them:
+            candidate #1: `argmin::core::State`
+            candidate #2: `rand::distributions::uniform::UniformSampler`
+
+Some errors have detailed explanations: E0428, E0599.
+For more information about an error, try `rustc --explain E0428`.
+error: could not compile `rustatlas` (lib test) due to 4 previous errors
+error: process didn't exit successfully: `/Users/josemelo/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --tests --manifest-path /Users/josemelo/Desktop/dev/libs/rustatlas/Cargo.toml --target-dir /Users/josemelo/Desktop/dev/libs/rustatlas/target/llvm-cov-target` (exit status: 101)
+</code></pre></td>
+                <td>&nbsp;</td>
+                <td><pre><code class="language-python">
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_portfolio_new() {
+        // Test the creation of a new Portfolio
+        let portfolio = Portfolio::new();
+        assert!(portfolio.id().is_none());
+        assert!(portfolio.segment().is_none());
+        assert!(portfolio.product_family().is_none());
+        assert!(portfolio.area().is_none());
+        assert!(portfolio.position_type().is_none());
+        assert!(portfolio.rate_type().is_none());
+        assert!(portfolio.currency().is_none());
+        assert!(portfolio.instruments().is_empty());
+    }
+
+    #[test]
+    fn test_portfolio_with_id() {
+        // Test setting the id of a Portfolio
+        let portfolio = Portfolio::new().with_id(1);
+        assert_eq!(portfolio.id(), Some(1));
+    }
+
+    #[test]
+    fn test_portfolio_with_segment() {
+        // Test setting the segment of a Portfolio
+        let portfolio = Portfolio::new().with_segment("Segment".to_string());
+        assert_eq!(portfolio.segment(), Some("Segment".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_product_family() {
+        // Test setting the product family of a Portfolio
+        let portfolio = Portfolio::new().with_product_family(ProductFamily::Comercial);
+        assert_eq!(portfolio.product_family(), Some(ProductFamily::Comercial));
+    }
+
+    #[test]
+    fn test_portfolio_with_area() {
+        // Test setting the area of a Portfolio
+        let portfolio = Portfolio::new().with_area("Area".to_string());
+        assert_eq!(portfolio.area(), Some("Area".to_string()));
+    }
+
+    #[test]
+    fn test_portfolio_with_position_type() {
+        // Test setting the position type of a Portfolio
+        let portfolio = Portfolio::new().with_position_type(PositionType::Base);
+        assert_eq!(portfolio.position_type(), Some(PositionType::Base));
+    }
+
+    #[test]
+    fn test_portfolio_with_rate_type() {
+        // Test setting the rate type of a Portfolio
+        let portfolio = Portfolio::new().with_rate_type(RateType::Fixed);
+        assert_eq!(portfolio.rate_type(), Some(RateType::Fixed));
+    }
+
+    #[test]
+    fn test_portfolio_with_currency() {
+        // Test setting the currency of a Portfolio
+        let portfolio = Portfolio::new().with_currency(Currency::USD);
+        assert_eq!(portfolio.currency(), Some(Currency::USD));
+    }
+
+    #[test]
+    fn test_portfolio_with_instruments() {
+        // Test setting the instruments of a Portfolio
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        let portfolio = Portfolio::new().with_instruments(vec![instrument.clone()]);
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_add_instrument() {
+        // Test adding an instrument to a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+
+    #[test]
+    fn test_portfolio_instruments_mut() {
+        // Test mutable access to instruments in a Portfolio
+        let mut portfolio = Portfolio::new();
+        let instrument = Instrument::new(); // Assuming Instrument has a new() method
+        portfolio.add_instrument(instrument.clone());
+        let instruments = portfolio.instruments_mut();
+        instruments[0] = instrument.clone(); // Modify the instrument
+        assert_eq!(portfolio.instruments(), &[instrument]);
+    }
+}</code></pre></td>
+            </tr>
+            
+        </table>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/prism.min.js"></script>
+    </body>
+    </html>
+    
