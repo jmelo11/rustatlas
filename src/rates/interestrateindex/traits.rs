@@ -3,7 +3,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::{NewValue, Number},
     math::interpolation::enums::Interpolator,
     rates::{
         traits::{HasReferenceDate, YieldProvider},
@@ -29,23 +32,23 @@ pub trait FixingProvider {
             let aux_btreemap = self
                 .fixings()
                 .iter()
-                .map(|(k, v)| (*k, *v))
-                .collect::<BTreeMap<Date, f64>>();
+                .map(|(k, v)| (*k, Number::new(*v)))
+                .collect::<BTreeMap<Date, Number>>();
 
             let x = aux_btreemap
                 .keys()
-                .map(|&d| (d - first_date) as f64)
-                .collect::<Vec<f64>>();
+                .map(|&d| (d - first_date))
+                .collect::<Vec<Number>>();
 
-            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<f64>>();
+            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<Number>>();
 
             let mut current_date = first_date.clone();
 
             while current_date <= last_date {
                 if !self.fixings().contains_key(&current_date) {
-                    let days = (current_date - first_date) as f64;
+                    let days = current_date - first_date;
                     let rate = interpolator.interpolate(days, &x, &y, false);
-                    self.add_fixing(current_date, rate);
+                    self.add_fixing(current_date, rate.to_f64().unwrap());
                 }
                 current_date = current_date + Period::new(1, TimeUnit::Days);
             }

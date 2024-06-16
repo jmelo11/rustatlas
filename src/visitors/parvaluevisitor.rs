@@ -2,6 +2,7 @@ use argmin::{
     core::{CostFunction, Error, Executor, State},
     solver::brent::BrentRoot,
 };
+use num_traits::ToPrimitive;
 
 use crate::{
     core::{meta::MarketData, traits::Registrable},
@@ -59,7 +60,10 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
                 Ok(())
             })?;
 
-        self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
+        self.npv_visitor
+            .visit(&inst)
+            .map(|x| x.to_f64().unwrap())
+            .map_err(|e| Error::from(e))
     }
 }
 
@@ -81,7 +85,10 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
             })?;
 
         let _ = self.fixing_visitor.visit(&mut inst);
-        self.npv_visitor.visit(&inst).map_err(|e| Error::from(e))
+        self.npv_visitor
+            .visit(&inst)
+            .map(|x| x.to_f64().unwrap())
+            .map_err(|e| Error::from(e))
     }
 }
 
@@ -123,9 +130,8 @@ impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
     }
 }
 
-
-
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod test {
     use std::{
         collections::HashMap,
@@ -133,22 +139,27 @@ mod test {
     };
 
     use crate::{
-        core::marketstore::MarketStore, currencies::enums::Currency, instruments::
-            makefixedrateinstrument::MakeFixedRateInstrument
-        , models::{simplemodel::SimpleModel, traits::Model}, prelude::Side, rates::{
+        cashflows::cashflow::Side,
+        core::marketstore::MarketStore,
+        currencies::enums::Currency,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
+        models::{simplemodel::SimpleModel, traits::Model},
+        rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
             traits::HasReferenceDate,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        }, time::{
+        },
+        time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        }, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}
+        },
+        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
     };
-    
+
     use super::*;
 
     pub fn create_store() -> Result<MarketStore> {
@@ -175,7 +186,7 @@ mod test {
                 DayCounter::Thirty360,
                 Compounding::Compounded,
                 Frequency::Annual,
-            )
+            ),
         ));
 
         let mut ibor_fixings = HashMap::new();
@@ -234,21 +245,21 @@ mod test {
             0.03,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Thirty360
+            DayCounter::Thirty360,
         );
 
         let mut instrument = MakeFixedRateInstrument::new()
-                .with_start_date(start_date)
-                .with_end_date(end_date)
-                .with_rate(rate)
-                .with_payment_frequency(Frequency::Semiannual)
-                .with_side(Side::Receive)
-                .with_currency(Currency::USD)
-                .with_discount_curve_id(Some(2))
-                .with_notional(notional)
-                .equal_payments()
-                .build()?;
-            
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate(rate)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .with_discount_curve_id(Some(2))
+            .with_notional(notional)
+            .equal_payments()
+            .build()?;
+
         let indexer = IndexingVisitor::new();
         indexer.visit(&mut instrument)?;
 
@@ -257,10 +268,8 @@ mod test {
 
         let parvaluevisitor = ParValueConstVisitor::new(&data);
         let par_value = parvaluevisitor.visit(&instrument)?;
-        
-        assert!((par_value-0.05).abs() < 1e-6);
 
-        
+        assert!((par_value - 0.05).abs() < 1e-6);
 
         Ok(())
     }

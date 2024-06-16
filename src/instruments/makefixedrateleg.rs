@@ -2,6 +2,7 @@ use argmin::{
     core::{CostFunction, Error, Executor},
     solver::brent::BrentRoot,
 };
+use num_traits::ToPrimitive;
 
 use std::collections::{HashMap, HashSet};
 
@@ -11,6 +12,7 @@ use crate::{
         fixedratecoupon::FixedRateCoupon,
         simplecashflow::SimpleCashflow,
     },
+    core::meta::{NewValue, Number},
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
     time::{
@@ -158,7 +160,7 @@ impl MakeFixedRateLeg {
         match self.rate_value {
             Some(rate_value) => {
                 self.rate = Some(InterestRate::new(
-                    rate_value,
+                    Number::new(rate_value),
                     rate_definition.compounding(),
                     rate_definition.frequency(),
                     rate_definition.day_counter(),
@@ -185,7 +187,7 @@ impl MakeFixedRateLeg {
         match self.rate {
             Some(rate) => {
                 self.rate = Some(InterestRate::new(
-                    rate_value,
+                    Number::new(rate_value),
                     rate.compounding(),
                     rate.frequency(),
                     rate.day_counter(),
@@ -194,7 +196,7 @@ impl MakeFixedRateLeg {
             None => match self.rate_definition {
                 Some(rate_definition) => {
                     self.rate = Some(InterestRate::new(
-                        rate_value,
+                        Number::new(rate_value),
                         rate_definition.compounding(),
                         rate_definition.frequency(),
                         rate_definition.day_counter(),
@@ -442,13 +444,14 @@ impl MakeFixedRateLeg {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse())
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
                 for (start_date, end_date, notional) in &timeline {
                     let coupon = FixedRateCoupon::new(
-                        *notional,
+                        Number::new(*notional),
                         rate,
                         *start_date,
                         *end_date,
@@ -460,7 +463,8 @@ impl MakeFixedRateLeg {
                 }
                 for (date, amount) in redemptions.iter() {
                     let cashflow = Cashflow::Redemption(
-                        SimpleCashflow::new(*date, currency, side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side)
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
@@ -810,7 +814,7 @@ fn build_coupons_from_notionals(
     for (date_pair, notional) in dates.windows(2).zip(notionals) {
         let d1 = date_pair[0];
         let d2 = date_pair[1];
-        let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
+        let coupon = FixedRateCoupon::new(Number::new(*notional), rate, d1, d2, d2, currency, side);
         cashflows.push(Cashflow::FixedRateCoupon(coupon));
     }
     Ok(())
@@ -821,6 +825,7 @@ struct EqualPaymentCost {
     rate: InterestRate,
 }
 
+#[cfg(feature = "f64")]
 impl CostFunction for EqualPaymentCost {
     type Param = f64;
     type Output = f64;
@@ -830,6 +835,23 @@ impl CostFunction for EqualPaymentCost {
             let d1 = date_pair[0];
             let d2 = date_pair[1];
             let interest = total_amount * (self.rate.compound_factor(d1, d2) - 1.0);
+            total_amount -= payment - interest;
+        }
+        Ok(total_amount)
+    }
+}
+
+#[cfg(feature = "aad")]
+impl CostFunction for EqualPaymentCost {
+    type Param = f64;
+    type Output = f64;
+    fn cost(&self, payment: &Self::Param) -> std::result::Result<Self::Output, Error> {
+        let mut total_amount = 1.0;
+        for date_pair in self.dates.windows(2) {
+            let d1 = date_pair[0];
+            let d2 = date_pair[1];
+            let interest =
+                total_amount * (self.rate.compound_factor(d1, d2).to_f64().unwrap() - 1.0);
             total_amount -= payment - interest;
         }
         Ok(total_amount)
@@ -865,7 +887,7 @@ fn calculate_equal_payment_redemptions(
     for date_pair in dates.windows(2) {
         let d1 = date_pair[0];
         let d2 = date_pair[1];
-        let interest = total_amount * (rate.compound_factor(d1, d2) - 1.0);
+        let interest = total_amount * (rate.compound_factor(d1, d2).to_f64().unwrap() - 1.0);
         let k = payment - interest;
         total_amount -= k;
         redemptions.push(k * flag);

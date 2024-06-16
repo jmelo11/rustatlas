@@ -69,6 +69,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
 
     use std::{

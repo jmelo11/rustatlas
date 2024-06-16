@@ -503,7 +503,7 @@ impl MakeSchedule {
                     let mut next20th = next_twentieth(self.effective_date, self.rule);
                     if self.rule == DateGenerationRule::OldCDS {
                         // distance rule inforced in natural days
-                        let stub_days = 30;
+                        let stub_days = 30.0;
                         if next20th - self.effective_date < stub_days {
                             // +1 will skip this one and get the next
                             next20th = next_twentieth(next20th + 1, self.rule);
@@ -1040,8 +1040,8 @@ mod tests {
             .with_first_date(first_date)
             .build()
             .unwrap();
-        let dates = schedule.dates();   
+        let dates = schedule.dates();
         assert_eq!(dates[0], from);
-        assert_eq!(dates[1], first_date);        
+        assert_eq!(dates[1], first_date);
     }
 }

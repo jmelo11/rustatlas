@@ -3,7 +3,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::{NewValue, Number},
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
@@ -71,11 +74,11 @@ impl OvernightIndex {
         self
     }
 
-    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Number> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;
 
-        let comp = end_index / start_index;
+        let comp = Number::new(end_index / start_index);
         let day_counter = self.rate_definition.day_counter();
         Ok(InterestRate::implied_rate(
             comp,
@@ -129,7 +132,7 @@ impl HasName for OvernightIndex {
 }
 
 impl YieldProvider for OvernightIndex {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         self.term_structure()?.discount_factor(date)
     }
 
@@ -139,7 +142,7 @@ impl YieldProvider for OvernightIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         // mixed case - return w.a.
         if start_date < self.reference_date() && end_date > self.reference_date() {
             let first_fixing = self.fixing(self.reference_date())?;
@@ -190,13 +193,16 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         if !fixings.is_empty() {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
-                let last_fixing = fixings.get(&seed).ok_or(AtlasError::NotFoundErr(format!(
-                    "No fixing for {} and date {}",
-                    name, seed
-                )))?;
+                let last_fixing = fixings
+                    .get(&seed)
+                    .ok_or(AtlasError::NotFoundErr(format!(
+                        "No fixing for {} and date {}",
+                        name, seed
+                    )))?
+                    .clone();
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;
-                let comp = last_fixing * first_df / second_df;
+                let comp = last_fixing * (first_df / second_df).to_f64().unwrap();
                 fixings.insert(seed, comp);
             }
         }
@@ -213,7 +219,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = (date - self.reference_date()).to_i32().unwrap();
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -238,6 +244,7 @@ impl RelinkableTermStructure for OvernightIndex {
 impl InterestRateIndexTrait for OvernightIndex {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use crate::{
         math::interpolation::enums::Interpolator,

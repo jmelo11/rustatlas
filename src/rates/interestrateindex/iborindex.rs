@@ -1,4 +1,7 @@
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::Number,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
@@ -138,7 +141,7 @@ impl HasName for IborIndex {
 }
 
 impl YieldProvider for IborIndex {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         self.term_structure()?.discount_factor(date)
     }
 
@@ -148,7 +151,7 @@ impl YieldProvider for IborIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         if end_date < start_date {
             return Err(AtlasError::InvalidValueErr(format!(
                 "End date {:?} is before start date {:?}",
@@ -156,7 +159,7 @@ impl YieldProvider for IborIndex {
             )));
         }
         if start_date < self.reference_date() {
-            return self.fixing(start_date);
+            return self.fixing(start_date).map(|x| x.into());
         } else {
             return self
                 .term_structure()?
@@ -197,7 +200,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
                 self.rate_definition.compounding(),
                 self.rate_definition.frequency(),
             )?;
-            fixings.insert(seed, rate);
+            fixings.insert(seed, rate.to_f64().unwrap());
             seed = seed.advance(1, TimeUnit::Days);
         }
         let new_curve = curve.advance_to_period(period)?;
@@ -212,7 +215,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = (date - self.reference_date()).to_i32().unwrap();
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
                 "Date {} is before reference date {}",
@@ -226,6 +229,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use crate::{

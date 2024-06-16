@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::Number,
     math::interpolation::enums::Interpolator,
     rates::{
         enums::Compounding,
@@ -44,8 +47,8 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 pub struct ZeroRateTermStructure {
     reference_date: Date,
     dates: Vec<Date>,
-    year_fractions: Vec<f64>,
-    rates: Vec<f64>,
+    year_fractions: Vec<Number>,
+    rates: Vec<Number>,
     rate_definition: RateDefinition,
     interpolator: Interpolator,
     enable_extrapolation: bool,
@@ -55,7 +58,7 @@ impl ZeroRateTermStructure {
     pub fn new(
         reference_date: Date,
         dates: Vec<Date>,
-        rates: Vec<f64>,
+        rates: Vec<Number>,
         rate_definition: RateDefinition,
         interpolator: Interpolator,
         enable_extrapolation: bool,
@@ -74,7 +77,7 @@ impl ZeroRateTermStructure {
             ));
         }
 
-        let year_fractions: Vec<f64> = dates
+        let year_fractions: Vec<Number> = dates
             .iter()
             .map(|x| {
                 rate_definition
@@ -98,7 +101,7 @@ impl ZeroRateTermStructure {
         return &self.dates;
     }
 
-    pub fn rates(&self) -> &Vec<f64> {
+    pub fn rates(&self) -> &Vec<Number> {
         return &self.rates;
     }
 
@@ -122,7 +125,7 @@ impl HasReferenceDate for ZeroRateTermStructure {
 }
 
 impl YieldProvider for ZeroRateTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         let year_fraction = self
             .rate_definition()
             .day_counter()
@@ -145,7 +148,7 @@ impl YieldProvider for ZeroRateTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let df_to_star = self.discount_factor(start_date)?;
         let df_to_end = self.discount_factor(end_date)?;
 
@@ -183,7 +186,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             .collect();
 
         let start_df = self.discount_factor(new_dates[0])?;
-        let shifted_dfs: Result<Vec<f64>> = new_dates
+        let shifted_dfs: Result<Vec<Number>> = new_dates
             .iter()
             .map(|x| {
                 let df = self.discount_factor(*x)?;
@@ -202,7 +205,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = (date - self.reference_date()).to_i32().unwrap();
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
                 "Date {:?} is before reference date {:?}",
@@ -218,6 +221,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
 impl YieldTermStructureTrait for ZeroRateTermStructure {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use crate::time::daycounter::DayCounter;

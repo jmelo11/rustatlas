@@ -5,7 +5,7 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
     },
-    core::traits::HasCurrency,
+    core::{meta::Number,meta::NewValue, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -32,8 +32,8 @@ use crate::utils::errors::Result;
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
-    notional: f64,
-    spread: f64,
+    notional: Number,
+    spread: Number,
     side: Side,
     cashflows: Vec<Cashflow>,
     payment_frequency: Frequency,
@@ -50,8 +50,8 @@ impl FloatingRateInstrument {
     pub fn new(
         start_date: Date,
         end_date: Date,
-        notional: f64,
-        spread: f64,
+        notional: Number,
+        spread: Number,
         side: Side,
         cashflows: Vec<Cashflow>,
         payment_frequency: Frequency,
@@ -97,11 +97,11 @@ impl FloatingRateInstrument {
         self.end_date
     }
 
-    pub fn notional(&self) -> f64 {
+    pub fn notional(&self) -> Number {
         self.notional
     }
 
-    pub fn spread(&self) -> f64 {
+    pub fn spread(&self) -> Number {
         self.spread
     }
 
@@ -159,9 +159,11 @@ impl InterestAccrual for FloatingRateInstrument {
     fn accrual_end_date(&self) -> Result<Date> {
         Ok(self.end_date)
     }
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        let total_accrued_amount = self.cashflows.iter().fold(0.0, |acc, cf| {
-            acc + cf.accrued_amount(start_date, end_date).unwrap_or(0.0)
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
+        let total_accrued_amount = self.cashflows.iter().fold(Number::new(0.0), |acc, cf| {
+            acc + cf
+                .accrued_amount(start_date, end_date)
+                .unwrap_or(Number::new(0.0))
         });
         Ok(total_accrued_amount)
     }

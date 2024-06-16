@@ -5,7 +5,10 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::{InterestAccrual, Payable},
     },
-    core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
+    core::{
+        meta::{NewValue, Number},
+        traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
+    },
     currencies::enums::Currency,
     instruments::{
         hybridrateinstrument::HybridRateInstrument,
@@ -138,7 +141,7 @@ impl CashflowCompressorConstVisitor {
             self.estimaded_end_date
                 .borrow()
                 .ok_or(AtlasError::ValueNotSetErr("End date".to_string()))?,
-            *self.estimated_notional.borrow(),
+            Number::new(*self.estimated_notional.borrow()),
             Frequency::OtherFrequency,
             Structure::Other,
             None,
@@ -322,6 +325,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
 

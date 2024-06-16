@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
+    core::meta::Number,
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
@@ -31,7 +32,7 @@ pub struct FlatForwardTermStructure {
 impl FlatForwardTermStructure {
     pub fn new(
         reference_date: Date,
-        rate: f64,
+        rate: Number,
         rate_definition: RateDefinition,
     ) -> FlatForwardTermStructure {
         let rate = InterestRate::from_rate_definition(rate, rate_definition);
@@ -45,7 +46,7 @@ impl FlatForwardTermStructure {
         return self.rate;
     }
 
-    pub fn value(&self) -> f64 {
+    pub fn value(&self) -> Number {
         self.rate.rate()
     }
 
@@ -61,7 +62,7 @@ impl HasReferenceDate for FlatForwardTermStructure {
 }
 
 impl YieldProvider for FlatForwardTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(format!(
                 "Date {:?} is before reference date {:?}",
@@ -77,7 +78,7 @@ impl YieldProvider for FlatForwardTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let comp_factor = self.discount_factor(start_date)? / self.discount_factor(end_date)?;
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
         return Ok(InterestRate::implied_rate(
@@ -116,6 +117,7 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
 impl YieldTermStructureTrait for FlatForwardTermStructure {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use crate::time::{daycounter::DayCounter, enums::TimeUnit};
 

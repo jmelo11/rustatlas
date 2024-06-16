@@ -3,10 +3,13 @@ use std::{
     sync::{Arc, RwLock, RwLockReadGuard},
 };
 
+use num_traits::ToPrimitive;
+
 use crate::{
-    currencies::enums::Currency, 
-    time::{date::Date, enums::TimeUnit, period::Period}, 
-    utils::errors::{AtlasError, Result}
+    core::meta::Number,
+    currencies::enums::Currency,
+    time::{date::Date, enums::TimeUnit, period::Period},
+    utils::errors::{AtlasError, Result},
 };
 
 use super::{
@@ -53,7 +56,7 @@ impl IndexStore {
     pub fn add_currency_curve(&mut self, currency: Currency, fx_curve: usize) {
         self.currency_curve.insert(currency, fx_curve);
     }
-    
+
     pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
         self.currency_curve
             .get(&currency)
@@ -210,12 +213,12 @@ impl IndexStore {
         for (currency, curve) in self.currency_curve.iter() {
             store.add_currency_curve(*currency, *curve);
         }
-        
+
         Ok(store)
     }
 
     pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
-        let days = (date - self.reference_date) as i32;
+        let days = (date - self.reference_date).to_i32().unwrap();
         self.advance_to_period(Period::new(days, TimeUnit::Days))
     }
 
@@ -225,7 +228,12 @@ impl IndexStore {
         self.index_map.insert(to, index);
     }
 
-    pub fn currency_forescast_factor (&self,first_currency: Currency, second_currency: Currency, date: Date) -> Result<f64> {
+    pub fn currency_forecast_factor(
+        &self,
+        first_currency: Currency,
+        second_currency: Currency,
+        date: Date,
+    ) -> Result<Number> {
         let first_id = self.get_currency_curve(first_currency)?;
         let second_id = self.get_currency_curve(second_currency)?;
 
@@ -235,6 +243,6 @@ impl IndexStore {
         let first_df = first_curve.read_index()?.discount_factor(date)?;
         let second_df = second_curve.read_index()?.discount_factor(date)?;
 
-        Ok(second_df/ first_df)
+        Ok(second_df / first_df)
     }
 }

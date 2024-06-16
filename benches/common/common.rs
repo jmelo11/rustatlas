@@ -5,7 +5,10 @@ use rustatlas::{
         cashflow::{Cashflow, Side},
         traits::Payable,
     },
-    core::{marketstore::MarketStore, meta::MarketData},
+    core::{
+        marketstore::MarketStore,
+        meta::{MarketData, NewValue, Number},
+    },
     currencies::enums::Currency,
     instruments::{instrument::Instrument, makefixedrateinstrument::MakeFixedRateInstrument},
     rates::{
@@ -23,8 +26,6 @@ use rustatlas::{
 };
 use std::{
     collections::HashMap,
-    ops::Deref,
-    rc::Rc,
     sync::{Arc, RwLock},
 };
 
@@ -41,12 +42,12 @@ pub fn print_title(title: &str) {
 }
 
 #[allow(dead_code)]
-pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
+pub fn print_table(cashflows: &[Cashflow], market_data: &[MarketData]) {
     println!(
         "{:10} | {:10} | {:10} | {:10}| {:10}",
         "Date", "Amount", "DF", "FWD", "FX"
     );
-    for (cf, md) in cashflows.iter().zip(market_data.deref()) {
+    for (cf, md) in cashflows.iter().zip(market_data) {
         let date = format!("{:10}", cf.payment_date().to_string());
         let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
 
@@ -90,19 +91,19 @@ pub fn create_store() -> Result<MarketStore> {
 
     let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        0.02,
+        Number::new(0.02),
         RateDefinition::default(),
     ));
 
     let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        0.03,
+        Number::new(0.03),
         RateDefinition::default(),
     ));
 
     let discount_curve = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        0.05,
+        Number::new(0.05),
         RateDefinition::default(),
     ));
 
@@ -155,6 +156,7 @@ pub trait Mock {
 
     fn random_currency() -> Currency;
 
+    #[allow(unused)]
     fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
 }
 

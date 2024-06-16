@@ -14,7 +14,12 @@ argmin = { version = "0.8.1" }
 indicatif = "0.17.7"
 serde = "1.0.136"
 serde_json = "1.0.68"
+num-traits = "0.2.19"
 
+[features]
+default = ["aad"]
+f64 = []
+aad = []
 
 [dev-dependencies]
 criterion = { version = "0.5.1", features = ["html_reports"] }

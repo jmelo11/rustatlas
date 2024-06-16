@@ -1,5 +1,5 @@
 use super::traits::DayCountProvider;
-use crate::time::date::Date;
+use crate::{core::meta::Number, time::date::Date};
 
 /// # Actual365 (Fixed)
 /// Actual/365 day count convention.
@@ -20,12 +20,11 @@ use crate::time::date::Date;
 pub struct Actual365;
 
 impl DayCountProvider for Actual365 {
-    fn day_count(start: Date, end: Date) -> i64 {
+    fn day_count(start: Date, end: Date) -> Number {
         return end - start;
     }
 
-    fn year_fraction(start: Date, end: Date) -> f64 {
-        return Actual365
-        ::day_count(start, end) as f64 / 365.0;
+    fn year_fraction(start: Date, end: Date) -> Number {
+        return Actual365::day_count(start, end) / 365.0;
     }
 }

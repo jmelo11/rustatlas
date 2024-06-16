@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
+use crate::core::meta::Number;
 use crate::core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId};
 use crate::utils::errors::AtlasError;
 use crate::{
@@ -26,7 +27,7 @@ use crate::{
 /// * `side` - The side of the coupon (Pay or Receive)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FixedRateCoupon {
-    notional: f64,
+    notional: Number,
     rate: InterestRate,
     accrual_start_date: Date,
     accrual_end_date: Date,
@@ -35,7 +36,7 @@ pub struct FixedRateCoupon {
 
 impl FixedRateCoupon {
     pub fn new(
-        notional: f64,
+        notional: Number,
         rate: InterestRate,
         accrual_start_date: Date,
         accrual_end_date: Date,
@@ -71,7 +72,7 @@ impl FixedRateCoupon {
         );
     }
 
-    pub fn set_notional(&mut self, notional: f64) {
+    pub fn set_notional(&mut self, notional: Number) {
         self.notional = notional;
         self.cashflow.set_amount(
             self.notional
@@ -82,7 +83,7 @@ impl FixedRateCoupon {
         );
     }
 
-    pub fn notional(&self) -> f64 {
+    pub fn notional(&self) -> Number {
         self.notional
     }
 
@@ -134,7 +135,7 @@ impl InterestAccrual for FixedRateCoupon {
         return Ok(self.accrual_end_date);
     }
 
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
         let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
@@ -146,7 +147,7 @@ impl InterestAccrual for FixedRateCoupon {
 }
 
 impl Payable for FixedRateCoupon {
-    fn amount(&self) -> Result<f64> {
+    fn amount(&self) -> Result<Number> {
         return self.cashflow.amount();
     }
 
@@ -166,6 +167,7 @@ impl Expires for FixedRateCoupon {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use crate::cashflows::cashflow::Side;

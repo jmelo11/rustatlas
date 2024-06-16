@@ -5,6 +5,7 @@ use rustatlas::{
         cashflow::Side,
         traits::{InterestAccrual, Payable},
     },
+    core::meta::{NewValue, Number},
     instruments::makefixedrateinstrument::MakeFixedRateInstrument,
     models::{simplemodel::SimpleModel, traits::Model},
     rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
@@ -34,7 +35,7 @@ fn starting_today_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        0.05,
+        Number::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -73,22 +74,28 @@ fn starting_today_pricing() {
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
-    let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
-    });
+    let accrued_amount = instrument
+        .cashflows()
+        .iter()
+        .fold(Number::new(0.0), |acc, cf| {
+            acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        });
 
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
     );
 
-    let maturing_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        if cf.payment_date() == ref_date {
-            acc + cf.amount().unwrap()
-        } else {
-            acc
-        }
-    });
+    let maturing_amount = instrument
+        .cashflows()
+        .iter()
+        .fold(Number::new(0.0), |acc, cf| {
+            if cf.payment_date() == ref_date {
+                acc + cf.amount().unwrap()
+            } else {
+                acc
+            }
+        });
 
     println!(
         "Maturing Amount between {} and {}: {}",
@@ -111,7 +118,7 @@ fn forward_starting_pricing() {
 
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        0.05,
+        Number::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -145,9 +152,12 @@ fn forward_starting_pricing() {
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
-    let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
-    });
+    let accrued_amount = instrument
+        .cashflows()
+        .iter()
+        .fold(Number::new(0.0), |acc, cf| {
+            acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        });
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount
@@ -164,7 +174,7 @@ fn already_started_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        0.05,
+        Number::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -202,9 +212,12 @@ fn already_started_pricing() {
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
-    let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
-    });
+    let accrued_amount = instrument
+        .cashflows()
+        .iter()
+        .fold(Number::new(0.0), |acc, cf| {
+            acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        });
     println!(
         "Accrued Amount between {} and {}: {}",
         start_accrual, end_accrual, accrued_amount

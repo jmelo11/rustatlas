@@ -1,18 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    alm::enums::{AccountType, EvaluationMode, ProductFamily},
-    cashflows::{
+    alm::enums::{AccountType, EvaluationMode, ProductFamily}, cashflows::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
-    },
-    currencies::enums::Currency,
-    rates::{
+    }, core::meta::Number, currencies::enums::Currency, rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
-    },
-    time::{date::Date, daycounter::DayCounter, enums::Frequency},
-    utils::errors::{AtlasError, Result},
+    }, time::{date::Date, daycounter::DayCounter, enums::Frequency}, utils::errors::{AtlasError, Result}
 };
 
 use super::{
@@ -30,7 +25,7 @@ pub struct LoanDepo {
     pub mis_id: String,
     pub reference_date: Date,
     pub loandepo_configuration_id: usize,
-    pub notional: f64,
+    pub notional: Number,
     pub issue_date: Option<Date>,
     pub start_date: Date,
     pub end_date: Date,
@@ -43,10 +38,10 @@ pub struct LoanDepo {
     pub product_family: ProductFamily,
     pub payment_frequency: Frequency,
 
-    pub first_ftp_rate: f64,
-    pub first_client_rate: f64,
-    pub second_ftp_rate: Option<f64>,
-    pub second_client_rate: Option<f64>,
+    pub first_ftp_rate: Number,
+    pub first_client_rate: Number,
+    pub second_ftp_rate: Option<Number>,
+    pub second_client_rate: Option<Number>,
 
     // pre-calculated fields
     pub notional_local_ccy: Option<f64>,

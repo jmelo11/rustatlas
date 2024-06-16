@@ -1,9 +1,15 @@
 use std::sync::Arc;
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::{NewValue, Number},
     math::interpolation::enums::Interpolator,
-    rates::traits::HasReferenceDate,
-    rates::{enums::Compounding, interestrate::InterestRate, traits::YieldProvider},
+    rates::{
+        enums::Compounding,
+        interestrate::InterestRate,
+        traits::{HasReferenceDate, YieldProvider},
+    },
     time::{
         date::Date,
         daycounter::DayCounter,
@@ -62,8 +68,8 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 pub struct DiscountTermStructure {
     reference_date: Date,
     dates: Vec<Date>,
-    year_fractions: Vec<f64>,
-    discount_factors: Vec<f64>,
+    year_fractions: Vec<Number>,
+    discount_factors: Vec<Number>,
     interpolator: Interpolator,
     day_counter: DayCounter,
     enable_extrapolation: bool,
@@ -72,7 +78,7 @@ pub struct DiscountTermStructure {
 impl DiscountTermStructure {
     pub fn new(
         dates: Vec<Date>,
-        discount_factors: Vec<f64>,
+        discount_factors: Vec<Number>,
         day_counter: DayCounter,
         interpolator: Interpolator,
         enable_extrapolation: bool,
@@ -85,18 +91,21 @@ impl DiscountTermStructure {
         }
 
         // order dates y discount_factors
-        let mut zipped = dates.into_iter().zip(discount_factors.into_iter()).collect::<Vec<_>>();
+        let mut zipped = dates
+            .into_iter()
+            .zip(discount_factors.into_iter())
+            .collect::<Vec<_>>();
         zipped.sort_by(|a, b| a.0.cmp(&b.0));
-        let (dates, discount_factors) : (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
+        let (dates, discount_factors): (Vec<Date>, Vec<Number>) = zipped.into_iter().unzip();
 
-        // discount_factors[0] needs to be 1.0 
+        // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
             ));
         }
         let reference_date = dates[0];
-        let year_fractions: Vec<f64> = dates
+        let year_fractions = dates
             .iter()
             .map(|x| day_counter.year_fraction(reference_date, *x))
             .collect();
@@ -116,7 +125,7 @@ impl DiscountTermStructure {
         return &self.dates;
     }
 
-    pub fn discount_factors(&self) -> &Vec<f64> {
+    pub fn discount_factors(&self) -> &Vec<Number> {
         return &self.discount_factors;
     }
 
@@ -140,14 +149,14 @@ impl HasReferenceDate for DiscountTermStructure {
 }
 
 impl YieldProvider for DiscountTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 "Date needs to be greater than reference date".to_string(),
             ));
         }
         if date == self.reference_date() {
-            return Ok(1.0);
+            return Ok(Number::new(1.0));
         }
 
         let year_fraction = self
@@ -169,7 +178,7 @@ impl YieldProvider for DiscountTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let discount_factor_to_star = self.discount_factor(start_date)?;
         let discount_factor_to_end = self.discount_factor(end_date)?;
 
@@ -192,7 +201,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             .collect();
 
         let start_df = self.discount_factor(new_dates[0])?;
-        let shifted_dfs: Result<Vec<f64>> = new_dates
+        let shifted_dfs: Result<Vec<Number>> = new_dates
             .iter()
             .map(|x| {
                 let df = self.discount_factor(*x)?;
@@ -210,7 +219,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = (date - self.reference_date()).to_i32().unwrap();
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(
                 "Date needs to be greater than reference date".to_string(),
@@ -224,6 +233,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
 impl YieldTermStructureTrait for DiscountTermStructure {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
 
@@ -386,7 +396,6 @@ mod tests {
                 .unwrap()
         );
     }
-
 
     #[test]
     fn order_dates() {

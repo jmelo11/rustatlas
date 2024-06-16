@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
+    core::meta::Number,
     rates::{
         enums::Compounding,
         traits::{HasReferenceDate, YieldProvider},
@@ -73,7 +74,7 @@ impl HasReferenceDate for CompositeTermStructure {
 }
 
 impl YieldProvider for CompositeTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
         let add_df = spread_discount_factor * base_discount_factor;
@@ -86,7 +87,7 @@ impl YieldProvider for CompositeTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let spread_forward_rate = self
             .spread_curve
             .forward_rate(start_date, end_date, comp, freq)?;
@@ -115,6 +116,7 @@ impl AdvanceTermStructureInTime for CompositeTermStructure {
 impl YieldTermStructureTrait for CompositeTermStructure {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod test {
     use std::sync::Arc;
 

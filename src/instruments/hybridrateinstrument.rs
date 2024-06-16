@@ -4,7 +4,7 @@ use super::instrument::RateType;
 use super::traits::Structure;
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
-    core::traits::HasCurrency,
+    core::{meta::Number, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -15,7 +15,7 @@ use crate::{
 pub struct HybridRateInstrument {
     start_date: Date,
     end_date: Date,
-    notional: f64,
+    notional: Number,
     payment_frequency: Frequency,
     structure: Structure,
     rate_type: RateType,
@@ -24,9 +24,9 @@ pub struct HybridRateInstrument {
     id: Option<String>,
     issue_date: Option<Date>,
     first_rate_definition: Option<RateDefinition>,
-    first_rate: Option<f64>,
+    first_rate: Option<Number>,
     second_rate_definition: Option<RateDefinition>,
-    second_rate: Option<f64>,
+    second_rate: Option<Number>,
     forecast_curve_id: Option<usize>,
     discount_curve_id: Option<usize>,
     cashflows: Vec<Cashflow>,
@@ -36,7 +36,7 @@ impl HybridRateInstrument {
     pub fn new(
         start_date: Date,
         end_date: Date,
-        notional: f64,
+        notional: Number,
         payment_frequency: Frequency,
         structure: Structure,
         side: Option<Side>,
@@ -45,9 +45,9 @@ impl HybridRateInstrument {
         issue_date: Option<Date>,
         rate_type: RateType,
         first_rate_definition: Option<RateDefinition>,
-        first_rate: Option<f64>,
+        first_rate: Option<Number>,
         second_rate_definition: Option<RateDefinition>,
-        second_rate: Option<f64>,
+        second_rate: Option<Number>,
         forecast_curve_id: Option<usize>,
         discount_curve_id: Option<usize>,
         cashflows: Vec<Cashflow>,
@@ -73,7 +73,7 @@ impl HybridRateInstrument {
         }
     }
 
-    pub fn notional(&self) -> f64 {
+    pub fn notional(&self) -> Number {
         self.notional
     }
 
@@ -121,7 +121,7 @@ impl HybridRateInstrument {
         self.first_rate_definition
     }
 
-    pub fn first_rate(&self) -> Option<f64> {
+    pub fn first_rate(&self) -> Option<Number> {
         self.first_rate
     }
 
@@ -129,7 +129,7 @@ impl HybridRateInstrument {
         self.second_rate_definition
     }
 
-    pub fn second_rate(&self) -> Option<f64> {
+    pub fn second_rate(&self) -> Option<Number> {
         self.second_rate
     }
 

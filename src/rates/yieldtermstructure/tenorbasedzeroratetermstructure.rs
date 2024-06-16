@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    core::meta::Number,
     math::interpolation::enums::Interpolator,
     rates::{
         enums::Compounding,
@@ -31,9 +34,9 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
     tenors: Vec<Period>,
-    spreads: Vec<f64>,
+    spreads: Vec<Number>,
     rate_definition: RateDefinition,
-    year_fractions: Vec<f64>,
+    year_fractions: Vec<Number>,
     interpolation: Interpolator,
     enable_extrapolation: bool,
 }
@@ -42,7 +45,7 @@ impl TenorBasedZeroRateTermStructure {
     pub fn new(
         reference_date: Date,
         tenors: Vec<Period>,
-        spreads: Vec<f64>,
+        spreads: Vec<Number>,
         rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
@@ -72,7 +75,7 @@ impl TenorBasedZeroRateTermStructure {
         return &self.tenors;
     }
 
-    pub fn spreads(&self) -> &Vec<f64> {
+    pub fn spreads(&self) -> &Vec<Number> {
         return &self.spreads;
     }
 }
@@ -84,7 +87,7 @@ impl HasReferenceDate for TenorBasedZeroRateTermStructure {
 }
 
 impl YieldProvider for TenorBasedZeroRateTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         let year_fraction = self
             .rate_definition
             .day_counter()
@@ -106,7 +109,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let start_df = self.discount_factor(start_date)?;
         let end_df = self.discount_factor(end_date)?;
 
@@ -140,7 +143,7 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date) as i32;
+        let days = (date - self.reference_date).to_i32().unwrap();
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -149,6 +152,7 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
 impl YieldTermStructureTrait for TenorBasedZeroRateTermStructure {}
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use crate::{
         math::interpolation::enums::Interpolator,

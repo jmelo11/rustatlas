@@ -8,6 +8,7 @@ use rayon::{
 };
 use rustatlas::{
     cashflows::cashflow::Side,
+    core::meta::{NewValue, Number},
     currencies::enums::Currency,
     instruments::{
         fixedrateinstrument::FixedRateInstrument, makefixedrateinstrument::MakeFixedRateInstrument,
@@ -39,7 +40,7 @@ fn multiple() {
     let end_date = start_date + Period::new(10, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        0.05,
+        Number::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Thirty360,

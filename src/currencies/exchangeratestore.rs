@@ -5,7 +5,12 @@ use std::{
 
 use super::{enums::Currency, traits::AdvanceExchangeRateStoreInTime};
 
-use crate::{rates::indexstore::IndexStore, time::{date::Date, period::Period}, utils::errors::{AtlasError, Result}};
+use crate::{
+    core::meta::{NewValue, Number},
+    rates::indexstore::IndexStore,
+    time::{date::Date, period::Period},
+    utils::errors::{AtlasError, Result},
+};
 
 /// # ExchangeRateStore
 /// A store for exchange rates.
@@ -17,12 +22,12 @@ use crate::{rates::indexstore::IndexStore, time::{date::Date, period::Period}, u
 #[derive(Clone)]
 pub struct ExchangeRateStore {
     reference_date: Date,
-    exchange_rate_map: HashMap<(Currency, Currency), f64>,
-    exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), f64>>>,
+    exchange_rate_map: HashMap<(Currency, Currency), Number>,
+    exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), Number>>>,
 }
 
 impl ExchangeRateStore {
-    pub fn new(date : Date) -> ExchangeRateStore {
+    pub fn new(date: Date) -> ExchangeRateStore {
         ExchangeRateStore {
             reference_date: date,
             exchange_rate_map: HashMap::new(),
@@ -32,13 +37,13 @@ impl ExchangeRateStore {
 
     pub fn with_exchange_rates(
         &mut self,
-        exchange_rate_map: HashMap<(Currency, Currency), f64>,
+        exchange_rate_map: HashMap<(Currency, Currency), Number>,
     ) -> &mut Self {
         self.exchange_rate_map = exchange_rate_map;
         self
     }
 
-    pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: f64) {
+    pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: Number) {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
@@ -46,12 +51,12 @@ impl ExchangeRateStore {
         self.reference_date
     }
 
-    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
+    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<Number> {
         let first_ccy = first_ccy;
         let second_ccy = second_ccy;
 
         if first_ccy == second_ccy {
-            return Ok(1.0);
+            return Ok(Number::new(1.0));
         }
 
         let cache_key = (first_ccy, second_ccy);
@@ -59,9 +64,9 @@ impl ExchangeRateStore {
             return Ok(*cached_rate);
         }
 
-        let mut q: VecDeque<(Currency, f64)> = VecDeque::new();
+        let mut q: VecDeque<(Currency, Number)> = VecDeque::new();
         let mut visited: HashSet<Currency> = HashSet::new();
-        q.push_back((first_ccy, 1.0));
+        q.push_back((first_ccy, Number::new(1.0)));
         visited.insert(first_ccy);
 
         let mut mutable_cache = self.exchange_rate_cache.lock().unwrap();
@@ -93,12 +98,14 @@ impl ExchangeRateStore {
             first_ccy, second_ccy
         )))
     }
-
 }
 
-
 impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
-    fn advance_to_period(&self, period: Period, index_store: &IndexStore) -> Result<ExchangeRateStore> { 
+    fn advance_to_period(
+        &self,
+        period: Period,
+        index_store: &IndexStore,
+    ) -> Result<ExchangeRateStore> {
         let new_date = self.reference_date + period;
         self.advance_to_date(new_date, index_store)
     }
@@ -112,20 +119,21 @@ impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
 
         let mut new_store = ExchangeRateStore::new(date);
         for ((ccy1, ccy2), fx) in self.exchange_rate_map.iter() {
-            let compound_factor = index_store.currency_forescast_factor(*ccy1, *ccy2, date);
+            let compound_factor = index_store.currency_forecast_factor(*ccy1, *ccy2, date);
             match compound_factor {
-                Ok(cf) => new_store.add_exchange_rate(*ccy1, *ccy2, fx * cf),
+                Ok(cf) => new_store.add_exchange_rate(*ccy1, *ccy2, fx.clone() * cf),
                 Err(_) => {
                     // If the compound factor is not available, we use the last fx rate
                     new_store.add_exchange_rate(*ccy1, *ccy2, *fx);
                 }
-            }    
+            }
         }
         Ok(new_store)
     }
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use crate::currencies::enums::Currency::{CLP, EUR, USD};

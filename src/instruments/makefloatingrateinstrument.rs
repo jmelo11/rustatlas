@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use num_traits::ToPrimitive;
+
 use crate::{
     cashflows::{
         cashflow::{Cashflow, CashflowType, Side},
@@ -7,7 +9,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
-    core::traits::HasCurrency,
+    core::{meta::NewValue, meta::Number, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{
@@ -352,8 +354,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    notional,
-                    spread,
+                    Number::new(notional),
+                    Number::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -448,8 +450,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    notional,
-                    spread,
+                    Number::new(notional),
+                    Number::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -559,8 +561,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    notional,
-                    spread,
+                    Number::new(notional),
+                    Number::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -595,15 +597,16 @@ impl MakeFloatingRateInstrument {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse())
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
 
                 for (start_date, end_date, notional) in &timeline {
                     let coupon = FloatingRateCoupon::new(
-                        *notional,
-                        spread,
+                        Number::new(*notional),
+                        Number::new(spread),
                         *start_date,
                         *end_date,
                         *end_date,
@@ -617,7 +620,8 @@ impl MakeFloatingRateInstrument {
 
                 for (date, amount) in redemptions.iter() {
                     let cashflow = Cashflow::Redemption(
-                        SimpleCashflow::new(*date, currency, side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side)
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
@@ -648,8 +652,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     *start_date,
                     *end_date,
-                    notional,
-                    spread,
+                    Number::new(notional),
+                    Number::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -682,8 +686,8 @@ fn build_coupons_from_notionals(
         let d1 = date_pair[0];
         let d2 = date_pair[1];
         let coupon = FloatingRateCoupon::new(
-            *notional,
-            spread,
+            Number::new(*notional),
+            Number::new(spread),
             d1,
             d2,
             d2,
@@ -720,19 +724,28 @@ impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
         MakeFloatingRateInstrument::new()
             .with_start_date(self.start_date())
             .with_end_date(self.end_date())
-            .with_notional(self.notional())
-            .with_spread(self.spread())
+            .with_notional(self.notional().to_f64().unwrap())
+            .with_spread(self.spread().to_f64().unwrap())
             .with_side(self.side())
             .with_rate_definition(self.rate_definition())
             .with_forecast_curve_id(self.forecast_curve_id())
             .with_discount_curve_id(self.discount_curve_id())
             .with_payment_frequency(self.payment_frequency())
             .with_currency(self.currency().unwrap())
-            .with_disbursements(disbursements)
-            .with_redemptions(redemptions)
+            .with_disbursements(
+                disbursements
+                    .iter()
+                    .map(|(k, v)| (*k, v.to_f64().unwrap()))
+                    .collect(),
+            )
+            .with_redemptions(
+                redemptions
+                    .iter()
+                    .map(|(k, v)| (*k, v.to_f64().unwrap()))
+                    .collect(),
+            )
             .with_additional_coupon_dates(additional_coupon_dates)
             .other()
-
     }
 }
 
@@ -743,16 +756,24 @@ impl From<&FloatingRateInstrument> for MakeFloatingRateInstrument {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use std::collections::{HashMap, HashSet};
 
     use crate::{
-        cashflows::{cashflow::Side, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::makefloatingrateinstrument::MakeFloatingRateInstrument, prelude::{HasCurrency, Structure}, rates::{enums::Compounding, interestrate::RateDefinition}, time::{
+        cashflows::{cashflow::Side, traits::RequiresFixingRate},
+        core::traits::HasCurrency,
+        currencies::enums::Currency,
+        instruments::{makefloatingrateinstrument::MakeFloatingRateInstrument, traits::Structure},
+        rates::{enums::Compounding, interestrate::RateDefinition},
+        time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        }, utils::errors::Result, visitors::traits::HasCashflows
+        },
+        utils::errors::Result,
+        visitors::traits::HasCashflows,
     };
 
     #[test]
@@ -960,17 +981,27 @@ mod tests {
         assert_eq!(instrument2.start_date(), instrument.start_date());
         assert_eq!(instrument2.end_date(), instrument.end_date());
         assert_eq!(instrument2.rate_definition(), instrument.rate_definition());
-        assert_ne!(instrument2.payment_frequency(), instrument.payment_frequency());
+        assert_ne!(
+            instrument2.payment_frequency(),
+            instrument.payment_frequency()
+        );
         assert_eq!(instrument2.spread(), instrument.spread());
         assert_eq!(instrument2.side(), instrument.side());
-        assert_eq!(instrument2.currency().unwrap(), instrument.currency().unwrap());
-        assert_eq!(instrument2.discount_curve_id(), instrument.discount_curve_id());
-        assert_eq!(instrument2.forecast_curve_id(), instrument.forecast_curve_id());
+        assert_eq!(
+            instrument2.currency().unwrap(),
+            instrument.currency().unwrap()
+        );
+        assert_eq!(
+            instrument2.discount_curve_id(),
+            instrument.discount_curve_id()
+        );
+        assert_eq!(
+            instrument2.forecast_curve_id(),
+            instrument.forecast_curve_id()
+        );
         assert_eq!(instrument2.structure(), Structure::Other);
         assert_eq!(instrument.structure(), Structure::Bullet);
 
         Ok(())
-
     }
-
 }

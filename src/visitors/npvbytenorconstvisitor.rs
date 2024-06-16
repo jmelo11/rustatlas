@@ -1,5 +1,8 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable}, core::{meta::MarketData, traits::Registrable}, time::period::Period, utils::errors::{AtlasError, Result}
+    cashflows::{cashflow::Side, traits::Payable},
+    core::{meta::MarketData, traits::Registrable},
+    time::period::Period,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -10,12 +13,16 @@ use std::collections::BTreeMap;
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByTenorConstVisitor<'a> {
     market_data: &'a [MarketData],
-    tenors: Vec<(Period,Period)>,
+    tenors: Vec<(Period, Period)>,
     include_today_cashflows: bool,
 }
 
 impl<'a> NPVByTenorConstVisitor<'a> {
-    pub fn new(market_data: &'a [MarketData], tenors : Vec<(Period,Period)>, include_today_cashflows: bool) -> Self {
+    pub fn new(
+        market_data: &'a [MarketData],
+        tenors: Vec<(Period, Period)>,
+        include_today_cashflows: bool,
+    ) -> Self {
         NPVByTenorConstVisitor {
             market_data: market_data,
             tenors: tenors,
@@ -26,24 +33,23 @@ impl<'a> NPVByTenorConstVisitor<'a> {
         self.include_today_cashflows = include_today_cashflows;
     }
 
-    pub fn set_tenors(&mut self, tenors: Vec<(Period,Period)>) {
+    pub fn set_tenors(&mut self, tenors: Vec<(Period, Period)>) {
         self.tenors = tenors;
     }
 
-    pub fn tenors(&self) -> Vec<(Period,Period)> {
+    pub fn tenors(&self) -> Vec<(Period, Period)> {
         self.tenors.clone()
     }
 }
 
-
 impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
-    type Output = Result<BTreeMap<(Period,Period), f64>>;
+    type Output = Result<BTreeMap<(Period, Period), f64>>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let reference_date = self.market_data[0].reference_date();
-       
-        let mut npv_result: BTreeMap<(Period,Period), f64> = BTreeMap::new();
+
+        let mut npv_result: BTreeMap<(Period, Period), f64> = BTreeMap::new();
         let tenors = self.tenors();
-        
+
         for tenor in tenors.iter() {
             npv_result.insert(tenor.clone(), 0.0);
         }
@@ -78,7 +84,9 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
                 let npv = amount * df * fx * flag;
 
                 for (key, value) in npv_result.iter_mut() {
-                    if cf.payment_date() >= reference_date + key.0 && cf.payment_date() < reference_date + key.1 {
+                    if cf.payment_date() >= reference_date + key.0
+                        && cf.payment_date() < reference_date + key.1
+                    {
                         *value += npv;
                     }
                 }
@@ -90,17 +98,33 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
-    use std::{collections::HashMap, sync::{Arc, RwLock}};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, RwLock},
+    };
 
-    use crate::{core::marketstore::MarketStore, 
-                currencies::enums::Currency,   
-                instruments::makefixedrateinstrument::MakeFixedRateInstrument, 
-                models::{simplemodel::SimpleModel, traits::Model}, 
-                rates::{enums::Compounding, interestrate::{InterestRate, RateDefinition}, interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex}, traits::HasReferenceDate, yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure}, 
-                time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}}, 
-                visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
-                
+    use crate::{
+        core::marketstore::MarketStore,
+        currencies::enums::Currency,
+        instruments::makefixedrateinstrument::MakeFixedRateInstrument,
+        models::{simplemodel::SimpleModel, traits::Model},
+        rates::{
+            enums::Compounding,
+            interestrate::{InterestRate, RateDefinition},
+            interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
+            traits::HasReferenceDate,
+            yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
+        },
+        time::{
+            date::Date,
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+        },
+        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+    };
+
     use super::*;
 
     pub fn create_store() -> Result<MarketStore> {
@@ -172,7 +196,6 @@ mod tests {
 
     #[test]
     fn test_npv_by_date_const_visitor() -> Result<()> {
-
         let market_store = create_store().unwrap();
         let indexer = IndexingVisitor::new();
 
@@ -199,18 +222,39 @@ mod tests {
             .build()?;
 
         let _ = indexer.visit(&mut instrument_1);
- 
+
         let model = SimpleModel::new(&market_store);
         let data = model.gen_market_data(&indexer.request())?;
 
         let mut tenors = Vec::new();
-        tenors.push((Period::new(0, TimeUnit::Days),Period::new(1, TimeUnit::Months)));        
-        tenors.push((Period::new(1, TimeUnit::Months),Period::new(2, TimeUnit::Months)));
-        tenors.push((Period::new(2, TimeUnit::Months),Period::new(3, TimeUnit::Months)));
-        tenors.push((Period::new(6, TimeUnit::Months),Period::new(12, TimeUnit::Months)));
-        tenors.push((Period::new(1, TimeUnit::Years),Period::new(2, TimeUnit::Years)));
-        tenors.push((Period::new(2, TimeUnit::Years),Period::new(3, TimeUnit::Years)));
-        tenors.push((Period::new(3, TimeUnit::Years),Period::new(5, TimeUnit::Years)));
+        tenors.push((
+            Period::new(0, TimeUnit::Days),
+            Period::new(1, TimeUnit::Months),
+        ));
+        tenors.push((
+            Period::new(1, TimeUnit::Months),
+            Period::new(2, TimeUnit::Months),
+        ));
+        tenors.push((
+            Period::new(2, TimeUnit::Months),
+            Period::new(3, TimeUnit::Months),
+        ));
+        tenors.push((
+            Period::new(6, TimeUnit::Months),
+            Period::new(12, TimeUnit::Months),
+        ));
+        tenors.push((
+            Period::new(1, TimeUnit::Years),
+            Period::new(2, TimeUnit::Years),
+        ));
+        tenors.push((
+            Period::new(2, TimeUnit::Years),
+            Period::new(3, TimeUnit::Years),
+        ));
+        tenors.push((
+            Period::new(3, TimeUnit::Years),
+            Period::new(5, TimeUnit::Years),
+        ));
 
         let npv_visitor = NPVByTenorConstVisitor::new(&data, tenors, false);
         let npv_result_inst_1 = npv_visitor.visit(&instrument_1)?;
@@ -219,5 +263,4 @@ mod tests {
 
         Ok(())
     }
-
 }

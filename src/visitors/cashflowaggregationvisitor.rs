@@ -7,7 +7,7 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::Payable,
     },
-    core::traits::HasCurrency,
+    core::{meta::Number, traits::HasCurrency},
     currencies::enums::Currency,
     time::date::Date,
     utils::errors::{AtlasError, Result},
@@ -23,9 +23,9 @@ use super::traits::{ConstVisit, HasCashflows};
 /// * `validation_currency` - Flag to validate the currency of the instrument against the provided currency
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CashflowsAggregatorConstVisitor {
-    redemptions: Mutex<BTreeMap<Date, f64>>,
-    disbursements: Mutex<BTreeMap<Date, f64>>,
-    interest: Mutex<BTreeMap<Date, f64>>,
+    redemptions: Mutex<BTreeMap<Date, Number>>,
+    disbursements: Mutex<BTreeMap<Date, Number>>,
+    interest: Mutex<BTreeMap<Date, Number>>,
     validation_currency: Option<Currency>,
 }
 
@@ -44,15 +44,15 @@ impl CashflowsAggregatorConstVisitor {
         self
     }
 
-    pub fn redemptions(&self) -> BTreeMap<Date, f64> {
+    pub fn redemptions(&self) -> BTreeMap<Date, Number> {
         self.redemptions.lock().unwrap().clone()
     }
 
-    pub fn disbursements(&self) -> BTreeMap<Date, f64> {
+    pub fn disbursements(&self) -> BTreeMap<Date, Number> {
         self.disbursements.lock().unwrap().clone()
     }
 
-    pub fn interest(&self) -> BTreeMap<Date, f64> {
+    pub fn interest(&self) -> BTreeMap<Date, Number> {
         self.interest.lock().unwrap().clone()
     }
 }
@@ -119,6 +119,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use crate::cashflows::cashflow::Side;

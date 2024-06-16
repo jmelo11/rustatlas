@@ -1,5 +1,6 @@
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
+    core::meta::Number,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
 };
@@ -12,7 +13,7 @@ use super::{instrument::RateType, traits::Structure};
 pub struct Leg {
     structure: Structure,
     rate_type: RateType,
-    rate_value: f64,
+    rate_value: Number,
     rate_definition: RateDefinition,
     currency: Currency,
     side: Side,
@@ -25,7 +26,7 @@ impl Leg {
     pub fn new(
         structure: Structure,
         rate_type: RateType,
-        rate_value: f64,
+        rate_value: Number,
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
@@ -58,7 +59,7 @@ impl Leg {
         self.rate_type
     }
 
-    pub fn rate_value(&self) -> f64 {
+    pub fn rate_value(&self) -> Number {
         self.rate_value
     }
 

@@ -1,7 +1,12 @@
 use std::sync::{Arc, RwLock};
 
+use num_traits::ToPrimitive;
+
 use crate::{
-    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore, traits::AdvanceExchangeRateStoreInTime},
+    currencies::{
+        enums::Currency, exchangeratestore::ExchangeRateStore,
+        traits::AdvanceExchangeRateStoreInTime,
+    },
     rates::{
         indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
         traits::HasReferenceDate,
@@ -9,6 +14,8 @@ use crate::{
     time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::{AtlasError, Result},
 };
+
+use super::meta::Number;
 
 /// # MarketStore
 /// A store for market data.
@@ -60,7 +67,7 @@ impl MarketStore {
         &self,
         first_currency: Currency,
         second_currency: Option<Currency>,
-    ) -> Result<f64> {
+    ) -> Result<Number> {
         let second_currency = match second_currency {
             Some(ccy) => ccy,
             None => self.local_currency,
@@ -82,9 +89,11 @@ impl MarketStore {
             )));
         }
         let new_reference_date = self.reference_date + period;
-        let new_exchange_rate_store = self.exchange_rate_store.advance_to_period(period, &self.index_store)?;
+        let new_exchange_rate_store = self
+            .exchange_rate_store
+            .advance_to_period(period, &self.index_store)?;
         let new_index_store = self.index_store.advance_to_period(period)?;
-        
+
         Ok(MarketStore {
             reference_date: new_reference_date,
             local_currency: self.local_currency,
@@ -100,7 +109,7 @@ impl MarketStore {
                 date, self.reference_date
             )));
         }
-        let days = (date - self.reference_date) as i32;
+        let days = (date - self.reference_date).to_i32().unwrap();
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }

@@ -2,6 +2,7 @@ use argmin::{
     core::{CostFunction, Error, Executor, State},
     solver::brent::BrentOpt,
 };
+use num_traits::ToPrimitive;
 
 use crate::{
     cashflows::{cashflow::Cashflow, traits::Payable},
@@ -87,7 +88,7 @@ where
         let final_df = 1.0 / composite_rate.compound_factor_from_yf(t);
         let flag = cf.side().sign();
         let cf_npv = cf.amount()? * final_df * flag;
-        Ok(cf_npv)
+        Ok(cf_npv.to_f64().unwrap())
     }
 }
 
@@ -139,6 +140,7 @@ where
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
 
     use std::sync::{Arc, RwLock};

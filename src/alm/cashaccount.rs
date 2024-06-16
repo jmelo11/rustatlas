@@ -101,6 +101,7 @@ impl CashAccount {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use crate::{
         instruments::makefixedrateinstrument::MakeFixedRateInstrument,

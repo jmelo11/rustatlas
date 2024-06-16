@@ -4,8 +4,9 @@ use super::daycounters::{
     actual360::Actual360, actual365::Actual365, thirty360::*, traits::DayCountProvider,
 };
 use crate::{
+    core::meta::Number,
     time::date::Date,
-    utils::errors::{AtlasError, Result}
+    utils::errors::{AtlasError, Result},
 };
 
 /// # DayCounter
@@ -15,11 +16,11 @@ pub enum DayCounter {
     Actual360,
     Actual365,
     Thirty360,
-    Thirty360US
+    Thirty360US,
 }
 
 impl DayCounter {
-    pub fn day_count(&self, start: Date, end: Date) -> i64 {
+    pub fn day_count(&self, start: Date, end: Date) -> Number {
         match self {
             DayCounter::Actual360 => Actual360::day_count(start, end),
             DayCounter::Actual365 => Actual365::day_count(start, end),
@@ -28,7 +29,7 @@ impl DayCounter {
         }
     }
 
-    pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
+    pub fn year_fraction(&self, start: Date, end: Date) -> Number {
         match self {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),
             DayCounter::Actual365 => Actual365::year_fraction(start, end),
@@ -67,6 +68,7 @@ impl From<DayCounter> for String {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
 
@@ -76,12 +78,11 @@ mod tests {
         let end = Date::new(2020, 1, 2);
 
         let day_count = DayCounter::Actual360.day_count(start, end);
-        assert_eq!(day_count, 1);
+        assert_eq!(day_count, 1.0);
         let day_count = DayCounter::Actual365.day_count(start, end);
-        assert_eq!(day_count, 1);
+        assert_eq!(day_count, 1.0);
         let day_count = DayCounter::Thirty360.day_count(start, end);
-        assert_eq!(day_count, 1);
-
+        assert_eq!(day_count, 1.0);
     }
 
     #[test]
@@ -96,7 +97,6 @@ mod tests {
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
         assert_eq!(year_fraction, 1.0 / 360.0);
     }
-
 
     #[test]
     fn test_year_fraction_trithy360_end_of_month() {
@@ -117,8 +117,14 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        println!("{} days between {} and {} with Thirty360", yf_1, start, end_1);
-        println!("{} days between {} and {} with Thirty360", yf_2, start, end_2);
+        println!(
+            "{} days between {} and {} with Thirty360",
+            yf_1, start, end_1
+        );
+        println!(
+            "{} days between {} and {} with Thirty360",
+            yf_2, start, end_2
+        );
         assert_eq!(yf_1, yf_2);
     }
 
@@ -133,7 +139,6 @@ mod tests {
         assert_ne!(yf_1, yf_2);
     }
 
-
     #[test]
     fn test_year_fraction_trithy360_leap_february() {
         let start = Date::new(2024, 2, 10);
@@ -142,10 +147,9 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-      
+
         assert_ne!(yf_1, yf_2);
     }
-
 
     #[test]
     fn test_year_fraction_trithy360_february() {
@@ -155,9 +159,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-       
+
         assert_ne!(yf_1, yf_2);
     }
 }
-
-

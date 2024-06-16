@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::core::meta::Number;
+
 use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits::Interpolate};
 
 /// # Interpolator
@@ -24,11 +26,11 @@ pub enum Interpolator {
 impl Interpolator {
     pub fn interpolate(
         &self,
-        x: f64,
-        x_: &Vec<f64>,
-        y_: &Vec<f64>,
+        x: Number,
+        x_: &Vec<Number>,
+        y_: &Vec<Number>,
         enable_extrapolation: bool,
-    ) -> f64 {
+    ) -> Number {
         match self {
             Interpolator::Linear => {
                 LinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)

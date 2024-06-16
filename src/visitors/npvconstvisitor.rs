@@ -1,6 +1,9 @@
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
-    core::{meta::MarketData, traits::Registrable},
+    core::{
+        meta::{MarketData, NewValue, Number},
+        traits::Registrable,
+    },
     utils::errors::{AtlasError, Result},
 };
 
@@ -31,40 +34,45 @@ impl<'a> NPVConstVisitor<'a> {
 }
 
 impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
-    type Output = Result<f64>;
+    type Output = Result<Number>;
     fn visit(&self, visitable: &T) -> Self::Output {
-        let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
-            let id = cf.id()?;
+        let npv = visitable
+            .cashflows()
+            .iter()
+            .try_fold(Number::new(0.0), |acc, cf| {
+                let id = cf.id()?;
 
-            let cf_market_data =
-                self.market_data
-                    .get(id)
-                    .ok_or(AtlasError::NotFoundErr(format!(
-                        "Market data for cashflow with id {}",
-                        id
-                    )))?;
+                let cf_market_data =
+                    self.market_data
+                        .get(id)
+                        .ok_or(AtlasError::NotFoundErr(format!(
+                            "Market data for cashflow with id {}",
+                            id
+                        )))?;
 
-            if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
-                || cf.payment_date() < cf_market_data.reference_date()
-            {
-                return Ok(acc);
-            }
+                if cf_market_data.reference_date() == cf.payment_date()
+                    && !self.include_today_cashflows
+                    || cf.payment_date() < cf_market_data.reference_date()
+                {
+                    return Ok(acc);
+                }
 
-            let df = cf_market_data.df()?;
-            let fx = cf_market_data.fx()?;
-            let flag = match cf.side() {
-                Side::Pay => -1.0,
-                Side::Receive => 1.0,
-            };
-            let amount = cf.amount()?;
-            let numerarie = cf_market_data.numerarie();
-            Ok(acc + df * amount / fx * flag / numerarie)
-        });
+                let df = cf_market_data.df()?;
+                let fx = cf_market_data.fx()?;
+                let flag = match cf.side() {
+                    Side::Pay => -1.0,
+                    Side::Receive => 1.0,
+                };
+                let amount = cf.amount()?;
+                let numerarie = cf_market_data.numerarie();
+                Ok(acc + df * amount / fx * flag / numerarie)
+            });
         return npv;
     }
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use std::{
         collections::HashMap,

@@ -147,6 +147,7 @@ impl<'a> RolloverSimulationEngine<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
 
     use std::sync::{Arc, RwLock};

@@ -3,6 +3,7 @@ use crate::{
         cashflow::{Cashflow, CashflowType, Side},
         simplecashflow::SimpleCashflow,
     },
+    core::meta::{NewValue, Number},
     currencies::enums::Currency,
     time::date::Date,
     utils::errors::{AtlasError, Result},
@@ -80,7 +81,7 @@ impl From<CashflowType> for String {
 }
 
 // Infer cashflows from amounts to handle negative amounts and sides.
-pub fn infer_cashflows_from_amounts(    
+pub fn infer_cashflows_from_amounts(
     dates: &[Date],
     amounts: &[f64],
     side: Side,
@@ -89,13 +90,15 @@ pub fn infer_cashflows_from_amounts(
     let mut cashflows = Vec::new();
     dates.iter().zip(amounts).for_each(|(date, amount)| {
         if *amount < 0.0 {
-            let cashflow = SimpleCashflow::new(*date, currency, side.inverse()).with_amount(amount.abs());
+            let cashflow = SimpleCashflow::new(*date, currency, side.inverse())
+                .with_amount(Number::new(amount.abs()));
             match side.inverse() {
                 Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
                 Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
             }
         } else {
-            let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
+            let cashflow =
+                SimpleCashflow::new(*date, currency, side).with_amount(Number::new(amount.abs()));
             match side {
                 Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
                 Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
@@ -115,7 +118,7 @@ pub fn add_cashflows_to_vec(
     cashflow_type: CashflowType,
 ) {
     dates.iter().zip(amounts).for_each(|(date, amount)| {
-        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
+        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(Number::new(*amount));
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
@@ -123,7 +126,6 @@ pub fn add_cashflows_to_vec(
         }
     });
 }
-
 
 // Calculate the notionals for a given structure
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
@@ -190,6 +192,7 @@ pub fn calculate_outstanding(
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use super::*;
     use std::collections::{HashMap, HashSet};

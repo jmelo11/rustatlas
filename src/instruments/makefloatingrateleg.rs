@@ -6,6 +6,7 @@ use crate::{
         floatingratecoupon::FloatingRateCoupon,
         simplecashflow::SimpleCashflow,
     },
+    core::meta::{NewValue, Number},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{
@@ -342,7 +343,7 @@ impl MakeFloatingRateLeg {
                 Ok(Leg::new(
                     structure,
                     RateType::Floating,
-                    spread,
+                    Number::new(spread),
                     rate_definition,
                     currency,
                     side,
@@ -433,7 +434,7 @@ impl MakeFloatingRateLeg {
                 Ok(Leg::new(
                     structure,
                     RateType::Floating,
-                    spread,
+                    Number::new(spread),
                     rate_definition,
                     currency,
                     side,
@@ -540,7 +541,7 @@ impl MakeFloatingRateLeg {
                 Ok(Leg::new(
                     structure,
                     RateType::Floating,
-                    spread,
+                    Number::new(spread),
                     rate_definition,
                     currency,
                     side,
@@ -571,15 +572,16 @@ impl MakeFloatingRateLeg {
 
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
-                        SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side.inverse())
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
 
                 for (start_date, end_date, notional) in &timeline {
                     let coupon = FloatingRateCoupon::new(
-                        *notional,
-                        spread,
+                        Number::new(*notional),
+                        Number::new(spread),
                         *start_date,
                         *end_date,
                         *end_date,
@@ -593,7 +595,8 @@ impl MakeFloatingRateLeg {
 
                 for (date, amount) in redemptions.iter() {
                     let cashflow = Cashflow::Redemption(
-                        SimpleCashflow::new(*date, currency, side).with_amount(*amount),
+                        SimpleCashflow::new(*date, currency, side)
+                            .with_amount(Number::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
@@ -613,7 +616,7 @@ impl MakeFloatingRateLeg {
                 Ok(Leg::new(
                     structure,
                     RateType::Floating,
-                    spread,
+                    Number::new(spread),
                     rate_definition,
                     currency,
                     side,
@@ -642,8 +645,8 @@ fn build_coupons_from_notionals(
         let d1 = date_pair[0];
         let d2 = date_pair[1];
         let coupon = FloatingRateCoupon::new(
-            *notional,
-            spread,
+            Number::new(*notional),
+            Number::new(spread),
             d1,
             d2,
             d2,

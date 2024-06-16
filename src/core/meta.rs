@@ -5,6 +5,27 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
+#[cfg(feature = "f64")]
+pub type Number = f64;
+
+#[cfg(feature = "f64")]
+impl NewValue for f64 {
+    fn new(value: f64) -> f64 {
+        value
+    }
+}
+
+#[cfg(feature = "aad")]
+use crate::math::aad::adnum::ADNum;
+#[cfg(feature = "aad")]
+pub type Number = ADNum;
+
+/// # NewValue
+/// Trait for creating a new value.
+pub trait NewValue {
+    fn new(value: f64) -> Self;
+}
+
 /// # ExchangeRateRequest
 /// Meta data for an exchange rate. Holds the first currency, the second currency and the reference
 /// date required to fetch the exchange rate.
@@ -188,20 +209,20 @@ impl MarketRequest {
 pub struct MarketData {
     id: usize,
     reference_date: Date,
-    df: Option<f64>,
-    fwd: Option<f64>,
-    fx: Option<f64>,
-    numerarie: f64,
+    df: Option<Number>,
+    fwd: Option<Number>,
+    fx: Option<Number>,
+    numerarie: Number,
 }
 
 impl MarketData {
     pub fn new(
         id: usize,
         reference_date: Date,
-        df: Option<f64>,
-        fwd: Option<f64>,
-        fx: Option<f64>,
-        numerarie: f64,
+        df: Option<Number>,
+        fwd: Option<Number>,
+        fx: Option<Number>,
+        numerarie: Number,
     ) -> MarketData {
         MarketData {
             id,
@@ -221,20 +242,20 @@ impl MarketData {
         self.reference_date
     }
 
-    pub fn df(&self) -> Result<f64> {
+    pub fn df(&self) -> Result<Number> {
         self.df.ok_or(AtlasError::ValueNotSetErr("df".to_string()))
     }
 
-    pub fn fwd(&self) -> Result<f64> {
+    pub fn fwd(&self) -> Result<Number> {
         self.fwd
             .ok_or(AtlasError::ValueNotSetErr("fwd".to_string()))
     }
 
-    pub fn fx(&self) -> Result<f64> {
+    pub fn fx(&self) -> Result<Number> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_string()))
     }
 
-    pub fn numerarie(&self) -> f64 {
+    pub fn numerarie(&self) -> Number {
         self.numerarie
     }
 }

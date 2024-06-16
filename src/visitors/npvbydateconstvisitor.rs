@@ -76,6 +76,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "f64")]
 mod tests {
     use std::{
         collections::HashMap,
