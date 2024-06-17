@@ -122,6 +122,20 @@ impl FixedRateInstrument {
 
         self
     }
+
+    pub fn set_rate(mut self, rate: InterestRate) -> Self {
+        self.rate = rate;
+        self.mut_cashflows().iter_mut().for_each(|cf| {
+            match cf {
+                Cashflow::FixedRateCoupon(coupon) => {
+                    coupon.set_rate(rate);
+                }
+                _ => {}
+            }
+        });
+        self
+    }
+
 }
 
 impl HasCurrency for FixedRateInstrument {

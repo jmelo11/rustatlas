@@ -144,6 +144,19 @@ impl FloatingRateInstrument {
             .for_each(|cf| cf.set_forecast_curve_id(forecast_curve_id));
         self
     }
+
+    pub fn set_spread(mut self, spread: f64) -> Self {
+        self.spread = spread;
+        self.mut_cashflows().iter_mut().for_each(|cf| {
+            match cf {
+                Cashflow::FloatingRateCoupon(coupon) => {
+                    coupon.set_spread(spread);
+                }
+                _ => {}
+            }
+        });
+        self
+    }
 }
 
 impl HasCurrency for FloatingRateInstrument {
