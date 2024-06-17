@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
-    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, thirty360::*, traits::DayCountProvider
+    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, business252::Business252, thirty360::*, traits::DayCountProvider
 };
 use crate::{
     time::date::Date,
@@ -17,7 +17,7 @@ pub enum DayCounter {
     Thirty360,
     Thirty360US,
     ActualActual,
-    //Business252(Calendar),
+    Business252,
 }
 
 impl DayCounter {
@@ -28,7 +28,7 @@ impl DayCounter {
             DayCounter::Thirty360 => Thirty360::day_count(start, end),
             DayCounter::Thirty360US => Thirty360US::day_count(start, end),
             DayCounter::ActualActual => ActualActual::day_count(start, end),
-            //DayCounter::Business252(calendar) => Business252::day_count(start, end, calendar),
+            DayCounter::Business252 => Business252::day_count(start, end),
         }
     }
 
@@ -39,7 +39,7 @@ impl DayCounter {
             DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
             DayCounter::Thirty360US => Thirty360US::year_fraction(start, end),
             DayCounter::ActualActual => ActualActual::year_fraction(start, end),
-            //DayCounter::Business252(calendar) => Business252::year_fraction(start, end, calendar.clone()),
+            DayCounter::Business252 => Business252::year_fraction(start, end),
         }
     }
 }
@@ -54,7 +54,7 @@ impl TryFrom<String> for DayCounter {
             "Thirty360" => Ok(DayCounter::Thirty360), // to match curveengine
             "Thirty360US" => Ok(DayCounter::Thirty360US),
             "ActualActual" => Ok(DayCounter::ActualActual),
-            //"Business252" => Ok(DayCounter::Business252(Calendar::Brazil(()))), 
+            "Business252" => Ok(DayCounter::Business252),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid day counter: {}",
                 s
@@ -71,7 +71,7 @@ impl From<DayCounter> for String {
             DayCounter::Thirty360 => "Thirty360".to_string(),
             DayCounter::Thirty360US => "Thirty360US".to_string(),
             DayCounter::ActualActual => "ActualActual".to_string(),
-            //DayCounter::Business252(_) => "Business252".to_string(),
+            DayCounter::Business252 => "Business252".to_string(),
         }
     }
 }

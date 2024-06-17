@@ -1,56 +1,29 @@
-use std::collections::HashMap;
+use super::traits::DayCountProvider;
+use crate::{prelude::Calendar, time::{calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date}};
+use crate::time::calendars::brazil::Market;
 
-use crate::time::{calendar::Calendar, calendars::traits::ImplCalendar, date::Date};
 
 /// # Business252
 /// Business/252 day count convention.
+/// Calculates the number of business days between two dates.
+/// # Example
+/// ```
+/// use rustatlas::prelude::*;
+/// 
+/// let start = Date::new(2020, 1, 1);
+/// let end = Date::new(2020, 2, 1);
+/// assert_eq!(Business252::day_count(start, end), 22);
+/// assert_eq!(Business252::year_fraction(start, end), 22.0 / 252.0);
+/// ```
+pub struct Business252;
 
+impl DayCountProvider for Business252 {
+    fn day_count(start: Date, end: Date) -> i64 {
 
+        let calendar = Calendar::Brazil(Brazil::new(Market::Settlement));
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Business252{
-    calendar: Calendar,
-    cache: HashMap<(i32, u32), i32>,
-    outer_cache : HashMap<i32, i32>,
-}
-
-
-impl Business252 {
-    pub fn new(calendar: Calendar) -> Self {
-        Business252 {
-            calendar,
-            cache: HashMap::new(),
-            outer_cache: HashMap::new(),
-        }
-    }
-
-    //fn business_days_monthly(&mut self, year: i32, month: u32) -> i32 {
-    //    if let Some(&days) = self.cache.get(&(year, month)) {
-    //        return days;
-    //    } else {
-    //        let d1 = Date::new(year, month, 1);
-    //        let d2 = d1 + Period::new(1, TimeUnit::Months); 
-    //        let days = self.calendar.business_day_list(d1, d2).len() as i32;
-    //        self.cache.insert((year, month), days);
-    //        return days;
-    //    }
-    //}
-
-    //fn business_days_yearly(&mut self, year: i32) -> i32 {
-    //    if let Some(&days) = self.outer_cache.get(&year) {
-    //        return days;
-    //    } else {
-    //        let mut total = 0;
-    //        for month in 1..=12 {
-    //            total += self.business_days_monthly(year, month);
-    //        }
-    //        self.outer_cache.insert(year, total);
-    //        return total;
-    //    }
-    //}
-
-    pub fn day_count(start: Date, end: Date, calendar: Calendar) -> i64 {
         if end < start {
+            
             return  -(calendar.business_day_list(start, end).len() as i64);
         }
         else {
@@ -58,7 +31,23 @@ impl Business252 {
         }
     }
 
-    pub fn year_fraction(start: Date, end: Date, calendar: Calendar) -> f64 {
-        Self::day_count(start, end, calendar) as f64 / 252.0
+    fn year_fraction(start: Date, end: Date) -> f64 {
+        Self::day_count(start, end) as f64 / 252.0
     }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::prelude::DayCountProvider;
+
+    #[test]
+    fn test_business252() {
+        use crate::time::date::Date;
+        use crate::time::daycounters::business252::Business252;
+        let start = Date::new(2020, 1, 1);
+        let end = Date::new(2020, 2, 1);
+        assert_eq!(Business252::day_count(start, end), 22);
+        assert_eq!(Business252::year_fraction(start, end), 22.0 / 252.0);
+    }
+
 }

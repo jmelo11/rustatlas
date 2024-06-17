@@ -30,7 +30,7 @@ pub use crate::{
         calendars::{nullcalendar::*, target::*, unitedstates::*, weekendsonly::*},
         date::*,
         daycounter::*,
-        daycounters::{actual360::*, actual365::*, thirty360::*, actualactual::*, traits::*},
+        daycounters::{actual360::*, actual365::*, thirty360::*, actualactual::*,business252::*, traits::*},
         enums::*,
         period::*,
         schedule::*,

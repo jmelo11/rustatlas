@@ -165,7 +165,7 @@ impl ImplCalendar for Chile {
     }
 
     fn impl_name(&self) -> String {
-        format!("Brazil({:?})", self.market)
+        format!("Chile({:?})", self.market)
     }
 
     fn added_holidays(&self) -> HashSet<Date> {
