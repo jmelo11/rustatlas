@@ -210,6 +210,46 @@ mod tests {
     }
 
     #[test]
+    fn test_npv_fixed_bullet_negative_rate() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            -0.05,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+
+        let mut instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate(rate)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .bullet()
+            .with_discount_curve_id(Some(2))
+            .with_notional(notional)
+            .build()?;
+
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let npv_visitor = NPVConstVisitor::new(&data, true);
+        let npv = npv_visitor.visit(&instrument)?;
+        
+        assert!(npv.abs() > 70000.0);
+        Ok(())
+    }
+
+    #[test]
     fn test_npv_floating_bullet() -> Result<()> {
         let market_store = create_store().unwrap();
         let ref_date = market_store.reference_date();
