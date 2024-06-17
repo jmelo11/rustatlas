@@ -185,3 +185,26 @@ impl ImplCalendar for Calendar {
 }
 
 impl IsCalendar for Calendar {}
+
+
+#[cfg(test)]
+mod test {
+    use crate::{prelude::{Calendar, NullCalendar, UnitedStates, WeekendsOnly, TARGET}, time::calendars::{brazil::Brazil, chile::Chile, traits::ImplCalendar}};
+
+    #[test]
+    fn test_create_calendar() {
+        let calendar = Calendar::NullCalendar(NullCalendar::new());
+        assert_eq!(calendar.impl_name(), "NullCalendar");
+        let calendar = Calendar::WeekendsOnly(WeekendsOnly::new());
+        assert_eq!(calendar.impl_name(), "WeekendsOnly");
+        let calendar = Calendar::TARGET(TARGET::new());
+        assert_eq!(calendar.impl_name(), "TARGET");
+        let calendar = Calendar::UnitedStates(UnitedStates::default());
+        assert_eq!(calendar.impl_name(), "UnitedStates(Sofr)");
+        let calendar = Calendar::Brazil(Brazil::default());
+        assert_eq!(calendar.impl_name(), "Brazil(Settlement)");
+        let calendar = Calendar::Chile(Chile::default());
+        assert_eq!(calendar.impl_name(), "Chile(SSE)");
+    }
+
+}
