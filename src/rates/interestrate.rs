@@ -1,5 +1,3 @@
-#[cfg(feature = "f64")]
-use crate::core::meta::NewValue;
 #[cfg(feature = "aad")]
 use num_traits::real::Real;
 

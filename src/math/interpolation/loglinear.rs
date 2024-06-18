@@ -1,10 +1,9 @@
-use std::cmp::Ordering;
-
+#[cfg(feature = "aad")]
 use num_traits::real::Real;
 
-use crate::core::meta::Number;
-
 use super::traits::Interpolate;
+use crate::core::meta::Number;
+use std::cmp::Ordering;
 
 /// # Log-Linear Interpolator
 /// Log-linear interpolator.

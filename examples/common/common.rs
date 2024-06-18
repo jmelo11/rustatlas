@@ -1,33 +1,10 @@
 extern crate rustatlas;
-use rayon::prelude::{IntoParallelIterator, ParallelIterator};
-use rustatlas::{
-    cashflows::{
-        cashflow::{Cashflow, Side},
-        traits::Payable,
-    },
-    core::{
-        marketstore::MarketStore,
-        meta::{MarketData, NewValue, Number},
-    },
-    currencies::enums::Currency,
-    instruments::{instrument::Instrument, makefixedrateinstrument::MakeFixedRateInstrument},
-    rates::{
-        interestrate::RateDefinition,
-        interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
-        traits::HasReferenceDate,
-        yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-    },
-    time::{
-        date::Date,
-        enums::{Frequency, TimeUnit},
-        period::Period,
-    },
-    utils::errors::Result,
-};
+use rustatlas::prelude::*;
 use std::{
     collections::HashMap,
     sync::{Arc, RwLock},
 };
+
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -137,108 +114,4 @@ pub fn create_store() -> Result<MarketStore> {
         .mut_index_store()
         .add_index(2, Arc::new(RwLock::new(discount_index)))?;
     return Ok(market_store);
-}
-
-use rand::Rng;
-
-pub struct MockMaker;
-
-pub trait Mock {
-    fn random_frequency() -> Frequency;
-
-    fn random_tenor() -> Period;
-
-    fn random_start_date(today: Date) -> Date;
-
-    fn random_notional() -> f64;
-
-    fn random_rate_value() -> f64;
-
-    fn random_currency() -> Currency;
-
-    #[allow(unused)]
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
-}
-
-impl Mock for MockMaker {
-    fn random_frequency() -> Frequency {
-        let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
-            0 => Frequency::Annual,
-            1 => Frequency::Semiannual,
-            2 => Frequency::Quarterly,
-            3 => Frequency::Monthly,
-            _ => Frequency::Annual,
-        }
-    }
-
-    fn random_tenor() -> Period {
-        let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
-            0 => Period::new(1, TimeUnit::Years),
-            1 => Period::new(3, TimeUnit::Years),
-            2 => Period::new(5, TimeUnit::Years),
-            3 => Period::new(7, TimeUnit::Years),
-            _ => Period::new(10, TimeUnit::Years),
-        }
-    }
-
-    fn random_start_date(today: Date) -> Date {
-        let mut rng = rand::thread_rng();
-        let day_shift = rng.gen_range(-365..365);
-        today + day_shift
-    }
-
-    fn random_notional() -> f64 {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(50.0..150.0)
-    }
-
-    fn random_rate_value() -> f64 {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(0.01..0.05)
-    }
-
-    fn random_currency() -> Currency {
-        let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
-            0 => Currency::USD,
-            1 => Currency::EUR,
-            2 => Currency::CLP,
-            3 => Currency::CLF,
-            _ => Currency::USD,
-        }
-    }
-
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument> {
-        let instruments = (0..n)
-            .into_par_iter() // Create a parallel iterator
-            .map(|_| {
-                let start_date = MockMaker::random_start_date(today);
-                let end_date = start_date + MockMaker::random_tenor();
-                let rate = MockMaker::random_rate_value();
-                let notional = MockMaker::random_notional();
-                let random_currency = MockMaker::random_currency();
-                let payment_frequency = MockMaker::random_frequency();
-                let instrument = MakeFixedRateInstrument::new()
-                    .with_start_date(start_date)
-                    .with_end_date(end_date)
-                    .with_payment_frequency(payment_frequency)
-                    .with_rate_value(rate)
-                    .with_rate_definition(RateDefinition::default())
-                    .with_currency(random_currency)
-                    .with_notional(notional)
-                    .with_side(Side::Receive)
-                    .bullet()
-                    .build()
-                    .unwrap();
-
-                Instrument::FixedRateInstrument(instrument)
-            })
-            .collect();
-        instruments
-    }
 }

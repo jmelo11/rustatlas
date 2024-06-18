@@ -1,38 +1,15 @@
 extern crate rustatlas;
-
-use std::sync::Arc;
-
 use rayon::{
     prelude::{IntoParallelIterator, ParallelIterator},
     slice::ParallelSliceMut,
 };
-use rustatlas::{
-    cashflows::cashflow::Side,
-    core::meta::{NewValue, Number},
-    currencies::enums::Currency,
-    instruments::{
-        fixedrateinstrument::FixedRateInstrument, makefixedrateinstrument::MakeFixedRateInstrument,
-    },
-    models::{simplemodel::SimpleModel, traits::Model},
-    rates::{enums::Compounding, interestrate::InterestRate, traits::HasReferenceDate},
-    time::{
-        daycounter::DayCounter,
-        enums::{Frequency, TimeUnit},
-        period::Period,
-    },
-    visitors::{
-        indexingvisitor::IndexingVisitor,
-        npvconstvisitor::NPVConstVisitor,
-        traits::{ConstVisit, Visit},
-    },
-};
-
+use rustatlas::prelude::*;
+use std::sync::Arc;
 mod common;
 use crate::common::common::*;
-
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn multiple() {
+fn multiple_instrument_valuations() {
     let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();
 
@@ -47,7 +24,7 @@ fn multiple() {
     );
 
     // par build
-    let mut instruments: Vec<FixedRateInstrument> = (0..150000)
+    let mut instruments: Vec<FixedRateInstrument> = (0..1000)
         .into_par_iter() // Create a parallel iterator
         .map(|_| {
             MakeFixedRateInstrument::new()
@@ -90,7 +67,7 @@ fn multiple() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("multiple", |b| b.iter(|| multiple()));
+    c.bench_function("multiple_instrument_valuationss", |b| b.iter(|| multiple_instrument_valuations()));
 }
 
 criterion_group!(benches, criterion_benchmark);
