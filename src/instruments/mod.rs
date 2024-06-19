@@ -1,6 +1,7 @@
 pub mod fixedrateinstrument;
 pub mod floatingrateinstrument;
 pub mod hybridrateinstrument;
+pub mod doublerateinstrument;
 pub mod instrument;
 pub mod leg;
 pub mod loandepo;
@@ -10,5 +11,6 @@ pub mod makeswap;
 pub mod makefloatingrateinstrument;
 pub mod makefloatingrateleg;
 pub mod makehybridrateinstrument;
+pub mod makedoublerateinstrument;
 pub mod swap;
 pub mod traits;
