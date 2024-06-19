@@ -5,8 +5,8 @@ use argmin::{
 
 use crate::{
     core::meta::MarketData, instruments::{
-        fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
-    }, prelude::{InterestRate, Structure}, utils::errors::Result
+        fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument, traits::Structure,
+    }, rates::interestrate::InterestRate, utils::errors::Result
 };
 
 use super::{
@@ -130,9 +130,8 @@ mod test {
     };
 
     use crate::{
-        core::marketstore::MarketStore, currencies::enums::Currency, instruments::
-            makefixedrateinstrument::MakeFixedRateInstrument
-        , models::{simplemodel::SimpleModel, traits::Model}, prelude::{MakeFloatingRateInstrument, Side}, rates::{
+        cashflows::cashflow::Side, core::marketstore::MarketStore, currencies::enums::Currency, instruments::{
+            makefixedrateinstrument::MakeFixedRateInstrument, makefloatingrateinstrument::MakeFloatingRateInstrument}, models::{simplemodel::SimpleModel, traits::Model}, rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
