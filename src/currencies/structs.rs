@@ -551,3 +551,4 @@ impl CurrencyDetails for DKK {
         return 208;
     }
 }
+

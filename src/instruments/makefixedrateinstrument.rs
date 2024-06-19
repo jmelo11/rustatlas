@@ -920,7 +920,8 @@ fn calculate_equal_payment_redemptions(
         dates: dates.clone(),
         rate: rate,
     };
-    let solver = BrentRoot::new(0.0, 0.9, 1e-6);
+    let (min, max) = (-0.2 , 1.5 );
+    let solver = BrentRoot::new(min, max, 1e-6);
 
     let init_param = 1.0 / (dates.len() as f64);
     let res = Executor::new(cost, solver)
@@ -1412,22 +1413,18 @@ mod tests_equal_payment {
         cashflows::{
             cashflow::{Cashflow, Side},
             traits::Payable,
-        },
-        currencies::enums::Currency,
-        instruments::makefixedrateinstrument::{calculate_equal_payment_redemptions, MakeFixedRateInstrument},
-        rates::{enums::Compounding, interestrate::InterestRate},
-        time::{
+        }, currencies::enums::Currency, instruments::makefixedrateinstrument::{calculate_equal_payment_redemptions, MakeFixedRateInstrument}, 
+        rates::enums::Compounding, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        },
-        utils::errors::Result,
-        visitors::traits::HasCashflows,
+        }, utils::errors::Result, visitors::traits::HasCashflows
     };
+    use crate::rates::interestrate::InterestRate;
 
     #[test]
-    fn test_calculate_equal_payment_redemptions(){
+    fn test_calculate_equal_payment_vector(){
         let notional = 100.0;
         let dates = vec![
             Date::new(2020, 1, 1), Date::new(2020, 12, 1), Date::new(2021, 1, 1),
@@ -1455,14 +1452,14 @@ mod tests_equal_payment {
     }
 
     #[test]
-    fn build_equal_payment_with_grace_period() -> Result<()> {
+    fn test_build_equal_payment_with_grace_period() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
 
         let rate = InterestRate::new(
             0.1,
             Compounding::Compounded,
             Frequency::Annual,
-            DayCounter::Actual360,
+            DayCounter::Thirty360,
         );
 
         let grace_period = start_date.clone() + Period::new(12, TimeUnit::Months);
@@ -1478,8 +1475,6 @@ mod tests_equal_payment {
             .with_first_coupon_date(Some(grace_period))
             .equal_payments()
             .build()?;
-
-        instrument.cashflows().iter().for_each(|cf| println!("{}", cf));
 
         instrument.cashflows().iter().for_each(|cf| 
             assert!(cf.amount().unwrap() > 0.0)
@@ -1498,8 +1493,62 @@ mod tests_equal_payment {
     }
 
     #[test]
-    fn  into_equal_payment_with_grace_period() -> Result<()> { 
+    fn test_build_equal_payment_with_grace_period_and_capitalization() -> Result<()> {
+        let start_date = Date::new(2020, 1, 1);
 
+        let rate = InterestRate::new(
+            0.1,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+
+        let grace_period = start_date.clone() + Period::new(12, TimeUnit::Months);
+        let notional = 100.0;
+
+        let instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_tenor(Period::new(5, TimeUnit::Years))
+            .with_payment_frequency(Frequency::Monthly)
+            .with_rate(rate)
+            .with_notional(notional.clone())
+            .with_side(Side::Pay)
+            .with_currency(Currency::CLP)
+            .with_first_coupon_date(Some(grace_period))
+            .equal_payments()
+            .build()?;
+
+        instrument.cashflows().iter().for_each(|cf| println!("{}", cf));
+
+        instrument.cashflows().iter().for_each(|cf| 
+            match &cf {
+                Cashflow::Disbursement(c) => assert!(c.amount().unwrap() > 0.0),
+                Cashflow::Redemption(c) => assert!(c.amount().unwrap() > 0.0),
+                _ => ()
+            }  
+        );   
+
+        let notional_calc = instrument.cashflows().iter().fold(0.0, |acc, cf| 
+            match cf {
+                Cashflow::Redemption(c) => acc + c.amount().unwrap(),
+                _ => acc
+            }
+        );
+        assert!(notional_calc > notional);
+
+        let number_of_disbursements = instrument.cashflows().iter().filter(|cf| 
+            match cf {
+                Cashflow::Disbursement(_) => true,
+                _ => false
+            }
+        ).count();
+        assert!(number_of_disbursements > 1);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_into_equal_payment_with_grace_period() -> Result<()> { 
         let start_date = Date::new(2020, 1, 1);
 
         let rate = InterestRate::new(
@@ -1523,7 +1572,6 @@ mod tests_equal_payment {
             .equal_payments()
             .build()?;
 
-
         let builder = MakeFixedRateInstrument::from(&instrument_1);
         let instrument_2 = builder.build()?;
 
@@ -1544,6 +1592,4 @@ mod tests_equal_payment {
         assert!((notional_1-notional_2).abs() < 1e-6);
         Ok(())
     }
-
-
 }

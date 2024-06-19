@@ -234,28 +234,28 @@ impl Display for Cashflow {
         match self {
             Cashflow::Redemption(cashflow) => write!(
                 f,
-                "date: {}, amount: {}, side: {:?}",
+                "date: {}, amount: {}, side: {:?}, type: redemption",
                 cashflow.payment_date(),
                 amount,
                 cashflow.side()
             ),
             Cashflow::Disbursement(cashflow) => write!(
                 f,
-                "date: {}, amount: {}, side: {:?}",
+                "date: {}, amount: {}, side: {:?}, type: disbursement",
                 cashflow.payment_date(),
                 amount,
                 cashflow.side()
             ),
             Cashflow::FixedRateCoupon(coupon) => write!(
                 f,
-                "date: {}, amount: {}, side: {:?}",
+                "date: {}, amount: {}, side: {:?}, type: fixed rate coupon",
                 coupon.payment_date(),
                 amount,
                 coupon.side()
             ),
             Cashflow::FloatingRateCoupon(coupon) => write!(
                 f,
-                "date: {}, amount: {}, side: {:?}",
+                "date: {}, amount: {}, side: {:?}, type: floating rate coupon",
                 coupon.payment_date(),
                 amount,
                 coupon.side()

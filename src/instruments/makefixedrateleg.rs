@@ -846,7 +846,8 @@ fn calculate_equal_payment_redemptions(
         dates: dates.clone(),
         rate: rate,
     };
-    let solver = BrentRoot::new(0.0, 0.9, 1e-6);
+    let (min, max) = (-0.1 , 1.5 );
+    let solver = BrentRoot::new(min, max, 1e-6);
 
     let init_param = 1.0 / (dates.len() as f64);
     let res = Executor::new(cost, solver)
