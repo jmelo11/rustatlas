@@ -138,7 +138,7 @@ impl CashflowCompressorConstVisitor {
             self.estimaded_end_date
                 .borrow()
                 .ok_or(AtlasError::ValueNotSetErr("End date".to_string()))?,
-            *self.estimated_notional.borrow(),
+            self.estimated_notional.borrow().abs(),
             Frequency::OtherFrequency,
             Structure::Other,
             None,
