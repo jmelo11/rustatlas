@@ -568,8 +568,6 @@ impl MakeFixedRateInstrument {
                     .notional
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
 
-               
-
                 let redemptions_raw: Vec<f64> = calculate_equal_payment_redemptions(
                     dates.clone(),
                     rate,

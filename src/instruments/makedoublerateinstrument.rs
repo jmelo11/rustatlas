@@ -13,6 +13,12 @@ use crate::{
 
 use super::{instrument::RateType, doublerateinstrument::DoubleRateInstrument, traits::add_cashflows_to_vec};
 
+/// MakeDoubleRateInstrument
+/// MakeDoubleRateInstrument is a builder for DoubleRateInstrument struct.
+/// Three different types of rates are supported: FixedThenFixed, FixedThenFloating and FloatingThenFixed
+/// In the case of floating part, te values "first_part_rate_definition", "first_part_rate" or "second_part_rate_definition" and "second_part_rate" make reference to the spread over the fixing rate
+/// In the case of fixed part, theses values make reference to the fixed rate
+
 pub struct MakeDoubleRateInstrument {
     start_date: Option<Date>,
     end_date: Option<Date>,
@@ -27,19 +33,16 @@ pub struct MakeDoubleRateInstrument {
     notional: Option<f64>,
     discount_curve_id: Option<usize>,
     forecast_curve_id: Option<usize>,
-    disbursements: Option<HashMap<Date, f64>>,
-    redemptions: Option<HashMap<Date, f64>>,
-    additional_coupon_dates: Option<HashSet<Date>>,
     rate_type: Option<RateType>,
-    first_part_rate_definition: Option<RateDefinition>,
+    first_part_rate_definition: Option<RateDefinition>, 
     first_part_rate: Option<f64>,
     second_part_rate_definition: Option<RateDefinition>,
     second_part_rate: Option<f64>,
-    id: Option<String>,
     issue_date: Option<Date>,
     calendar: Option<Calendar>,
     business_day_convention: Option<BusinessDayConvention>,
     date_generation_rule: Option<DateGenerationRule>,
+    id: Option<String>,
 }
 
 impl MakeDoubleRateInstrument {
@@ -58,9 +61,6 @@ impl MakeDoubleRateInstrument {
             notional: None,
             discount_curve_id: None,
             forecast_curve_id: None,
-            disbursements: None,
-            redemptions: None,
-            additional_coupon_dates: None,
             rate_type: None,
             first_part_rate_definition: None,
             first_part_rate: None,
@@ -74,6 +74,7 @@ impl MakeDoubleRateInstrument {
         }
     }
 
+    /// Sets the issue date.
     pub fn with_issue_date(mut self, issue_date: Date) -> MakeDoubleRateInstrument {
         self.issue_date = Some(issue_date);
         self
@@ -117,24 +118,6 @@ impl MakeDoubleRateInstrument {
     /// Sets the end date.
     pub fn with_end_date(mut self, end_date: Date) -> MakeDoubleRateInstrument {
         self.end_date = Some(end_date);
-        self
-    }
-
-    /// Sets the disbursements.
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeDoubleRateInstrument {
-        self.disbursements = Some(disbursements);
-        self
-    }
-
-    /// Sets the redemptions.
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeDoubleRateInstrument {
-        self.redemptions = Some(redemptions);
-        self
-    }
-
-    /// Sets the additional coupon dates.
-    pub fn with_additional_coupon_dates(mut self, additional_coupon_dates: HashSet<Date>) -> MakeDoubleRateInstrument {
-        self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
@@ -186,31 +169,37 @@ impl MakeDoubleRateInstrument {
         self
     }
 
+    /// Sets the date generation rule.
     pub fn with_date_generation_rule(mut self, date_generation_rule: DateGenerationRule) -> MakeDoubleRateInstrument {
         self.date_generation_rule = Some(date_generation_rule);
         self
     }
 
+    /// Sets the rate type.
     pub fn with_rate_type(mut self, rate_type: RateType) -> MakeDoubleRateInstrument {
         self.rate_type = Some(rate_type);
         self
     }
 
+    /// Sets the rate definition for the first part.
     pub fn with_first_part_rate_definition(mut self, rate_definition: RateDefinition) -> MakeDoubleRateInstrument {
         self.first_part_rate_definition = Some(rate_definition);
         self
     }
 
+    /// Sets the rate value for the first part.
     pub fn with_first_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
         self.first_part_rate = Some(rate);
         self
     }
 
+    /// Sets the rate definition for the second part.
     pub fn with_second_part_rate_definition(mut self, rate_definition: RateDefinition) -> MakeDoubleRateInstrument {
         self.second_part_rate_definition = Some(rate_definition);
         self
     }
 
+    /// Sets the rate value for the second part.
     pub fn with_second_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
         self.second_part_rate = Some(rate);
         self
@@ -356,9 +345,11 @@ impl MakeDoubleRateInstrument {
                 None => schedule_builder_second_part.build()?,
             };
             
+        
             let dates_first_part = schedule_first_part.dates().clone();
             let dates_second_part = schedule_second_part.dates().clone();
 
+            // combine dates from first and second part
             let mut dates = dates_first_part.clone();
             dates.pop();
             dates.extend(dates_second_part.clone());
@@ -639,15 +630,11 @@ fn calculate_equal_payment_redemptions(
 
 #[cfg(test)]
 mod test {
-    use crate::{cashflows::{cashflow::Side, traits::RequiresFixingRate}, 
-                currencies::enums::Currency, 
-                instruments::{instrument::RateType, makedoublerateinstrument::MakeDoubleRateInstrument}, 
-                rates::interestrate::RateDefinition, time::{date::Date, enums::{Frequency, TimeUnit}, period::Period}, 
-                utils::errors::Result, visitors::traits::HasCashflows};
+    use crate::{cashflows::{cashflow::Side, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::{instrument::RateType, makedoublerateinstrument::MakeDoubleRateInstrument}, prelude::Cashflow, rates::interestrate::RateDefinition, time::{date::Date, enums::{Frequency, TimeUnit}, period::Period}, utils::errors::Result, visitors::traits::HasCashflows};
 
 
     #[test]
-    fn build_equal_payments() -> Result<()> {
+    fn build_fixed_then_floating_instrument() -> Result<()> {
         let start_date = Date::new(2020, 1, 1);
 
         let rate_type = RateType::FixedThenFloating;
@@ -655,7 +642,6 @@ mod test {
         let first_part_rate = 0.05;
         let second_part_rate_definition = RateDefinition::default();
         let second_part_rate = 0.02;
-
 
         let mut instrument = MakeDoubleRateInstrument::new()
             .with_start_date(start_date)
@@ -675,7 +661,16 @@ mod test {
 
         instrument.mut_cashflows().iter_mut().for_each(|cf| cf.set_fixing_rate(0.03));
         
-        instrument.cashflows().iter().for_each(|cf| println!("{}", cf));
+        instrument.cashflows().iter().for_each(|cf| 
+            match cf {
+                Cashflow::FixedRateCoupon(coupon) => {
+                    assert!((coupon.rate().rate()-0.05).abs() < 1e-6 );  
+                }
+                Cashflow::FloatingRateCoupon(coupon) => {
+                    assert!((coupon.spread() - 0.02).abs() < 1e-6);
+                }
+                _ => ()
+            });
 
         Ok(())
     }
