@@ -45,7 +45,7 @@ pub struct Portfolio {
     id: Option<usize>,
     segment: Option<String>,
     area: Option<String>,
-    product_family: Option<ProductFamily>,
+    product_family: Option<String>,
     postion_type: Option<PositionType>,
     rate_type: Option<RateType>,
     currency: Option<Currency>,
@@ -74,8 +74,8 @@ impl Portfolio {
         self.segment.clone()
     }
 
-    pub fn product_family(&self) -> Option<ProductFamily> {
-        self.product_family
+    pub fn product_family(&self) -> Option<String> {
+        self.product_family.clone()
     }
 
     pub fn area(&self) -> Option<String> {
@@ -114,7 +114,7 @@ impl Portfolio {
         self
     }
 
-    pub fn with_product_family(mut self, product_family: ProductFamily) -> Self {
+    pub fn with_product_family(mut self, product_family: String) -> Self {
         self.product_family = Some(product_family);
         self
     }
@@ -217,100 +217,6 @@ impl From<EvaluationMode> for String {
         match evaluation_mode {
             EvaluationMode::FTPRate => "FTPRate".to_string(),
             EvaluationMode::ClientRate => "ClientRate".to_string(),
-        }
-    }
-}
-
-/// # Segment
-/// A struct that contains the information needed to define a segment.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Segment {
-    Minorista,
-    Mayorista,
-    Tesoreria,
-}
-
-impl TryFrom<String> for Segment {
-    type Error = AtlasError;
-
-    fn try_from(s: String) -> Result<Self> {
-        match s.as_str() {
-            "Minorista" => Ok(Segment::Minorista),
-            "Mayorista" => Ok(Segment::Mayorista),
-            "Tesoreria" => Ok(Segment::Tesoreria),
-            _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid segment: {}",
-                s
-            ))),
-        }
-    }
-}
-
-impl From<Segment> for String {
-    fn from(segment: Segment) -> Self {
-        match segment {
-            Segment::Minorista => "Minorista".to_string(),
-            Segment::Mayorista => "Mayorista".to_string(),
-            Segment::Tesoreria => "Tesoreria".to_string(),
-        }
-    }
-}
-
-/// # ProductFamily
-/// A struct that contains the information needed to define a product family.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ProductFamily {
-    Comercial,
-    Comex,
-    Consumo,
-    Deposito,
-    Hipotecario,
-    Bono,
-    CAE,
-    Leasing,
-    Fogape,
-    Corfo,
-    Factoring,
-}
-
-impl TryFrom<String> for ProductFamily {
-    type Error = AtlasError;
-
-    fn try_from(s: String) -> Result<Self> {
-        match s.as_str() {
-            "Comercial" => Ok(ProductFamily::Comercial),
-            "Comex" => Ok(ProductFamily::Comex),
-            "Consumo" => Ok(ProductFamily::Consumo),
-            "Deposito" => Ok(ProductFamily::Deposito),
-            "Hipotecario" => Ok(ProductFamily::Hipotecario),
-            "Bono" => Ok(ProductFamily::Bono),
-            "CAE" => Ok(ProductFamily::CAE),
-            "Leasing" => Ok(ProductFamily::Leasing),
-            "Fogape" => Ok(ProductFamily::Fogape),
-            "Corfo" => Ok(ProductFamily::Corfo),
-            "Factoring" => Ok(ProductFamily::Factoring),
-            _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid product family: {}",
-                s
-            ))),
-        }
-    }
-}
-
-impl From<ProductFamily> for String {
-    fn from(product_family: ProductFamily) -> Self {
-        match product_family {
-            ProductFamily::Comercial => "Comercial".to_string(),
-            ProductFamily::Comex => "Comex".to_string(),
-            ProductFamily::Consumo => "Consumo".to_string(),
-            ProductFamily::Deposito => "Deposito".to_string(),
-            ProductFamily::Hipotecario => "Hipotecario".to_string(),
-            ProductFamily::Bono => "Bono".to_string(),
-            ProductFamily::CAE => "CAE".to_string(),
-            ProductFamily::Leasing => "Leasing".to_string(),
-            ProductFamily::Fogape => "Fogape".to_string(),
-            ProductFamily::Corfo => "Corfo".to_string(),
-            ProductFamily::Factoring => "Factoring".to_string(),
         }
     }
 }
