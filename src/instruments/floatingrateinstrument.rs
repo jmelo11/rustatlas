@@ -5,7 +5,7 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
     },
-    core::{meta::Number,meta::NewValue, traits::HasCurrency},
+    core::{meta::NewValue, meta::Number, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -145,15 +145,13 @@ impl FloatingRateInstrument {
         self
     }
 
-    pub fn set_spread(mut self, spread: f64) -> Self {
+    pub fn set_spread(mut self, spread: Number) -> Self {
         self.spread = spread;
-        self.mut_cashflows().iter_mut().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    coupon.set_spread(spread);
-                }
-                _ => {}
+        self.mut_cashflows().iter_mut().for_each(|cf| match cf {
+            Cashflow::FloatingRateCoupon(coupon) => {
+                coupon.set_spread(spread);
             }
+            _ => {}
         });
         self
     }
@@ -192,25 +190,29 @@ impl HasCashflows for FloatingRateInstrument {
     }
 }
 
-
+#[cfg(feature = "f64")]
 #[cfg(test)]
 mod test {
-    use crate::{prelude::{Cashflow, Compounding, Currency, Date, DayCounter, Frequency, HasCurrency, MakeFloatingRateInstrument, Payable, Period, RateDefinition, RequiresFixingRate, Side, TimeUnit}, 
-                utils::errors::Result,
-                visitors::traits::HasCashflows};
-   
+    use crate::{
+        prelude::{
+            Cashflow, Compounding, Currency, Date, DayCounter, Frequency, HasCurrency,
+            MakeFloatingRateInstrument, Payable, Period, RateDefinition, RequiresFixingRate, Side,
+            TimeUnit,
+        },
+        utils::errors::Result,
+        visitors::traits::HasCashflows,
+    };
+
     #[test]
     fn test_float_rate_instrument() -> Result<()> {
-
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
             DayCounter::Thirty360,
             Compounding::Simple,
             Frequency::Annual,
-            
         );
-    
+
         let spread = 0.04;
 
         let instrument = MakeFloatingRateInstrument::new()
@@ -236,19 +238,17 @@ mod test {
 
         Ok(())
     }
-   
+
     #[test]
     fn test_set_spread() -> Result<()> {
-
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
             DayCounter::Thirty360,
             Compounding::Simple,
             Frequency::Annual,
-            
         );
-    
+
         let spread = 0.04;
 
         let mut instrument = MakeFloatingRateInstrument::new()
@@ -268,34 +268,25 @@ mod test {
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.02));
 
-        instrument.cashflows().iter().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    assert!((coupon.amount().unwrap()- 150000.0).abs() < 1e-6); 
-                    assert_eq!(coupon.spread(), spread);
-                }
-                _ => {}
+        instrument.cashflows().iter().for_each(|cf| match cf {
+            Cashflow::FloatingRateCoupon(coupon) => {
+                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert_eq!(coupon.spread(), spread);
             }
+            _ => {}
         });
 
         let new_spread = 0.01;
         let new_instrument = instrument.set_spread(new_spread);
 
-        new_instrument.cashflows().iter().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    assert!((coupon.amount().unwrap()- 75000.0).abs() < 1e-6); 
-                    assert_eq!(coupon.spread(), new_spread);
-                }
-                _ => {}
+        new_instrument.cashflows().iter().for_each(|cf| match cf {
+            Cashflow::FloatingRateCoupon(coupon) => {
+                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert_eq!(coupon.spread(), new_spread);
             }
+            _ => {}
         });
 
-
         Ok(())
-
     }
-
-
-
 }

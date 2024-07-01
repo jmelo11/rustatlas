@@ -3,7 +3,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use num_traits::ToPrimitive;
+
 use crate::{
+    prelude::Number,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
@@ -18,10 +21,13 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-use super::{overnightindex::OvernightIndex, traits::{
-    AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
-    InterestRateIndexTrait, RelinkableTermStructure,
-}};
+use super::{
+    overnightindex::OvernightIndex,
+    traits::{
+        AdvanceInterestRateIndexInTime, FixingProvider, HasName, HasTenor, HasTermStructure,
+        InterestRateIndexTrait, RelinkableTermStructure,
+    },
+};
 
 /// # OvernightCompoundedRateIndex
 /// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
@@ -31,13 +37,24 @@ pub struct OvernightCompoundedRateIndex {
     overnight_index: OvernightIndex,
 }
 
-pub fn calculate_overnight_index(start_date: Date, end_date: Date, index: f64, rate: f64, rate_definition: RateDefinition) -> f64 {
-    let year_fraction = rate_definition.day_counter().year_fraction(start_date, end_date);
-    let new_index = (1.0 + rate * year_fraction)* index;
-    return new_index;
+pub fn calculate_overnight_index(
+    start_date: Date,
+    end_date: Date,
+    index: f64,
+    rate: f64,
+    rate_definition: RateDefinition,
+) -> f64 {
+    let year_fraction = rate_definition
+        .day_counter()
+        .year_fraction(start_date, end_date);
+    let new_index = (1.0 + rate * year_fraction) * index;
+    return new_index.to_f64().unwrap();
 }
 
-pub fn compose_fixing_rate(fixings_rates: HashMap<Date, f64> , rate_definition: RateDefinition) -> HashMap<Date, f64> {
+pub fn compose_fixing_rate(
+    fixings_rates: HashMap<Date, f64>,
+    rate_definition: RateDefinition,
+) -> HashMap<Date, f64> {
     let mut fixings_rates = fixings_rates.into_iter().collect::<Vec<_>>();
     fixings_rates.sort_by(|a, b| a.0.cmp(&b.0));
 
@@ -47,15 +64,15 @@ pub fn compose_fixing_rate(fixings_rates: HashMap<Date, f64> , rate_definition: 
     fixing_index.insert(fixings_rates[0].0, index);
 
     for i in 1..fixings_rates.len() {
-        let (previus_date, previus_rate) = fixings_rates[i-1];
+        let (previus_date, previus_rate) = fixings_rates[i - 1];
         let date = fixings_rates[i].0;
-        let new_index = calculate_overnight_index(previus_date, date, index, previus_rate, rate_definition);
+        let new_index =
+            calculate_overnight_index(previus_date, date, index, previus_rate, rate_definition);
         fixing_index.insert(date, new_index);
         index = new_index;
     }
     return fixing_index;
 }
-
 
 impl OvernightCompoundedRateIndex {
     pub fn new(reference_date: Date) -> OvernightCompoundedRateIndex {
@@ -67,9 +84,9 @@ impl OvernightCompoundedRateIndex {
 
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.overnight_index = self.overnight_index.with_name(name);
-        self 
+        self
     }
-    
+
     pub fn rate_definition(&self) -> RateDefinition {
         self.overnight_index.rate_definition()
     }
@@ -95,10 +112,9 @@ impl OvernightCompoundedRateIndex {
         self
     }
 
-    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
-        self.overnight_index.average_rate(start_date, end_date) 
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Number> {
+        self.overnight_index.average_rate(start_date, end_date)
     }
-
 }
 
 impl FixingProvider for OvernightCompoundedRateIndex {
@@ -109,7 +125,8 @@ impl FixingProvider for OvernightCompoundedRateIndex {
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "No fixing for date {} for index {:?}",
-                date, self.overnight_index.name()
+                date,
+                self.overnight_index.name()
             )))
     }
 
@@ -141,7 +158,7 @@ impl HasName for OvernightCompoundedRateIndex {
 }
 
 impl YieldProvider for OvernightCompoundedRateIndex {
-    fn discount_factor(&self, date: Date) -> Result<f64> {
+    fn discount_factor(&self, date: Date) -> Result<Number> {
         self.overnight_index.discount_factor(date)
     }
 
@@ -151,8 +168,9 @@ impl YieldProvider for OvernightCompoundedRateIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<f64> {
-        self.overnight_index.forward_rate(start_date, end_date, comp, freq)
+    ) -> Result<Number> {
+        self.overnight_index
+            .forward_rate(start_date, end_date, comp, freq)
     }
 }
 
@@ -162,7 +180,7 @@ impl AdvanceInterestRateIndexInTime for OvernightCompoundedRateIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = (date - self.reference_date()).to_i32().unwrap();
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -182,6 +200,7 @@ impl RelinkableTermStructure for OvernightCompoundedRateIndex {
 
 impl InterestRateIndexTrait for OvernightCompoundedRateIndex {}
 
+#[cfg(feature = "f64")]
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -197,7 +216,7 @@ mod tests {
         let date = Date::new(2021, 1, 1);
         let overnight_index = OvernightCompoundedRateIndex::new(date);
         assert!(overnight_index.fixings_rates.is_empty());
-    }   
+    }
 
     #[test]
     fn test_with_rate_definition() {
@@ -205,7 +224,6 @@ mod tests {
         let overnight_index =
             OvernightCompoundedRateIndex::new(date).with_rate_definition(RateDefinition::default());
         assert_eq!(overnight_index.rate_definition(), RateDefinition::default());
-        
     }
 
     #[test]
@@ -213,13 +231,13 @@ mod tests {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
-        let overnight_index = OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
+        let overnight_index =
+            OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
         assert_eq!(*overnight_index.fixings_rates(), fixings);
     }
 
-
     #[test]
-    fn test_average_rate(){
+    fn test_average_rate() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
 
@@ -230,13 +248,16 @@ mod tests {
         fixings.insert(Date::new(2021, 1, 5), 0.04);
         fixings.insert(Date::new(2021, 1, 6), 0.045);
 
-        let overnight_index = OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
-        let average_rate = overnight_index.average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5)).unwrap();
-        assert!((average_rate-0.03).abs() < 1e-5); 
+        let overnight_index =
+            OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
+        let average_rate = overnight_index
+            .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
+            .unwrap();
+        assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
     #[test]
-    fn test_average_rate_disordered(){
+    fn test_average_rate_disordered() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
 
@@ -247,9 +268,12 @@ mod tests {
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         fixings.insert(Date::new(2021, 1, 4), 0.035);
 
-        let overnight_index = OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
-        let average_rate = overnight_index.average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5)).unwrap();
-        assert!((average_rate-0.03).abs() < 1e-5); 
+        let overnight_index =
+            OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
+        let average_rate = overnight_index
+            .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
+            .unwrap();
+        assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
     #[test]
@@ -257,7 +281,8 @@ mod tests {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
-        let overnight_index = OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
+        let overnight_index =
+            OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
 
         assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 1000.0);
         Ok(())
@@ -293,18 +318,16 @@ mod tests {
         assert_eq!(overnight_index.reference_date(), next_date_2);
     }
 
-
     #[test]
     fn test_fixing_provider_overnight() -> Result<()> {
-        let fixing: HashMap<Date, f64> = [
-            (Date::new(2023, 6, 2), 2.5),
-            (Date::new(2023, 6, 5), 3.0),
-        ]
-        .iter()
-        .cloned()
-        .collect();
+        let fixing: HashMap<Date, f64> =
+            [(Date::new(2023, 6, 2), 2.5), (Date::new(2023, 6, 5), 3.0)]
+                .iter()
+                .cloned()
+                .collect();
 
-        let mut overnight_index = OvernightCompoundedRateIndex::new(Date::new(2023, 6, 5)).with_fixings_rates(fixing);
+        let mut overnight_index =
+            OvernightCompoundedRateIndex::new(Date::new(2023, 6, 5)).with_fixings_rates(fixing);
 
         overnight_index.fill_missing_fixings(Interpolator::Linear);
 
@@ -313,10 +336,10 @@ mod tests {
                 .fixings()
                 .get(&Date::new(2023, 6, 3))
                 .unwrap()
-                - 1006.944444).abs()
+                - 1006.944444)
+                .abs()
                 < 0.001
         );
         Ok(())
     }
-
 }

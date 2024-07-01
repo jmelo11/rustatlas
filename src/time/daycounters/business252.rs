@@ -1,7 +1,13 @@
 use super::traits::DayCountProvider;
-use crate::{prelude::Calendar, time::{calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date}};
+use crate::prelude::NewValue;
 use crate::time::calendars::brazil::Market;
-
+use crate::{
+    prelude::{Calendar, Number},
+    time::{
+        calendars::{brazil::Brazil, traits::ImplCalendar},
+        date::Date,
+    },
+};
 
 /// # Business252
 /// Business/252 day count convention.
@@ -9,7 +15,7 @@ use crate::time::calendars::brazil::Market;
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
-/// 
+///
 /// let start = Date::new(2020, 1, 1);
 /// let end = Date::new(2020, 2, 1);
 /// assert_eq!(Business252::day_count(start, end), 22);
@@ -18,24 +24,22 @@ use crate::time::calendars::brazil::Market;
 pub struct Business252;
 
 impl DayCountProvider for Business252 {
-    fn day_count(start: Date, end: Date) -> i64 {
-
+    fn day_count(start: Date, end: Date) -> Number {
         let calendar = Calendar::Brazil(Brazil::new(Market::Settlement));
 
         if end < start {
-            
-            return  -(calendar.business_day_list(start, end).len() as i64);
-        }
-        else {
-            return calendar.business_day_list(start, end).len() as i64
+            return Number::new(-(calendar.business_day_list(start, end).len() as f64));
+        } else {
+            return Number::new(calendar.business_day_list(start, end).len() as f64);
         }
     }
 
-    fn year_fraction(start: Date, end: Date) -> f64 {
-        Self::day_count(start, end) as f64 / 252.0
+    fn year_fraction(start: Date, end: Date) -> Number {
+        Self::day_count(start, end) / 252.0
     }
 }
 
+#[cfg(feature = "f64")]
 #[cfg(test)]
 mod test {
     use crate::prelude::DayCountProvider;
@@ -49,5 +53,4 @@ mod test {
         assert_eq!(Business252::day_count(start, end), 22);
         assert_eq!(Business252::year_fraction(start, end), 22.0 / 252.0);
     }
-
 }

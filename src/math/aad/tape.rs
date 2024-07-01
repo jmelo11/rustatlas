@@ -81,7 +81,6 @@ impl GradientTape {
 
 #[cfg(test)]
 mod tests {
-    use num_traits::real::Real;
 
     use crate::prelude::NewValue;
 

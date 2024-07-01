@@ -9,7 +9,7 @@ use crate::{
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
     },
-    prelude::{InterestRate, Structure},
+    prelude::{InterestRate, NewValue, Number, Structure},
     utils::errors::Result,
 };
 
@@ -75,7 +75,7 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
         let new_spread = *param;
 
         // new instrument with the new spread
-        let mut inst = self.eval.clone().set_spread(new_spread);
+        let mut inst = self.eval.clone().set_spread(Number::new(new_spread));
 
         // visit the instrument to update the fixing values
         let _ = self.fixing_visitor.visit(&mut inst);
