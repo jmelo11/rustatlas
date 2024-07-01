@@ -5,19 +5,18 @@ use argmin::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::{meta::MarketData, traits::Registrable},
+    core::meta::MarketData,
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
-        makefixedrateinstrument::MakeFixedRateInstrument,
-        makefloatingrateinstrument::MakeFloatingRateInstrument,
     },
+    prelude::{InterestRate, Structure},
     utils::errors::Result,
 };
 
 use super::{
     fixingvisitor::FixingVisitor,
     npvconstvisitor::NPVConstVisitor,
-    traits::{ConstVisit, HasCashflows, Visit},
+    traits::{ConstVisit, Visit},
 };
 
 /// # ParValue
@@ -44,22 +43,23 @@ impl<'a, T> ParValue<'a, T> {
     }
 }
 
+// cost function for fixed rate instrument
 impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
-
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFixedRateInstrument::from(self.eval);
-        let mut inst = builder.with_rate_value(*param).build()?;
-        inst.mut_cashflows()
-            .iter_mut()
-            .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<()> {
-                let id = old_cf.id()?;
-                cf.set_id(id);
-                Ok(())
-            })?;
+        let rate = self.eval.rate();
+        let new_rate = InterestRate::new(
+            Number::new(*param),
+            rate.compounding(),
+            rate.frequency(),
+            rate.day_counter(),
+        );
 
+        // new instrument with the new rate
+        let inst = self.eval.clone().set_rate(new_rate);
+
+        // visit the instrument to calculate the npv and return the result
         self.npv_visitor
             .visit(&inst)
             .map(|x| x.to_f64().unwrap())
@@ -67,24 +67,20 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     }
 }
 
+// cost function for floating rate instrument
 impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
     type Param = f64;
     type Output = f64;
-
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
-        let builder = MakeFloatingRateInstrument::from(self.eval);
-        let mut inst = builder.with_spread(*param).build()?;
+        let new_spread = *param;
 
-        inst.mut_cashflows()
-            .iter_mut()
-            .zip(self.eval.cashflows().iter())
-            .try_for_each(|(cf, old_cf)| -> Result<()> {
-                let id = old_cf.id()?;
-                cf.set_id(id);
-                Ok(())
-            })?;
+        // new instrument with the new spread
+        let mut inst = self.eval.clone().set_spread(new_spread);
 
+        // visit the instrument to update the fixing values
         let _ = self.fixing_visitor.visit(&mut inst);
+
+        // visit the instrument to calculate the npv and return the result
         self.npv_visitor
             .visit(&inst)
             .map(|x| x.to_f64().unwrap())
@@ -106,9 +102,16 @@ impl<'a> ParValueConstVisitor<'a> {
 
 impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
+    // visit fixed rate instrument
+    // use BrentRoot solver to find the par rate
     fn visit(&self, instrument: &FixedRateInstrument) -> Self::Output {
+        let (min, max) = match instrument.structure() {
+            Structure::EqualPayments => (-0.7, 0.7),
+            _ => (-1.0, 1.0),
+        };
+
         let cost = ParValue::new(instrument, &self.market_data);
-        let solver = BrentRoot::new(-0.9, 0.9, 1e-6);
+        let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
@@ -119,9 +122,12 @@ impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
 
 impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
     type Output = Result<f64>;
+    // visit floating rate instrument
+    // use BrentRoot solver to find the par spread
     fn visit(&self, instrument: &FloatingRateInstrument) -> Self::Output {
+        let (min, max) = (-1.0, 1.0);
         let cost = ParValue::new(instrument, &self.market_data);
-        let solver = BrentRoot::new(-0.9, 0.9, 1e-6);
+        let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
@@ -139,11 +145,11 @@ mod test {
     };
 
     use crate::{
-        cashflows::cashflow::Side,
         core::marketstore::MarketStore,
         currencies::enums::Currency,
         instruments::makefixedrateinstrument::MakeFixedRateInstrument,
         models::{simplemodel::SimpleModel, traits::Model},
+        prelude::{MakeFloatingRateInstrument, Side},
         rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
@@ -170,13 +176,21 @@ mod test {
         let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.02,
-            RateDefinition::default(),
+            RateDefinition::new(
+                DayCounter::Thirty360,
+                Compounding::Compounded,
+                Frequency::Annual,
+            ),
         ));
 
         let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
             ref_date,
             0.03,
-            RateDefinition::default(),
+            RateDefinition::new(
+                DayCounter::Thirty360,
+                Compounding::Compounded,
+                Frequency::Annual,
+            ),
         ));
 
         let discount_curve = Arc::new(FlatForwardTermStructure::new(
@@ -269,7 +283,128 @@ mod test {
         let parvaluevisitor = ParValueConstVisitor::new(&data);
         let par_value = parvaluevisitor.visit(&instrument)?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_par_value_fixed_bullet() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            0.03,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+        let mut instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate(rate)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .with_discount_curve_id(Some(2))
+            .with_notional(notional)
+            .bullet()
+            .build()?;
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let parvaluevisitor = ParValueConstVisitor::new(&data);
+        let par_value = parvaluevisitor.visit(&instrument)?;
+
         assert!((par_value - 0.05).abs() < 1e-6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_par_value_fixed_bullet_negative_rate() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate = InterestRate::new(
+            -0.03,
+            Compounding::Compounded,
+            Frequency::Annual,
+            DayCounter::Thirty360,
+        );
+
+        let mut instrument = MakeFixedRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate(rate)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .with_discount_curve_id(Some(2))
+            .with_notional(notional)
+            .bullet()
+            .build()?;
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let parvaluevisitor = ParValueConstVisitor::new(&data);
+        let par_value = parvaluevisitor.visit(&instrument)?;
+
+        assert!((par_value - 0.05).abs() < 1e-6);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_par_value_floating_bullet() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let ref_date = market_store.reference_date();
+
+        let start_date = ref_date;
+        let end_date = start_date + Period::new(10, TimeUnit::Years);
+        let notional = 100_000.0;
+        let rate_definition = RateDefinition::new(
+            DayCounter::Thirty360,
+            Compounding::Compounded,
+            Frequency::Annual,
+        );
+
+        let spread = 0.04;
+
+        let mut instrument = MakeFloatingRateInstrument::new()
+            .with_start_date(start_date)
+            .with_end_date(end_date)
+            .with_rate_definition(rate_definition)
+            .with_payment_frequency(Frequency::Semiannual)
+            .with_side(Side::Receive)
+            .with_currency(Currency::USD)
+            .with_discount_curve_id(Some(2))
+            .with_forecast_curve_id(Some(0))
+            .with_notional(notional)
+            .with_spread(spread)
+            .bullet()
+            .build()?;
+
+        let indexer = IndexingVisitor::new();
+        indexer.visit(&mut instrument)?;
+
+        let model = SimpleModel::new(&market_store);
+        let data = model.gen_market_data(&indexer.request())?;
+
+        let parvaluevisitor = ParValueConstVisitor::new(&data);
+        let par_value = parvaluevisitor.visit(&instrument)?;
+
+        assert!((par_value - 0.03).abs() < 1e-6);
 
         Ok(())
     }

@@ -1,11 +1,7 @@
 use serde::Serialize;
 
 use super::calendars::{
-    nullcalendar::NullCalendar,
-    target::TARGET,
-    traits::{ImplCalendar, IsCalendar},
-    unitedstates::UnitedStates,
-    weekendsonly::WeekendsOnly,
+    brazil::Brazil, chile::Chile, nullcalendar::NullCalendar, target::TARGET, traits::{ImplCalendar, IsCalendar}, unitedstates::UnitedStates, weekendsonly::WeekendsOnly
 };
 use crate::{
     time::date::Date,
@@ -27,6 +23,8 @@ pub enum Calendar {
     WeekendsOnly(WeekendsOnly),
     TARGET(TARGET),
     UnitedStates(UnitedStates),
+    Brazil(Brazil),
+    Chile(Chile),
 }
 
 impl Serialize for Calendar {
@@ -39,6 +37,8 @@ impl Serialize for Calendar {
             Calendar::WeekendsOnly(cal) => cal.impl_name(),
             Calendar::TARGET(cal) => cal.impl_name(),
             Calendar::UnitedStates(cal) => cal.impl_name(),
+            Calendar::Brazil(cal) => cal.impl_name(),
+            Calendar::Chile(cal) => cal.impl_name(),
         };
         serializer.serialize_str(&s)
     }
@@ -55,6 +55,8 @@ impl<'de> serde::Deserialize<'de> for Calendar {
             "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
             "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
             "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
+            "Brazil" => Ok(Calendar::Brazil(Brazil::default())),
+            "Chile" => Ok(Calendar::Chile(Chile::default())),
             _ => Err(serde::de::Error::custom(format!("Invalid calendar: {}", s))),
         }
     }
@@ -69,6 +71,8 @@ impl TryFrom<String> for Calendar {
             "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
             "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
             "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
+            "Brazil" => Ok(Calendar::Brazil(Brazil::default())),
+            "Chile" => Ok(Calendar::Chile(Chile::default())),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid calendar: {}",
                 s
@@ -84,6 +88,8 @@ impl From<Calendar> for String {
             Calendar::WeekendsOnly(_) => "WeekendsOnly".to_string(),
             Calendar::TARGET(_) => "TARGET".to_string(),
             Calendar::UnitedStates(_) => "UnitedStates".to_string(),
+            Calendar::Brazil(_) => "Brazil".to_string(),
+            Calendar::Chile(_) => "Chile".to_string(),
         }
     }
 }
@@ -95,6 +101,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.impl_name(),
             Calendar::TARGET(cal) => cal.impl_name(),
             Calendar::UnitedStates(cal) => cal.impl_name(),
+            Calendar::Brazil(cal) => cal.impl_name(),
+            Calendar::Chile(cal) => cal.impl_name(),
         }
     }
 
@@ -104,6 +112,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.impl_is_business_day(date),
             Calendar::TARGET(cal) => cal.impl_is_business_day(date),
             Calendar::UnitedStates(cal) => cal.impl_is_business_day(date),
+            Calendar::Brazil(cal) => cal.impl_is_business_day(date),
+            Calendar::Chile(cal) => cal.impl_is_business_day(date),
         }
     }
 
@@ -113,6 +123,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.added_holidays(),
             Calendar::TARGET(cal) => cal.added_holidays(),
             Calendar::UnitedStates(cal) => cal.added_holidays(),
+            Calendar::Brazil(cal) => cal.added_holidays(),
+            Calendar::Chile(cal) => cal.added_holidays(),
         }
     }
 
@@ -122,6 +134,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.removed_holidays(),
             Calendar::TARGET(cal) => cal.removed_holidays(),
             Calendar::UnitedStates(cal) => cal.removed_holidays(),
+            Calendar::Brazil(cal) => cal.removed_holidays(),
+            Calendar::Chile(cal) => cal.removed_holidays(),
         }
     }
 
@@ -131,6 +145,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.add_holiday(date),
             Calendar::TARGET(cal) => cal.add_holiday(date),
             Calendar::UnitedStates(cal) => cal.add_holiday(date),
+            Calendar::Brazil(cal) => cal.add_holiday(date),
+            Calendar::Chile(cal) => cal.add_holiday(date),
         }
     }
 
@@ -140,6 +156,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.remove_holiday(date),
             Calendar::TARGET(cal) => cal.remove_holiday(date),
             Calendar::UnitedStates(cal) => cal.remove_holiday(date),
+            Calendar::Brazil(cal) => cal.remove_holiday(date),
+            Calendar::Chile(cal) => cal.remove_holiday(date),
         }
     }
 
@@ -149,6 +167,8 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.holiday_list(from, to, include_weekends),
             Calendar::TARGET(cal) => cal.holiday_list(from, to, include_weekends),
             Calendar::UnitedStates(cal) => cal.holiday_list(from, to, include_weekends),
+            Calendar::Brazil(cal) => cal.holiday_list(from, to, include_weekends),
+            Calendar::Chile(cal) => cal.holiday_list(from, to, include_weekends),
         }
     }
 
@@ -158,8 +178,33 @@ impl ImplCalendar for Calendar {
             Calendar::WeekendsOnly(cal) => cal.business_day_list(from, to),
             Calendar::TARGET(cal) => cal.business_day_list(from, to),
             Calendar::UnitedStates(cal) => cal.business_day_list(from, to),
+            Calendar::Brazil(cal) => cal.business_day_list(from, to),
+            Calendar::Chile(cal) => cal.business_day_list(from, to),
         }
     }
 }
 
 impl IsCalendar for Calendar {}
+
+
+#[cfg(test)]
+mod test {
+    use crate::{prelude::{Calendar, NullCalendar, UnitedStates, WeekendsOnly, TARGET}, time::calendars::{brazil::Brazil, chile::Chile, traits::ImplCalendar}};
+
+    #[test]
+    fn test_create_calendar() {
+        let calendar = Calendar::NullCalendar(NullCalendar::new());
+        assert_eq!(calendar.impl_name(), "NullCalendar");
+        let calendar = Calendar::WeekendsOnly(WeekendsOnly::new());
+        assert_eq!(calendar.impl_name(), "WeekendsOnly");
+        let calendar = Calendar::TARGET(TARGET::new());
+        assert_eq!(calendar.impl_name(), "TARGET");
+        let calendar = Calendar::UnitedStates(UnitedStates::default());
+        assert_eq!(calendar.impl_name(), "UnitedStates(Sofr)");
+        let calendar = Calendar::Brazil(Brazil::default());
+        assert_eq!(calendar.impl_name(), "Brazil(Settlement)");
+        let calendar = Calendar::Chile(Chile::default());
+        assert_eq!(calendar.impl_name(), "Chile(SSE)");
+    }
+
+}

@@ -66,6 +66,7 @@ impl FixedRateCoupon {
 
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
+        // Update the cashflow amount
         self.cashflow.set_amount(
             self.notional
                 * (rate.compound_factor(self.accrual_start_date, self.accrual_end_date) - 1.0),

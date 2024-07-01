@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
-    actual360::Actual360, actual365::Actual365, thirty360::*, traits::DayCountProvider,
+    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, business252::Business252, thirty360::*, traits::DayCountProvider
 };
 use crate::{
     core::meta::Number,
@@ -17,6 +17,8 @@ pub enum DayCounter {
     Actual365,
     Thirty360,
     Thirty360US,
+    ActualActual,
+    Business252,
 }
 
 impl DayCounter {
@@ -26,6 +28,8 @@ impl DayCounter {
             DayCounter::Actual365 => Actual365::day_count(start, end),
             DayCounter::Thirty360 => Thirty360::day_count(start, end),
             DayCounter::Thirty360US => Thirty360US::day_count(start, end),
+            DayCounter::ActualActual => ActualActual::day_count(start, end),
+            DayCounter::Business252 => Business252::day_count(start, end),
         }
     }
 
@@ -35,6 +39,8 @@ impl DayCounter {
             DayCounter::Actual365 => Actual365::year_fraction(start, end),
             DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
             DayCounter::Thirty360US => Thirty360US::year_fraction(start, end),
+            DayCounter::ActualActual => ActualActual::year_fraction(start, end),
+            DayCounter::Business252 => Business252::year_fraction(start, end),
         }
     }
 }
@@ -48,6 +54,8 @@ impl TryFrom<String> for DayCounter {
             "Actual365" => Ok(DayCounter::Actual365),
             "Thirty360" => Ok(DayCounter::Thirty360), // to match curveengine
             "Thirty360US" => Ok(DayCounter::Thirty360US),
+            "ActualActual" => Ok(DayCounter::ActualActual),
+            "Business252" => Ok(DayCounter::Business252),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid day counter: {}",
                 s
@@ -63,6 +71,8 @@ impl From<DayCounter> for String {
             DayCounter::Actual365 => "Actual365".to_string(),
             DayCounter::Thirty360 => "Thirty360".to_string(),
             DayCounter::Thirty360US => "Thirty360US".to_string(),
+            DayCounter::ActualActual => "ActualActual".to_string(),
+            DayCounter::Business252 => "Business252".to_string(),
         }
     }
 }
@@ -82,8 +92,31 @@ mod tests {
         let day_count = DayCounter::Actual365.day_count(start, end);
         assert_eq!(day_count, 1.0);
         let day_count = DayCounter::Thirty360.day_count(start, end);
-        assert_eq!(day_count, 1.0);
+        assert_eq!(day_count, 1);
+        let day_count = DayCounter::Thirty360US.day_count(start, end);
+        assert_eq!(day_count, 1);
+        let day_count = DayCounter::ActualActual.day_count(start, end);
+        assert_eq!(day_count, 1);
     }
+
+
+    #[test]
+    fn test_day_count_standard_inverted() {
+        let start = Date::new(2020, 1, 1);
+        let end = Date::new(2020, 1, 2);
+
+        let day_count = DayCounter::Actual360.day_count(end, start);
+        assert_eq!(day_count, -1);
+        let day_count = DayCounter::Actual365.day_count(end, start);
+        assert_eq!(day_count, -1);
+        let day_count = DayCounter::Thirty360.day_count(end, start);
+        assert_eq!(day_count, -1);
+        let day_count = DayCounter::Thirty360US.day_count(end, start);
+        assert_eq!(day_count, -1);
+        let day_count = DayCounter::ActualActual.day_count(end, start);
+        assert_eq!(day_count, -1);
+    }
+    
 
     #[test]
     fn test_year_fraction() {
@@ -96,6 +129,28 @@ mod tests {
         assert_eq!(year_fraction, 1.0 / 365.0);
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
         assert_eq!(year_fraction, 1.0 / 360.0);
+        let year_fraction = DayCounter::Thirty360US.year_fraction(start, end);
+        assert_eq!(year_fraction, 1.0 / 360.0);
+        let year_fraction = DayCounter::ActualActual.year_fraction(start, end);
+        assert_eq!(year_fraction, 1.0 / 366.0);
+    }
+
+
+    #[test]
+    fn test_year_fraction_inverse() {
+        let start = Date::new(2020, 1, 1);
+        let end = Date::new(2020, 1, 2);
+
+        let year_fraction = DayCounter::Actual360.year_fraction(end, start);
+        assert_eq!(year_fraction, -1.0 / 360.0);
+        let year_fraction = DayCounter::Actual365.year_fraction(end, start);
+        assert_eq!(year_fraction, -1.0 / 365.0);
+        let year_fraction = DayCounter::Thirty360.year_fraction(end, start);
+        assert_eq!(year_fraction, -1.0 / 360.0);
+        let year_fraction = DayCounter::Thirty360US.year_fraction(end, start);
+        assert_eq!(year_fraction, -1.0 / 360.0);
+        let year_fraction = DayCounter::ActualActual.year_fraction(end, start);
+        assert_eq!(year_fraction, -1.0 / 366.0);
     }
 
     #[test]
@@ -109,6 +164,7 @@ mod tests {
         assert_ne!(yf_1, yf_2);
     }
 
+
     #[test]
     fn test_year_fraction_trithy360_beetween_end_and_start_of_month() {
         let start = Date::new(2023, 12, 10);
@@ -117,16 +173,9 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        println!(
-            "{} days between {} and {} with Thirty360",
-            yf_1, start, end_1
-        );
-        println!(
-            "{} days between {} and {} with Thirty360",
-            yf_2, start, end_2
-        );
         assert_eq!(yf_1, yf_2);
     }
+
 
     #[test]
     fn test_year_fraction_trithy360_star_in_end_of_month() {
