@@ -56,8 +56,9 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
                 Side::Pay => -1.0,
                 Side::Receive => 1.0,
             };
+            let numerarie = cf_market_data.numerarie();
             let amount = cf.amount()?;
-            Ok(acc + df * amount / fx * flag)
+            Ok(acc + df * amount / fx * flag / numerarie)
         });
         return npv;
     }

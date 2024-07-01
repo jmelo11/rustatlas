@@ -7,6 +7,7 @@ pub trait Model {
     fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<f64>;
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64>;
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64>;
+    fn gen_numerarie(&self, market_request: &MarketRequest) -> Result<f64>;
     fn gen_node(&self, market_request: &MarketRequest) -> Result<MarketData> {
         let id = market_request.id();
         let df = match market_request.df() {
@@ -23,7 +24,17 @@ pub trait Model {
             Some(fx) => Some(self.gen_fx_data(fx)?),
             None => None,
         };
-        return Ok(MarketData::new(id, self.reference_date(), df, fwd, fx));
+
+        let numerarie = self.gen_numerarie(market_request)?;
+
+        return Ok(MarketData::new(
+            id,
+            self.reference_date(),
+            df,
+            fwd,
+            fx,
+            numerarie,
+        ));
     }
 
     fn gen_market_data(&self, market_request: &[MarketRequest]) -> Result<Vec<MarketData>> {
