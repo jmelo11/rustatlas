@@ -1,6 +1,6 @@
 use super::enums::*;
 use super::period::Period;
-use crate::core::meta::{NewValue, Number};
+use crate::core::meta::{NewNumeric, Numeric};
 use crate::utils::errors::Result;
 use chrono::{Datelike, Duration, Months, NaiveDate};
 use serde::{Deserialize, Serialize};
@@ -297,12 +297,12 @@ impl Date {
 /// assert_eq!(date1 - date2, 5);
 /// ```
 impl Sub for Date {
-    type Output = Number;
+    type Output = Numeric;
 
     fn sub(self, rhs: Self) -> Self::Output {
         let base_date = self.base_date;
         let rhs_base_date = rhs.base_date;
-        return Number::new((base_date - rhs_base_date).num_days() as f64);
+        return Numeric::new((base_date - rhs_base_date).num_days() as f64);
     }
 }
 

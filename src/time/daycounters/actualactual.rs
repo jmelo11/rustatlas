@@ -1,8 +1,5 @@
 use super::traits::DayCountProvider;
-use crate::{
-    prelude::{NewValue, Number},
-    time::date::Date,
-};
+use crate::{core::meta::{NewNumeric, Numeric}, time::date::Date};
 
 /// # ActualActual
 /// Actual/Actual day count convention.
@@ -33,11 +30,11 @@ fn days_in_year(year: i32) -> i32 {
 }
 
 impl DayCountProvider for ActualActual {
-    fn day_count(start: Date, end: Date) -> Number {
+    fn day_count(start: Date, end: Date) -> Numeric {
         return end - start;
     }
 
-    fn year_fraction(start: Date, end: Date) -> Number {
+    fn year_fraction(start: Date, end: Date) -> Numeric {
         let days = ActualActual::day_count(start, end);
 
         let y1 = start.year() as i32;
@@ -53,7 +50,7 @@ impl DayCountProvider for ActualActual {
                     sum += 1.0;
                 }
                 sum += (end - Date::new(y2 as i32, 1, 1)) / days_in_year(y2 as i32) as f64;
-                return Number::new(sum);
+                return Numeric::new(sum);
             } else {
                 let mut sum = 0.0;
                 sum -= (Date::new(y2 + 1 as i32, 1, 1) - end) / days_in_year(y2 as i32) as f64;
@@ -61,7 +58,7 @@ impl DayCountProvider for ActualActual {
                     sum -= 1.0;
                 }
                 sum -= (start - Date::new(y1 as i32, 1, 1)) / days_in_year(y1 as i32) as f64;
-                return Number::new(sum);
+                return Numeric::new(sum);
             }
         }
     }

@@ -1,7 +1,7 @@
 use crate::{
     core::{
         marketstore::MarketStore,
-        meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest, NewValue, Number},
+        meta::{DiscountFactorRequest, ExchangeRateRequest, ForwardRateRequest, NewNumeric, Numeric},
     },
     rates::{indexstore::ReadIndex, traits::HasReferenceDate},
     time::date::Date,
@@ -43,15 +43,15 @@ impl<'a> Model for SimpleModel<'a> {
         self.market_store.reference_date()
     }
 
-    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<Number> {
+    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<Numeric> {
         let date = df.date();
         let ref_date = self.market_store.reference_date();
 
         // eval today or before ref date
         if ref_date > date {
-            return Ok(Number::new(0.0));
+            return Ok(Numeric::new(0.0));
         } else if ref_date == date {
-            return Ok(Number::new(1.0));
+            return Ok(Numeric::new(1.0));
         }
 
         let id = df.provider_id();
@@ -60,12 +60,12 @@ impl<'a> Model for SimpleModel<'a> {
         Ok(curve.discount_factor(date)?)
     }
 
-    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<Number> {
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<Numeric> {
         let id = fwd.provider_id();
         let end_date = fwd.end_date();
         let ref_date = self.market_store.reference_date();
         if end_date <= ref_date {
-            return Ok(Number::new(0.0));
+            return Ok(Numeric::new(0.0));
         }
 
         let index = self.market_store.get_index(id)?;
@@ -79,7 +79,7 @@ impl<'a> Model for SimpleModel<'a> {
         )?)
     }
 
-    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<Number> {
+    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<Numeric> {
         let first_currency = fx.first_currency();
         let second_currency = match fx.second_currency() {
             Some(ccy) => ccy,
@@ -113,7 +113,7 @@ impl<'a> Model for SimpleModel<'a> {
         }
     }
 
-    fn gen_numerarie(&self) -> Number {
-        Number::new(1.0)
+    fn gen_numerarie(&self) -> Numeric {
+        Numeric::new(1.0)
     }
 }

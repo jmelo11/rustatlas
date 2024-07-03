@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{
-        meta::{DiscountFactorRequest, ExchangeRateRequest, MarketRequest, Number},
+        meta::{DiscountFactorRequest, ExchangeRateRequest, MarketRequest, Numeric},
         traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
     },
     currencies::enums::Currency,
@@ -29,7 +29,7 @@ pub struct SimpleCashflow {
     payment_date: Date,
     currency: Currency,
     side: Side,
-    amount: Option<Number>,
+    amount: Option<Numeric>,
     discount_curve_id: Option<usize>,
     id: Option<usize>,
 }
@@ -46,7 +46,7 @@ impl SimpleCashflow {
         }
     }
 
-    pub fn with_amount(mut self, amount: Number) -> SimpleCashflow {
+    pub fn with_amount(mut self, amount: Numeric) -> SimpleCashflow {
         self.amount = Some(amount);
         self
     }
@@ -65,7 +65,7 @@ impl SimpleCashflow {
         self.discount_curve_id = Some(id);
     }
 
-    pub fn set_amount(&mut self, amount: Number) {
+    pub fn set_amount(&mut self, amount: Numeric) {
         self.amount = Some(amount);
     }
 }
@@ -117,7 +117,7 @@ impl Registrable for SimpleCashflow {
 }
 
 impl Payable for SimpleCashflow {
-    fn amount(&self) -> Result<Number> {
+    fn amount(&self) -> Result<Numeric> {
         return self.amount.ok_or(AtlasError::ValueNotSetErr(
             "Amount not set for simple cashflow".to_string(),
         ));

@@ -6,7 +6,7 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::Payable,
     },
-    core::{meta::NewValue, meta::Number, traits::HasCurrency},
+    core::{meta::NewNumeric, meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::InterestRate,
     time::{date::Date, enums::Frequency},
@@ -28,7 +28,7 @@ use crate::{
 pub struct FixedRateInstrument {
     start_date: Date,
     end_date: Date,
-    notional: Number,
+    notional: Numeric,
     rate: InterestRate,
     payment_frequency: Frequency,
     cashflows: Vec<Cashflow>,
@@ -45,7 +45,7 @@ impl FixedRateInstrument {
     pub fn new(
         start_date: Date,
         end_date: Date,
-        notional: Number,
+        notional: Numeric,
         rate: InterestRate,
         payment_frequency: Frequency,
         cashflows: Vec<Cashflow>,
@@ -86,7 +86,7 @@ impl FixedRateInstrument {
         self.end_date
     }
 
-    pub fn notional(&self) -> Number {
+    pub fn notional(&self) -> Numeric {
         self.notional
     }
 
@@ -151,7 +151,7 @@ impl HasCurrency for FixedRateInstrument {
 pub trait BondAccrual: HasCashflows {
     fn yield_rate(&self) -> Option<InterestRate>;
 
-    fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         let ini_pv = self.discounted_cashflows(start_date)?;
         let end_pv = self.discounted_cashflows(end_date)?;
         let accrual = self.matured_amount_accrual(start_date, end_date)?;
@@ -184,7 +184,7 @@ pub trait BondAccrual: HasCashflows {
         Ok(amount)
     }
 
-    fn discounted_cashflows(&self, evaluation_date: Date) -> Result<Number> {
+    fn discounted_cashflows(&self, evaluation_date: Date) -> Result<Numeric> {
         let rate = self
             .yield_rate()
             .ok_or(AtlasError::NotFoundErr("Yield rate".to_string()))?;
@@ -193,7 +193,7 @@ pub trait BondAccrual: HasCashflows {
             .cashflows()
             .iter()
             .filter(|cf| cf.payment_date() >= evaluation_date)
-            .fold(Number::new(0.0), |acc, cf| {
+            .fold(Numeric::new(0.0), |acc, cf| {
                 let npv = cf.amount().unwrap()
                     * rate.discount_factor(evaluation_date, cf.payment_date())
                     * cf.side().sign();

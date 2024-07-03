@@ -1,12 +1,10 @@
 use super::traits::DayCountProvider;
-use crate::prelude::NewValue;
+use crate::core::meta::{NewNumeric, Numeric};
+use crate::time::calendar::Calendar;
 use crate::time::calendars::brazil::Market;
-use crate::{
-    prelude::{Calendar, Number},
-    time::{
-        calendars::{brazil::Brazil, traits::ImplCalendar},
-        date::Date,
-    },
+use crate::time::{
+    calendars::{brazil::Brazil, traits::ImplCalendar},
+    date::Date,
 };
 
 /// # Business252
@@ -24,17 +22,17 @@ use crate::{
 pub struct Business252;
 
 impl DayCountProvider for Business252 {
-    fn day_count(start: Date, end: Date) -> Number {
+    fn day_count(start: Date, end: Date) -> Numeric {
         let calendar = Calendar::Brazil(Brazil::new(Market::Settlement));
 
         if end < start {
-            return Number::new(-(calendar.business_day_list(start, end).len() as f64));
+            return Numeric::new(-(calendar.business_day_list(start, end).len() as f64));
         } else {
-            return Number::new(calendar.business_day_list(start, end).len() as f64);
+            return Numeric::new(calendar.business_day_list(start, end).len() as f64);
         }
     }
 
-    fn year_fraction(start: Date, end: Date) -> Number {
+    fn year_fraction(start: Date, end: Date) -> Numeric {
         Self::day_count(start, end) / 252.0
     }
 }

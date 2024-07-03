@@ -15,7 +15,7 @@ fn starting_today_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        Number::new(0.05),
+        Numeric::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -58,7 +58,7 @@ fn starting_today_pricing() {
     let accrued_amount = instrument
         .cashflows()
         .iter()
-        .fold(Number::new(0.0), |acc, cf| {
+        .fold(Numeric::new(0.0), |acc, cf| {
             acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
         });
 
@@ -70,7 +70,7 @@ fn starting_today_pricing() {
     let maturing_amount = instrument
         .cashflows()
         .iter()
-        .fold(Number::new(0.0), |acc, cf| {
+        .fold(Numeric::new(0.0), |acc, cf| {
             if cf.payment_date() == ref_date {
                 acc + cf.amount().unwrap()
             } else {
@@ -101,7 +101,7 @@ fn forward_starting_pricing() {
 
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        Number::new(0.05),
+        Numeric::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -139,7 +139,7 @@ fn forward_starting_pricing() {
     let accrued_amount = instrument
         .cashflows()
         .iter()
-        .fold(Number::new(0.0), |acc, cf| {
+        .fold(Numeric::new(0.0), |acc, cf| {
             acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
         });
     println!(
@@ -160,7 +160,7 @@ fn already_started_pricing() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        Number::new(0.05),
+        Numeric::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,
@@ -201,7 +201,7 @@ fn already_started_pricing() {
     let accrued_amount = instrument
         .cashflows()
         .iter()
-        .fold(Number::new(0.0), |acc, cf| {
+        .fold(Numeric::new(0.0), |acc, cf| {
             acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
         });
     println!(
@@ -225,7 +225,7 @@ fn sensitivity_analysis_using_aad() {
     let end_date = start_date + Period::new(5, TimeUnit::Years);
     let notional = 100_000.0;
 
-    let rate_val = Number::new(0.05);
+    let rate_val = Numeric::new(0.05);
     let rate = InterestRate::new(
         rate_val,
         Compounding::Simple,
@@ -260,7 +260,7 @@ fn sensitivity_analysis_using_aad() {
     let dr_dnpv = TAPE.with(|tape| tape.derivative(&npv, &rate_val)) * 0.01;
 
     let new_rate = InterestRate::new(
-        Number::new(0.06),
+        Numeric::new(0.06),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Actual360,

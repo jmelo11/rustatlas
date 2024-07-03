@@ -1,7 +1,7 @@
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::Number,
+    core::meta::Numeric,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
@@ -141,7 +141,7 @@ impl HasName for IborIndex {
 }
 
 impl YieldProvider for IborIndex {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         self.term_structure()?.discount_factor(date)
     }
 
@@ -151,7 +151,7 @@ impl YieldProvider for IborIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         if end_date < start_date {
             return Err(AtlasError::InvalidValueErr(format!(
                 "End date {:?} is before start date {:?}",

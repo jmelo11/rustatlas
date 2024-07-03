@@ -12,7 +12,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
-    core::{meta::NewValue, meta::Number, traits::HasCurrency},
+    core::{meta::NewNumeric, meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::{InterestRate, RateDefinition},
     time::{
@@ -166,7 +166,7 @@ impl MakeFixedRateInstrument {
         match self.rate_value {
             Some(rate_value) => {
                 self.rate = Some(InterestRate::new(
-                    Number::new(rate_value),
+                    Numeric::new(rate_value),
                     rate_definition.compounding(),
                     rate_definition.frequency(),
                     rate_definition.day_counter(),
@@ -193,7 +193,7 @@ impl MakeFixedRateInstrument {
         match self.rate {
             Some(rate) => {
                 self.rate = Some(InterestRate::new(
-                    Number::new(rate_value),
+                    Numeric::new(rate_value),
                     rate.compounding(),
                     rate.frequency(),
                     rate.day_counter(),
@@ -202,7 +202,7 @@ impl MakeFixedRateInstrument {
             None => match self.rate_definition {
                 Some(rate_definition) => {
                     self.rate = Some(InterestRate::new(
-                        Number::new(rate_value),
+                        Numeric::new(rate_value),
                         rate_definition.compounding(),
                         rate_definition.frequency(),
                         rate_definition.day_counter(),
@@ -419,7 +419,7 @@ impl MakeFixedRateInstrument {
                 Ok(FixedRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
+                    Numeric::new(notional),
                     rate,
                     payment_frequency,
                     cashflows,
@@ -455,13 +455,13 @@ impl MakeFixedRateInstrument {
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse())
-                            .with_amount(Number::new(*amount)),
+                            .with_amount(Numeric::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
                 for (start_date, end_date, notional) in &timeline {
                     let coupon = FixedRateCoupon::new(
-                        Number::new(*notional),
+                        Numeric::new(*notional),
                         rate,
                         *start_date,
                         *end_date,
@@ -474,7 +474,7 @@ impl MakeFixedRateInstrument {
                 for (date, amount) in redemptions.iter() {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side)
-                            .with_amount(Number::new(*amount)),
+                            .with_amount(Numeric::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
@@ -497,7 +497,7 @@ impl MakeFixedRateInstrument {
                 Ok(FixedRateInstrument::new(
                     *start_date,
                     *end_date,
-                    Number::new(notional),
+                    Numeric::new(notional),
                     rate,
                     payment_frequency,
                     cashflows,
@@ -659,7 +659,7 @@ impl MakeFixedRateInstrument {
                 Ok(FixedRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
+                    Numeric::new(notional),
                     rate,
                     payment_frequency,
                     cashflows,
@@ -747,7 +747,7 @@ impl MakeFixedRateInstrument {
                 Ok(FixedRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
+                    Numeric::new(notional),
                     rate,
                     payment_frequency,
                     cashflows,
@@ -852,7 +852,7 @@ impl MakeFixedRateInstrument {
                 Ok(FixedRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
+                    Numeric::new(notional),
                     rate,
                     payment_frequency,
                     cashflows,
@@ -890,7 +890,7 @@ fn build_coupons_from_notionals(
     for (date_pair, notional) in dates.windows(2).zip(notionals) {
         let d1 = date_pair[0];
         let d2 = date_pair[1];
-        let coupon = FixedRateCoupon::new(Number::new(*notional), rate, d1, d2, d2, currency, side);
+        let coupon = FixedRateCoupon::new(Numeric::new(*notional), rate, d1, d2, d2, currency, side);
         cashflows.push(Cashflow::FixedRateCoupon(coupon));
     }
     Ok(())

@@ -4,7 +4,7 @@ use super::daycounters::{
     actual360::Actual360, actual365::Actual365, actualactual::ActualActual, business252::Business252, thirty360::*, traits::DayCountProvider
 };
 use crate::{
-    core::meta::Number,
+    core::meta::Numeric,
     time::date::Date,
     utils::errors::{AtlasError, Result},
 };
@@ -22,7 +22,7 @@ pub enum DayCounter {
 }
 
 impl DayCounter {
-    pub fn day_count(&self, start: Date, end: Date) -> Number {
+    pub fn day_count(&self, start: Date, end: Date) -> Numeric {
         match self {
             DayCounter::Actual360 => Actual360::day_count(start, end),
             DayCounter::Actual365 => Actual365::day_count(start, end),
@@ -33,7 +33,7 @@ impl DayCounter {
         }
     }
 
-    pub fn year_fraction(&self, start: Date, end: Date) -> Number {
+    pub fn year_fraction(&self, start: Date, end: Date) -> Numeric {
         match self {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),
             DayCounter::Actual365 => Actual365::year_fraction(start, end),

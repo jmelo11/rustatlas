@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    core::meta::Number,
+    core::meta::Numeric,
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
@@ -32,7 +32,7 @@ pub struct FlatForwardTermStructure {
 impl FlatForwardTermStructure {
     pub fn new(
         reference_date: Date,
-        rate: Number,
+        rate: Numeric,
         rate_definition: RateDefinition,
     ) -> FlatForwardTermStructure {
         let rate = InterestRate::from_rate_definition(rate, rate_definition);
@@ -46,7 +46,7 @@ impl FlatForwardTermStructure {
         return self.rate;
     }
 
-    pub fn value(&self) -> Number {
+    pub fn value(&self) -> Numeric {
         self.rate.rate()
     }
 
@@ -62,7 +62,7 @@ impl HasReferenceDate for FlatForwardTermStructure {
 }
 
 impl YieldProvider for FlatForwardTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(format!(
                 "Date {:?} is before reference date {:?}",
@@ -78,7 +78,7 @@ impl YieldProvider for FlatForwardTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         let comp_factor = self.discount_factor(start_date)? / self.discount_factor(end_date)?;
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
         return Ok(InterestRate::implied_rate(

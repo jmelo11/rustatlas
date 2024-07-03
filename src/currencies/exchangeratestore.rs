@@ -6,7 +6,7 @@ use std::{
 use super::{enums::Currency, traits::AdvanceExchangeRateStoreInTime};
 
 use crate::{
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     rates::indexstore::IndexStore,
     time::{date::Date, period::Period},
     utils::errors::{AtlasError, Result},
@@ -22,8 +22,8 @@ use crate::{
 #[derive(Clone)]
 pub struct ExchangeRateStore {
     reference_date: Date,
-    exchange_rate_map: HashMap<(Currency, Currency), Number>,
-    exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), Number>>>,
+    exchange_rate_map: HashMap<(Currency, Currency), Numeric>,
+    exchange_rate_cache: Arc<Mutex<HashMap<(Currency, Currency), Numeric>>>,
 }
 
 impl ExchangeRateStore {
@@ -37,13 +37,13 @@ impl ExchangeRateStore {
 
     pub fn with_exchange_rates(
         &mut self,
-        exchange_rate_map: HashMap<(Currency, Currency), Number>,
+        exchange_rate_map: HashMap<(Currency, Currency), Numeric>,
     ) -> &mut Self {
         self.exchange_rate_map = exchange_rate_map;
         self
     }
 
-    pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: Number) {
+    pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: Numeric) {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
@@ -51,12 +51,12 @@ impl ExchangeRateStore {
         self.reference_date
     }
 
-    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<Number> {
+    pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<Numeric> {
         let first_ccy = first_ccy;
         let second_ccy = second_ccy;
 
         if first_ccy == second_ccy {
-            return Ok(Number::new(1.0));
+            return Ok(Numeric::new(1.0));
         }
 
         let cache_key = (first_ccy, second_ccy);
@@ -64,9 +64,9 @@ impl ExchangeRateStore {
             return Ok(*cached_rate);
         }
 
-        let mut q: VecDeque<(Currency, Number)> = VecDeque::new();
+        let mut q: VecDeque<(Currency, Numeric)> = VecDeque::new();
         let mut visited: HashSet<Currency> = HashSet::new();
-        q.push_back((first_ccy, Number::new(1.0)));
+        q.push_back((first_ccy, Numeric::new(1.0)));
         visited.insert(first_ccy);
 
         let mut mutable_cache = self.exchange_rate_cache.lock().unwrap();

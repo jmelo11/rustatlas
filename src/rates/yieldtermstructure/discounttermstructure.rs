@@ -3,7 +3,7 @@ use std::sync::Arc;
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     math::interpolation::enums::Interpolator,
     rates::{
         enums::Compounding,
@@ -68,8 +68,8 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 pub struct DiscountTermStructure {
     reference_date: Date,
     dates: Vec<Date>,
-    year_fractions: Vec<Number>,
-    discount_factors: Vec<Number>,
+    year_fractions: Vec<Numeric>,
+    discount_factors: Vec<Numeric>,
     interpolator: Interpolator,
     day_counter: DayCounter,
     enable_extrapolation: bool,
@@ -78,7 +78,7 @@ pub struct DiscountTermStructure {
 impl DiscountTermStructure {
     pub fn new(
         dates: Vec<Date>,
-        discount_factors: Vec<Number>,
+        discount_factors: Vec<Numeric>,
         day_counter: DayCounter,
         interpolator: Interpolator,
         enable_extrapolation: bool,
@@ -96,7 +96,7 @@ impl DiscountTermStructure {
             .zip(discount_factors.into_iter())
             .collect::<Vec<_>>();
         zipped.sort_by(|a, b| a.0.cmp(&b.0));
-        let (dates, discount_factors): (Vec<Date>, Vec<Number>) = zipped.into_iter().unzip();
+        let (dates, discount_factors): (Vec<Date>, Vec<Numeric>) = zipped.into_iter().unzip();
 
         // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
@@ -125,7 +125,7 @@ impl DiscountTermStructure {
         return &self.dates;
     }
 
-    pub fn discount_factors(&self) -> &Vec<Number> {
+    pub fn discount_factors(&self) -> &Vec<Numeric> {
         return &self.discount_factors;
     }
 
@@ -149,14 +149,14 @@ impl HasReferenceDate for DiscountTermStructure {
 }
 
 impl YieldProvider for DiscountTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 "Date needs to be greater than reference date".to_string(),
             ));
         }
         if date == self.reference_date() {
-            return Ok(Number::new(1.0));
+            return Ok(Numeric::new(1.0));
         }
 
         let year_fraction = self
@@ -178,7 +178,7 @@ impl YieldProvider for DiscountTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         let discount_factor_to_star = self.discount_factor(start_date)?;
         let discount_factor_to_end = self.discount_factor(end_date)?;
 
@@ -201,7 +201,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             .collect();
 
         let start_df = self.discount_factor(new_dates[0])?;
-        let shifted_dfs: Result<Vec<Number>> = new_dates
+        let shifted_dfs: Result<Vec<Numeric>> = new_dates
             .iter()
             .map(|x| {
                 let df = self.discount_factor(*x)?;

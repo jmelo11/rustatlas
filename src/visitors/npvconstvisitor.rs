@@ -1,7 +1,7 @@
 use crate::{
     cashflows::{cashflow::Side, traits::Payable},
     core::{
-        meta::{MarketData, NewValue, Number},
+        meta::{MarketData, NewNumeric, Numeric},
         traits::Registrable,
     },
     utils::errors::{AtlasError, Result},
@@ -34,12 +34,12 @@ impl<'a> NPVConstVisitor<'a> {
 }
 
 impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
-    type Output = Result<Number>;
+    type Output = Result<Numeric>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable
             .cashflows()
             .iter()
-            .try_fold(Number::new(0.0), |acc, cf| {
+            .try_fold(Numeric::new(0.0), |acc, cf| {
                 let id = cf.id()?;
 
                 let cf_market_data =

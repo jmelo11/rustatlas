@@ -7,7 +7,7 @@ use std::{
 use num_traits::{real::Real, Num, NumCast, One, ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
 
-use crate::core::meta::NewValue;
+use crate::core::meta::NewNumeric;
 
 use super::tape::TAPE;
 
@@ -46,37 +46,37 @@ impl Div<ADNum> for f64 {
 
 impl AddAssign<ADNum> for f64 {
     fn add_assign(&mut self, other: ADNum) {
-        *self = *self + other.value;
+        *self = *self + other.value();
     }
 }
 
 impl SubAssign<ADNum> for f64 {
     fn sub_assign(&mut self, other: ADNum) {
-        *self = *self - other.value;
+        *self = *self - other.value();
     }
 }
 
 impl MulAssign<ADNum> for f64 {
     fn mul_assign(&mut self, other: ADNum) {
-        *self = *self * other.value;
+        *self = *self * other.value();
     }
 }
 
 impl DivAssign<ADNum> for f64 {
     fn div_assign(&mut self, other: ADNum) {
-        *self = *self / other.value;
+        *self = *self / other.value();
     }
 }
 
 impl PartialEq<ADNum> for f64 {
     fn eq(&self, other: &ADNum) -> bool {
-        *self == other.value
+        *self == other.value()
     }
 }
 
 impl PartialOrd<ADNum> for f64 {
     fn partial_cmp(&self, other: &ADNum) -> Option<std::cmp::Ordering> {
-        self.partial_cmp(&other.value)
+        self.partial_cmp(&other.value())
     }
 }
 
@@ -118,24 +118,49 @@ impl ADNode {
 /// # ADNum
 /// A number that supports automatic differentiation.
 #[derive(Debug, Clone, Copy)]
-pub struct ADNum {
-    value: f64,
-    id: usize,
+// pub struct ADNum {
+//     value: f64,
+//     id: usize,
+// }
+pub enum ADNum {
+    Active(f64, usize),
+    Inactive(f64),
 }
 
-impl NewValue for ADNum {
+impl NewNumeric for ADNum {
     fn new(value: f64) -> ADNum {
-        let id = TAPE.with(|tape| tape.tape_size());
-        // Create a new node for the new variable
-        let node = ADNode::new([1.0, 0.0], [None, None], 0);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value, id }
+        TAPE.with(|tape| match tape.is_active() {
+            true => {
+                let node = ADNode::new([1.0, 0.0], [None, None], 0);
+                tape.push_node(node);
+                ADNum::Active(value, tape.len() - 1)
+            }
+            false => ADNum::Inactive(value),
+        })
     }
 }
 
 impl ADNum {
+    pub fn new_active(value: f64, id: usize) -> ADNum {
+        ADNum::Active(value, id)
+    }
+
+    pub fn new_inactive(value: f64) -> ADNum {
+        ADNum::Inactive(value)
+    }
+
     pub fn id(&self) -> usize {
-        self.id
+        match self {
+            ADNum::Active(_, id) => *id,
+            ADNum::Inactive(_) => panic!("Inactive ADNum does not have an id"),
+        }
+    }
+
+    pub fn value(&self) -> f64 {
+        match self {
+            ADNum::Active(value, _) => *value,
+            ADNum::Inactive(value) => *value,
+        }
     }
 }
 
@@ -145,7 +170,10 @@ impl Serialize for ADNum {
     where
         S: serde::ser::Serializer,
     {
-        self.value.serialize(serializer)
+        match self {
+            ADNum::Active(value, _) => value.serialize(serializer),
+            ADNum::Inactive(value) => value.serialize(serializer),
+        }
     }
 }
 
@@ -166,7 +194,7 @@ impl Zero for ADNum {
     }
 
     fn is_zero(&self) -> bool {
-        self.value.is_zero()
+        self.value().is_zero()
     }
 }
 
@@ -180,7 +208,7 @@ impl Rem for ADNum {
     type Output = ADNum;
 
     fn rem(self, other: ADNum) -> ADNum {
-        self.value.rem(other.value).into()
+        self.value().rem(other.value()).into()
     }
 }
 
@@ -193,58 +221,58 @@ impl Num for ADNum {
 
 impl ToPrimitive for ADNum {
     fn to_f32(&self) -> Option<f32> {
-        self.value.to_f32()
+        self.value().to_f32()
     }
     fn to_f64(&self) -> Option<f64> {
-        self.value.to_f64()
+        self.value().to_f64()
     }
 
     fn to_isize(&self) -> Option<isize> {
-        self.value.to_isize()
+        self.value().to_isize()
     }
 
     fn to_i8(&self) -> Option<i8> {
-        self.value.to_i8()
+        self.value().to_i8()
     }
 
     fn to_i16(&self) -> Option<i16> {
-        self.value.to_i16()
+        self.value().to_i16()
     }
 
     fn to_i32(&self) -> Option<i32> {
-        self.value.to_i32()
+        self.value().to_i32()
     }
 
     fn to_i128(&self) -> Option<i128> {
-        self.value.to_i128()
+        self.value().to_i128()
     }
 
     fn to_usize(&self) -> Option<usize> {
-        self.value.to_usize()
+        self.value().to_usize()
     }
 
     fn to_u8(&self) -> Option<u8> {
-        self.value.to_u8()
+        self.value().to_u8()
     }
 
     fn to_u16(&self) -> Option<u16> {
-        self.value.to_u16()
+        self.value().to_u16()
     }
 
     fn to_u32(&self) -> Option<u32> {
-        self.value.to_u32()
+        self.value().to_u32()
     }
 
     fn to_u128(&self) -> Option<u128> {
-        self.value.to_u128()
+        self.value().to_u128()
     }
 
     fn to_i64(&self) -> Option<i64> {
-        self.value.to_i64()
+        self.value().to_i64()
     }
 
     fn to_u64(&self) -> Option<u64> {
-        self.value.to_u64()
+        self.value().to_u64()
     }
 }
 
@@ -289,78 +317,142 @@ impl Real for ADNum {
     }
 
     fn abs(self) -> Self {
-        let result = self.value.abs();
-        let der = self.value.signum();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().abs();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let der = self.value().signum();
+        // let node = ADNode::new([der, 0.0], [Some(self.id()), None], 1);
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.abs();
+                let der = value.signum();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().abs()),
+        })
     }
 
     fn signum(self) -> Self {
-        self.value.signum().into()
+        self.value().signum().into()
     }
 
     fn is_sign_positive(self) -> bool {
-        self.value.is_sign_positive()
+        self.value().is_sign_positive()
     }
 
     fn is_sign_negative(self) -> bool {
-        self.value.is_sign_negative()
+        self.value().is_sign_negative()
     }
 
     fn mul_add(self, a: Self, b: Self) -> Self {
-        let result = self.value.mul_add(a.value, b.value);
-        let der = a.value;
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().mul_add(a.value(), b.value());
+        // let der = a.value();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id()), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.mul_add(a.value(), b.value());
+                let der = a.value();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().mul_add(a.value(), b.value())),
+        })
     }
 
     fn recip(self) -> Self {
-        let result = self.value.recip();
-        let der = -1.0 / self.value.powi(2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().recip();
+        // let der = -1.0 / self.value().powi(2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.recip();
+                let der = -1.0 / self.value().powi(2);
+                let node = ADNode::new([der, 0.0], [Some(self.id()), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new(self.value().recip()),
+        })
     }
 
     fn powi(self, n: i32) -> Self {
-        let result = self.value.powi(n);
-        let der = n as f64 * self.value.powi(n - 1);
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().powi(n);
+        // let der = n as f64 * self.value().powi(n - 1);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.powi(n);
+                let der = n as f64 * self.value().powi(n - 1);
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new(self.value().powi(n)),
+        })
     }
 
     fn powf(self, n: Self) -> Self {
-        let result = self.value.powf(n.value);
-        let der = n.value * self.value.powf(n.value - 1.0);
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().powf(n.value);
+        // let der = n.value * self.value().powf(n.value - 1.0);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.powf(n.value());
+                let der = n.value() * self.value().powf(n.value() - 1.0);
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            _ => ADNum::new_inactive(self.value().powf(n.value())),
+        })
     }
 
     fn sqrt(self) -> Self {
-        let result = self.value.sqrt();
-        let der = 0.5 / self.value.sqrt();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().sqrt();
+        // let der = 0.5 / self.value().sqrt();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.sqrt();
+                let der = 0.5 / self.value().sqrt();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            _ => ADNum::new_inactive(self.value().sqrt()),
+        })
     }
 
     fn exp(self) -> Self {
-        let result = self.value.exp();
-        let der = self.value.exp();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.exp();
+                let der = self.value().exp();
+
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().exp()),
+        })
     }
 
     fn exp2(self) -> Self {
@@ -368,12 +460,22 @@ impl Real for ADNum {
     }
 
     fn ln(self) -> Self {
-        let result = self.value.ln();
-        let der = 1.0 / self.value;
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().ln();
+        // let der = 1.0 / self.value;
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.ln();
+                let der = 1.0 / self.value();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().ln()),
+        })
     }
 
     fn log(self, base: Self) -> Self {
@@ -409,21 +511,41 @@ impl Real for ADNum {
     }
 
     fn sin(self) -> Self {
-        let result = self.value.sin();
-        let der = self.value.cos();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().sin();
+        // let der = self.value().cos();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.sin();
+                let der = value.cos();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().sin()),
+        })
     }
 
     fn cos(self) -> Self {
-        let result = self.value.cos();
-        let der = -self.value.sin();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().cos();
+        // let der = -self.value().sin();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.cos();
+                let der = -value.sin();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().cos()),
+        })
     }
 
     fn tan(self) -> Self {
@@ -467,39 +589,79 @@ impl Real for ADNum {
     }
 
     fn tanh(self) -> Self {
-        let result = self.value.tanh();
-        let der = 1.0 - self.value.tanh().powi(2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().tanh();
+        // let der = 1.0 - self.value().tanh().powi(2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.tanh();
+                let der = 1.0 - value.tanh().powi(2);
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().tanh()),
+        })
     }
 
     fn asinh(self) -> Self {
-        let result = self.value.asinh();
-        let der = 1.0 / (self.value.powi(2) + 1.0).sqrt();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().asinh();
+        // let der = 1.0 / (self.value().powi(2) + 1.0).sqrt();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.asinh();
+                let der = 1.0 / (value.powi(2) + 1.0).sqrt();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().asinh()),
+        })
     }
 
     fn acosh(self) -> Self {
-        let result = self.value.acosh();
-        let der = 1.0 / (self.value.powi(2) - 1.0).sqrt();
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().acosh();
+        // let der = 1.0 / (self.value().powi(2) - 1.0).sqrt();
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.acosh();
+                let der = 1.0 / (value.powi(2) - 1.0).sqrt();
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().acosh()),
+        })
     }
 
     fn atanh(self) -> Self {
-        let result = self.value.atanh();
-        let der = 1.0 / (1.0 - self.value.powi(2));
-        let id = TAPE.with(|tape| tape.tape_size());
-        let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum { value: result, id }
+        // let result = self.value().atanh();
+        // let der = 1.0 / (1.0 - self.value().powi(2));
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // let node = ADNode::new([der, 0.0], [Some(self.id), None], 1);
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = value.atanh();
+                let der = 1.0 / (1.0 - value.powi(2));
+                let node = ADNode::new([der, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(self.value().atanh()),
+        })
     }
 
     fn epsilon() -> Self {
@@ -507,11 +669,11 @@ impl Real for ADNum {
     }
 
     fn to_degrees(self) -> Self {
-        self.value.to_degrees().into()
+        self.value().to_degrees().into()
     }
 
     fn to_radians(self) -> Self {
-        self.value.to_radians().into()
+        self.value().to_radians().into()
     }
 }
 
@@ -531,19 +693,36 @@ impl Add for ADNum {
     type Output = ADNum;
 
     fn add(self, other: ADNum) -> ADNum {
-        let result = self.value + other.value;
-        let lhs_der = 1.0;
-        let rhs_der = 1.0;
-        let lhs_id = Some(self.id);
-        let rhs_id = Some(other.id);
+        // let result = self.value + other.value();
+        // let lhs_der = 1.0;
+        // let rhs_der = 1.0;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = Some(other.id);
 
-        let node = ADNode::new([lhs_der.into(), rhs_der.into()], [lhs_id, rhs_id], 2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // let node = ADNode::new([lhs_der.into(), rhs_der.into()], [lhs_id, rhs_id], 2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match (tape.is_active(), self, other) {
+            (true, ADNum::Active(value, id), ADNum::Active(other_value, other_id)) => {
+                let result = value + other_value;
+                let lhs_der = 1.0;
+                let rhs_der = 1.0;
+                let lhs_id = Some(id);
+                let rhs_id = Some(other_id);
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            (true, ADNum::Active(_, _), ADNum::Inactive(other_value)) => self + other_value,
+            (true, ADNum::Inactive(value), ADNum::Active(_, _)) => value + other,
+            _ => ADNum::new_inactive(self.value() + other.value()),
+        })
     }
 }
 
@@ -551,19 +730,34 @@ impl Add<f64> for ADNum {
     type Output = ADNum;
 
     fn add(self, other: f64) -> ADNum {
-        let result = self.value + other;
-        let lhs_der = 1.0;
-        let rhs_der = 0.0;
-        let lhs_id = Some(self.id);
-        let rhs_id = None;
+        // let result = self.value + other;
+        // let lhs_der = 1.0;
+        // let rhs_der = 0.0;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = None;
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match tape.is_active() {
+            true => {
+                let result = self.value() + other;
+                let lhs_der = 1.0;
+                let rhs_der = 0.0;
+                let lhs_id = Some(self.id());
+                let rhs_id = None;
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            false => ADNum::new_inactive(self.value() + other),
+        })
     }
 }
 
@@ -571,19 +765,36 @@ impl Sub for ADNum {
     type Output = ADNum;
 
     fn sub(self, other: ADNum) -> ADNum {
-        let result = self.value - other.value;
-        let lhs_der = 1.0;
-        let rhs_der = -1.0;
-        let lhs_id = Some(self.id);
-        let rhs_id = Some(other.id);
+        // let result = self.value - other.value();
+        // let lhs_der = 1.0;
+        // let rhs_der = -1.0;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = Some(other.id);
 
-        let node = ADNode::new([lhs_der.into(), rhs_der.into()], [lhs_id, rhs_id], 2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // let node = ADNode::new([lhs_der.into(), rhs_der.into()], [lhs_id, rhs_id], 2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match (tape.is_active(), self, other) {
+            (true, ADNum::Active(value, id), ADNum::Active(other_value, other_id)) => {
+                let result = value - other_value;
+                let lhs_der = 1.0;
+                let rhs_der = -1.0;
+                let lhs_id = Some(id);
+                let rhs_id = Some(other_id);
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            (true, ADNum::Active(_, _), ADNum::Inactive(other_value)) => self - other_value,
+            (true, ADNum::Inactive(value), ADNum::Active(_, _)) => value - other,
+            _ => ADNum::new_inactive(self.value() - other.value()),
+        })
     }
 }
 
@@ -591,19 +802,34 @@ impl Sub<f64> for ADNum {
     type Output = ADNum;
 
     fn sub(self, other: f64) -> ADNum {
-        let result = self.value - other;
-        let lhs_der = 1.0;
-        let rhs_der = 0.0;
-        let lhs_id = Some(self.id);
-        let rhs_id = None;
+        // let result = self.value - other;
+        // let lhs_der = 1.0;
+        // let rhs_der = 0.0;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = None;
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match tape.is_active() {
+            true => {
+                let result = self.value() - other;
+                let lhs_der = 1.0;
+                let rhs_der = 0.0;
+                let lhs_id = Some(self.id());
+                let rhs_id = None;
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            false => ADNum::new_inactive(self.value() - other),
+        })
     }
 }
 
@@ -611,20 +837,37 @@ impl Mul for ADNum {
     type Output = ADNum;
 
     fn mul(self, other: ADNum) -> ADNum {
-        let result = self.value * other.value;
-        let lhs_der = other.value;
-        let rhs_der = self.value;
-        let lhs_id = Some(self.id);
-        let rhs_id = Some(other.id);
+        // let result = self.value * other.value();
+        // let lhs_der = other.value();
+        // let rhs_der = self.value;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = Some(other.id);
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
 
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match (tape.is_active(), self, other) {
+            (true, ADNum::Active(value, id), ADNum::Active(other_value, other_id)) => {
+                let result = value * other_value;
+                let lhs_der = other_value;
+                let rhs_der = value;
+                let lhs_id = Some(id);
+                let rhs_id = Some(other_id);
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            (true, ADNum::Active(_, _), ADNum::Inactive(value)) => self * value,
+            (true, ADNum::Inactive(value), ADNum::Active(_, _)) => other * value,
+            _ => ADNum::new_inactive(self.value() * other.value()),
+        })
     }
 }
 
@@ -632,20 +875,35 @@ impl Mul<f64> for ADNum {
     type Output = ADNum;
 
     fn mul(self, other: f64) -> ADNum {
-        let result = self.value * other;
-        let lhs_der = other;
-        let rhs_der = self.value;
-        let lhs_id = Some(self.id);
-        let rhs_id = None;
+        // let result = self.value * other;
+        // let lhs_der = other;
+        // let rhs_der = self.value;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = None;
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
 
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match tape.is_active() {
+            true => {
+                let result = self.value() * other;
+                let lhs_der = other;
+                let rhs_der = self.value();
+                let lhs_id = Some(self.id());
+                let rhs_id = None;
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            false => ADNum::new_inactive(self.value() * other),
+        })
     }
 }
 
@@ -653,20 +911,36 @@ impl Div for ADNum {
     type Output = ADNum;
 
     fn div(self, other: ADNum) -> ADNum {
-        let result = self.value / other.value;
-        let lhs_der = 1.0 / other.value;
-        let rhs_der = -self.value / (other.value * other.value);
-        let lhs_id = Some(self.id);
-        let rhs_id = Some(other.id);
+        // let result = self.value / other.value();
+        // let lhs_der = 1.0 / other.value();
+        // let rhs_der = -self.value / (other.value * other.value);
+        // let lhs_id = Some(self.id);
+        // let rhs_id = Some(other.id);
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
 
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match (tape.is_active(), self, other) {
+            (true, ADNum::Active(value, id), ADNum::Active(other_value, other_id)) => {
+                let result = value / other_value;
+                let lhs_der = 1.0 / other_value;
+                let rhs_der = -value / (other_value * other_value);
+                let lhs_id = Some(id);
+                let rhs_id = Some(other_id);
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 2);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            (true, ADNum::Active(_, _), ADNum::Inactive(other_value)) => self / other_value,
+            _ => ADNum::new_inactive(self.value() / other.value()),
+        })
     }
 }
 
@@ -674,20 +948,35 @@ impl Div<f64> for ADNum {
     type Output = ADNum;
 
     fn div(self, other: f64) -> ADNum {
-        let result = self.value / other;
-        let lhs_der = 1.0 / other;
-        let rhs_der = 0.0;
-        let lhs_id = Some(self.id);
-        let rhs_id = None;
+        // let result = self.value / other;
+        // let lhs_der = 1.0 / other;
+        // let rhs_der = 0.0;
+        // let lhs_id = Some(self.id);
+        // let rhs_id = None;
 
-        let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
-        let id = TAPE.with(|tape| tape.tape_size());
-        TAPE.with(|tape| tape.push_node(node));
+        // let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // TAPE.with(|tape| tape.push_node(node));
 
-        ADNum {
-            value: result,
-            id: id,
-        }
+        // ADNum {
+        //     value: result,
+        //     id: id,
+        // }
+        TAPE.with(|tape| match tape.is_active() {
+            true => {
+                let result = self.value() / other;
+                let lhs_der = 1.0 / other;
+                let rhs_der = 0.0;
+                let lhs_id = Some(self.id());
+                let rhs_id = None;
+
+                let node = ADNode::new([lhs_der, rhs_der], [lhs_id, rhs_id], 1);
+                let id = tape.len();
+                tape.push_node(node);
+                ADNum::new_active(result, id)
+            }
+            false => ADNum::new_inactive(self.value() / other),
+        })
     }
 }
 
@@ -696,9 +985,18 @@ impl Neg for ADNum {
     type Output = ADNum;
 
     fn neg(self) -> ADNum {
-        let result = -self.value;
-        let id = TAPE.with(|tape| tape.tape_size());
-        ADNum { value: result, id }
+        // let result = -self.value;
+        // let id = TAPE.with(|tape| tape.tape_size());
+        // ADNum { value: result, id }
+        TAPE.with(|tape| match (tape.is_active(), self) {
+            (true, ADNum::Active(value, id)) => {
+                let result = -value;
+                let node = ADNode::new([-1.0, 0.0], [Some(id), None], 1);
+                tape.push_node(node);
+                ADNum::new_active(result, tape.len() - 1)
+            }
+            _ => ADNum::new_inactive(-self.value()),
+        })
     }
 }
 
@@ -730,34 +1028,34 @@ impl DivAssign for ADNum {
 /// PartialEq
 impl PartialEq for ADNum {
     fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
+        self.value() == other.value()
     }
 }
 /// PartialOrd
 impl PartialOrd for ADNum {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(&other.value)
+        self.value().partial_cmp(&other.value())
     }
 }
 
 /// Cmp to f64
 impl PartialEq<f64> for ADNum {
     fn eq(&self, other: &f64) -> bool {
-        self.value == *other
+        self.value() == *other
     }
 }
 
 /// PartialOrd to f64
 impl PartialOrd<f64> for ADNum {
     fn partial_cmp(&self, other: &f64) -> Option<std::cmp::Ordering> {
-        self.value.partial_cmp(other)
+        self.value().partial_cmp(other)
     }
 }
 
 /// Display trait implementation for ADNum
 impl Display for ADNum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value)
+        write!(f, "{}", self.value())
     }
 }
 
@@ -770,7 +1068,7 @@ mod tests {
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x + y;
-        assert_eq!(z.value, 5.0);
+        assert_eq!(z.value(), 5.0);
     }
 
     #[test]
@@ -778,7 +1076,7 @@ mod tests {
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x - y;
-        assert_eq!(z.value, -1.0);
+        assert_eq!(z.value(), -1.0);
     }
 
     #[test]
@@ -786,7 +1084,7 @@ mod tests {
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x * y;
-        assert_eq!(z.value, 6.0);
+        assert_eq!(z.value(), 6.0);
     }
 
     #[test]
@@ -794,7 +1092,7 @@ mod tests {
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x / y;
-        assert_eq!(z.value, 2.0 / 3.0);
+        assert_eq!(z.value(), 2.0 / 3.0);
     }
 
     #[test]
@@ -802,7 +1100,7 @@ mod tests {
         let mut x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         x += y;
-        assert_eq!(x.value, 5.0);
+        assert_eq!(x.value(), 5.0);
     }
 
     #[test]
@@ -810,7 +1108,7 @@ mod tests {
         let mut x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         x -= y;
-        assert_eq!(x.value, -1.0);
+        assert_eq!(x.value(), -1.0);
     }
 
     #[test]
@@ -818,7 +1116,7 @@ mod tests {
         let mut x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         x *= y;
-        assert_eq!(x.value, 6.0);
+        assert_eq!(x.value(), 6.0);
     }
 
     #[test]
@@ -826,7 +1124,7 @@ mod tests {
         let mut x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         x /= y;
-        assert_eq!(x.value, 2.0 / 3.0);
+        assert_eq!(x.value(), 2.0 / 3.0);
     }
 
     #[test]
@@ -843,15 +1141,18 @@ mod math_ops_tests {
 
     #[test]
     fn test_tape_size() {
+        TAPE.with(|tape| tape.activate());
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let _ = x + y;
-        let tape_size = TAPE.with(|tape| tape.tape_size());
+        let tape_size = TAPE.with(|tape| tape.len());
         assert_eq!(tape_size, 3);
     }
 
     #[test]
     fn test_derivative_add() {
+        TAPE.with(|tape| tape.activate());
+
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x + y;
@@ -861,6 +1162,7 @@ mod math_ops_tests {
 
     #[test]
     fn test_derivative_div() {
+        TAPE.with(|tape| tape.activate());
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x / y;
@@ -870,6 +1172,7 @@ mod math_ops_tests {
 
     #[test]
     fn test_derivative_mul() {
+        TAPE.with(|tape| tape.activate());
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x * y;
@@ -879,6 +1182,7 @@ mod math_ops_tests {
 
     #[test]
     fn test_derivative_sub() {
+        TAPE.with(|tape| tape.activate());
         let x = ADNum::new(2.0);
         let y = ADNum::new(3.0);
         let z = x - y;

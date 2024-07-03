@@ -5,7 +5,7 @@ use crate::{
     cashflows::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
-    }, core::meta::Number, currencies::enums::Currency, rates::{
+    }, core::meta::Numeric, currencies::enums::Currency, rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
     }, time::{date::Date, daycounter::DayCounter, enums::Frequency}, utils::errors::{AtlasError, Result}
@@ -26,7 +26,7 @@ pub struct LoanDepo {
     pub mis_id: String,
     pub reference_date: Date,
     pub loandepo_configuration_id: usize,
-    pub notional: Number,
+    pub notional: Numeric,
     pub issue_date: Option<Date>,
     pub start_date: Date,
     pub end_date: Date,
@@ -39,10 +39,10 @@ pub struct LoanDepo {
     pub product_family: String,
     pub payment_frequency: Frequency,
 
-    pub first_ftp_rate: Number,
-    pub first_client_rate: Number,
-    pub second_ftp_rate: Option<Number>,
-    pub second_client_rate: Option<Number>,
+    pub first_ftp_rate: Numeric,
+    pub first_client_rate: Numeric,
+    pub second_ftp_rate: Option<Numeric>,
+    pub second_client_rate: Option<Numeric>,
 
     // pre-calculated fields
     pub notional_local_ccy: Option<f64>,

@@ -6,7 +6,7 @@ use std::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    prelude::Number,
+    prelude::Numeric,
     rates::{
         enums::Compounding,
         interestrate::RateDefinition,
@@ -112,7 +112,7 @@ impl OvernightCompoundedRateIndex {
         self
     }
 
-    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         self.overnight_index.average_rate(start_date, end_date)
     }
 }
@@ -158,7 +158,7 @@ impl HasName for OvernightCompoundedRateIndex {
 }
 
 impl YieldProvider for OvernightCompoundedRateIndex {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         self.overnight_index.discount_factor(date)
     }
 
@@ -168,7 +168,7 @@ impl YieldProvider for OvernightCompoundedRateIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         self.overnight_index
             .forward_rate(start_date, end_date, comp, freq)
     }

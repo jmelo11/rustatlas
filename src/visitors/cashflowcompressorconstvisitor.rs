@@ -6,7 +6,7 @@ use crate::{
         traits::{InterestAccrual, Payable},
     },
     core::{
-        meta::{NewValue, Number},
+        meta::{NewNumeric, Numeric},
         traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId},
     },
     currencies::enums::Currency,
@@ -141,7 +141,7 @@ impl CashflowCompressorConstVisitor {
             self.estimaded_end_date
                 .borrow()
                 .ok_or(AtlasError::ValueNotSetErr("End date".to_string()))?,
-            Number::new(*self.estimated_notional.borrow()),
+            Numeric::new(*self.estimated_notional.borrow()),
             Frequency::OtherFrequency,
             Structure::Other,
             None,

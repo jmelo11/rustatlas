@@ -3,7 +3,7 @@ use crate::{
         cashflow::{Cashflow, CashflowType, Side},
         simplecashflow::SimpleCashflow,
     },
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     currencies::enums::Currency,
     time::date::Date,
     utils::errors::{AtlasError, Result},
@@ -91,14 +91,14 @@ pub fn infer_cashflows_from_amounts(
     dates.iter().zip(amounts).for_each(|(date, amount)| {
         if *amount < 0.0 {
             let cashflow = SimpleCashflow::new(*date, currency, side.inverse())
-                .with_amount(Number::new(amount.abs()));
+                .with_amount(Numeric::new(amount.abs()));
             match side.inverse() {
                 Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
                 Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
             }
         } else {
             let cashflow =
-                SimpleCashflow::new(*date, currency, side).with_amount(Number::new(amount.abs()));
+                SimpleCashflow::new(*date, currency, side).with_amount(Numeric::new(amount.abs()));
             match side {
                 Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
                 Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
@@ -118,7 +118,7 @@ pub fn add_cashflows_to_vec(
     cashflow_type: CashflowType,
 ) {
     dates.iter().zip(amounts).for_each(|(date, amount)| {
-        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(Number::new(*amount));
+        let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(Numeric::new(*amount));
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),

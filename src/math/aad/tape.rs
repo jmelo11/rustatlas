@@ -37,7 +37,7 @@ impl GradientTape {
         *self.is_active.borrow()
     }
 
-    pub fn tape_size(&self) -> usize {
+    pub fn len(&self) -> usize {
         let tape = self.tape.borrow();
         tape.len()
     }
@@ -82,7 +82,7 @@ impl GradientTape {
 #[cfg(test)]
 mod tests {
 
-    use crate::prelude::NewValue;
+    use crate::prelude::NewNumeric;
 
     use super::*;
 
@@ -107,7 +107,33 @@ mod tests {
         TAPE.with(|tape| tape.activate());
         let y = ADNum::new(3.0);
         let z = x * y;
-        let dz_dx = TAPE.with(|tape| tape.derivative(&z, &y));
-        assert_eq!(dz_dx, 2.0); // dz/dx = 2*x*y = 12
+        let dz_dy = TAPE.with(|tape| tape.derivative(&z, &y));
+        assert_eq!(dz_dy, 2.0);
+
+        // flip side
+        let z = y * x;
+        let dz_dy = TAPE.with(|tape| tape.derivative(&z, &y));
+        assert_eq!(dz_dy, 2.0);
+
+        // constant ops
+        let x = ADNum::new(2.0);
+        let y = 3.0;
+        let z = y * x;
+        let dz_dy = TAPE.with(|tape| tape.derivative(&z, &x));
+        assert_eq!(dz_dy, 3.0);
+
+        // addition
+        TAPE.with(|tape| tape.deactivate());
+        let x = ADNum::new(2.0);
+        TAPE.with(|tape| tape.activate());
+        let y = ADNum::new(3.0);
+        let z = x + y;
+        let dz_dy = TAPE.with(|tape| tape.derivative(&z, &y));
+        assert_eq!(dz_dy, 1.0);
+
+        // flip side
+        let z = y + x;
+        let dz_dy = TAPE.with(|tape| tape.derivative(&z, &y));
+        assert_eq!(dz_dy, 1.0);
     }
 }

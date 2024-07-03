@@ -17,7 +17,7 @@ fn multiple_instrument_valuations() {
     let end_date = start_date + Period::new(10, TimeUnit::Years);
     let notional = 100_000.0;
     let rate = InterestRate::new(
-        Number::new(0.05),
+        Numeric::new(0.05),
         Compounding::Simple,
         Frequency::Annual,
         DayCounter::Thirty360,
@@ -67,7 +67,9 @@ fn multiple_instrument_valuations() {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("multiple_instrument_valuationss", |b| b.iter(|| multiple_instrument_valuations()));
+    c.bench_function("multiple_instrument_valuationss", |b| {
+        b.iter(|| multiple_instrument_valuations())
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

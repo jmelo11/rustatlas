@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use crate::core::meta::Number;
+use crate::core::meta::Numeric;
 
 use super::traits::Interpolate;
 
@@ -11,11 +11,11 @@ pub struct LinearInterpolator {}
 
 impl Interpolate for LinearInterpolator {
     fn interpolate(
-        x: Number,
-        x_: &Vec<Number>,
-        y_: &Vec<Number>,
+        x: Numeric,
+        x_: &Vec<Numeric>,
+        y_: &Vec<Numeric>,
         enable_extrapolation: bool,
-    ) -> Number {
+    ) -> Numeric {
         let index: usize =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Equal)) {
                 Ok(index) => index,

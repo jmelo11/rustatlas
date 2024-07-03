@@ -7,7 +7,7 @@ use rustatlas::{
     },
     core::{
         marketstore::MarketStore,
-        meta::{MarketData, NewValue, Number},
+        meta::{MarketData, NewNumeric, Numeric},
     },
     currencies::enums::Currency,
     instruments::{instrument::Instrument, makefixedrateinstrument::MakeFixedRateInstrument},
@@ -91,19 +91,19 @@ pub fn create_store() -> Result<MarketStore> {
 
     let forecast_curve_1 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        Number::new(0.02),
+        Numeric::new(0.02),
         RateDefinition::default(),
     ));
 
     let forecast_curve_2 = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        Number::new(0.03),
+        Numeric::new(0.03),
         RateDefinition::default(),
     ));
 
     let discount_curve = Arc::new(FlatForwardTermStructure::new(
         ref_date,
-        Number::new(0.05),
+        Numeric::new(0.05),
         RateDefinition::default(),
     ));
 

@@ -6,7 +6,7 @@ use std::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::Number,
+    core::meta::Numeric,
     currencies::enums::Currency,
     time::{date::Date, enums::TimeUnit, period::Period},
     utils::errors::{AtlasError, Result},
@@ -233,7 +233,7 @@ impl IndexStore {
         first_currency: Currency,
         second_currency: Currency,
         date: Date,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         let first_id = self.get_currency_curve(first_currency)?;
         let second_id = self.get_currency_curve(second_currency)?;
 

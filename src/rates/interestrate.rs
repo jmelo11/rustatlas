@@ -4,7 +4,7 @@ use num_traits::real::Real;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     time::{date::Date, daycounter::DayCounter, enums::Frequency},
     utils::errors::{AtlasError, Result},
 };
@@ -78,13 +78,13 @@ impl Default for RateDefinition {
 /// ```
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct InterestRate {
-    rate: Number,
+    rate: Numeric,
     rate_definition: RateDefinition,
 }
 
 impl InterestRate {
     pub fn new(
-        rate: Number,
+        rate: Numeric,
         compounding: Compounding,
         frequency: Frequency,
         day_counter: DayCounter,
@@ -95,14 +95,14 @@ impl InterestRate {
         }
     }
 
-    pub fn from_rate_definition(rate: Number, rate_definition: RateDefinition) -> InterestRate {
+    pub fn from_rate_definition(rate: Numeric, rate_definition: RateDefinition) -> InterestRate {
         InterestRate {
             rate,
             rate_definition,
         }
     }
 
-    pub fn rate(&self) -> Number {
+    pub fn rate(&self) -> Numeric {
         return self.rate;
     }
 
@@ -123,18 +123,18 @@ impl InterestRate {
     }
 
     pub fn implied_rate(
-        compound: Number,
+        compound: Numeric,
         result_dc: DayCounter,
         comp: Compounding,
         freq: Frequency,
-        t: Number,
+        t: Numeric,
     ) -> Result<InterestRate> {
         if compound <= 0.0 {
             return Err(AtlasError::InvalidValueErr(
                 "Positive compound factor required".to_string(),
             ));
         }
-        let r: Number;
+        let r: Numeric;
         let f = freq as i64 as f64;
         if compound == 1.0 {
             if t < 0.0 {
@@ -142,7 +142,7 @@ impl InterestRate {
                     "Non-negative time required".to_string(),
                 ));
             }
-            r = Number::new(0.0);
+            r = Numeric::new(0.0);
         } else {
             if t <= 0.0 {
                 return Err(AtlasError::InvalidValueErr(
@@ -172,13 +172,13 @@ impl InterestRate {
         return Ok(InterestRate::new(r, comp, freq, result_dc));
     }
 
-    pub fn compound_factor(&self, start: Date, end: Date) -> Number {
+    pub fn compound_factor(&self, start: Date, end: Date) -> Numeric {
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
         return self.compound_factor_from_yf(year_fraction);
     }
 
-    pub fn compound_factor_from_yf(&self, year_fraction: Number) -> Number {
+    pub fn compound_factor_from_yf(&self, year_fraction: Numeric) -> Numeric {
         let rate = self.rate();
         let compounding = self.compounding();
         let f = self.frequency() as i64 as f64;
@@ -203,7 +203,7 @@ impl InterestRate {
         }
     }
 
-    pub fn discount_factor(&self, start: Date, end: Date) -> Number {
+    pub fn discount_factor(&self, start: Date, end: Date) -> Numeric {
         return 1.0 / self.compound_factor(start, end);
     }
 
@@ -213,7 +213,7 @@ impl InterestRate {
         _end_date: Date,
         _comp: Compounding,
         _freq: Frequency,
-    ) -> Number {
+    ) -> Numeric {
         return self.rate;
     }
 }

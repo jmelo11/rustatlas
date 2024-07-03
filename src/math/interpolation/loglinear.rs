@@ -2,7 +2,7 @@
 use num_traits::real::Real;
 
 use super::traits::Interpolate;
-use crate::core::meta::Number;
+use crate::core::meta::Numeric;
 use std::cmp::Ordering;
 
 /// # Log-Linear Interpolator
@@ -12,11 +12,11 @@ pub struct LogLinearInterpolator {}
 
 impl Interpolate for LogLinearInterpolator {
     fn interpolate(
-        x: Number,
-        x_: &Vec<Number>,
-        y_: &Vec<Number>,
+        x: Numeric,
+        x_: &Vec<Numeric>,
+        y_: &Vec<Numeric>,
         enable_extrapolation: bool,
-    ) -> Number {
+    ) -> Numeric {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Less)) {
                 Ok(index) => index,

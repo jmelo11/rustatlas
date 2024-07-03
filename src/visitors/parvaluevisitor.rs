@@ -5,11 +5,12 @@ use argmin::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::MarketData,
+    core::meta::{MarketData, NewNumeric, Numeric},
     instruments::{
         fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument,
+        traits::Structure,
     },
-    prelude::{InterestRate, NewValue, Number, Structure},
+    rates::interestrate::InterestRate,
     utils::errors::Result,
 };
 
@@ -50,7 +51,7 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
         let rate = self.eval.rate();
         let new_rate = InterestRate::new(
-            Number::new(*param),
+            Numeric::new(*param),
             rate.compounding(),
             rate.frequency(),
             rate.day_counter(),
@@ -75,7 +76,7 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
         let new_spread = *param;
 
         // new instrument with the new spread
-        let mut inst = self.eval.clone().set_spread(Number::new(new_spread));
+        let mut inst = self.eval.clone().set_spread(Numeric::new(new_spread));
 
         // visit the instrument to update the fixing values
         let _ = self.fixing_visitor.visit(&mut inst);

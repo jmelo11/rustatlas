@@ -9,7 +9,7 @@ use crate::{
         simplecashflow::SimpleCashflow,
         traits::{InterestAccrual, Payable},
     },
-    core::{meta::NewValue, meta::Number, traits::HasCurrency},
+    core::{meta::NewNumeric, meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{
@@ -354,8 +354,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
-                    Number::new(spread),
+                    Numeric::new(notional),
+                    Numeric::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -450,8 +450,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
-                    Number::new(spread),
+                    Numeric::new(notional),
+                    Numeric::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -561,8 +561,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     start_date,
                     end_date,
-                    Number::new(notional),
-                    Number::new(spread),
+                    Numeric::new(notional),
+                    Numeric::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -598,15 +598,15 @@ impl MakeFloatingRateInstrument {
                 for (date, amount) in disbursements.iter() {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse())
-                            .with_amount(Number::new(*amount)),
+                            .with_amount(Numeric::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
 
                 for (start_date, end_date, notional) in &timeline {
                     let coupon = FloatingRateCoupon::new(
-                        Number::new(*notional),
-                        Number::new(spread),
+                        Numeric::new(*notional),
+                        Numeric::new(spread),
                         *start_date,
                         *end_date,
                         *end_date,
@@ -621,7 +621,7 @@ impl MakeFloatingRateInstrument {
                 for (date, amount) in redemptions.iter() {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side)
-                            .with_amount(Number::new(*amount)),
+                            .with_amount(Numeric::new(*amount)),
                     );
                     cashflows.push(cashflow);
                 }
@@ -652,8 +652,8 @@ impl MakeFloatingRateInstrument {
                 Ok(FloatingRateInstrument::new(
                     *start_date,
                     *end_date,
-                    Number::new(notional),
-                    Number::new(spread),
+                    Numeric::new(notional),
+                    Numeric::new(spread),
                     side,
                     cashflows,
                     payment_frequency,
@@ -686,8 +686,8 @@ fn build_coupons_from_notionals(
         let d1 = date_pair[0];
         let d2 = date_pair[1];
         let coupon = FloatingRateCoupon::new(
-            Number::new(*notional),
-            Number::new(spread),
+            Numeric::new(*notional),
+            Numeric::new(spread),
             d1,
             d2,
             d2,

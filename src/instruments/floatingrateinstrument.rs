@@ -5,7 +5,7 @@ use crate::{
         cashflow::{Cashflow, Side},
         traits::InterestAccrual,
     },
-    core::{meta::NewValue, meta::Number, traits::HasCurrency},
+    core::{meta::NewNumeric, meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -32,8 +32,8 @@ use crate::utils::errors::Result;
 pub struct FloatingRateInstrument {
     start_date: Date,
     end_date: Date,
-    notional: Number,
-    spread: Number,
+    notional: Numeric,
+    spread: Numeric,
     side: Side,
     cashflows: Vec<Cashflow>,
     payment_frequency: Frequency,
@@ -50,8 +50,8 @@ impl FloatingRateInstrument {
     pub fn new(
         start_date: Date,
         end_date: Date,
-        notional: Number,
-        spread: Number,
+        notional: Numeric,
+        spread: Numeric,
         side: Side,
         cashflows: Vec<Cashflow>,
         payment_frequency: Frequency,
@@ -97,11 +97,11 @@ impl FloatingRateInstrument {
         self.end_date
     }
 
-    pub fn notional(&self) -> Number {
+    pub fn notional(&self) -> Numeric {
         self.notional
     }
 
-    pub fn spread(&self) -> Number {
+    pub fn spread(&self) -> Numeric {
         self.spread
     }
 
@@ -145,7 +145,7 @@ impl FloatingRateInstrument {
         self
     }
 
-    pub fn set_spread(mut self, spread: Number) -> Self {
+    pub fn set_spread(mut self, spread: Numeric) -> Self {
         self.spread = spread;
         self.mut_cashflows().iter_mut().for_each(|cf| match cf {
             Cashflow::FloatingRateCoupon(coupon) => {
@@ -170,11 +170,11 @@ impl InterestAccrual for FloatingRateInstrument {
     fn accrual_end_date(&self) -> Result<Date> {
         Ok(self.end_date)
     }
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
-        let total_accrued_amount = self.cashflows.iter().fold(Number::new(0.0), |acc, cf| {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
+        let total_accrued_amount = self.cashflows.iter().fold(Numeric::new(0.0), |acc, cf| {
             acc + cf
                 .accrued_amount(start_date, end_date)
-                .unwrap_or(Number::new(0.0))
+                .unwrap_or(Numeric::new(0.0))
         });
         Ok(total_accrued_amount)
     }

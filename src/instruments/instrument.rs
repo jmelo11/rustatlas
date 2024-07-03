@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     cashflows::cashflow::{Cashflow, Side},
-    core::{meta::Number, traits::HasCurrency},
+    core::{meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
     time::{date::Date, enums::Frequency},
@@ -86,7 +86,7 @@ impl HasCashflows for Instrument {
 }
 
 impl Instrument {
-    pub fn notional(&self) -> Number {
+    pub fn notional(&self) -> Numeric {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.notional(),
             Instrument::FloatingRateInstrument(fri) => fri.notional(),
@@ -158,7 +158,7 @@ impl Instrument {
         }
     }
 
-    pub fn rate(&self) -> Option<Number> {
+    pub fn rate(&self) -> Option<Numeric> {
         match self {
             Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate()),
             Instrument::FloatingRateInstrument(_) => None,
@@ -166,7 +166,7 @@ impl Instrument {
         }
     }
 
-    pub fn spread(&self) -> Option<Number> {
+    pub fn spread(&self) -> Option<Numeric> {
         match self {
             Instrument::FixedRateInstrument(_) => None,
             Instrument::FloatingRateInstrument(fri) => Some(fri.spread()),

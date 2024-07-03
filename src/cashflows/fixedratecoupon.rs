@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use super::cashflow::Side;
 use super::simplecashflow::SimpleCashflow;
 use super::traits::{Expires, InterestAccrual, Payable};
-use crate::core::meta::Number;
+use crate::core::meta::Numeric;
 use crate::core::traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId};
 use crate::utils::errors::AtlasError;
 use crate::{
@@ -27,7 +27,7 @@ use crate::{
 /// * `side` - The side of the coupon (Pay or Receive)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FixedRateCoupon {
-    notional: Number,
+    notional: Numeric,
     rate: InterestRate,
     accrual_start_date: Date,
     accrual_end_date: Date,
@@ -36,7 +36,7 @@ pub struct FixedRateCoupon {
 
 impl FixedRateCoupon {
     pub fn new(
-        notional: Number,
+        notional: Numeric,
         rate: InterestRate,
         accrual_start_date: Date,
         accrual_end_date: Date,
@@ -73,7 +73,7 @@ impl FixedRateCoupon {
         );
     }
 
-    pub fn set_notional(&mut self, notional: Number) {
+    pub fn set_notional(&mut self, notional: Numeric) {
         self.notional = notional;
         self.cashflow.set_amount(
             self.notional
@@ -84,7 +84,7 @@ impl FixedRateCoupon {
         );
     }
 
-    pub fn notional(&self) -> Number {
+    pub fn notional(&self) -> Numeric {
         self.notional
     }
 
@@ -136,7 +136,7 @@ impl InterestAccrual for FixedRateCoupon {
         return Ok(self.accrual_end_date);
     }
 
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, end_date)?;
         let acc_1 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
@@ -148,7 +148,7 @@ impl InterestAccrual for FixedRateCoupon {
 }
 
 impl Payable for FixedRateCoupon {
-    fn amount(&self) -> Result<Number> {
+    fn amount(&self) -> Result<Numeric> {
         return self.cashflow.amount();
     }
 

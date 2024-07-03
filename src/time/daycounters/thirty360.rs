@@ -1,5 +1,5 @@
 use super::traits::DayCountProvider;
-use crate::{core::meta::NewValue, core::meta::Number, time::date::Date};
+use crate::{core::meta::NewNumeric, core::meta::Numeric, time::date::Date};
 
 /// # Thirty360 (ISMA)
 /// Convention: if the starting date is the 31st of a
@@ -18,7 +18,7 @@ use crate::{core::meta::NewValue, core::meta::Number, time::date::Date};
 pub struct Thirty360;
 
 impl DayCountProvider for Thirty360 {
-    fn day_count(start: Date, end: Date) -> Number {
+    fn day_count(start: Date, end: Date) -> Numeric {
         let d1 = start.day() as i64;
         let d2 = end.day() as i64;
         let m1 = start.month() as i64;
@@ -29,10 +29,10 @@ impl DayCountProvider for Thirty360 {
         let dd1 = if d1 == 31 { 30 } else { d1 };
         let dd2 = if d2 == 31 && dd1 == 30 { 30 } else { d2 };
 
-        return Number::new((360 * (y2 - y1) + 30 * (m2 - m1) + (dd2 - dd1)) as f64);
+        return Numeric::new((360 * (y2 - y1) + 30 * (m2 - m1) + (dd2 - dd1)) as f64);
     }
 
-    fn year_fraction(start: Date, end: Date) -> Number {
+    fn year_fraction(start: Date, end: Date) -> Numeric {
         return Thirty360::day_count(start, end) / 360.0;
     }
 }
@@ -65,7 +65,7 @@ fn is_last_of_february(d: i64, m: i64, y: i32) -> bool {
 }
 
 impl DayCountProvider for Thirty360US {
-    fn day_count(start: Date, end: Date) -> Number {
+    fn day_count(start: Date, end: Date) -> Numeric {
         let d1 = start.day() as i64;
         let d2 = end.day() as i64;
         let m1 = start.month() as i64;
@@ -87,12 +87,12 @@ impl DayCountProvider for Thirty360US {
             dd2
         };
 
-        return Number::new(
+        return Numeric::new(
             (360 * ((y2 as i64) - (y1 as i64)) + 30 * (m2 - m1) + (dd2 - dd1)) as f64,
         );
     }
 
-    fn year_fraction(start: Date, end: Date) -> Number {
+    fn year_fraction(start: Date, end: Date) -> Numeric {
         return Thirty360US::day_count(start, end) / 360.0;
     }
 }

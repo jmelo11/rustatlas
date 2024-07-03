@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{
-        meta::{ForwardRateRequest, MarketRequest, Number},
+        meta::{ForwardRateRequest, MarketRequest, Numeric},
         traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
     },
     currencies::enums::Currency,
@@ -34,21 +34,21 @@ use super::{
 /// * `side` - The side of the coupon (Pay or Receive)
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FloatingRateCoupon {
-    notional: Number,
-    spread: Number,
+    notional: Numeric,
+    spread: Numeric,
     accrual_start_date: Date,
     accrual_end_date: Date,
     fixing_date: Option<Date>,
     rate_definition: RateDefinition,
     cashflow: SimpleCashflow,
-    fixing_rate: Option<Number>,
+    fixing_rate: Option<Numeric>,
     forecast_curve_id: Option<usize>,
 }
 
 impl FloatingRateCoupon {
     pub fn new(
-        notional: Number,
-        spread: Number,
+        notional: Numeric,
+        spread: Numeric,
         accrual_start_date: Date,
         accrual_end_date: Date,
         payment_date: Date,
@@ -88,7 +88,7 @@ impl FloatingRateCoupon {
         self.forecast_curve_id = Some(id);
     }
 
-    pub fn set_spread(&mut self, spread: Number) {
+    pub fn set_spread(&mut self, spread: Numeric) {
         self.spread = spread;
         // if fixing rate is set, update the cashflow
         match self.fixing_rate {
@@ -99,15 +99,15 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn set_notional(&mut self, notional: Number) {
+    pub fn set_notional(&mut self, notional: Numeric) {
         self.notional = notional;
     }
 
-    pub fn notional(&self) -> Number {
+    pub fn notional(&self) -> Numeric {
         self.notional
     }
 
-    pub fn spread(&self) -> Number {
+    pub fn spread(&self) -> Numeric {
         self.spread
     }
 
@@ -122,7 +122,7 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn fixing_rate(&self) -> Option<Number> {
+    pub fn fixing_rate(&self) -> Option<Numeric> {
         self.fixing_rate
     }
 }
@@ -134,7 +134,7 @@ impl InterestAccrual for FloatingRateCoupon {
     fn accrual_end_date(&self) -> Result<Date> {
         return Ok(self.accrual_end_date);
     }
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         let fixing = self
             .fixing_rate
             .ok_or(AtlasError::ValueNotSetErr("Fixing rate".to_string()))?;
@@ -151,7 +151,7 @@ impl InterestAccrual for FloatingRateCoupon {
 }
 
 impl RequiresFixingRate for FloatingRateCoupon {
-    fn set_fixing_rate(&mut self, fixing_rate: Number) {
+    fn set_fixing_rate(&mut self, fixing_rate: Numeric) {
         self.fixing_rate = Some(fixing_rate);
         let accrual = self
             .accrued_amount(self.accrual_start_date, self.accrual_end_date)
@@ -161,7 +161,7 @@ impl RequiresFixingRate for FloatingRateCoupon {
 }
 
 impl Payable for FloatingRateCoupon {
-    fn amount(&self) -> Result<Number> {
+    fn amount(&self) -> Result<Numeric> {
         return self.cashflow.amount();
     }
     fn side(&self) -> Side {

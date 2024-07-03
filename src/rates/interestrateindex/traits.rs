@@ -6,7 +6,7 @@ use std::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     math::interpolation::enums::Interpolator,
     rates::{
         traits::{HasReferenceDate, YieldProvider},
@@ -32,15 +32,15 @@ pub trait FixingProvider {
             let aux_btreemap = self
                 .fixings()
                 .iter()
-                .map(|(k, v)| (*k, Number::new(*v)))
-                .collect::<BTreeMap<Date, Number>>();
+                .map(|(k, v)| (*k, Numeric::new(*v)))
+                .collect::<BTreeMap<Date, Numeric>>();
 
             let x = aux_btreemap
                 .keys()
                 .map(|&d| (d - first_date))
-                .collect::<Vec<Number>>();
+                .collect::<Vec<Numeric>>();
 
-            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<Number>>();
+            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<Numeric>>();
 
             let mut current_date = first_date.clone();
 

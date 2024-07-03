@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, sync::Mutex};
 
 use crate::{
     cashflows::{cashflow::Cashflow, traits::InterestAccrual},
-    core::{meta::Number, traits::HasCurrency},
+    core::{meta::Numeric, traits::HasCurrency},
     currencies::enums::Currency,
     time::{date::Date, enums::TimeUnit, period::Period, schedule::MakeSchedule},
     utils::errors::{AtlasError, Result},
@@ -18,7 +18,7 @@ use super::traits::{ConstVisit, HasCashflows};
 /// * `horizon` - The horizon of the calculation
 /// * `validation_currency` - Flag to validate the currency of the instrument against the provided currency
 pub struct AccruedAmountConstVisitor {
-    accrued_amounts: Mutex<BTreeMap<Date, Number>>,
+    accrued_amounts: Mutex<BTreeMap<Date, Numeric>>,
     validation_currency: Option<Currency>,
     evaluation_dates: Vec<Date>,
 }
@@ -42,7 +42,7 @@ impl AccruedAmountConstVisitor {
         self
     }
 
-    pub fn accrued_amounts(&self) -> BTreeMap<Date, Number> {
+    pub fn accrued_amounts(&self) -> BTreeMap<Date, Numeric> {
         self.accrued_amounts.lock().unwrap().clone()
     }
 }

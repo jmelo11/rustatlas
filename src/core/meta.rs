@@ -6,10 +6,10 @@ use crate::{
 };
 
 #[cfg(feature = "f64")]
-pub type Number = f64;
+pub type Numeric = f64;
 
 #[cfg(feature = "f64")]
-impl NewValue for f64 {
+impl NewNumeric for f64 {
     fn new(value: f64) -> f64 {
         value
     }
@@ -18,11 +18,11 @@ impl NewValue for f64 {
 #[cfg(feature = "aad")]
 use crate::math::aad::adnum::ADNum;
 #[cfg(feature = "aad")]
-pub type Number = ADNum;
+pub type Numeric = ADNum;
 
-/// # NewValue
-/// Trait for creating a new value.
-pub trait NewValue {
+/// # NewNumeric
+/// Trait for creating a new numeric value.
+pub trait NewNumeric {
     fn new(value: f64) -> Self;
 }
 
@@ -209,20 +209,20 @@ impl MarketRequest {
 pub struct MarketData {
     id: usize,
     reference_date: Date,
-    df: Option<Number>,
-    fwd: Option<Number>,
-    fx: Option<Number>,
-    numerarie: Number,
+    df: Option<Numeric>,
+    fwd: Option<Numeric>,
+    fx: Option<Numeric>,
+    numerarie: Numeric,
 }
 
 impl MarketData {
     pub fn new(
         id: usize,
         reference_date: Date,
-        df: Option<Number>,
-        fwd: Option<Number>,
-        fx: Option<Number>,
-        numerarie: Number,
+        df: Option<Numeric>,
+        fwd: Option<Numeric>,
+        fx: Option<Numeric>,
+        numerarie: Numeric,
     ) -> MarketData {
         MarketData {
             id,
@@ -242,20 +242,20 @@ impl MarketData {
         self.reference_date
     }
 
-    pub fn df(&self) -> Result<Number> {
+    pub fn df(&self) -> Result<Numeric> {
         self.df.ok_or(AtlasError::ValueNotSetErr("df".to_string()))
     }
 
-    pub fn fwd(&self) -> Result<Number> {
+    pub fn fwd(&self) -> Result<Numeric> {
         self.fwd
             .ok_or(AtlasError::ValueNotSetErr("fwd".to_string()))
     }
 
-    pub fn fx(&self) -> Result<Number> {
+    pub fn fx(&self) -> Result<Numeric> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_string()))
     }
 
-    pub fn numerarie(&self) -> Number {
+    pub fn numerarie(&self) -> Numeric {
         self.numerarie
     }
 }

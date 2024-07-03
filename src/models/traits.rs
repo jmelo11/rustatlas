@@ -4,10 +4,10 @@ use crate::{core::meta::*, time::date::Date, utils::errors::Result};
 /// A model that provides market data based in the current market state.
 pub trait Model {
     fn reference_date(&self) -> Date;
-    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<Number>;
-    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<Number>;
-    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<Number>;
-    fn gen_numerarie(&self) -> Number;
+    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<Numeric>;
+    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<Numeric>;
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<Numeric>;
+    fn gen_numerarie(&self) -> Numeric;
     fn gen_node(&self, market_request: &MarketRequest) -> Result<MarketData> {
         let id = market_request.id();
         let df = match market_request.df() {

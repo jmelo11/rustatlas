@@ -6,7 +6,7 @@ use std::{
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::{NewValue, Number},
+    core::meta::{NewNumeric, Numeric},
     rates::{
         enums::Compounding,
         interestrate::{InterestRate, RateDefinition},
@@ -74,11 +74,11 @@ impl OvernightIndex {
         self
     }
 
-    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;
 
-        let comp = Number::new(end_index / start_index);
+        let comp = Numeric::new(end_index / start_index);
         let day_counter = self.rate_definition.day_counter();
         Ok(InterestRate::implied_rate(
             comp,
@@ -132,7 +132,7 @@ impl HasName for OvernightIndex {
 }
 
 impl YieldProvider for OvernightIndex {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         self.term_structure()?.discount_factor(date)
     }
 
@@ -142,7 +142,7 @@ impl YieldProvider for OvernightIndex {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         // mixed case - return w.a.
         if start_date < self.reference_date() && end_date > self.reference_date() {
             let first_fixing = self.fixing(self.reference_date())?;

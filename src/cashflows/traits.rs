@@ -1,4 +1,4 @@
-use crate::{core::meta::Number, time::date::Date, utils::errors::Result};
+use crate::{core::meta::Numeric, time::date::Date, utils::errors::Result};
 
 use super::cashflow::Side;
 
@@ -7,7 +7,7 @@ use super::cashflow::Side;
 pub trait InterestAccrual {
     fn accrual_start_date(&self) -> Result<Date>;
     fn accrual_end_date(&self) -> Result<Date>;
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number>;
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric>;
     fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> Result<(Date, Date)> {
         let accrual_start = self.accrual_start_date()?;
         let accrual_end = self.accrual_end_date()?;
@@ -38,13 +38,13 @@ pub trait InterestAccrual {
 /// # RequiresFixingRate
 /// A trait that defines if an instrument requires a fixing rate.
 pub trait RequiresFixingRate: InterestAccrual {
-    fn set_fixing_rate(&mut self, fixing_rate: Number);
+    fn set_fixing_rate(&mut self, fixing_rate: Numeric);
 }
 
 /// # Payable
 /// A trait that defines the payment of an instrument.
 pub trait Payable {
-    fn amount(&self) -> Result<Number>;
+    fn amount(&self) -> Result<Numeric>;
     fn side(&self) -> Side;
     fn payment_date(&self) -> Date;
 }

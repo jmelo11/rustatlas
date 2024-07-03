@@ -3,7 +3,7 @@ use std::sync::Arc;
 use num_traits::ToPrimitive;
 
 use crate::{
-    core::meta::Number,
+    core::meta::Numeric,
     math::interpolation::enums::Interpolator,
     rates::{
         enums::Compounding,
@@ -34,9 +34,9 @@ use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 pub struct TenorBasedZeroRateTermStructure {
     reference_date: Date,
     tenors: Vec<Period>,
-    spreads: Vec<Number>,
+    spreads: Vec<Numeric>,
     rate_definition: RateDefinition,
-    year_fractions: Vec<Number>,
+    year_fractions: Vec<Numeric>,
     interpolation: Interpolator,
     enable_extrapolation: bool,
 }
@@ -45,7 +45,7 @@ impl TenorBasedZeroRateTermStructure {
     pub fn new(
         reference_date: Date,
         tenors: Vec<Period>,
-        spreads: Vec<Number>,
+        spreads: Vec<Numeric>,
         rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
@@ -75,7 +75,7 @@ impl TenorBasedZeroRateTermStructure {
         return &self.tenors;
     }
 
-    pub fn spreads(&self) -> &Vec<Number> {
+    pub fn spreads(&self) -> &Vec<Numeric> {
         return &self.spreads;
     }
 }
@@ -87,7 +87,7 @@ impl HasReferenceDate for TenorBasedZeroRateTermStructure {
 }
 
 impl YieldProvider for TenorBasedZeroRateTermStructure {
-    fn discount_factor(&self, date: Date) -> Result<Number> {
+    fn discount_factor(&self, date: Date) -> Result<Numeric> {
         let year_fraction = self
             .rate_definition
             .day_counter()
@@ -109,7 +109,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
         end_date: Date,
         comp: Compounding,
         freq: Frequency,
-    ) -> Result<Number> {
+    ) -> Result<Numeric> {
         let start_df = self.discount_factor(start_date)?;
         let end_df = self.discount_factor(end_date)?;
 

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{
-        meta::{MarketRequest, NewValue, Number},
+        meta::{MarketRequest, NewNumeric, Numeric},
         traits::{HasCurrency, HasDiscountCurveId, HasForecastCurveId, Registrable},
     },
     currencies::enums::Currency,
@@ -93,7 +93,7 @@ impl Cashflow {
 }
 
 impl Payable for Cashflow {
-    fn amount(&self) -> Result<Number> {
+    fn amount(&self) -> Result<Numeric> {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.amount(),
             Cashflow::Disbursement(cashflow) => cashflow.amount(),
@@ -210,17 +210,17 @@ impl InterestAccrual for Cashflow {
         }
     }
 
-    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Number> {
+    fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<Numeric> {
         match self {
             Cashflow::FixedRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
             Cashflow::FloatingRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
-            _ => Ok(Number::new(0.0)),
+            _ => Ok(Numeric::new(0.0)),
         }
     }
 }
 
 impl RequiresFixingRate for Cashflow {
-    fn set_fixing_rate(&mut self, fixing_rate: Number) {
+    fn set_fixing_rate(&mut self, fixing_rate: Numeric) {
         match self {
             Cashflow::FloatingRateCoupon(coupon) => coupon.set_fixing_rate(fixing_rate),
             _ => (),
@@ -230,7 +230,7 @@ impl RequiresFixingRate for Cashflow {
 
 impl Display for Cashflow {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let amount = self.amount().unwrap_or(Number::new(0.0));
+        let amount = self.amount().unwrap_or(Numeric::new(0.0));
         match self {
             Cashflow::Redemption(cashflow) => write!(
                 f,
