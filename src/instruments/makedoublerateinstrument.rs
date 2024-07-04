@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 use argmin::{core::{CostFunction, Error, Executor}, solver::brent::BrentRoot};
 
 use crate::{
