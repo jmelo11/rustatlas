@@ -538,4 +538,68 @@ mod tests {
         assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
         Ok(())
     }
+
+    #[test]
+    fn test_rollover_simulation_engine_with_anual_growth_mode_and_growth_rate_2() -> Result<()> {
+        let market_store = create_store().unwrap();
+        let horizon = Period::new(5, TimeUnit::Years);
+
+        let base_redemptions = [
+            (Date::new(2021, 9, 1), 100.0),
+            (Date::new(2021, 10, 1), 100.0),
+            (Date::new(2021, 11, 1), 100.0),
+            (Date::new(2021, 12, 1), 100.0),
+            (Date::new(2022, 1, 1), 150.0),
+            (Date::new(2022, 2, 1), 150.0),
+            (Date::new(2022, 3, 1), 150.0),
+            (Date::new(2022, 4, 1), 150.0),
+            (Date::new(2022, 5, 1), 200.0),
+            (Date::new(2022, 6, 1), 200.0),
+            (Date::new(2022, 7, 1), 200.0),
+            (Date::new(2022, 8, 1), 200.0),
+        ]
+        .iter()
+        .map(|&(date, value)| (date, value))
+        .collect::<BTreeMap<_, _>>();
+
+        let engine =
+            RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
+                .with_growth_mode(RolloverGrowthMode::Annual)
+                .with_growth_rate(0.1);
+        
+        let strategies = vec![
+            RolloverStrategy::new(
+                0.5,
+                Structure::Bullet,
+                Frequency::Semiannual,
+                Period::new(1, TimeUnit::Years),
+                Side::Receive,
+                RateType::Fixed,
+                RateDefinition::default(),
+                0,
+                None),
+            RolloverStrategy::new(
+                0.5,
+                Structure::Bullet,
+                Frequency::Semiannual,
+                Period::new(6, TimeUnit::Months),
+                Side::Receive,
+                RateType::Fixed,
+                RateDefinition::default(),
+                0,
+                None),
+        ];
+
+        let inst = engine.run(strategies)?;
+        let eval_date = Date::new(2023, 9, 1);
+        let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
+        let outstanding = get_outstandings_at_date(&inst, eval_date)?;
+        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+
+        let eval_date = Date::new(2024, 9, 1);
+        let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
+        let outstanding = get_outstandings_at_date(&inst, eval_date)?;
+        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        Ok(())
+    }
 }
