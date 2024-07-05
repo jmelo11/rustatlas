@@ -628,7 +628,7 @@ fn calculate_equal_payment_redemptions(
 
 #[cfg(test)]
 mod test {
-    use crate::{cashflows::{cashflow::Side, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::{instrument::RateType, makedoublerateinstrument::MakeDoubleRateInstrument}, prelude::Cashflow, rates::interestrate::RateDefinition, time::{date::Date, enums::{Frequency, TimeUnit}, period::Period}, utils::errors::Result, visitors::traits::HasCashflows};
+    use crate::{cashflows::{cashflow::{Cashflow, Side}, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::{instrument::RateType, makedoublerateinstrument::MakeDoubleRateInstrument}, rates::interestrate::RateDefinition, time::{date::Date, enums::{Frequency, TimeUnit}, period::Period}, utils::errors::Result, visitors::traits::HasCashflows};
 
 
     #[test]
