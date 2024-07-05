@@ -1,12 +1,11 @@
 use core::fmt;
-use std::{sync::{Arc, RwLock}};
+use std::sync::{Arc, RwLock};
 
 use crate::{
-    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore, traits::AdvanceExchangeRateStoreInTime}, prelude::{CurrencyDetails, ReadIndex}, rates::{
-        indexstore::IndexStore, interestrateindex::traits::InterestRateIndexTrait,
+    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore, traits::{AdvanceExchangeRateStoreInTime, CurrencyDetails}}, rates::{
+        indexstore::{IndexStore, ReadIndex}, interestrateindex::traits::InterestRateIndexTrait,
         traits::HasReferenceDate,
-    }, time::{date::Date, enums::TimeUnit, period::Period}, utils::errors::{AtlasError, Result},
-    utils::tools
+    }, time::{date::Date, enums::TimeUnit, period::Period}, utils::{errors::{AtlasError, Result}, tools}
 };
 
 /// # MarketStore
