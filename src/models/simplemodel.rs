@@ -79,6 +79,10 @@ impl<'a> Model for SimpleModel<'a> {
         )?)
     }
 
+    fn gen_numerarie(&self, _: &crate::prelude::MarketRequest) -> Result<f64> {
+        Ok(1.0)
+    }
+
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
         let first_currency = fx.first_currency();
         let second_currency = match fx.second_currency() {
@@ -94,8 +98,8 @@ impl<'a> Model for SimpleModel<'a> {
 
         match fx.reference_date() {
             Some(date) => {
-
-                let currency_forescast_factor = self.market_store
+                let currency_forescast_factor = self
+                    .market_store
                     .index_store()
                     .currency_forescast_factor(first_currency, second_currency, date)?;
 
@@ -103,7 +107,6 @@ impl<'a> Model for SimpleModel<'a> {
                     .market_store
                     .exchange_rate_store()
                     .get_exchange_rate(first_currency, second_currency)?;
-
 
                 Ok(spot * currency_forescast_factor)
             }
