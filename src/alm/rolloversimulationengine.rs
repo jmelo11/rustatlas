@@ -27,9 +27,9 @@ use crate::{
 /// ## Details
 /// - Requires redemptions and the currency of the redemptions
 
-pub enum RolloverGrowthMode{
+pub enum GrowthMode{
     Annual,
-    AmountPaid,
+    PaidAmount,
 }
 
 pub struct RolloverSimulationEngine<'a> {
@@ -37,8 +37,8 @@ pub struct RolloverSimulationEngine<'a> {
     base_redemptions: BTreeMap<Date, f64>,
     redemptions_currency: Currency,
     eval_dates: Vec<Date>,
-    rollover_growth_mode: RolloverGrowthMode,
-    rollover_growth_rate: f64,
+    growth_mode: GrowthMode,
+    growth_rate: f64,
 }
 
 impl<'a> RolloverSimulationEngine<'a> {
@@ -63,18 +63,18 @@ impl<'a> RolloverSimulationEngine<'a> {
             base_redemptions,
             redemptions_currency: redemption_currency,
             eval_dates: schedule.dates().clone(),
-            rollover_growth_mode: RolloverGrowthMode::AmountPaid,
-            rollover_growth_rate: 0.0,
+            growth_mode: GrowthMode::PaidAmount,
+            growth_rate: 0.0,
         }
     }
 
-    pub fn with_growth_mode(mut self, mode: RolloverGrowthMode) -> Self {
-        self.rollover_growth_mode = mode;
+    pub fn with_growth_mode(mut self, mode: GrowthMode) -> Self {
+        self.growth_mode = mode;
         self
     } 
 
     pub fn with_growth_rate(mut self, rate: f64) -> Self {
-        self.rollover_growth_rate = rate;
+        self.growth_rate = rate;
         self
     }
 
@@ -93,20 +93,20 @@ impl<'a> RolloverSimulationEngine<'a> {
         self.eval_dates.iter().try_for_each(|date| -> Result<()> {
             let maturing_amount = redemptions.get(date);
 
-            let redemtion = match maturing_amount {
+            let redemption = match maturing_amount {
                 Some(amount) => *amount, 
                 None => 0.0
             };
-            let amount = match self.rollover_growth_mode {
-                RolloverGrowthMode::Annual => {
+            let amount = match self.growth_mode {
+                GrowthMode::Annual => {
                     let delta_date = Actual360::year_fraction(*first_date, *date);
-                    outstanding -= redemtion;
-                    let placement = outstanding_0* (1.0 + self.rollover_growth_rate * delta_date) - outstanding;
+                    outstanding -= redemption;
+                    let placement = outstanding_0* (1.0 + self.growth_rate * delta_date) - outstanding;
                     outstanding += placement;
                     placement
                 }   
-                RolloverGrowthMode::AmountPaid => {
-                    let placement = redemtion * (1.0 + self.rollover_growth_rate);
+                GrowthMode::PaidAmount => {
+                    let placement = redemption * (1.0 + self.growth_rate);
                     placement
                 }
             };
@@ -438,7 +438,7 @@ mod tests {
 
         let engine =
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
-                .with_growth_mode(RolloverGrowthMode::Annual);
+                .with_growth_mode(GrowthMode::Annual);
         
         let strategies = vec![
             RolloverStrategy::new(
@@ -500,7 +500,7 @@ mod tests {
 
         let engine =
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
-                .with_growth_mode(RolloverGrowthMode::Annual)
+                .with_growth_mode(GrowthMode::Annual)
                 .with_growth_rate(0.1);
         
         let strategies = vec![
@@ -564,7 +564,7 @@ mod tests {
 
         let engine =
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
-                .with_growth_mode(RolloverGrowthMode::Annual)
+                .with_growth_mode(GrowthMode::Annual)
                 .with_growth_rate(0.1);
         
         let strategies = vec![
