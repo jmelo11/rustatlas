@@ -48,10 +48,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
 
                 let df = cf_market_data.df()?;
                 let fx = cf_market_data.fx()?;
-                let flag = match cf.side() {
-                    Side::Pay => -1.0,
-                    Side::Receive => 1.0,
-                };
+                let flag = cf.side().sign();
 
                 let aux_amount = cf.amount()? * df / fx * flag;
 
