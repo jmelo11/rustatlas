@@ -5,8 +5,9 @@ use crate::{
 use super::traits::{ConstVisit, HasCashflows};
 use std::collections::BTreeMap;
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # NPVByTenorConstVisitor
+/// NPVByTenorConstVisitor is a visitor that calculates the NPV of an instrument by tenor.
+/// Tenor is defined as a tuple of two periods: (start, end).
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByTenorConstVisitor<'a> {
     market_data: &'a [MarketData],

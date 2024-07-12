@@ -8,8 +8,9 @@ use crate::{
 use super::traits::{ConstVisit, HasCashflows};
 use std::collections::BTreeMap;
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # NPVByDateConstVisitor
+/// NPVByDateConstVisitor is a visitor that calculates the NPV of an instrument and returns the result in a BTreeMap
+/// where the key is the payment date of the cashflow and the value is the NPV of the cashflow.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByDateConstVisitor<'a> {
     market_data: &'a [MarketData],
