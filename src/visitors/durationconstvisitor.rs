@@ -1,5 +1,5 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable},
+    cashflows::traits::Payable,
     core::{meta::MarketData, traits::Registrable},
     time::daycounter::DayCounter,
     utils::errors::{AtlasError, Result},
@@ -79,27 +79,21 @@ mod tests {
     };
 
     use crate::{
-        core::marketstore::MarketStore,
-        currencies::enums::Currency,
-        instruments::{
+        cashflows::cashflow::Side, core::marketstore::MarketStore, currencies::enums::Currency, instruments::{
             fixedrateinstrument::FixedRateInstrument,
             makefixedrateinstrument::MakeFixedRateInstrument,
-        },
-        models::{simplemodel::SimpleModel, traits::Model},
-        rates::{
+        }, models::{simplemodel::SimpleModel, traits::Model}, rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
             traits::HasReferenceDate,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        },
-        time::{
+        }, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        },
-        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+        }, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}
     };
 
     use super::*;
