@@ -42,6 +42,10 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
                             "Market data for cashflow with id {}",
                             id
                         )))?;
+                
+                if  cf_market_data.reference_date() == cf.payment_date() {
+                    return Ok(acc);
+                }
 
                 let year_fraction = DayCounter::Actual365
                     .year_fraction(cf_market_data.reference_date(), cf.payment_date());
