@@ -83,6 +83,9 @@ pub struct LoanDepo {
     pub evaluation_mode: Option<EvaluationMode>,
     pub rate_change_date: Option<Date>,
     pub cashflows_source: String,
+
+    pub last_reprice_date: Option<Date>,
+    pub next_reprice_date: Option<Date>,
 }
 
 impl TryFrom<LoanDepo> for Instrument {
