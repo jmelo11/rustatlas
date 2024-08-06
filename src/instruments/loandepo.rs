@@ -65,6 +65,9 @@ pub struct LoanDepo {
     pub margin: Option<f64>,
     pub margin_local_ccy: Option<f64>,
 
+    pub interest: Option<f64>, 
+    pub interest_local_ccy: Option<f64>, 
+
     pub rate_type: RateType,
     pub first_rate_frequency: Frequency,
     pub first_rate_day_counter: DayCounter,
