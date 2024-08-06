@@ -46,6 +46,10 @@ impl ExchangeRateStore {
         self.reference_date
     }
 
+    pub fn get_exchange_rate_map(&self) -> HashMap<(Currency, Currency), f64> {
+        self.exchange_rate_map.clone()
+    }
+
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
         let first_ccy = first_ccy;
         let second_ccy = second_ccy;

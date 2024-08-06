@@ -1,5 +1,5 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable},
+    cashflows::traits::Payable,
     core::{meta::MarketData, traits::Registrable},
     time::daycounter::DayCounter,
     utils::errors::{AtlasError, Result},
@@ -42,16 +42,17 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
                             "Market data for cashflow with id {}",
                             id
                         )))?;
+                
+                if  cf_market_data.reference_date() <= cf.payment_date() {
+                    return Ok(acc);
+                }
 
                 let year_fraction = DayCounter::Actual365
                     .year_fraction(cf_market_data.reference_date(), cf.payment_date());
 
                 let df = cf_market_data.df()?;
                 let fx = cf_market_data.fx()?;
-                let flag = match cf.side() {
-                    Side::Pay => -1.0,
-                    Side::Receive => 1.0,
-                };
+                let flag = cf.side().sign();
 
                 let aux_amount = cf.amount()? * df / fx * flag;
 
@@ -82,27 +83,21 @@ mod tests {
     };
 
     use crate::{
-        core::marketstore::MarketStore,
-        currencies::enums::Currency,
-        instruments::{
+        cashflows::cashflow::Side, core::marketstore::MarketStore, currencies::enums::Currency, instruments::{
             fixedrateinstrument::FixedRateInstrument,
             makefixedrateinstrument::MakeFixedRateInstrument,
-        },
-        models::{simplemodel::SimpleModel, traits::Model},
-        rates::{
+        }, models::{simplemodel::SimpleModel, traits::Model}, rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
             traits::HasReferenceDate,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        },
-        time::{
+        }, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        },
-        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
+        }, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}
     };
 
     use super::*;

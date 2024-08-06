@@ -65,6 +65,9 @@ pub struct LoanDepo {
     pub margin: Option<f64>,
     pub margin_local_ccy: Option<f64>,
 
+    pub interest: Option<f64>, 
+    pub interest_local_ccy: Option<f64>, 
+
     pub rate_type: RateType,
     pub first_rate_frequency: Frequency,
     pub first_rate_day_counter: DayCounter,
@@ -83,6 +86,9 @@ pub struct LoanDepo {
     pub evaluation_mode: Option<EvaluationMode>,
     pub rate_change_date: Option<Date>,
     pub cashflows_source: String,
+
+    pub last_reprice_date: Option<Date>,
+    pub next_reprice_date: Option<Date>,
 }
 
 impl TryFrom<LoanDepo> for Instrument {

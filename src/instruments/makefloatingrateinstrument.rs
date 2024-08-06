@@ -747,7 +747,7 @@ mod tests {
     use std::collections::{HashMap, HashSet};
 
     use crate::{
-        cashflows::{cashflow::Side, traits::RequiresFixingRate}, currencies::enums::Currency, instruments::makefloatingrateinstrument::MakeFloatingRateInstrument, prelude::{HasCurrency, Structure}, rates::{enums::Compounding, interestrate::RateDefinition}, time::{
+        cashflows::{cashflow::Side, traits::RequiresFixingRate}, core::traits::HasCurrency, currencies::enums::Currency, instruments::{makefloatingrateinstrument::MakeFloatingRateInstrument, traits::Structure}, rates::{enums::Compounding, interestrate::RateDefinition}, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},

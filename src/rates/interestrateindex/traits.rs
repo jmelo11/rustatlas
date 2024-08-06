@@ -32,7 +32,7 @@ pub trait FixingProvider {
                 .map(|(k, v)| (*k, *v))
                 .collect::<BTreeMap<Date, f64>>();
 
-            let x = aux_btreemap
+            let x: Vec<f64> = aux_btreemap
                 .keys()
                 .map(|&d| (d - first_date) as f64)
                 .collect::<Vec<f64>>();

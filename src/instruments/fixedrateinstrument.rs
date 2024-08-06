@@ -221,9 +221,9 @@ impl HasCashflows for FixedRateInstrument {
 #[cfg(test)]
 mod tests {
     use crate::{
-        cashflows::cashflow::Side, currencies::enums::Currency, instruments::{
+        cashflows::{cashflow::{Cashflow, Side}, traits::Payable}, currencies::enums::Currency, instruments::{
             fixedrateinstrument::BondAccrual, makefixedrateinstrument::MakeFixedRateInstrument,
-        }, prelude::{Cashflow, Payable}, rates::{enums::Compounding, interestrate::InterestRate}, time::{
+        }, rates::{enums::Compounding, interestrate::InterestRate}, time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},

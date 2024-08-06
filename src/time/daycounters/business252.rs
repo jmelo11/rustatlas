@@ -1,5 +1,5 @@
 use super::traits::DayCountProvider;
-use crate::{prelude::Calendar, time::{calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date}};
+use crate::time::{calendar::Calendar, calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date};
 use crate::time::calendars::brazil::Market;
 
 
@@ -38,7 +38,7 @@ impl DayCountProvider for Business252 {
 
 #[cfg(test)]
 mod test {
-    use crate::prelude::DayCountProvider;
+    use crate::time::daycounters::traits::DayCountProvider;
 
     #[test]
     fn test_business252() {

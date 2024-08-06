@@ -63,6 +63,11 @@ impl FixedRateCoupon {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    pub fn set_rate_value(&mut self, rate_value: f64) {
+        let rate = InterestRate::from_rate_definition(rate_value, self.rate.rate_definition());
+        self.set_rate(rate);
+    }
+
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
         // Update the cashflow amount

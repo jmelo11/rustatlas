@@ -193,9 +193,7 @@ impl HasCashflows for FloatingRateInstrument {
 
 #[cfg(test)]
 mod test {
-    use crate::{prelude::{Cashflow, Compounding, Currency, Date, DayCounter, Frequency, HasCurrency, MakeFloatingRateInstrument, Payable, Period, RateDefinition, RequiresFixingRate, Side, TimeUnit}, 
-                utils::errors::Result,
-                visitors::traits::HasCashflows};
+    use crate::{cashflows::{cashflow::{Cashflow, Side}, traits::{Payable, RequiresFixingRate}}, core::traits::HasCurrency, currencies::enums::Currency, instruments::makefloatingrateinstrument::MakeFloatingRateInstrument, rates::{enums::Compounding, interestrate::RateDefinition}, time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}, period::Period}, utils::errors::Result, visitors::traits::HasCashflows};
    
     #[test]
     fn test_float_rate_instrument() -> Result<()> {

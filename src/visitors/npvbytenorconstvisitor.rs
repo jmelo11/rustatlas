@@ -1,12 +1,13 @@
 use crate::{
-    cashflows::{cashflow::Side, traits::Payable}, core::{meta::MarketData, traits::Registrable}, time::period::Period, utils::errors::{AtlasError, Result}
+    cashflows::traits::Payable, core::{meta::MarketData, traits::Registrable}, time::period::Period, utils::errors::{AtlasError, Result}
 };
 
 use super::traits::{ConstVisit, HasCashflows};
 use std::collections::BTreeMap;
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # NPVByTenorConstVisitor
+/// NPVByTenorConstVisitor is a visitor that calculates the NPV of an instrument by tenor.
+/// Tenor is defined as a tuple of two periods: (start, end).
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByTenorConstVisitor<'a> {
     market_data: &'a [MarketData],
@@ -70,10 +71,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
 
                 let df = cf_market_data.df()?;
                 let fx = cf_market_data.fx()?;
-                let flag = match cf.side() {
-                    Side::Pay => -1.0,
-                    Side::Receive => 1.0,
-                };
+                let flag = cf.side().sign();
                 let amount = cf.amount()?;
                 let npv = amount * df * fx * flag;
 
@@ -93,13 +91,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
 mod tests {
     use std::{collections::HashMap, sync::{Arc, RwLock}};
 
-    use crate::{core::marketstore::MarketStore, 
-                currencies::enums::Currency,   
-                instruments::makefixedrateinstrument::MakeFixedRateInstrument, 
-                models::{simplemodel::SimpleModel, traits::Model}, 
-                rates::{enums::Compounding, interestrate::{InterestRate, RateDefinition}, interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex}, traits::HasReferenceDate, yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure}, 
-                time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}}, 
-                visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
+    use crate::{core::marketstore::MarketStore, currencies::enums::Currency, instruments::makefixedrateinstrument::MakeFixedRateInstrument, models::{simplemodel::SimpleModel, traits::Model}, prelude::Side, rates::{enums::Compounding, interestrate::{InterestRate, RateDefinition}, interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex}, traits::HasReferenceDate, yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure}, time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}}, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}};
                 
     use super::*;
 
