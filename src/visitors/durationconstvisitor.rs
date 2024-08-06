@@ -43,7 +43,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
                             id
                         )))?;
                 
-                if  cf_market_data.reference_date() == cf.payment_date() {
+                if  cf_market_data.reference_date() <= cf.payment_date() {
                     return Ok(acc);
                 }
 
