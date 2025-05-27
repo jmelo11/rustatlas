@@ -46,7 +46,7 @@ pub struct Portfolio {
     segment: Option<String>,
     area: Option<String>,
     product_family: Option<String>,
-    postion_type: Option<PositionType>,
+    position_type: Option<PositionType>,
     rate_type: Option<RateType>,
     currency: Option<Currency>,
     instruments: Vec<Instrument>,
@@ -59,7 +59,7 @@ impl Portfolio {
             segment: None,
             product_family: None,
             area: None,
-            postion_type: None,
+            position_type: None,
             rate_type: None,
             currency: None,
             instruments: Vec::new(),
@@ -83,7 +83,7 @@ impl Portfolio {
     }
 
     pub fn position_type(&self) -> Option<PositionType> {
-        self.postion_type
+        self.position_type
     }
 
     pub fn rate_type(&self) -> Option<RateType> {
@@ -125,7 +125,7 @@ impl Portfolio {
     }
 
     pub fn with_position_type(mut self, position_type: PositionType) -> Self {
-        self.postion_type = Some(position_type);
+        self.position_type = Some(position_type);
         self
     }
 
