@@ -39,11 +39,12 @@ impl<'a> SimpleModel<'a> {
 }
 
 impl<'a> Model for SimpleModel<'a> {
+    type Num = f64;
     fn reference_date(&self) -> Date {
         self.market_store.reference_date()
     }
 
-    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<f64> {
+    fn gen_df_data(&self, df: DiscountFactorRequest) -> Result<Self::Num> {
         let date = df.date();
         let ref_date = self.market_store.reference_date();
 
@@ -60,7 +61,7 @@ impl<'a> Model for SimpleModel<'a> {
         Ok(curve.discount_factor(date)?)
     }
 
-    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64> {
+    fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<Self::Num> {
         let id = fwd.provider_id();
         let end_date = fwd.end_date();
         let ref_date = self.market_store.reference_date();
@@ -79,11 +80,11 @@ impl<'a> Model for SimpleModel<'a> {
         )?)
     }
 
-    fn gen_numerarie(&self, _: &crate::prelude::MarketRequest) -> Result<f64> {
+    fn gen_numerarie(&self, _: &crate::prelude::MarketRequest) -> Result<Self::Num> {
         Ok(1.0)
     }
 
-    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
+    fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<Self::Num> {
         let first_currency = fx.first_currency();
         let second_currency = match fx.second_currency() {
             Some(ccy) => ccy,

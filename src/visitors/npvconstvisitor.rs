@@ -1,7 +1,7 @@
 use crate::{
     cashflows::traits::Payable,
     core::{meta::MarketData, traits::Registrable},
-    utils::errors::{AtlasError, Result},
+    utils::{errors::{AtlasError, Result}, num::Real},
 };
 
 use super::traits::{ConstVisit, HasCashflows};
@@ -13,13 +13,13 @@ use super::traits::{ConstVisit, HasCashflows};
 /// ## Parameters
 /// * `market_data` - The market data to use for NPV calculation
 /// * `include_today_cashflows` - Flag to include cashflows with payment date equal to the reference date
-pub struct NPVConstVisitor<'a> {
-    market_data: &'a [MarketData],
+pub struct NPVConstVisitor<'a, R: Real = f64> {
+    market_data: &'a [MarketData<R>],
     include_today_cashflows: bool,
 }
 
-impl<'a> NPVConstVisitor<'a> {
-    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
+impl<'a, R: Real> NPVConstVisitor<'a, R> {
+    pub fn new(market_data: &'a [MarketData<R>], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data: market_data,
             include_today_cashflows,
@@ -30,10 +30,14 @@ impl<'a> NPVConstVisitor<'a> {
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
-    type Output = Result<f64>;
-    fn visit(&self, visitable: &T) -> Self::Output {
-        let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
+impl<'a, V, R> ConstVisit<V> for NPVConstVisitor<'a, R>
+where
+    V: HasCashflows,
+    R: Real,
+{
+    type Output = Result<R>;
+    fn visit(&self, visitable: &V) -> Self::Output {
+        let npv = visitable.cashflows().iter().try_fold(R::from(0.0), |acc, cf| {
             let id = cf.id()?;
 
             let cf_market_data =
@@ -56,7 +60,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
 
             let numerarie = cf_market_data.numerarie();
             let amount = cf.amount()?;
-            Ok(acc + df * amount / fx * flag / numerarie)
+            Ok(acc + df * R::from(amount) / fx * R::from(flag) / numerarie)
         });
         return npv;
     }

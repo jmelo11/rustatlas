@@ -13,6 +13,8 @@ enum Op {
     Mul,
     Div,
     Neg,
+    Exp,
+    Ln,
 }
 
 #[derive(Clone, Copy)]
@@ -55,12 +57,64 @@ impl Var {
         Var { id }
     }
 
-    fn value(&self) -> f64 {
+    pub fn value(&self) -> f64 {
         value_of(self.id)
     }
 
     pub fn id(&self) -> usize {
         self.id
+    }
+
+    pub fn exp(self) -> Var {
+        let v = self.value().exp();
+        let id = push(Node {
+            value: v,
+            op: Op::Exp,
+            lhs: Some(self.id),
+            rhs: None,
+        });
+        Var { id }
+    }
+
+    pub fn ln(self) -> Var {
+        let v = self.value().ln();
+        let id = push(Node {
+            value: v,
+            op: Op::Ln,
+            lhs: Some(self.id),
+            rhs: None,
+        });
+        Var { id }
+    }
+
+    pub fn powf(self, n: f64) -> Var {
+        (self.ln() * Var::from(n)).exp()
+    }
+}
+
+impl From<f64> for Var {
+    fn from(value: f64) -> Self {
+        Var::new(value)
+    }
+}
+
+impl From<Var> for f64 {
+    fn from(v: Var) -> Self {
+        v.value()
+    }
+}
+
+impl crate::utils::num::FloatOps for Var {
+    fn exp(self) -> Self {
+        Var::exp(self)
+    }
+
+    fn ln(self) -> Self {
+        Var::ln(self)
+    }
+
+    fn powf(self, n: f64) -> Self {
+        Var::powf(self, n)
     }
 }
 
@@ -175,6 +229,16 @@ pub fn backward(result: &Var) -> Vec<f64> {
                     let l = node.lhs.unwrap();
                     grad[l] -= grad[i];
                 }
+                Op::Exp => {
+                    let l = node.lhs.unwrap();
+                    let v = tape[i].value;
+                    grad[l] += grad[i] * v;
+                }
+                Op::Ln => {
+                    let l = node.lhs.unwrap();
+                    let v = tape[l].value;
+                    grad[l] += grad[i] / v;
+                }
             }
         }
         grad
@@ -214,6 +278,17 @@ mod tests {
         let grad = backward(&z);
         assert!((grad[x.id()] + 0.5).abs() < 1e-12);
         assert!((grad[y.id()] + 1.25).abs() < 1e-12);
+    }
+
+    #[test]
+    fn exp_ln_powf_test() {
+        reset_tape();
+        let x = Var::new(2.0);
+        let y = x.ln().exp() + x.powf(2.0);
+        let grad = backward(&y);
+        // derivative of ln(x).exp() is 1/x * exp(ln(x)) = 1/x * x = 1
+        // derivative of x.powf(2) is 2*x
+        assert!((grad[x.id()] - (1.0 + 2.0 * 2.0)).abs() < 1e-12);
     }
 }
 

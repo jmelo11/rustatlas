@@ -29,3 +29,6 @@ name = "fixedratepricing"
 [[example]]
 name = "floatingratepricing"
 
+[[example]]
+name = "ad_time_sensitivity"
+
