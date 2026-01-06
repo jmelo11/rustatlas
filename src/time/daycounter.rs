@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
-    actual360::Actual360, actual365::Actual365, actualactual::ActualActual, business252::Business252, thirty360::*, traits::DayCountProvider
+    actual360::Actual360, actual365::Actual365, actualactual::ActualActual,
+    business252::Business252, thirty360::*, traits::DayCountProvider,
 };
 use crate::{
     time::date::Date,
-    utils::errors::{AtlasError, Result}
+    utils::errors::{AtlasError, Result},
 };
 
 /// # DayCounter
@@ -97,7 +98,6 @@ mod tests {
         assert_eq!(day_count, 1);
     }
 
-
     #[test]
     fn test_day_count_standard_inverted() {
         let start = Date::new(2020, 1, 1);
@@ -114,7 +114,6 @@ mod tests {
         let day_count = DayCounter::ActualActual.day_count(end, start);
         assert_eq!(day_count, -1);
     }
-    
 
     #[test]
     fn test_year_fraction() {
@@ -133,7 +132,6 @@ mod tests {
         assert_eq!(year_fraction, 1.0 / 366.0);
     }
 
-
     #[test]
     fn test_year_fraction_inverse() {
         let start = Date::new(2020, 1, 1);
@@ -151,7 +149,6 @@ mod tests {
         assert_eq!(year_fraction, -1.0 / 366.0);
     }
 
-
     #[test]
     fn test_year_fraction_trithy360_end_of_month() {
         let start = Date::new(2023, 12, 10);
@@ -162,7 +159,6 @@ mod tests {
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
         assert_ne!(yf_1, yf_2);
     }
-
 
     #[test]
     fn test_year_fraction_trithy360_beetween_end_and_start_of_month() {
@@ -175,7 +171,6 @@ mod tests {
         assert_eq!(yf_1, yf_2);
     }
 
-
     #[test]
     fn test_year_fraction_trithy360_star_in_end_of_month() {
         let start = Date::new(2023, 12, 30);
@@ -187,7 +182,6 @@ mod tests {
         assert_ne!(yf_1, yf_2);
     }
 
-
     #[test]
     fn test_year_fraction_trithy360_leap_february() {
         let start = Date::new(2024, 2, 10);
@@ -196,10 +190,9 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-      
+
         assert_ne!(yf_1, yf_2);
     }
-
 
     #[test]
     fn test_year_fraction_trithy360_february() {
@@ -209,9 +202,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-       
+
         assert_ne!(yf_1, yf_2);
     }
 }
-
-

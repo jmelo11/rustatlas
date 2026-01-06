@@ -51,7 +51,7 @@ impl IborIndex {
     pub fn new(reference_date: Date) -> IborIndex {
         IborIndex {
             name: None,
-            reference_date: reference_date,
+            reference_date,
             tenor: Period::empty(),
             rate_definition: RateDefinition::default(),
             fixings: HashMap::new(),
@@ -156,7 +156,7 @@ impl YieldProvider for IborIndex {
             )));
         }
         if start_date < self.reference_date() {
-            return self.fixing(start_date);
+            self.fixing(start_date)
         } else {
             return self
                 .term_structure()?

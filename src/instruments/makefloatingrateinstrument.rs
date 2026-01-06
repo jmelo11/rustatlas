@@ -133,7 +133,7 @@ impl MakeFloatingRateInstrument {
 
     pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateInstrument {
         self.tenor = Some(tenor);
-        return self;
+        self
     }
 
     pub fn with_disbursements(
@@ -165,7 +165,7 @@ impl MakeFloatingRateInstrument {
         forecast_curve_id: Option<usize>,
     ) -> MakeFloatingRateInstrument {
         self.forecast_curve_id = forecast_curve_id;
-        return self;
+        self
     }
 
     pub fn with_discount_curve_id(
@@ -173,7 +173,7 @@ impl MakeFloatingRateInstrument {
         discount_curve_id: Option<usize>,
     ) -> MakeFloatingRateInstrument {
         self.discount_curve_id = discount_curve_id;
-        return self;
+        self
     }
 
     pub fn with_rate_definition(
@@ -181,27 +181,27 @@ impl MakeFloatingRateInstrument {
         rate_definition: RateDefinition,
     ) -> MakeFloatingRateInstrument {
         self.rate_definition = Some(rate_definition);
-        return self;
+        self
     }
 
     pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateInstrument {
         self.notional = Some(notional);
-        return self;
+        self
     }
 
     pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateInstrument {
         self.currency = Some(currency);
-        return self;
+        self
     }
 
     pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateInstrument {
         self.spread = Some(spread);
-        return self;
+        self
     }
 
     pub fn bullet(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Bullet);
-        return self;
+        self
     }
 
     pub fn equal_redemptions(mut self) -> MakeFloatingRateInstrument {
@@ -223,17 +223,23 @@ impl MakeFloatingRateInstrument {
 
     pub fn with_side(mut self, side: Side) -> MakeFloatingRateInstrument {
         self.side = Some(side);
-        return self;
+        self
     }
 
     pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateInstrument {
         self.payment_frequency = Some(frequency);
-        return self;
+        self
     }
 
     pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateInstrument {
         self.structure = Some(structure);
-        return self;
+        self
+    }
+}
+
+impl Default for MakeFloatingRateInstrument {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -313,14 +319,14 @@ impl MakeFloatingRateInstrument {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -330,23 +336,21 @@ impl MakeFloatingRateInstrument {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -409,14 +413,14 @@ impl MakeFloatingRateInstrument {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -426,23 +430,21 @@ impl MakeFloatingRateInstrument {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -519,14 +521,14 @@ impl MakeFloatingRateInstrument {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -543,17 +545,15 @@ impl MakeFloatingRateInstrument {
                     currency,
                     CashflowType::Redemption,
                 );
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -633,17 +633,15 @@ impl MakeFloatingRateInstrument {
 
                 let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
                 Ok(FloatingRateInstrument::new(
                     *start_date,
@@ -671,8 +669,8 @@ impl MakeFloatingRateInstrument {
 
 fn build_coupons_from_notionals(
     cashflows: &mut Vec<Cashflow>,
-    dates: &Vec<Date>,
-    notionals: &Vec<f64>,
+    dates: &[Date],
+    notionals: &[f64],
     spread: f64,
     rate_definition: RateDefinition,
     side: Side,
@@ -696,12 +694,13 @@ fn build_coupons_from_notionals(
     }
 }
 
-impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
-    fn into(self) -> MakeFloatingRateInstrument {
+impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
+    fn from(val: FloatingRateInstrument) -> Self {
         let mut disbursements = HashMap::new();
         let mut redemptions = HashMap::new();
         let mut additional_coupon_dates = HashSet::new();
-        for cashflow in self.cashflows() {
+
+        for cashflow in val.cashflows() {
             match cashflow {
                 Cashflow::Disbursement(c) => {
                     disbursements.insert(c.payment_date(), c.amount().unwrap());
@@ -718,21 +717,20 @@ impl Into<MakeFloatingRateInstrument> for FloatingRateInstrument {
         }
 
         MakeFloatingRateInstrument::new()
-            .with_start_date(self.start_date())
-            .with_end_date(self.end_date())
-            .with_notional(self.notional())
-            .with_spread(self.spread())
-            .with_side(self.side())
-            .with_rate_definition(self.rate_definition())
-            .with_forecast_curve_id(self.forecast_curve_id())
-            .with_discount_curve_id(self.discount_curve_id())
-            .with_payment_frequency(self.payment_frequency())
-            .with_currency(self.currency().unwrap())
+            .with_start_date(val.start_date())
+            .with_end_date(val.end_date())
+            .with_notional(val.notional())
+            .with_spread(val.spread())
+            .with_side(val.side())
+            .with_rate_definition(val.rate_definition())
+            .with_forecast_curve_id(val.forecast_curve_id())
+            .with_discount_curve_id(val.discount_curve_id())
+            .with_payment_frequency(val.payment_frequency())
+            .with_currency(val.currency().unwrap())
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
             .with_additional_coupon_dates(additional_coupon_dates)
             .other()
-
     }
 }
 
@@ -747,12 +745,19 @@ mod tests {
     use std::collections::{HashMap, HashSet};
 
     use crate::{
-        cashflows::{cashflow::Side, traits::RequiresFixingRate}, core::traits::HasCurrency, currencies::enums::Currency, instruments::{makefloatingrateinstrument::MakeFloatingRateInstrument, traits::Structure}, rates::{enums::Compounding, interestrate::RateDefinition}, time::{
+        cashflows::{cashflow::Side, traits::RequiresFixingRate},
+        core::traits::HasCurrency,
+        currencies::enums::Currency,
+        instruments::{makefloatingrateinstrument::MakeFloatingRateInstrument, traits::Structure},
+        rates::{enums::Compounding, interestrate::RateDefinition},
+        time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        }, utils::errors::Result, visitors::traits::HasCashflows
+        },
+        utils::errors::Result,
+        visitors::traits::HasCashflows,
     };
 
     #[test]
@@ -960,17 +965,27 @@ mod tests {
         assert_eq!(instrument2.start_date(), instrument.start_date());
         assert_eq!(instrument2.end_date(), instrument.end_date());
         assert_eq!(instrument2.rate_definition(), instrument.rate_definition());
-        assert_ne!(instrument2.payment_frequency(), instrument.payment_frequency());
+        assert_ne!(
+            instrument2.payment_frequency(),
+            instrument.payment_frequency()
+        );
         assert_eq!(instrument2.spread(), instrument.spread());
         assert_eq!(instrument2.side(), instrument.side());
-        assert_eq!(instrument2.currency().unwrap(), instrument.currency().unwrap());
-        assert_eq!(instrument2.discount_curve_id(), instrument.discount_curve_id());
-        assert_eq!(instrument2.forecast_curve_id(), instrument.forecast_curve_id());
+        assert_eq!(
+            instrument2.currency().unwrap(),
+            instrument.currency().unwrap()
+        );
+        assert_eq!(
+            instrument2.discount_curve_id(),
+            instrument.discount_curve_id()
+        );
+        assert_eq!(
+            instrument2.forecast_curve_id(),
+            instrument.forecast_curve_id()
+        );
         assert_eq!(instrument2.structure(), Structure::Other);
         assert_eq!(instrument.structure(), Structure::Bullet);
 
         Ok(())
-
     }
-
 }

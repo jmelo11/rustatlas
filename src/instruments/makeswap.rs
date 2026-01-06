@@ -690,6 +690,12 @@ impl MakeSwap {
     }
 }
 
+impl Default for MakeSwap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// MakeFixFloatSwap
 ///
 /// Simplified version of the MakeSwap struct that only allows for a fixed and floating leg, with same notional, start and end dates and currency.
@@ -822,7 +828,7 @@ impl MakeFixFloatSwap {
             .end_date
             .ok_or(AtlasError::ValueNotSetErr("End Date".to_string()))?;
 
-        Ok(MakeSwap::new()
+        MakeSwap::new()
             .with_first_leg_rate_type(RateType::Fixed)
             .with_first_leg_rate_value(rate_value)
             .with_first_leg_rate_definition(rate_definition)
@@ -850,7 +856,13 @@ impl MakeFixFloatSwap {
             .with_second_leg_date_generation_rule(self.date_generation_rule)
             .with_second_leg_discount_curve_id(self.discount_curve_id)
             .with_second_leg_forecast_curve_id(self.forecast_curve_id)
-            .build()?)
+            .build()
+    }
+}
+
+impl Default for MakeFixFloatSwap {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

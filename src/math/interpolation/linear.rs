@@ -8,19 +8,15 @@ use super::traits::Interpolate;
 pub struct LinearInterpolator {}
 
 impl Interpolate for LinearInterpolator {
-    fn interpolate(x: f64, x_: &Vec<f64>, y_: &Vec<f64>, enable_extrapolation: bool) -> f64 {
+    fn interpolate(x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Equal)) {
                 Ok(index) => index,
                 Err(index) => index,
             };
 
-        if !enable_extrapolation {
-            if x < *x_.first().unwrap() || x > *x_.last().unwrap() {
-                panic!(
-                    "Extrapolation is not enabled, and the provided value is outside the range."
-                );
-            }
+        if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
+            panic!("Extrapolation is not enabled, and the provided value is outside the range.");
         }
 
         match index {

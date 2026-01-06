@@ -8,7 +8,7 @@ use super::traits::Interpolate;
 pub struct LogLinearInterpolator {}
 
 impl Interpolate for LogLinearInterpolator {
-    fn interpolate(x: f64, x_: &Vec<f64>, y_: &Vec<f64>, enable_extrapolation: bool) -> f64 {
+    fn interpolate(x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Less)) {
                 Ok(index) => index,

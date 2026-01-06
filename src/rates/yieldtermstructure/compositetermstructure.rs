@@ -58,17 +58,17 @@ impl CompositeTermStructure {
     }
 
     pub fn spread_curve(&self) -> &dyn YieldTermStructureTrait {
-        return self.spread_curve.as_ref();
+        self.spread_curve.as_ref()
     }
 
     pub fn base_curve(&self) -> &dyn YieldTermStructureTrait {
-        return self.base_curve.as_ref();
+        self.base_curve.as_ref()
     }
 }
 
 impl HasReferenceDate for CompositeTermStructure {
     fn reference_date(&self) -> Date {
-        return self.date_reference;
+        self.date_reference
     }
 }
 
@@ -77,7 +77,7 @@ impl YieldProvider for CompositeTermStructure {
         let spread_discount_factor = self.spread_curve.discount_factor(date)?;
         let base_discount_factor = self.base_curve.discount_factor(date)?;
         let add_df = spread_discount_factor * base_discount_factor;
-        return Ok(add_df);
+        Ok(add_df)
     }
 
     fn forward_rate(
@@ -93,7 +93,7 @@ impl YieldProvider for CompositeTermStructure {
         let base_forward_rate = self
             .base_curve
             .forward_rate(start_date, end_date, comp, freq)?;
-        return Ok(spread_forward_rate + base_forward_rate);
+        Ok(spread_forward_rate + base_forward_rate)
     }
 }
 

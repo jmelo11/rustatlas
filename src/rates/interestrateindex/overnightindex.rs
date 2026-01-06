@@ -43,7 +43,7 @@ impl OvernightIndex {
             term_structure: None,
             rate_definition: RateDefinition::default(),
             tenor: Period::new(1, TimeUnit::Days),
-            reference_date: reference_date,
+            reference_date,
         }
     }
 
@@ -188,15 +188,14 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let name = self.name()?;
 
         if !fixings.is_empty() {
-
-            let mut last_fixing_date = fixings.iter().map(|(a,_)| a).max().cloned().unwrap();
+            let mut last_fixing_date = fixings.keys().max().cloned().unwrap();
             if seed > last_fixing_date {
                 let last_fixing = *fixings.get(&last_fixing_date).unwrap();
                 let first_df = curve.discount_factor(seed)?;
                 let second_df = curve.discount_factor(seed.advance(1, TimeUnit::Days))?;
                 while seed > last_fixing_date {
                     last_fixing_date = last_fixing_date.advance(1, TimeUnit::Days);
-                    fixings.insert(last_fixing_date, last_fixing*first_df / second_df);
+                    fixings.insert(last_fixing_date, last_fixing * first_df / second_df);
                 }
             }
 
@@ -210,7 +209,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
                 let second_df = curve.discount_factor(seed)?;
                 let comp = last_fixing * first_df / second_df;
                 fixings.insert(seed, comp);
-            }                
+            }
         }
 
         let new_curve = curve.advance_to_period(period)?;
@@ -370,18 +369,13 @@ mod tests {
     }
 
     #[test]
-    fn test_advance_to_period() -> Result<()>  {
+    fn test_advance_to_period() -> Result<()> {
         let mut fixing: HashMap<Date, f64> = HashMap::new();
         fixing.insert(Date::new(2023, 6, 2), 21945.57);
         fixing.insert(Date::new(2023, 6, 5), 21966.14);
 
         let mut overnight_index = OvernightIndex::new(Date::new(2023, 7, 6)).with_fixings(fixing);
         overnight_index.fill_missing_fixings(Interpolator::Linear);
-
-        
-
-
-
 
         Ok(())
     }

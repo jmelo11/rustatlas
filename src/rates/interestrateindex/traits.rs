@@ -23,8 +23,8 @@ pub trait FixingProvider {
     /// Fill missing fixings using interpolation.
     fn fill_missing_fixings(&mut self, interpolator: Interpolator) {
         if !self.fixings().is_empty() {
-            let first_date = self.fixings().keys().min().unwrap().clone();
-            let last_date = self.fixings().keys().max().unwrap().clone();
+            let first_date = *self.fixings().keys().min().unwrap();
+            let last_date = *self.fixings().keys().max().unwrap();
 
             let aux_btreemap = self
                 .fixings()
@@ -37,9 +37,9 @@ pub trait FixingProvider {
                 .map(|&d| (d - first_date) as f64)
                 .collect::<Vec<f64>>();
 
-            let y = aux_btreemap.values().map(|r| *r).collect::<Vec<f64>>();
+            let y = aux_btreemap.values().copied().collect::<Vec<f64>>();
 
-            let mut current_date = first_date.clone();
+            let mut current_date = first_date;
 
             while current_date <= last_date {
                 if !self.fixings().contains_key(&current_date) {

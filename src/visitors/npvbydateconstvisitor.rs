@@ -26,7 +26,7 @@ impl<'a> NPVByDateConstVisitor<'a> {
     ) -> Self {
         NPVByDateConstVisitor {
             reference_date,
-            market_data: market_data,
+            market_data,
             include_today_cashflows,
         }
     }
@@ -156,7 +156,7 @@ mod tests {
         market_store
             .mut_index_store()
             .add_index(2, Arc::new(RwLock::new(discount_index)))?;
-        return Ok(market_store);
+        Ok(market_store)
     }
 
     fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
@@ -166,9 +166,9 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init = init * (1.0 + rate * 1.0 / 360.0);
+            init *= 1.0 + rate * 1.0 / 360.0
         }
-        return fixings;
+        fixings
     }
 
     #[test]

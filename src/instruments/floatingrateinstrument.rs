@@ -147,13 +147,8 @@ impl FloatingRateInstrument {
 
     pub fn set_spread(mut self, spread: f64) -> Self {
         self.spread = spread;
-        self.mut_cashflows().iter_mut().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    coupon.set_spread(spread);
-                }
-                _ => {}
-            }
+        self.mut_cashflows().iter_mut().for_each(|cf| if let Cashflow::FloatingRateCoupon(coupon) = cf {
+           coupon.set_spread(spread);
         });
         self
     }
@@ -190,23 +185,37 @@ impl HasCashflows for FloatingRateInstrument {
     }
 }
 
-
 #[cfg(test)]
 mod test {
-    use crate::{cashflows::{cashflow::{Cashflow, Side}, traits::{Payable, RequiresFixingRate}}, core::traits::HasCurrency, currencies::enums::Currency, instruments::makefloatingrateinstrument::MakeFloatingRateInstrument, rates::{enums::Compounding, interestrate::RateDefinition}, time::{date::Date, daycounter::DayCounter, enums::{Frequency, TimeUnit}, period::Period}, utils::errors::Result, visitors::traits::HasCashflows};
-   
+    use crate::{
+        cashflows::{
+            cashflow::{Cashflow, Side},
+            traits::{Payable, RequiresFixingRate},
+        },
+        core::traits::HasCurrency,
+        currencies::enums::Currency,
+        instruments::makefloatingrateinstrument::MakeFloatingRateInstrument,
+        rates::{enums::Compounding, interestrate::RateDefinition},
+        time::{
+            date::Date,
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+            period::Period,
+        },
+        utils::errors::Result,
+        visitors::traits::HasCashflows,
+    };
+
     #[test]
     fn test_float_rate_instrument() -> Result<()> {
-
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
             DayCounter::Thirty360,
             Compounding::Simple,
             Frequency::Annual,
-            
         );
-    
+
         let spread = 0.04;
 
         let instrument = MakeFloatingRateInstrument::new()
@@ -232,19 +241,17 @@ mod test {
 
         Ok(())
     }
-   
+
     #[test]
     fn test_set_spread() -> Result<()> {
-
         let start_date = Date::new(2020, 1, 1);
         let end_date = start_date + Period::new(5, TimeUnit::Years);
         let rate_definition = RateDefinition::new(
             DayCounter::Thirty360,
             Compounding::Simple,
             Frequency::Annual,
-            
         );
-    
+
         let spread = 0.04;
 
         let mut instrument = MakeFloatingRateInstrument::new()
@@ -264,34 +271,21 @@ mod test {
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.02));
 
-        instrument.cashflows().iter().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    assert!((coupon.amount().unwrap()- 150000.0).abs() < 1e-6); 
-                    assert_eq!(coupon.spread(), spread);
-                }
-                _ => {}
-            }
-        });
+        instrument.cashflows().iter().for_each(|cf| if let Cashflow::FloatingRateCoupon(coupon) = cf {
+             assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+            assert_eq!(coupon.spread(), spread);
+       });
 
         let new_spread = 0.01;
         let new_instrument = instrument.set_spread(new_spread);
 
         new_instrument.cashflows().iter().for_each(|cf| {
-            match cf {
-                Cashflow::FloatingRateCoupon(coupon) => {
-                    assert!((coupon.amount().unwrap()- 75000.0).abs() < 1e-6); 
-                    assert_eq!(coupon.spread(), new_spread);
-                }
-                _ => {}
+            if let Cashflow::FloatingRateCoupon(coupon) = cf {
+                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert_eq!(coupon.spread(), new_spread);
             }
         });
 
-
         Ok(())
-
     }
-
-
-
 }

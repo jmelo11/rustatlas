@@ -27,14 +27,14 @@ pub trait Model {
 
         let numerarie = self.gen_numerarie(market_request)?;
 
-        return Ok(MarketData::new(
+        Ok(MarketData::new(
             id,
             self.reference_date(),
             df,
             fwd,
             fx,
             numerarie,
-        ));
+        ))
     }
 
     fn gen_market_data(&self, market_request: &[MarketRequest]) -> Result<Vec<MarketData>> {

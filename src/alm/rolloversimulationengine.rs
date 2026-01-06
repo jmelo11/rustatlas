@@ -2,14 +2,27 @@ use std::collections::BTreeMap;
 
 use super::positiongenerator::{PositionGenerator, RolloverStrategy};
 use crate::{
-    core::marketstore::MarketStore, currencies::enums::Currency, instruments::instrument::Instrument, models::{simplemodel::SimpleModel, traits::Model}, rates::traits::HasReferenceDate, time::{
-        calendar::Calendar, calendars::nullcalendar::NullCalendar, date::Date, daycounters::{actual360::Actual360, traits::DayCountProvider}, enums::{BusinessDayConvention, TimeUnit}, period::Period, schedule::MakeSchedule
-    }, utils::errors::Result, visitors::{
+    core::marketstore::MarketStore,
+    currencies::enums::Currency,
+    instruments::instrument::Instrument,
+    models::{simplemodel::SimpleModel, traits::Model},
+    rates::traits::HasReferenceDate,
+    time::{
+        calendar::Calendar,
+        calendars::nullcalendar::NullCalendar,
+        date::Date,
+        daycounters::{actual360::Actual360, traits::DayCountProvider},
+        enums::{BusinessDayConvention, TimeUnit},
+        period::Period,
+        schedule::MakeSchedule,
+    },
+    utils::errors::Result,
+    visitors::{
         cashflowaggregationvisitor::CashflowsAggregatorConstVisitor,
         fixingvisitor::FixingVisitor,
         indexingvisitor::IndexingVisitor,
         traits::{ConstVisit, Visit},
-    }
+    },
 };
 
 /// # RolloverSimulationEngine
@@ -26,8 +39,7 @@ use crate::{
 ///
 /// ## Details
 /// - Requires redemptions and the currency of the redemptions
-
-pub enum GrowthMode{
+pub enum GrowthMode {
     Annual,
     PaidAmount,
 }
@@ -71,7 +83,7 @@ impl<'a> RolloverSimulationEngine<'a> {
     pub fn with_growth_mode(mut self, mode: GrowthMode) -> Self {
         self.growth_mode = mode;
         self
-    } 
+    }
 
     pub fn with_growth_rate(mut self, rate: f64) -> Self {
         self.growth_rate = rate;
@@ -80,9 +92,13 @@ impl<'a> RolloverSimulationEngine<'a> {
 
     pub fn run(&self, strategies: Vec<RolloverStrategy>) -> Result<Vec<Instrument>> {
         let mut redemptions = self.base_redemptions.clone(); // redemptions for target portfolio
-        
-        let outstanding_0 = self.base_redemptions.clone().iter().fold(0.0, |acc, (_, value)| acc + value); // total outstanding amount
-        let mut outstanding = outstanding_0; 
+
+        let outstanding_0 = self
+            .base_redemptions
+            .clone()
+            .iter()
+            .fold(0.0, |acc, (_, value)| acc + value); // total outstanding amount
+        let mut outstanding = outstanding_0;
         let first_date = self.eval_dates.first().unwrap();
 
         // vector of new positions
@@ -94,23 +110,23 @@ impl<'a> RolloverSimulationEngine<'a> {
             let maturing_amount = redemptions.get(date);
 
             let redemption = match maturing_amount {
-                Some(amount) => *amount, 
-                None => 0.0
+                Some(amount) => *amount,
+                None => 0.0,
             };
             let amount = match self.growth_mode {
                 GrowthMode::Annual => {
                     let delta_date = Actual360::year_fraction(*first_date, *date);
                     outstanding -= redemption;
-                    let placement = outstanding_0* (1.0 + self.growth_rate * delta_date) - outstanding;
+                    let placement =
+                        outstanding_0 * (1.0 + self.growth_rate * delta_date) - outstanding;
                     outstanding += placement;
                     placement
-                }   
+                }
                 GrowthMode::PaidAmount => {
-                    let placement = redemption * (1.0 + self.growth_rate);
-                    placement
+                    redemption * (1.0 + self.growth_rate)
                 }
             };
-            
+
             if amount != 0.0 {
                 let amount_abs = amount.abs();
 
@@ -180,7 +196,14 @@ mod tests {
     use std::sync::{Arc, RwLock};
 
     use crate::{
-        cashflows::{cashflow::{Cashflow, Side}, traits::Payable}, currencies::enums::Currency, instruments::{instrument::RateType, traits::Structure}, math::interpolation::enums::Interpolator, rates::{
+        cashflows::{
+            cashflow::{Cashflow, Side},
+            traits::Payable,
+        },
+        currencies::enums::Currency,
+        instruments::{instrument::RateType, traits::Structure},
+        math::interpolation::enums::Interpolator,
+        rates::{
             interestrate::RateDefinition,
             interestrateindex::iborindex::IborIndex,
             yieldtermstructure::{
@@ -189,12 +212,14 @@ mod tests {
                 flatforwardtermstructure::FlatForwardTermStructure,
                 tenorbasedzeroratetermstructure::TenorBasedZeroRateTermStructure,
             },
-        }, time::{daycounter::DayCounter, enums::Frequency}, visitors::traits::HasCashflows
+        },
+        time::{daycounter::DayCounter, enums::Frequency},
+        visitors::traits::HasCashflows,
     };
 
     use super::*;
 
-    // function to get the outstanding amount at a given date -- Move to a library? 
+    // function to get the outstanding amount at a given date -- Move to a library?
     pub fn get_outstandings_at_date(instruments: &[Instrument], eval_date: Date) -> Result<f64> {
         let outstanding = instruments
             .iter()
@@ -204,20 +229,21 @@ mod tests {
                     Cashflow::Disbursement(f) => {
                         let payment_date = f.payment_date();
                         if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap()*f.side().sign();
+                            local_sum += f.amount().unwrap() * f.side().sign();
                         }
                     }
                     Cashflow::Redemption(f) => {
-                        let payment_date = f.payment_date(); 
+                        let payment_date = f.payment_date();
                         if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap()*f.side().sign();
+                            local_sum += f.amount().unwrap() * f.side().sign();
                         }
                     }
                     _ => {}
                 });
                 local_sum
-            }).sum::<f64>();
-        Ok(outstanding)    
+            })
+            .sum::<f64>();
+        Ok(outstanding)
     }
 
     fn create_store() -> Result<MarketStore> {
@@ -295,7 +321,7 @@ mod tests {
             .mut_index_store()
             .add_index(1, Arc::new(RwLock::new(composite_index_2)))?;
 
-        return Ok(market_store);
+        Ok(market_store)
     }
 
     #[test]
@@ -334,7 +360,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
             RolloverStrategy::new(
                 0.5,
                 Structure::Bullet,
@@ -344,7 +371,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
         ];
         let inst = engine.run(strategies)?;
         let eval_date = Date::new(2023, 9, 2);
@@ -383,7 +411,7 @@ mod tests {
         let engine =
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
                 .with_growth_rate(0.1);
-        
+
         let strategies = vec![
             RolloverStrategy::new(
                 0.5,
@@ -394,7 +422,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
             RolloverStrategy::new(
                 0.5,
                 Structure::Bullet,
@@ -404,7 +433,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
         ];
         let inst = engine.run(strategies)?;
         let eval_date = Date::new(2023, 9, 2);
@@ -439,7 +469,7 @@ mod tests {
         let engine =
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
                 .with_growth_mode(GrowthMode::Annual);
-        
+
         let strategies = vec![
             RolloverStrategy::new(
                 0.5,
@@ -450,7 +480,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
             RolloverStrategy::new(
                 0.5,
                 Structure::Bullet,
@@ -460,7 +491,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
         ];
 
         let inst = engine.run(strategies)?;
@@ -502,7 +534,7 @@ mod tests {
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
                 .with_growth_mode(GrowthMode::Annual)
                 .with_growth_rate(0.1);
-        
+
         let strategies = vec![
             RolloverStrategy::new(
                 0.5,
@@ -513,7 +545,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
             RolloverStrategy::new(
                 0.5,
                 Structure::Bullet,
@@ -523,19 +556,20 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
         ];
 
         let inst = engine.run(strategies)?;
         let eval_date = Date::new(2023, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
         Ok(())
     }
 
@@ -566,7 +600,7 @@ mod tests {
             RolloverSimulationEngine::new(&market_store, base_redemptions, Currency::USD, horizon)
                 .with_growth_mode(GrowthMode::Annual)
                 .with_growth_rate(0.1);
-        
+
         let strategies = vec![
             RolloverStrategy::new(
                 0.5,
@@ -577,7 +611,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
             RolloverStrategy::new(
                 0.5,
                 Structure::Bullet,
@@ -587,7 +622,8 @@ mod tests {
                 RateType::Fixed,
                 RateDefinition::default(),
                 0,
-                None),
+                None,
+            ),
         ];
 
         let inst = engine.run(strategies)?;

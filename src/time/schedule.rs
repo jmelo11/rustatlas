@@ -19,12 +19,12 @@ fn next_twentieth(date: Date, rule: DateGenerationRule) -> Date {
         || rule == DateGenerationRule::CDS2015
     {
         let m = result.month();
-        if m % 3 != 0 {
+        if !m.is_multiple_of(3) {
             let skip = 3 - m % 3;
             result = result + Period::new(skip as i32, TimeUnit::Months);
         }
     }
-    return result;
+    result
 }
 
 fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
@@ -38,12 +38,12 @@ fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
         || rule == DateGenerationRule::CDS2015
     {
         let m = result.month();
-        if m % 3 != 0 {
+        if !m.is_multiple_of(3) {
             let skip = 3 - m % 3;
             result = result - Period::new(skip as i32, TimeUnit::Months);
         }
     }
-    return result;
+    result
 }
 
 /// # Schedule
@@ -118,43 +118,43 @@ impl Schedule {
     }
 
     pub fn dates(&self) -> &Vec<Date> {
-        return &self.dates;
+        &self.dates
     }
 
     pub fn is_regular(&self) -> &Vec<bool> {
-        return &self.is_regular;
+        &self.is_regular
     }
 
     pub fn tenor(&self) -> Period {
-        return self.tenor;
+        self.tenor
     }
 
     pub fn calendar(&self) -> Calendar {
-        return self.calendar.clone();
+        self.calendar.clone()
     }
 
     pub fn convention(&self) -> BusinessDayConvention {
-        return self.convention;
+        self.convention
     }
 
     pub fn termination_date_convention(&self) -> BusinessDayConvention {
-        return self.termination_date_convention;
+        self.termination_date_convention
     }
 
     pub fn rule(&self) -> DateGenerationRule {
-        return self.rule;
+        self.rule
     }
 
     pub fn end_of_month(&self) -> bool {
-        return self.end_of_month;
+        self.end_of_month
     }
 
     pub fn first_date(&self) -> Date {
-        return self.first_date;
+        self.first_date
     }
 
     pub fn next_to_last_date(&self) -> Date {
-        return self.next_to_last_date;
+        self.next_to_last_date
     }
 }
 
@@ -248,43 +248,43 @@ impl MakeSchedule {
         termination_date_convention: BusinessDayConvention,
     ) -> MakeSchedule {
         self.termination_date_convention = termination_date_convention;
-        return self;
+        self
     }
 
     /// Sets the rule.
     pub fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
         self.rule = rule;
-        return self;
+        self
     }
 
     /// Sets the end of month flag.
     pub fn forwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Forward;
-        return self;
+        self
     }
 
     /// Sets the date generation rule to backward.
     pub fn backwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Backward;
-        return self;
+        self
     }
 
     /// Sets the end of month flag.
     pub fn end_of_month(mut self, flag: bool) -> MakeSchedule {
         self.end_of_month = flag;
-        return self;
+        self
     }
 
     /// Sets the first date.
     pub fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
         self.first_date = first_date;
-        return self;
+        self
     }
 
     /// Sets the next to last date.
     pub fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
         self.next_to_last_date = next_to_last_date;
-        return self;
+        self
     }
 }
 
@@ -457,7 +457,7 @@ impl MakeSchedule {
                     //     "endOfMonth convention incompatible with {:?} date generation rule",
                     //     self.rule
                     // );
-                    if self.end_of_month == true {
+                    if self.end_of_month {
                         //panic!("endOfMonth convention incompatible with {:?} date generation rule", self.rule);
                         return Err(AtlasError::MakeScheduleErr(
                             "endOfMonth convention incompatible with date generation rule"
@@ -478,7 +478,7 @@ impl MakeSchedule {
                     self.dates.push(self.effective_date);
                 }
 
-                seed = self.dates.last().unwrap().clone();
+                seed = *self.dates.last().unwrap();
 
                 if self.first_date != Date::empty() {
                     self.dates.push(self.first_date);
@@ -536,7 +536,7 @@ impl MakeSchedule {
                         if self.next_to_last_date != Date::empty()
                             && (self
                                 .calendar
-                                .adjust(self.dates.last().unwrap().clone(), Some(self.convention))
+                                .adjust(*self.dates.last().unwrap(), Some(self.convention))
                                 != self
                                     .calendar
                                     .adjust(self.next_to_last_date, Some(self.convention)))
@@ -550,7 +550,7 @@ impl MakeSchedule {
                         // after adjustment
                         if self
                             .calendar
-                            .adjust(self.dates.last().unwrap().clone(), Some(self.convention))
+                            .adjust(*self.dates.last().unwrap(), Some(self.convention))
                             != self.calendar.adjust(temp, Some(self.convention))
                         {
                             self.dates.push(temp);
@@ -561,7 +561,7 @@ impl MakeSchedule {
                 }
 
                 if self.calendar.adjust(
-                    self.dates.last().unwrap().clone(),
+                    *self.dates.last().unwrap(),
                     Some(self.termination_date_convention),
                 ) != self.calendar.adjust(
                     self.termination_date,
@@ -631,16 +631,15 @@ impl MakeSchedule {
             }
         }
 
-        if self.dates.len() >= 2
-            && self.dates[self.dates.len() - 2] >= self.dates.last().unwrap().clone()
+        if self.dates.len() >= 2 && self.dates[self.dates.len() - 2] >= *self.dates.last().unwrap()
         {
             let is_regular_len = self.is_regular.len();
             let dates_len = self.dates.len();
             if self.is_regular.len() >= 2 {
                 self.is_regular[is_regular_len - 2] =
-                    self.dates[dates_len - 2] == self.dates.last().unwrap().clone();
+                    self.dates[dates_len - 2] == *self.dates.last().unwrap();
             }
-            self.dates[dates_len - 2] = self.dates.last().unwrap().clone();
+            self.dates[dates_len - 2] = *self.dates.last().unwrap();
             self.dates.pop();
             self.is_regular.pop();
         }
@@ -652,7 +651,7 @@ impl MakeSchedule {
             self.is_regular.remove(0);
         }
 
-        return Ok(Schedule::new(
+        Ok(Schedule::new(
             self.tenor,
             self.calendar.clone(),
             self.convention,
@@ -663,7 +662,7 @@ impl MakeSchedule {
             self.next_to_last_date,
             self.dates.clone(),
             self.is_regular.clone(),
-        ));
+        ))
     }
 }
 
@@ -676,8 +675,8 @@ mod tests {
     use super::*;
 
     fn allows_end_of_month(period: Period) -> bool {
-        return period.units() == TimeUnit::Months
-            || period.units() == TimeUnit::Years && period >= Period::new(1, TimeUnit::Months);
+        period.units() == TimeUnit::Months
+            || period.units() == TimeUnit::Years && period >= Period::new(1, TimeUnit::Months)
     }
 
     #[test]
@@ -697,15 +696,15 @@ mod tests {
     fn test_allows_end_of_month() {
         let period = Period::new(1, TimeUnit::Months);
         let result = allows_end_of_month(period);
-        assert_eq!(result, true);
+        assert!(result);
 
         let period = Period::new(1, TimeUnit::Years);
         let result = allows_end_of_month(period);
-        assert_eq!(result, true);
+        assert!(result);
 
         let period = Period::new(1, TimeUnit::Days);
         let result = allows_end_of_month(period);
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -740,7 +739,7 @@ mod tests {
             BusinessDayConvention::Unadjusted
         );
         assert_eq!(make_schedule.rule, DateGenerationRule::Backward);
-        assert_eq!(make_schedule.end_of_month, false);
+        assert!(!make_schedule.end_of_month);
         assert_eq!(make_schedule.first_date, Date::empty());
         assert_eq!(make_schedule.next_to_last_date, Date::empty());
         assert_eq!(make_schedule.dates, Vec::new());
@@ -838,7 +837,7 @@ mod tests {
         let make_schedule = MakeSchedule::new(from, to)
             .with_tenor(tenor)
             .end_of_month(true);
-        assert_eq!(make_schedule.end_of_month, true);
+        assert!(make_schedule.end_of_month);
     }
 
     #[test]
@@ -968,7 +967,7 @@ mod tests {
         let make_schedule = MakeSchedule::new(from, to)
             .with_tenor(tenor)
             .end_of_month(true);
-        assert_eq!(make_schedule.end_of_month, true);
+        assert!(make_schedule.end_of_month);
     }
 
     #[test]
@@ -1040,8 +1039,8 @@ mod tests {
             .with_first_date(first_date)
             .build()
             .unwrap();
-        let dates = schedule.dates();   
+        let dates = schedule.dates();
         assert_eq!(dates[0], from);
-        assert_eq!(dates[1], first_date);        
+        assert_eq!(dates[1], first_date);
     }
 }

@@ -2,10 +2,21 @@ use core::fmt;
 use std::sync::{Arc, RwLock};
 
 use crate::{
-    currencies::{enums::Currency, exchangeratestore::ExchangeRateStore, traits::{AdvanceExchangeRateStoreInTime, CurrencyDetails}}, rates::{
-        indexstore::{IndexStore, ReadIndex}, interestrateindex::traits::InterestRateIndexTrait,
+    currencies::{
+        enums::Currency,
+        exchangeratestore::ExchangeRateStore,
+        traits::{AdvanceExchangeRateStoreInTime, CurrencyDetails},
+    },
+    rates::{
+        indexstore::{IndexStore, ReadIndex},
+        interestrateindex::traits::InterestRateIndexTrait,
         traits::HasReferenceDate,
-    }, time::{date::Date, enums::TimeUnit, period::Period}, utils::{errors::{AtlasError, Result}, tools}
+    },
+    time::{date::Date, enums::TimeUnit, period::Period},
+    utils::{
+        errors::{AtlasError, Result},
+        tools,
+    },
 };
 
 /// # MarketStore
@@ -63,13 +74,13 @@ impl MarketStore {
             Some(ccy) => ccy,
             None => self.local_currency,
         };
-        return self
+       self
             .exchange_rate_store
-            .get_exchange_rate(first_currency, second_currency);
+            .get_exchange_rate(first_currency, second_currency)
     }
 
     pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        return self.index_store.get_index(id);
+        self.index_store.get_index(id)
     }
 
     pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
@@ -80,9 +91,11 @@ impl MarketStore {
             )));
         }
         let new_reference_date = self.reference_date + period;
-        let new_exchange_rate_store = self.exchange_rate_store.advance_to_period(period, &self.index_store)?;
+        let new_exchange_rate_store = self
+            .exchange_rate_store
+            .advance_to_period(period, &self.index_store)?;
         let new_index_store = self.index_store.advance_to_period(period)?;
-        
+
         Ok(MarketStore {
             reference_date: new_reference_date,
             local_currency: self.local_currency,
@@ -113,18 +126,17 @@ impl HasReferenceDate for MarketStore {
 // fecha, moneda, qué curvas tiene cargadas, paridades
 impl fmt::Display for MarketStore {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         let mut msg = "=====================================\n".to_string();
         msg.push_str("======= MarketStore features! =======\n");
         msg.push_str("=====================================\n");
 
         msg.push_str("> Reference Date: ");
         msg.push_str(&self.reference_date.to_string());
-        msg.push_str("\n");
+        msg.push('\n');
         msg.push_str("-------------------------------------\n");
         msg.push_str("> Currency: ");
         msg.push_str(&self.local_currency.code().to_string());
-        msg.push_str("\n");
+        msg.push('\n');
         msg.push_str("-------------------------------------\n");
 
         let index_store = self.index_store();
@@ -138,9 +150,9 @@ impl fmt::Display for MarketStore {
                 Ok(indice) => indice.name().unwrap().to_string(),
                 Err(_) => "".to_string(),
             };
-            if indice_name != "".to_string() {
+            if !indice_name.is_empty() {
                 indices_names.push(indice_name);
-            }   
+            }
         }
 
         let indices_map = index_store.get_index_map().unwrap();
@@ -151,7 +163,6 @@ impl fmt::Display for MarketStore {
         msg.push_str(&indices_names.len().to_string());
         msg.push_str("):\n");
         for indice_name in indices_names {
-
             let indice_idx = match indices_map.get(&indice_name) {
                 Some(idx) => idx.to_string(),
                 None => "".to_string(),
@@ -161,7 +172,7 @@ impl fmt::Display for MarketStore {
             msg.push_str(&indice_idx);
             msg.push_str(" -> ");
             msg.push_str(&indice_name);
-            msg.push_str("\n");
+            msg.push('\n');
         }
 
         let exchange_rate_store = self.exchange_rate_store();
@@ -178,7 +189,7 @@ impl fmt::Display for MarketStore {
             msg.push_str(&currencies.1.code());
             msg.push_str(": ");
             msg.push_str(&value.to_string());
-            msg.push_str("\n");
+            msg.push('\n');
         }
 
         msg.push_str("=====================================\n");

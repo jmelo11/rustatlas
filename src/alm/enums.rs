@@ -147,6 +147,12 @@ impl Portfolio {
     }
 }
 
+impl Default for Portfolio {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// # AccountType
 /// A struct that contains the information needed to define an account type.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]

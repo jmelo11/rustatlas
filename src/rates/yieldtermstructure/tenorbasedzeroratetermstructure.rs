@@ -69,17 +69,17 @@ impl TenorBasedZeroRateTermStructure {
     }
 
     pub fn tenors(&self) -> &Vec<Period> {
-        return &self.tenors;
+        &self.tenors
     }
 
     pub fn spreads(&self) -> &Vec<f64> {
-        return &self.spreads;
+        &self.spreads
     }
 }
 
 impl HasReferenceDate for TenorBasedZeroRateTermStructure {
     fn reference_date(&self) -> Date {
-        return self.reference_date;
+        self.reference_date
     }
 }
 
@@ -133,7 +133,7 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
             new_reference_date,
             self.tenors.clone(),
             self.spreads.clone(),
-            self.rate_definition.clone(),
+            self.rate_definition,
             self.interpolation,
             self.enable_extrapolation,
         )?))
@@ -172,8 +172,8 @@ mod tests {
         let interpolation = Interpolator::Linear;
         let enable_extrapolation = true;
 
-        let years = vec![1, 2, 3, 4, 5];
-        let spreads = vec![0.01, 0.02, 0.03, 0.04, 0.05];
+        let years = [1, 2, 3, 4, 5];
+        let spreads = [0.01, 0.02, 0.03, 0.04, 0.05];
         let tenors = years
             .iter()
             .map(|x| Period::new(*x, TimeUnit::Years))
@@ -182,7 +182,7 @@ mod tests {
         let zero_rate_term_structure = TenorBasedZeroRateTermStructure::new(
             reference_date,
             tenors,
-            spreads,
+            spreads.to_vec(),
             rate_definition,
             interpolation,
             enable_extrapolation,

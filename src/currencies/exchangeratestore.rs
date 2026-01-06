@@ -5,7 +5,11 @@ use std::{
 
 use super::{enums::Currency, traits::AdvanceExchangeRateStoreInTime};
 
-use crate::{rates::indexstore::IndexStore, time::{date::Date, period::Period}, utils::errors::{AtlasError, Result}};
+use crate::{
+    rates::indexstore::IndexStore,
+    time::{date::Date, period::Period},
+    utils::errors::{AtlasError, Result},
+};
 
 /// # ExchangeRateStore
 /// A store for exchange rates.
@@ -22,7 +26,7 @@ pub struct ExchangeRateStore {
 }
 
 impl ExchangeRateStore {
-    pub fn new(date : Date) -> ExchangeRateStore {
+    pub fn new(date: Date) -> ExchangeRateStore {
         ExchangeRateStore {
             reference_date: date,
             exchange_rate_map: HashMap::new(),
@@ -51,8 +55,6 @@ impl ExchangeRateStore {
     }
 
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
-        let first_ccy = first_ccy;
-        let second_ccy = second_ccy;
 
         if first_ccy == second_ccy {
             return Ok(1.0);
@@ -97,21 +99,21 @@ impl ExchangeRateStore {
             first_ccy, second_ccy
         )))
     }
-
 }
 
-
 impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
-    fn advance_to_period(&self, period: Period, index_store: &IndexStore) -> Result<ExchangeRateStore> { 
+    fn advance_to_period(
+        &self,
+        period: Period,
+        index_store: &IndexStore,
+    ) -> Result<ExchangeRateStore> {
         let new_date = self.reference_date + period;
         self.advance_to_date(new_date, index_store)
     }
 
     fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<ExchangeRateStore> {
         if self.reference_date() != index_store.reference_date() {
-            return Err(AtlasError::InvalidValueErr(format!(
-                "Reference date of exchange rate store and index store do not match"
-            )));
+            return Err(AtlasError::InvalidValueErr("Reference date of exchange rate store and index store do not match".to_string()));
         }
 
         let mut new_store = ExchangeRateStore::new(date);
@@ -123,7 +125,7 @@ impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
                     // If the compound factor is not available, we use the last fx rate
                     new_store.add_exchange_rate(*ccy1, *ccy2, *fx);
                 }
-            }    
+            }
         }
         Ok(new_store)
     }

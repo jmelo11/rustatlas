@@ -153,10 +153,10 @@ impl Period {
 
     pub fn from_str(tenor: &str) -> Result<Period> {
         // parse multiple periods and add them
-        let mut chars = tenor.chars();
+        let chars = tenor.chars();
         let mut periods = Vec::new();
         let mut current_period = String::new();
-        while let Some(c) = chars.next() {
+        for c in chars {
             if c.is_numeric() {
                 current_period.push(c);
             } else {
@@ -173,10 +173,10 @@ impl Period {
     }
 
     fn parse_single_period(tenor: &str) -> Result<Period> {
-        let mut chars = tenor.chars();
+        let chars = tenor.chars();
         let mut length = String::new();
         let mut units = String::new();
-        while let Some(c) = chars.next() {
+        for c in chars {
             if c.is_numeric() {
                 length.push(c);
             } else {
@@ -289,11 +289,7 @@ impl Serialize for Period {
 /// ```
 impl PartialOrd for Period {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.length == other.length {
-            self.units.partial_cmp(&other.units)
-        } else {
-            self.length.partial_cmp(&other.length)
-        }
+        Some(self.cmp(other))
     }
 }
 

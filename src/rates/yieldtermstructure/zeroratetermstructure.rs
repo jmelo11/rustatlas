@@ -95,29 +95,29 @@ impl ZeroRateTermStructure {
     }
 
     pub fn dates(&self) -> &Vec<Date> {
-        return &self.dates;
+        &self.dates
     }
 
     pub fn rates(&self) -> &Vec<f64> {
-        return &self.rates;
+        &self.rates
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        return self.rate_definition;
+        self.rate_definition
     }
 
     pub fn enable_extrapolation(&self) -> bool {
-        return self.enable_extrapolation;
+        self.enable_extrapolation
     }
 
     pub fn interpolator(&self) -> Interpolator {
-        return self.interpolator;
+        self.interpolator
     }
 }
 
 impl HasReferenceDate for ZeroRateTermStructure {
     fn reference_date(&self) -> Date {
-        return self.reference_date;
+        self.reference_date
     }
 }
 
@@ -136,7 +136,7 @@ impl YieldProvider for ZeroRateTermStructure {
         );
         let rt = InterestRate::from_rate_definition(rate, self.rate_definition());
         let compound = rt.compound_factor_from_yf(year_fraction);
-        return Ok(1.0 / compound);
+        Ok(1.0 / compound)
     }
 
     fn forward_rate(
@@ -165,7 +165,7 @@ impl YieldProvider for ZeroRateTermStructure {
         )?)
         .rate();
 
-        return Ok(forward_rate);
+        Ok(forward_rate)
     }
 }
 
@@ -211,7 +211,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             )));
         }
         let period = Period::new(days, TimeUnit::Days);
-        return self.advance_to_period(period);
+        self.advance_to_period(period)
     }
 }
 

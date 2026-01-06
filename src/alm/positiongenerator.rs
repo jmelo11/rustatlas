@@ -150,20 +150,20 @@ impl<'a> PositionGenerator<'a> {
         let mut instrument = builder.with_spread(0.01).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
-        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+        let market_store = self.market_store.ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
         let model = SimpleModel::new(market_store);
         let data = model.gen_market_data(&indexing_visitor.request())?;
         let par_visitor = ParValueConstVisitor::new(&data);
-        Ok(par_visitor.visit(&mut instrument)?)
+        par_visitor.visit(&instrument)
     }
 
     fn calculate_par_rate(&self, builder: MakeFixedRateInstrument) -> Result<f64> {
         let mut instrument = builder.with_rate_value(0.03).build()?;
         let indexing_visitor = IndexingVisitor::new();
         let _ = indexing_visitor.visit(&mut instrument);
-        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+        let market_store = self.market_store.ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
         let model = SimpleModel::new(market_store);
@@ -171,7 +171,7 @@ impl<'a> PositionGenerator<'a> {
         let data = model.gen_market_data(&indexing_visitor.request())?;
 
         let par_visitor = ParValueConstVisitor::new(&data);
-        Ok(par_visitor.visit(&mut instrument)?)
+        par_visitor.visit(&instrument)
     }
 
     pub fn generate_position(&self, strategies: &RolloverStrategy) -> Result<Instrument> {
@@ -181,7 +181,7 @@ impl<'a> PositionGenerator<'a> {
             .ok_or(AtlasError::ValueNotSetErr("Amount".into()))?;
         let notional = amount * strategies.weight();
 
-        let market_store = self.market_store.clone().ok_or(AtlasError::ValueNotSetErr(
+        let market_store = self.market_store.ok_or(AtlasError::ValueNotSetErr(
             "Market store not set for loan generator".into(),
         ))?;
         let start_date = market_store.reference_date();
@@ -278,7 +278,7 @@ mod tests {
         market_store
             .mut_index_store()
             .add_index(0, discount_index)?;
-        return Ok(market_store);
+        Ok(market_store)
     }
 
     #[test]

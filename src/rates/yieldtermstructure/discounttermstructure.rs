@@ -85,11 +85,11 @@ impl DiscountTermStructure {
         }
 
         // order dates y discount_factors
-        let mut zipped = dates.into_iter().zip(discount_factors.into_iter()).collect::<Vec<_>>();
+        let mut zipped = dates.into_iter().zip(discount_factors).collect::<Vec<_>>();
         zipped.sort_by(|a, b| a.0.cmp(&b.0));
-        let (dates, discount_factors) : (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
+        let (dates, discount_factors): (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
 
-        // discount_factors[0] needs to be 1.0 
+        // discount_factors[0] needs to be 1.0
         if discount_factors[0] != 1.0 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
@@ -113,29 +113,29 @@ impl DiscountTermStructure {
     }
 
     pub fn dates(&self) -> &Vec<Date> {
-        return &self.dates;
+        &self.dates
     }
 
     pub fn discount_factors(&self) -> &Vec<f64> {
-        return &self.discount_factors;
+        &self.discount_factors
     }
 
     pub fn day_counter(&self) -> DayCounter {
-        return self.day_counter;
+        self.day_counter
     }
 
     pub fn enable_extrapolation(&self) -> bool {
-        return self.enable_extrapolation;
+        self.enable_extrapolation
     }
 
     pub fn interpolator(&self) -> Interpolator {
-        return self.interpolator;
+        self.interpolator
     }
 }
 
 impl HasReferenceDate for DiscountTermStructure {
     fn reference_date(&self) -> Date {
-        return self.reference_date;
+        self.reference_date
     }
 }
 
@@ -160,7 +160,7 @@ impl YieldProvider for DiscountTermStructure {
             &self.discount_factors,
             self.enable_extrapolation,
         );
-        return Ok(discount_factor);
+        Ok(discount_factor)
     }
 
     fn forward_rate(
@@ -176,9 +176,7 @@ impl YieldProvider for DiscountTermStructure {
         let comp_factor = discount_factor_to_star / discount_factor_to_end;
         let t = self.day_counter().year_fraction(start_date, end_date);
 
-        return Ok(
-            InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t)?.rate(),
-        );
+        Ok(InterestRate::implied_rate(comp_factor, self.day_counter(), comp, freq, t)?.rate())
     }
 }
 
@@ -217,7 +215,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             ));
         }
         let period = Period::new(days, TimeUnit::Days);
-        return self.advance_to_period(period);
+        self.advance_to_period(period)
     }
 }
 
@@ -386,7 +384,6 @@ mod tests {
                 .unwrap()
         );
     }
-
 
     #[test]
     fn order_dates() {

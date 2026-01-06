@@ -43,7 +43,7 @@ impl UnitedStates {
 
     fn is_washington_birthday(day: u32, month: u32, year: i32, weekday: Weekday) -> bool {
         match year {
-            y if y >= 1971 => (day >= 15 && day <= 21) && weekday == Weekday::Mon && month == 2,
+            y if y >= 1971 => (15..=21).contains(&day) && weekday == Weekday::Mon && month == 2,
             _ => {
                 (day == 22
                     || (day == 23 && weekday == Weekday::Mon)
@@ -71,7 +71,7 @@ impl UnitedStates {
     }
 
     fn is_thanksgiving(day: u32, month: u32, weekday: Weekday) -> bool {
-        (day >= 22 && day <= 28) && weekday == Weekday::Thu && month == 11
+        (22..=29).contains(&day) && weekday == Weekday::Thu && month == 11
     }
 
     fn is_christmas(day: u32, month: u32, weekday: Weekday) -> bool {
@@ -140,7 +140,7 @@ impl ImplCalendar for UnitedStates {
             if self.is_holiday(&d) {
                 holidays.push(d);
             }
-            d = d + 1;
+            d += 1;
         }
         if include_weekends {
             holidays
@@ -159,7 +159,7 @@ impl ImplCalendar for UnitedStates {
             if self.is_business_day(d.base_date()) {
                 business_days.push(d);
             }
-            d = d + 1;
+            d += 1;
         }
         business_days
     }

@@ -21,6 +21,12 @@ impl NullCalendar {
     }
 }
 
+impl Default for NullCalendar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImplCalendar for NullCalendar {
     fn impl_name(&self) -> String {
         "NullCalendar".to_string()
@@ -71,7 +77,7 @@ mod tests {
             removed_holidays: HashSet::new(),
         };
         assert_eq!(cal.name(), "NullCalendar");
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 1)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 2)), true);
+        assert!(cal.is_business_day(&Date::new(2021, 1, 1)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 2)));
     }
 }

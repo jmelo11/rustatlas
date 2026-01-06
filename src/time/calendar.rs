@@ -1,7 +1,13 @@
 use serde::Serialize;
 
 use super::calendars::{
-    brazil::Brazil, chile::Chile, nullcalendar::NullCalendar, target::TARGET, traits::{ImplCalendar, IsCalendar}, unitedstates::UnitedStates, weekendsonly::WeekendsOnly
+    brazil::Brazil,
+    chile::Chile,
+    nullcalendar::NullCalendar,
+    target::TARGET,
+    traits::{ImplCalendar, IsCalendar},
+    unitedstates::UnitedStates,
+    weekendsonly::WeekendsOnly,
 };
 use crate::{
     time::date::Date,
@@ -186,10 +192,15 @@ impl ImplCalendar for Calendar {
 
 impl IsCalendar for Calendar {}
 
-
 #[cfg(test)]
 mod test {
-    use crate::time::{calendar::Calendar, calendars::{brazil::Brazil, chile::Chile, nullcalendar::NullCalendar, target::TARGET, traits::ImplCalendar, unitedstates::UnitedStates, weekendsonly::WeekendsOnly}};
+    use crate::time::{
+        calendar::Calendar,
+        calendars::{
+            brazil::Brazil, chile::Chile, nullcalendar::NullCalendar, target::TARGET,
+            traits::ImplCalendar, unitedstates::UnitedStates, weekendsonly::WeekendsOnly,
+        },
+    };
 
     #[test]
     fn test_create_calendar() {
@@ -206,5 +217,4 @@ mod test {
         let calendar = Calendar::Chile(Chile::default());
         assert_eq!(calendar.impl_name(), "Chile(SSE)");
     }
-
 }

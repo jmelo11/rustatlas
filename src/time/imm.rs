@@ -14,10 +14,7 @@ impl IMM {
         if !main_cycle {
             return true;
         }
-        match date.month() {
-            3 | 6 | 9 | 12 => return true,
-            _ => return false,
-        }
+        matches!(date.month(), 3 | 6 | 9 | 12)
     }
 
     pub fn is_imm_code(in_: String, main_cycle: bool) -> bool {
@@ -26,7 +23,7 @@ impl IMM {
         }
         let str1 = "0123456789";
         let loc = str1.find(&in_[1..2]);
-        if loc == None {
+        if loc.is_none() {
             return false;
         }
         let str1 = if main_cycle {
@@ -35,7 +32,7 @@ impl IMM {
             "fghjkmnquvxzFGHJKMNQUVXZ"
         };
         let loc = str1.find(&in_[0..1]);
-        return loc != None;
+        loc.is_some()
     }
 
     pub fn code(imm_date: Date) -> String {
@@ -44,18 +41,18 @@ impl IMM {
         }
         let y = imm_date.year() % 10;
         match imm_date.month() {
-            1 => return format!("F{}", y),
-            2 => return format!("G{}", y),
-            3 => return format!("H{}", y),
-            4 => return format!("J{}", y),
-            5 => return format!("K{}", y),
-            6 => return format!("M{}", y),
-            7 => return format!("N{}", y),
-            8 => return format!("Q{}", y),
-            9 => return format!("U{}", y),
-            10 => return format!("V{}", y),
-            11 => return format!("X{}", y),
-            12 => return format!("Z{}", y),
+            1 => format!("F{}", y),
+            2 => format!("G{}", y),
+            3 => format!("H{}", y),
+            4 => format!("J{}", y),
+            5 => format!("K{}", y),
+            6 => format!("M{}", y),
+            7 => format!("N{}", y),
+            8 => format!("Q{}", y),
+            9 => format!("U{}", y),
+            10 => format!("V{}", y),
+            11 => format!("X{}", y),
+            12 => format!("Z{}", y),
             _ => panic!("Invalid month number"),
         }
     }
@@ -91,12 +88,12 @@ impl IMM {
         }
         let reference_year = reference_date.year() % 10;
         y += reference_date.year() - reference_year;
-        
+
         let result = IMM::next_date(Date::new(y, m, 1), false);
         if result < reference_date {
             return IMM::next_date(Date::new(y + 10, m, 1), false);
         }
-        return result;
+        result
     }
 
     pub fn next_date(reference_date: Date, main_cycle: bool) -> Date {
@@ -121,23 +118,23 @@ impl IMM {
         if result <= reference_date {
             return IMM::next_date(Date::new(y, m, 22), main_cycle);
         }
-        return result;
+        result
     }
 
     pub fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
         let imm_date = IMM::date(imm_code, reference_date);
-        return IMM::next_date(imm_date + 1, main_cycle);
+        IMM::next_date(imm_date + 1, main_cycle)
     }
 
     pub fn next_code(d: Date, main_cycle: bool) -> String {
         let next = IMM::next_date(d, main_cycle);
-        return IMM::code(next);
+        IMM::code(next)
     }
 
     pub fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
         let imm_date = IMM::date(imm_code, reference_date);
         let next = IMM::next_date(imm_date, main_cycle);
-        return IMM::code(next);
+        IMM::code(next)
     }
 }
 
@@ -149,32 +146,32 @@ mod tests {
     #[test]
     fn test_is_imm_date() {
         let d = Date::new(2023, 8, 1);
-        assert_eq!(IMM::is_imm_date(d, false), false);
+        assert!(!IMM::is_imm_date(d, false));
 
         let d = Date::new(2023, 8, 16);
-        assert_eq!(IMM::is_imm_date(d, false), true);
+        assert!(IMM::is_imm_date(d, false));
 
         let d = Date::new(2023, 8, 16);
-        assert_eq!(IMM::is_imm_date(d, true), false);
+        assert!(!IMM::is_imm_date(d, true));
 
         let d = Date::new(2023, 9, 20);
-        assert_eq!(IMM::is_imm_date(d, true), true);
-        assert_eq!(IMM::is_imm_date(d, false), true);
+        assert!(IMM::is_imm_date(d, true));
+        assert!(IMM::is_imm_date(d, false));
     }
 
     #[test]
     fn test_is_imm_code() {
         let s = "F3".to_string();
-        assert_eq!(IMM::is_imm_code(s, false), true);
+        assert!(IMM::is_imm_code(s, false));
 
         let s = "F3".to_string();
-        assert_eq!(IMM::is_imm_code(s, true), false);
+        assert!(!IMM::is_imm_code(s, true));
 
         let s = "Z3".to_string();
-        assert_eq!(IMM::is_imm_code(s, true), true);
+        assert!(IMM::is_imm_code(s, true));
 
         let s = "Z3".to_string();
-        assert_eq!(IMM::is_imm_code(s, false), true);
+        assert!(IMM::is_imm_code(s, false));
     }
 
     #[test]
@@ -215,15 +212,24 @@ mod tests {
     fn test_next_date_with_code() {
         let d = Date::new(2023, 8, 16);
         let code = "Q3".to_string();
-        assert_eq!(IMM::next_date_with_code(code, false, d), Date::new(2023, 9, 20));
+        assert_eq!(
+            IMM::next_date_with_code(code, false, d),
+            Date::new(2023, 9, 20)
+        );
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
-        assert_eq!(IMM::next_date_with_code(code, false, d), Date::new(2023, 10, 18));
+        assert_eq!(
+            IMM::next_date_with_code(code, false, d),
+            Date::new(2023, 10, 18)
+        );
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
-        assert_eq!(IMM::next_date_with_code(code, true, d), Date::new(2023, 12, 20));
+        assert_eq!(
+            IMM::next_date_with_code(code, true, d),
+            Date::new(2023, 12, 20)
+        );
     }
 
     #[test]

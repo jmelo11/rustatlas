@@ -164,16 +164,13 @@ impl MakeFixedRateLeg {
                     rate_definition.day_counter(),
                 ));
             }
-            None => match self.rate {
-                Some(rate) => {
-                    self.rate = Some(InterestRate::new(
-                        rate.rate(),
-                        rate_definition.compounding(),
-                        rate_definition.frequency(),
-                        rate_definition.day_counter(),
-                    ));
-                }
-                None => (),
+            None => if let Some(rate) = self.rate {
+                self.rate = Some(InterestRate::new(
+                     rate.rate(),
+                    rate_definition.compounding(),
+                    rate_definition.frequency(),
+                    rate_definition.day_counter(),
+               ));
             },
         }
         self
@@ -191,16 +188,13 @@ impl MakeFixedRateLeg {
                     rate.day_counter(),
                 ));
             }
-            None => match self.rate_definition {
-                Some(rate_definition) => {
-                    self.rate = Some(InterestRate::new(
-                        rate_value,
-                        rate_definition.compounding(),
-                        rate_definition.frequency(),
-                        rate_definition.day_counter(),
-                    ));
-                }
-                None => (),
+            None => if let Some(rate_definition) = self.rate_definition {
+                self.rate = Some(InterestRate::new(
+                    rate_value,
+                   rate_definition.compounding(),
+                   rate_definition.frequency(),
+                    rate_definition.day_counter(),
+                ));
             },
         }
         self
@@ -302,6 +296,12 @@ impl MakeFixedRateLeg {
     }
 }
 
+impl Default for MakeFixedRateLeg {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MakeFixedRateLeg {
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
@@ -377,7 +377,7 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
@@ -393,18 +393,15 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id)),
-                    None => (),
-                }
+                if let Some(id) = self.discount_curve_id { cashflows
+                .iter_mut()
+                 .for_each(|cf| cf.set_discount_curve_id(id)) }
 
                 let leg = Leg::new(
                     structure,
@@ -465,12 +462,9 @@ impl MakeFixedRateLeg {
                     cashflows.push(cashflow);
                 }
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id)),
-                    None => (),
-                }
+                if let Some(id) = self.discount_curve_id { cashflows
+                 .iter_mut()
+                .for_each(|cf| cf.set_discount_curve_id(id)) }
 
                 Ok(Leg::new(
                     structure,
@@ -560,7 +554,7 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
@@ -580,12 +574,9 @@ impl MakeFixedRateLeg {
                 //let infered_cashflows = infer_cashflows_from_amounts(dates, amounts, side, currency);
                 //cashflows.extend(infered_cashflows);
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id)),
-                    None => (),
-                }
+                if let Some(id) = self.discount_curve_id { cashflows
+                 .iter_mut()
+               .for_each(|cf| cf.set_discount_curve_id(id)) }
 
                 Ok(Leg::new(
                     structure,
@@ -642,7 +633,7 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
@@ -658,18 +649,15 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id)),
-                    None => (),
-                }
+                if let Some(id) = self.discount_curve_id { cashflows
+                 .iter_mut()
+                .for_each(|cf| cf.set_discount_curve_id(id)) }
 
                 Ok(Leg::new(
                     structure,
@@ -739,7 +727,7 @@ impl MakeFixedRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
@@ -766,12 +754,9 @@ impl MakeFixedRateLeg {
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id)),
-                    None => (),
-                }
+                if let Some(id) = self.discount_curve_id { cashflows
+                 .iter_mut()
+                 .for_each(|cf| cf.set_discount_curve_id(id)) }
 
                 Ok(Leg::new(
                     structure,
@@ -791,8 +776,8 @@ impl MakeFixedRateLeg {
 
 fn build_coupons_from_notionals(
     cashflows: &mut Vec<Cashflow>,
-    dates: &Vec<Date>,
-    notionals: &Vec<f64>,
+    dates: &[Date],
+    notionals: &[f64],
     rate: InterestRate,
     side: Side,
     currency: Currency,
@@ -844,9 +829,9 @@ fn calculate_equal_payment_redemptions(
 ) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
         dates: dates.clone(),
-        rate: rate,
+        rate,
     };
-    let (min, max) = (-0.1 , 1.5 );
+    let (min, max) = (-0.1, 1.5);
     let solver = BrentRoot::new(min, max, 1e-6);
 
     let init_param = 1.0 / (dates.len() as f64);

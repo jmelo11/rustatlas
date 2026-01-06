@@ -110,12 +110,10 @@ pub trait IsCalendar: ImplCalendar {
             self.impl_days_between(from, to, include_first, include_last)
         } else if from > to {
             -self.impl_days_between(to, from, include_last, include_first)
+        } else if include_first && include_last && self.is_business_day(&from) {
+            1
         } else {
-            if include_first && include_last && self.is_business_day(&from) {
-                1
-            } else {
-                0
-            }
+            0
         }
     }
 
