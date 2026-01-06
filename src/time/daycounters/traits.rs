@@ -1,6 +1,5 @@
 use crate::time::date::Date;
 
-
 /// # DayCountProvider
 /// Day count convention trait.
 pub trait DayCountProvider {

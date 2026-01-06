@@ -72,29 +72,29 @@ impl SimpleCashflow {
 
 impl HasCurrency for SimpleCashflow {
     fn currency(&self) -> Result<Currency> {
-        return Ok(self.currency);
+        Ok(self.currency)
     }
 }
 
 impl HasDiscountCurveId for SimpleCashflow {
     fn discount_curve_id(&self) -> Result<usize> {
-        return self
+        self
             .discount_curve_id
-            .ok_or(AtlasError::ValueNotSetErr("Discount curve id".to_string()));
+            .ok_or(AtlasError::ValueNotSetErr("Discount curve id".to_string()))
     }
 }
 
 impl HasForecastCurveId for SimpleCashflow {
     fn forecast_curve_id(&self) -> Result<usize> {
-        return Err(AtlasError::InvalidValueErr(
+        Err(AtlasError::InvalidValueErr(
             "No forecast curve id for simple cashflow".to_string(),
-        ));
+        ))
     }
 }
 
 impl Registrable for SimpleCashflow {
     fn id(&self) -> Result<usize> {
-        return self.id.ok_or(AtlasError::ValueNotSetErr("Id".to_string()));
+        self.id.ok_or(AtlasError::ValueNotSetErr("Id".to_string()))
     }
 
     fn set_id(&mut self, id: usize) {
@@ -107,32 +107,32 @@ impl Registrable for SimpleCashflow {
         let currency = self.currency()?;
         let currency_request = ExchangeRateRequest::new(currency, None, None);
         let discount_request = DiscountFactorRequest::new(discount_curve_id, self.payment_date);
-        return Ok(MarketRequest::new(
+        Ok(MarketRequest::new(
             id,
             Some(discount_request),
             None,
             Some(currency_request),
-        ));
+        ))
     }
 }
 
 impl Payable for SimpleCashflow {
     fn amount(&self) -> Result<f64> {
-        return self.amount.ok_or(AtlasError::ValueNotSetErr(
+        self.amount.ok_or(AtlasError::ValueNotSetErr(
             "Amount not set for simple cashflow".to_string(),
-        ));
+        ))
     }
     fn side(&self) -> Side {
-        return self.side;
+        self.side
     }
 
     fn payment_date(&self) -> Date {
-        return self.payment_date;
+        self.payment_date
     }
 }
 
 impl Expires for SimpleCashflow {
     fn is_expired(&self, date: Date) -> bool {
-        return self.payment_date < date;
+        self.payment_date < date
     }
 }

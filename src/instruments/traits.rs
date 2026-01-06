@@ -80,7 +80,7 @@ impl From<CashflowType> for String {
 }
 
 // Infer cashflows from amounts to handle negative amounts and sides.
-pub fn infer_cashflows_from_amounts(    
+pub fn infer_cashflows_from_amounts(
     dates: &[Date],
     amounts: &[f64],
     side: Side,
@@ -89,7 +89,8 @@ pub fn infer_cashflows_from_amounts(
     let mut cashflows = Vec::new();
     dates.iter().zip(amounts).for_each(|(date, amount)| {
         if *amount < 0.0 {
-            let cashflow = SimpleCashflow::new(*date, currency, side.inverse()).with_amount(amount.abs());
+            let cashflow =
+                SimpleCashflow::new(*date, currency, side.inverse()).with_amount(amount.abs());
             match side.inverse() {
                 Side::Receive => cashflows.push(Cashflow::Redemption(cashflow)),
                 Side::Pay => cashflows.push(Cashflow::Disbursement(cashflow)),
@@ -124,7 +125,6 @@ pub fn add_cashflows_to_vec(
     });
 }
 
-
 // Calculate the notionals for a given structure
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
     match structure {
@@ -153,20 +153,19 @@ pub fn calculate_outstanding(
     let mut outstanding = Vec::new();
 
     // Combine disbursements and redemptions into a timeline of events
-    let mut timeline: Vec<(Date, f64)> =
-        disbursements.iter().map(|(k, v)| (k.clone(), *v)).collect();
+    let mut timeline: Vec<(Date, f64)> = disbursements.iter().map(|(k, v)| (*k, *v)).collect();
 
     for (date, amount) in redemptions.iter() {
         match timeline.iter_mut().find(|(d, _)| *d == *date) {
             Some((_, a)) => *a -= amount,
-            None => timeline.push((date.clone(), -amount)),
+            None => timeline.push((*date, -amount)),
         }
     }
 
     // Add zero-value entries for additional dates not in the timeline
     for date in additional_dates {
         if timeline.iter().all(|(d, _)| d != date) {
-            timeline.push((date.clone(), 0.0));
+            timeline.push((*date, 0.0));
         }
     }
 
@@ -176,13 +175,13 @@ pub fn calculate_outstanding(
     // Process the timeline
     let mut event_iter = timeline.iter();
     let (mut period_start, mut current_amount) = match event_iter.next() {
-        Some((date, amount)) => (date.clone(), *amount),
+        Some((date, amount)) => (*date, *amount),
         None => return Vec::new(),
     };
 
     for (date, amount) in event_iter {
-        let period_end = date.clone();
-        outstanding.push((period_start.clone(), period_end.clone(), current_amount));
+        let period_end = *date;
+        outstanding.push((period_start, period_end, current_amount));
         current_amount += amount;
         period_start = period_end;
     }

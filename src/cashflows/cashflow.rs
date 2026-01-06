@@ -85,10 +85,7 @@ impl Cashflow {
     }
 
     pub fn set_forecast_curve_id(&mut self, id: usize) {
-        match self {
-            Cashflow::FloatingRateCoupon(coupon) => coupon.set_forecast_curve_id(id),
-            _ => (),
-        }
+        if let Cashflow::FloatingRateCoupon(coupon) = self { coupon.set_forecast_curve_id(id) }
     }
 }
 
@@ -221,10 +218,7 @@ impl InterestAccrual for Cashflow {
 
 impl RequiresFixingRate for Cashflow {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
-        match self {
-            Cashflow::FloatingRateCoupon(coupon) => coupon.set_fixing_rate(fixing_rate),
-            _ => (),
-        }
+        if let Cashflow::FloatingRateCoupon(coupon) = self { coupon.set_fixing_rate(fixing_rate) }
     }
 }
 

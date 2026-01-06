@@ -2,7 +2,10 @@ use serde::{Deserialize, Serialize};
 
 use super::instrument::RateType;
 use crate::{
-    cashflows::{cashflow::{Cashflow, Side}, traits::{InterestAccrual, Payable}},
+    cashflows::{
+        cashflow::{Cashflow, Side},
+        traits::{InterestAccrual, Payable},
+    },
     core::traits::HasCurrency,
     currencies::enums::Currency,
     rates::interestrate::RateDefinition,
@@ -154,13 +157,17 @@ impl DoubleRateInstrument {
         self.mut_cashflows().iter_mut().for_each(|cf| {
             if cf.payment_date() <= change_rate_date {
                 match cf {
-                    Cashflow::FloatingRateCoupon(coupon) => { coupon.set_spread(rate); }
-                    Cashflow::FixedRateCoupon(coupon) => { coupon.set_rate_value(rate); }
+                    Cashflow::FloatingRateCoupon(coupon) => {
+                        coupon.set_spread(rate);
+                    }
+                    Cashflow::FixedRateCoupon(coupon) => {
+                        coupon.set_rate_value(rate);
+                    }
                     _ => {}
                 }
             }
         });
-        self 
+        self
     }
 
     pub fn set_second_rate(mut self, rate: f64) -> Self {
@@ -168,13 +175,17 @@ impl DoubleRateInstrument {
         self.mut_cashflows().iter_mut().for_each(|cf| {
             if cf.payment_date() > change_rate_date {
                 match cf {
-                    Cashflow::FloatingRateCoupon(coupon) => { coupon.set_spread(rate); }
-                    Cashflow::FixedRateCoupon(coupon) => { coupon.set_rate_value(rate); }
+                    Cashflow::FloatingRateCoupon(coupon) => {
+                        coupon.set_spread(rate);
+                    }
+                    Cashflow::FixedRateCoupon(coupon) => {
+                        coupon.set_rate_value(rate);
+                    }
                     _ => {}
                 }
             }
         });
-        self 
+        self
     }
 
     pub fn set_rates(mut self, first_rate: Option<f64>, second_rate: Option<f64>) -> Self {
@@ -184,7 +195,7 @@ impl DoubleRateInstrument {
         if let Some(rate) = second_rate {
             self = self.set_second_rate(rate);
         }
-        self 
+        self
     }
 }
 
@@ -193,7 +204,6 @@ impl HasCurrency for DoubleRateInstrument {
         Ok(self.currency)
     }
 }
-
 
 impl InterestAccrual for DoubleRateInstrument {
     fn accrual_start_date(&self) -> Result<Date> {

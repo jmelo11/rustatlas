@@ -27,9 +27,10 @@ pub trait HasCashflows {
             .for_each(|cf| cf.set_discount_curve_id(id));
     }
     fn set_forecast_curve_id(&mut self, id: usize) {
-        self.mut_cashflows().iter_mut().for_each(|cf| match cf {
-            Cashflow::FloatingRateCoupon(frcf) => frcf.set_forecast_curve_id(id),
-            _ => (),
+        self.mut_cashflows().iter_mut().for_each(|cf| {
+            if let Cashflow::FloatingRateCoupon(frcf) = cf {
+                frcf.set_forecast_curve_id(id)
+            }
         });
     }
 
@@ -38,30 +39,21 @@ pub trait HasCashflows {
             CashflowType::Disbursement => self
                 .cashflows()
                 .iter()
-                .filter(|cf| match cf {
-                    Cashflow::Disbursement(_) => true,
-                    _ => false,
-                })
+                .filter(|cf| matches!(cf, Cashflow::Disbursement(_)))
                 .filter(|cf| cf.payment_date() > reference_date)
                 .min_by(|cf1, cf2| cf1.payment_date().cmp(&cf2.payment_date()))
                 .cloned(),
             CashflowType::Redemption => self
                 .cashflows()
                 .iter()
-                .filter(|cf| match cf {
-                    Cashflow::Redemption(_) => true,
-                    _ => false,
-                })
+                .filter(|cf| matches!(cf, Cashflow::Redemption(_)))
                 .filter(|cf| cf.payment_date() > reference_date)
                 .min_by(|cf1, cf2| cf1.payment_date().cmp(&cf2.payment_date()))
                 .cloned(),
             CashflowType::FixedRateCoupon => self
                 .cashflows()
                 .iter()
-                .filter(|cf| match cf {
-                    Cashflow::FixedRateCoupon(_) => true,
-                    _ => false,
-                })
+                .filter(|cf| matches!(cf, Cashflow::FixedRateCoupon(_)))
                 .filter(|cf| cf.payment_date() > reference_date)
                 .min_by(|cf1, cf2| cf1.payment_date().cmp(&cf2.payment_date()))
                 .cloned(),
@@ -69,10 +61,7 @@ pub trait HasCashflows {
             CashflowType::FloatingRateCoupon => self
                 .cashflows()
                 .iter()
-                .filter(|cf| match cf {
-                    Cashflow::FloatingRateCoupon(_) => true,
-                    _ => false,
-                })
+                .filter(|cf| matches!(cf, Cashflow::FloatingRateCoupon(_)))
                 .filter(|cf| cf.payment_date() > reference_date)
                 .min_by(|cf1, cf2| cf1.payment_date().cmp(&cf2.payment_date()))
                 .cloned(),

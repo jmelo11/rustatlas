@@ -91,12 +91,9 @@ impl FloatingRateCoupon {
     pub fn set_spread(&mut self, spread: f64) {
         self.spread = spread;
         // if fixing rate is set, update the cashflow
-        match self.fixing_rate {
-            Some(fixing_rate) => {
-                self.set_fixing_rate(fixing_rate);
-            },
-            None => {}
-        }
+if let Some(fixing_rate) = self.fixing_rate {
+            self.set_fixing_rate(fixing_rate);
+         }
     }
 
     pub fn set_notional(&mut self, notional: f64) {
@@ -129,10 +126,10 @@ impl FloatingRateCoupon {
 
 impl InterestAccrual for FloatingRateCoupon {
     fn accrual_start_date(&self) -> Result<Date> {
-        return Ok(self.accrual_start_date);
+        Ok(self.accrual_start_date)
     }
     fn accrual_end_date(&self) -> Result<Date> {
-        return Ok(self.accrual_end_date);
+        Ok(self.accrual_end_date)
     }
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let fixing = self
@@ -146,7 +143,7 @@ impl InterestAccrual for FloatingRateCoupon {
         let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date)?;
         let acc_2 = self.notional * (rate.compound_factor(d1, d2) - 1.0);
 
-        return Ok(acc_1 - acc_2);
+        Ok(acc_1 - acc_2)
     }
 }
 
@@ -162,13 +159,13 @@ impl RequiresFixingRate for FloatingRateCoupon {
 
 impl Payable for FloatingRateCoupon {
     fn amount(&self) -> Result<f64> {
-        return self.cashflow.amount();
+        self.cashflow.amount()
     }
     fn side(&self) -> Side {
-        return self.cashflow.side();
+        self.cashflow.side()
     }
     fn payment_date(&self) -> Date {
-        return self.cashflow.payment_date();
+        self.cashflow.payment_date()
     }
 }
 

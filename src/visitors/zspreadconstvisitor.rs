@@ -105,7 +105,7 @@ where
             .iter()
             .try_fold(0.0, |acc, cf| -> Result<f64> {
                 match cf {
-                    Cashflow::Disbursement(_) => return Ok(acc),
+                    Cashflow::Disbursement(_) => Ok(acc),
                     _ => {
                         let cf_npv = self.cashflow_npv(cf, *param)?;
                         Ok(acc + cf_npv)

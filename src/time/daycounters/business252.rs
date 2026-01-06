@@ -1,7 +1,10 @@
 use super::traits::DayCountProvider;
-use crate::time::{calendar::Calendar, calendars::{brazil::Brazil, traits::ImplCalendar}, date::Date};
 use crate::time::calendars::brazil::Market;
-
+use crate::time::{
+    calendar::Calendar,
+    calendars::{brazil::Brazil, traits::ImplCalendar},
+    date::Date,
+};
 
 /// # Business252
 /// Business/252 day count convention.
@@ -9,7 +12,7 @@ use crate::time::calendars::brazil::Market;
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
-/// 
+///
 /// let start = Date::new(2020, 1, 1);
 /// let end = Date::new(2020, 2, 1);
 /// assert_eq!(Business252::day_count(start, end), 22);
@@ -19,15 +22,12 @@ pub struct Business252;
 
 impl DayCountProvider for Business252 {
     fn day_count(start: Date, end: Date) -> i64 {
-
         let calendar = Calendar::Brazil(Brazil::new(Market::Settlement));
 
         if end < start {
-            
-            return  -(calendar.business_day_list(start, end).len() as i64);
-        }
-        else {
-            return calendar.business_day_list(start, end).len() as i64
+            -(calendar.business_day_list(start, end).len() as i64)
+        } else {
+            calendar.business_day_list(start, end).len() as i64
         }
     }
 
@@ -49,5 +49,4 @@ mod test {
         assert_eq!(Business252::day_count(start, end), 22);
         assert_eq!(Business252::year_fraction(start, end), 22.0 / 252.0);
     }
-
 }

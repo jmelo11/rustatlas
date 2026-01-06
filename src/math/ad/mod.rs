@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
 thread_local! {
-    static TAPE: RefCell<Vec<Node>> = RefCell::new(Vec::new());
+    static TAPE: RefCell<Vec<Node>> = const { RefCell::new(Vec::new()) };
 }
 
 #[derive(Clone, Copy)]
@@ -216,4 +216,3 @@ mod tests {
         assert!((grad[y.id()] + 1.25).abs() < 1e-12);
     }
 }
-

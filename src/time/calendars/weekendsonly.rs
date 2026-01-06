@@ -20,6 +20,12 @@ impl WeekendsOnly {
     }
 }
 
+impl Default for WeekendsOnly {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ImplCalendar for WeekendsOnly {
     fn impl_is_business_day(&self, date: &Date) -> bool {
         !self.is_weekend(&date.weekday())
@@ -72,7 +78,7 @@ mod tests {
             removed_holidays: HashSet::new(),
         };
         assert_eq!(cal.name(), "WeekendsOnly");
-        assert_eq!(cal.is_business_day(&Date::new(2023, 8, 23)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2023, 8, 25)), true);
+        assert!(cal.is_business_day(&Date::new(2023, 8, 23)));
+        assert!(cal.is_business_day(&Date::new(2023, 8, 25)));
     }
 }

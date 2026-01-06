@@ -68,30 +68,30 @@ impl NaiveDateExt for NaiveDate {
 
     fn date_has_leap_year(&self) -> bool {
         let year = self.year();
-        return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+        year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
     }
 
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate {
         let date = *self;
         let flag = n >= 0;
-        return match units {
+        match units {
             TimeUnit::Days => date + Duration::try_days(n as i64).unwrap(),
             TimeUnit::Weeks => date + Duration::try_days(7 * n as i64).unwrap(),
             TimeUnit::Months => {
                 if flag {
-                    return date + Months::new(n as u32);
+                    date + Months::new(n as u32)
                 } else {
-                    return date - Months::new((-n) as u32);
+                    date - Months::new((-n) as u32)
                 }
             }
             TimeUnit::Years => {
                 if flag {
-                    return date + Months::new(12 * n as u32);
+                    date + Months::new(12 * n as u32)
                 } else {
-                    return date - Months::new((-12 * n) as u32);
+                    date - Months::new((-12 * n) as u32)
                 }
             }
-        };
+        }
     }
 
     fn end_of_month(date: NaiveDate) -> NaiveDate {
@@ -99,7 +99,7 @@ impl NaiveDateExt for NaiveDate {
         let year = date.year();
         let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
         end_of_month = end_of_month + Months::new(1);
-        end_of_month = end_of_month - Duration::try_days(1).unwrap();
+        end_of_month -= Duration::try_days(1).unwrap();
         end_of_month
     }
 }
@@ -121,7 +121,7 @@ impl Add<Period> for NaiveDate {
     fn add(self, rhs: Period) -> Self::Output {
         let n = rhs.length();
         let units = rhs.units();
-        return self.advance(n, units);
+        self.advance(n, units)
     }
 }
 
@@ -135,14 +135,13 @@ impl Add<Period> for NaiveDate {
 /// let period = Period::new(15, TimeUnit::Days);
 /// assert_eq!(date - period, NaiveDate::from_ymd_opt(2019, 12, 31).unwrap());
 /// ```
-
 impl Sub<Period> for NaiveDate {
     type Output = NaiveDate;
 
     fn sub(self, rhs: Period) -> Self::Output {
         let n = rhs.length();
         let units = rhs.units();
-        return self.advance(-n, units);
+        self.advance(-n, units)
     }
 }
 
@@ -233,7 +232,7 @@ impl Date {
     }
 
     pub fn is_leap_year(year: i32) -> bool {
-        return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+        year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
     }
 
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
@@ -265,7 +264,7 @@ impl Date {
     // testing needed
     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
         let wd = date.weekday();
-        return date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64;
+        date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
     }
 
     pub fn weekday(&self) -> Weekday {
@@ -301,7 +300,7 @@ impl Sub for Date {
     fn sub(self, rhs: Self) -> Self::Output {
         let base_date = self.base_date;
         let rhs_base_date = rhs.base_date;
-        return (base_date - rhs_base_date).num_days();
+        (base_date - rhs_base_date).num_days()
     }
 }
 
@@ -353,7 +352,7 @@ impl Add<i64> for Date {
     type Output = Date;
 
     fn add(self, rhs: i64) -> Self::Output {
-        let base_date: NaiveDate = self.base_date + Duration::try_days(rhs as i64).unwrap();
+        let base_date: NaiveDate = self.base_date + Duration::try_days(rhs).unwrap();
         Date::from(base_date)
     }
 }
@@ -369,7 +368,7 @@ impl Add<i64> for Date {
 /// ```
 impl AddAssign<i64> for Date {
     fn add_assign(&mut self, rhs: i64) {
-        self.base_date = self.base_date + Duration::try_days(rhs as i64).unwrap();
+        self.base_date = self.base_date + Duration::try_days(rhs).unwrap();
     }
 }
 
@@ -385,7 +384,7 @@ impl Sub<i64> for Date {
     type Output = Date;
 
     fn sub(self, rhs: i64) -> Self::Output {
-        let base_date: NaiveDate = self.base_date - Duration::try_days(rhs as i64).unwrap();
+        let base_date: NaiveDate = self.base_date - Duration::try_days(rhs).unwrap();
         Date::from(base_date)
     }
 }
@@ -401,7 +400,7 @@ impl Sub<i64> for Date {
 /// ```
 impl SubAssign<i64> for Date {
     fn sub_assign(&mut self, rhs: i64) {
-        self.base_date = self.base_date - Duration::try_days(rhs as i64).unwrap();
+        self.base_date = self.base_date - Duration::try_days(rhs).unwrap();
     }
 }
 

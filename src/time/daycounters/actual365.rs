@@ -21,11 +21,10 @@ pub struct Actual365;
 
 impl DayCountProvider for Actual365 {
     fn day_count(start: Date, end: Date) -> i64 {
-        return end - start;
+        end - start
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        return Actual365
-        ::day_count(start, end) as f64 / 365.0;
+        Actual365::day_count(start, end) as f64 / 365.0
     }
 }

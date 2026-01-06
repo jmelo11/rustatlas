@@ -22,13 +22,7 @@ pub enum Interpolator {
 }
 
 impl Interpolator {
-    pub fn interpolate(
-        &self,
-        x: f64,
-        x_: &Vec<f64>,
-        y_: &Vec<f64>,
-        enable_extrapolation: bool,
-    ) -> f64 {
+    pub fn interpolate(&self, x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         match self {
             Interpolator::Linear => {
                 LinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)

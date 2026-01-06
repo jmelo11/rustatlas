@@ -25,6 +25,12 @@ impl IndexingVisitor {
     }
 }
 
+impl Default for IndexingVisitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: HasCashflows> Visit<T> for IndexingVisitor {
     type Output = Result<()>;
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {

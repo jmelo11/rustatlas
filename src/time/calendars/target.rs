@@ -22,6 +22,11 @@ impl TARGET {
     }
 }
 
+impl Default for TARGET {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl ImplCalendar for TARGET {
     fn impl_name(&self) -> String {
         "TARGET".to_string()
@@ -45,7 +50,7 @@ impl ImplCalendar for TARGET {
         {
             return false;
         }
-        return true;
+        true
     }
 
     fn added_holidays(&self) -> HashSet<Date> {
@@ -71,7 +76,7 @@ impl ImplCalendar for TARGET {
             if self.is_holiday(&d) {
                 holidays.push(d);
             }
-            d = d + 1;
+            d += 1;
         }
         if include_weekends {
             holidays
@@ -90,7 +95,7 @@ impl ImplCalendar for TARGET {
             if self.is_business_day(&d) {
                 business_days.push(d);
             }
-            d = d + 1;
+            d += 1;
         }
         business_days
     }
@@ -109,15 +114,15 @@ mod tests {
     #[test]
     fn test_is_business_day() {
         let cal = TARGET::new();
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 1)), false);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 2)), false);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 3)), false);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 4)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 5)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 6)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 7)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 8)), true);
-        assert_eq!(cal.is_business_day(&Date::new(2021, 1, 9)), false);
+        assert!(!cal.is_business_day(&Date::new(2021, 1, 1)));
+        assert!(!cal.is_business_day(&Date::new(2021, 1, 2)));
+        assert!(!cal.is_business_day(&Date::new(2021, 1, 3)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 4)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 5)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 6)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 7)));
+        assert!(cal.is_business_day(&Date::new(2021, 1, 8)));
+        assert!(!cal.is_business_day(&Date::new(2021, 1, 9)));
     }
 
     #[test]
@@ -130,8 +135,8 @@ mod tests {
             Some(BusinessDayConvention::Unadjusted),
             true,
         );
-        let tmpd = date+1;
-        assert!(cal.is_business_day(&tmpd)==false);
+        let tmpd = date + 1;
+        assert!(!cal.is_business_day(&tmpd));
         assert_eq!(cal.adjust(tmpd, None).month(), 4);
 
         assert_eq!(new_date, Date::new(2014, 3, 31));

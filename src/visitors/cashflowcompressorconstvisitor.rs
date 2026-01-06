@@ -212,7 +212,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                                     );
                                 }
                             })
-                            .or_insert(Cashflow::Disbursement(disbursement.clone()));
+                            .or_insert(Cashflow::Disbursement(disbursement));
                     }
                     Cashflow::Redemption(redemption) => {
                         let group = SimpleCashlowGroup {
@@ -230,7 +230,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                                     );
                                 }
                             })
-                            .or_insert(Cashflow::Redemption(redemption.clone()));
+                            .or_insert(Cashflow::Redemption(redemption));
 
                         let mut estimated_notional = self.estimated_notional.borrow_mut();
                         *estimated_notional +=
@@ -268,7 +268,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                                     pos.set_notional(notional);
                                 }
                             })
-                            .or_insert(Cashflow::FixedRateCoupon(cf.clone()));
+                            .or_insert(Cashflow::FixedRateCoupon(cf));
 
                         // check if start_accrual_date is less than the current estimated start date
                         if let Some(start_date) = *estimated_start_date {
@@ -302,7 +302,7 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                                     pos.set_notional(total);
                                 }
                             })
-                            .or_insert(Cashflow::FloatingRateCoupon(cf.clone()));
+                            .or_insert(Cashflow::FloatingRateCoupon(cf));
 
                         // check if start_accrual_date is less than the current estimated start date
                         if let Some(start_date) = *estimated_start_date {

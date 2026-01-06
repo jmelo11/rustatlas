@@ -21,7 +21,7 @@ pub struct DurationConstVisitor<'a> {
 impl<'a> DurationConstVisitor<'a> {
     pub fn new(market_data: &'a [MarketData]) -> Self {
         DurationConstVisitor {
-            market_data: market_data,
+            market_data,
         }
     }
 }
@@ -42,8 +42,8 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
                             "Market data for cashflow with id {}",
                             id
                         )))?;
-                
-                if  cf_market_data.reference_date() <= cf.payment_date() {
+
+                if cf_market_data.reference_date() <= cf.payment_date() {
                     return Ok(acc);
                 }
 
@@ -56,8 +56,8 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
 
                 let aux_amount = cf.amount()? * df / fx * flag;
 
-                acc.0 += aux_amount.clone() * year_fraction;
-                acc.1 += aux_amount.clone();
+                acc.0 += aux_amount * year_fraction;
+                acc.1 += aux_amount;
 
                 Ok(acc)
             });
@@ -83,21 +83,28 @@ mod tests {
     };
 
     use crate::{
-        cashflows::cashflow::Side, core::marketstore::MarketStore, currencies::enums::Currency, instruments::{
+        cashflows::cashflow::Side,
+        core::marketstore::MarketStore,
+        currencies::enums::Currency,
+        instruments::{
             fixedrateinstrument::FixedRateInstrument,
             makefixedrateinstrument::MakeFixedRateInstrument,
-        }, models::{simplemodel::SimpleModel, traits::Model}, rates::{
+        },
+        models::{simplemodel::SimpleModel, traits::Model},
+        rates::{
             enums::Compounding,
             interestrate::{InterestRate, RateDefinition},
             interestrateindex::{iborindex::IborIndex, overnightindex::OvernightIndex},
             traits::HasReferenceDate,
             yieldtermstructure::flatforwardtermstructure::FlatForwardTermStructure,
-        }, time::{
+        },
+        time::{
             date::Date,
             daycounter::DayCounter,
             enums::{Frequency, TimeUnit},
             period::Period,
-        }, visitors::{indexingvisitor::IndexingVisitor, traits::Visit}
+        },
+        visitors::{indexingvisitor::IndexingVisitor, traits::Visit},
     };
 
     use super::*;
@@ -154,7 +161,7 @@ mod tests {
         market_store
             .mut_index_store()
             .add_index(2, Arc::new(RwLock::new(discount_index)))?;
-        return Ok(market_store);
+        Ok(market_store)
     }
 
     fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
@@ -164,9 +171,9 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init = init * (1.0 + rate * 1.0 / 360.0);
+            init *= 1.0 + rate * 1.0 / 360.0
         }
-        return fixings;
+        fixings
     }
 
     #[test]
@@ -189,8 +196,8 @@ mod tests {
             .into_par_iter() // Create a parallel iterator
             .map(|_| {
                 MakeFixedRateInstrument::new()
-                    .with_start_date(start_date.clone()) // clone data if needed
-                    .with_end_date(end_date.clone()) // clone data if needed
+                    .with_start_date(start_date) // clone data if needed
+                    .with_end_date(end_date) // clone data if needed
                     .with_rate(rate)
                     .with_payment_frequency(Frequency::Semiannual)
                     .with_side(Side::Receive)

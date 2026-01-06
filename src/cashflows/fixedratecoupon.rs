@@ -50,7 +50,7 @@ impl FixedRateCoupon {
             rate,
             accrual_start_date,
             accrual_end_date,
-            cashflow: cashflow,
+            cashflow,
         }
     }
 
@@ -111,15 +111,15 @@ impl HasDiscountCurveId for FixedRateCoupon {
 
 impl HasForecastCurveId for FixedRateCoupon {
     fn forecast_curve_id(&self) -> Result<usize> {
-        return Err(AtlasError::InvalidValueErr(
+        Err(AtlasError::InvalidValueErr(
             "No forecast curve id for fixed rate cashflow".to_string(),
-        ));
+        ))
     }
 }
 
 impl Registrable for FixedRateCoupon {
     fn id(&self) -> Result<usize> {
-        return self.cashflow.id();
+        self.cashflow.id()
     }
 
     fn set_id(&mut self, id: usize) {
@@ -127,17 +127,17 @@ impl Registrable for FixedRateCoupon {
     }
 
     fn market_request(&self) -> Result<MarketRequest> {
-        return self.cashflow.market_request();
+        self.cashflow.market_request()
     }
 }
 
 impl InterestAccrual for FixedRateCoupon {
     fn accrual_start_date(&self) -> Result<Date> {
-        return Ok(self.accrual_start_date);
+        Ok(self.accrual_start_date)
     }
 
     fn accrual_end_date(&self) -> Result<Date> {
-        return Ok(self.accrual_end_date);
+        Ok(self.accrual_end_date)
     }
 
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
@@ -147,27 +147,27 @@ impl InterestAccrual for FixedRateCoupon {
         let (d1, d2) = self.relevant_accrual_dates(self.accrual_start_date, start_date)?;
         let acc_2 = self.notional * (self.rate.compound_factor(d1, d2) - 1.0);
 
-        return Ok(acc_1 - acc_2);
+        Ok(acc_1 - acc_2)
     }
 }
 
 impl Payable for FixedRateCoupon {
     fn amount(&self) -> Result<f64> {
-        return self.cashflow.amount();
+        self.cashflow.amount()
     }
 
     fn side(&self) -> Side {
-        return self.cashflow.side();
+        self.cashflow.side()
     }
 
     fn payment_date(&self) -> Date {
-        return self.cashflow.payment_date();
+        self.cashflow.payment_date()
     }
 }
 
 impl Expires for FixedRateCoupon {
     fn is_expired(&self, date: Date) -> bool {
-        return self.cashflow.is_expired(date);
+        self.cashflow.is_expired(date)
     }
 }
 

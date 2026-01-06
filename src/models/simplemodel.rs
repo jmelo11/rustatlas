@@ -25,7 +25,7 @@ pub struct SimpleModel<'a> {
 }
 
 impl<'a> SimpleModel<'a> {
-    pub fn new(market_store: &'a MarketStore) -> SimpleModel {
+    pub fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
         SimpleModel {
             market_store,
             transform_currencies: false,
@@ -57,7 +57,7 @@ impl<'a> Model for SimpleModel<'a> {
         let id = df.provider_id();
         let index = self.market_store.get_index(id)?;
         let curve = index.read_index()?.term_structure()?;
-        Ok(curve.discount_factor(date)?)
+        curve.discount_factor(date)
     }
 
     fn gen_fwd_data(&self, fwd: ForwardRateRequest) -> Result<f64> {
@@ -71,12 +71,7 @@ impl<'a> Model for SimpleModel<'a> {
         let index = self.market_store.get_index(id)?;
         let fwd_rate_provider = index.read_index()?;
         let start_date = fwd.start_date();
-        Ok(fwd_rate_provider.forward_rate(
-            start_date,
-            end_date,
-            fwd.compounding(),
-            fwd.frequency(),
-        )?)
+        fwd_rate_provider.forward_rate(start_date, end_date, fwd.compounding(), fwd.frequency())
     }
 
     fn gen_numerarie(&self, _: &crate::prelude::MarketRequest) -> Result<f64> {

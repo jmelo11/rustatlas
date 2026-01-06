@@ -250,13 +250,13 @@ impl From<DateGenerationRule> for String {
 /// ## Convention
 /// * Following - Choose the first business day after the given holiday.
 /// * ModifiedFollowing - Choose the first business day after the given holiday unless
-/// it belongs to a different month, in which case choose the first business day before the given holiday.
+///   it belongs to a different month, in which case choose the first business day before the given holiday.
 /// * Preceding - Choose the first business day before the given holiday.
 /// * ModifiedPreceding - Choose the first business day before the given holiday unless
-/// it belongs to a different month, in which case choose the first business day after the given holiday.
+///   it belongs to a different month, in which case choose the first business day after the given holiday.
 /// * Unadjusted - Do not adjust.
 /// * HalfMonthModifiedFollowing - Choose the first business day after the given holiday
-/// unless that day falls in the first half of the month, in which case choose the first business day before the given holiday.
+///   unless that day falls in the first half of the month, in which case choose the first business day before the given holiday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize, Hash)]
 pub enum BusinessDayConvention {
     Following,
@@ -355,8 +355,7 @@ impl Add<i32> for Weekday {
     type Output = i32;
 
     fn add(self, rhs: i32) -> Self::Output {
-        let res = self as i32 + rhs;
-        return res;
+        self as i32 + rhs
     }
 }
 
@@ -364,7 +363,7 @@ impl Sub<i32> for Weekday {
     type Output = i32;
 
     fn sub(self, rhs: i32) -> Self::Output {
-        return self + -rhs;
+        self + -rhs
     }
 }
 
@@ -372,7 +371,7 @@ impl Add<Weekday> for Weekday {
     type Output = i32;
 
     fn add(self, rhs: Weekday) -> Self::Output {
-        return rhs as i32 + self as i32;
+        rhs as i32 + self as i32
     }
 }
 
@@ -380,7 +379,7 @@ impl Sub<Weekday> for Weekday {
     type Output = i32;
 
     fn sub(self, rhs: Weekday) -> Self::Output {
-        return self as i32 + -(rhs as i32);
+        self as i32 + -(rhs as i32)
     }
 }
 
@@ -388,7 +387,7 @@ impl Add<Weekday> for i32 {
     type Output = i32;
 
     fn add(self, rhs: Weekday) -> Self::Output {
-        return rhs + self;
+        rhs + self
     }
 }
 
@@ -396,7 +395,7 @@ impl Sub<Weekday> for i32 {
     type Output = i32;
 
     fn sub(self, rhs: Weekday) -> Self::Output {
-        return self + -(rhs as i32);
+        self + -(rhs as i32)
     }
 }
 

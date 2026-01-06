@@ -131,7 +131,7 @@ impl MakeFloatingRateLeg {
 
     pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLeg {
         self.tenor = Some(tenor);
-        return self;
+        self
     }
 
     pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFloatingRateLeg {
@@ -157,7 +157,7 @@ impl MakeFloatingRateLeg {
         forecast_curve_id: Option<usize>,
     ) -> MakeFloatingRateLeg {
         self.forecast_curve_id = forecast_curve_id;
-        return self;
+        self
     }
 
     pub fn with_discount_curve_id(
@@ -165,32 +165,32 @@ impl MakeFloatingRateLeg {
         discount_curve_id: Option<usize>,
     ) -> MakeFloatingRateLeg {
         self.discount_curve_id = discount_curve_id;
-        return self;
+        self
     }
 
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLeg {
         self.rate_definition = Some(rate_definition);
-        return self;
+        self
     }
 
     pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateLeg {
         self.notional = Some(notional);
-        return self;
+        self
     }
 
     pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateLeg {
         self.currency = Some(currency);
-        return self;
+        self
     }
 
     pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateLeg {
         self.spread = Some(spread);
-        return self;
+        self
     }
 
     pub fn bullet(mut self) -> MakeFloatingRateLeg {
         self.structure = Some(Structure::Bullet);
-        return self;
+        self
     }
 
     pub fn equal_redemptions(mut self) -> MakeFloatingRateLeg {
@@ -212,17 +212,23 @@ impl MakeFloatingRateLeg {
 
     pub fn with_side(mut self, side: Side) -> MakeFloatingRateLeg {
         self.side = Some(side);
-        return self;
+        self
     }
 
     pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLeg {
         self.payment_frequency = Some(frequency);
-        return self;
+        self
     }
 
     pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLeg {
         self.structure = Some(structure);
-        return self;
+        self
+    }
+}
+
+impl Default for MakeFloatingRateLeg {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -303,14 +309,14 @@ impl MakeFloatingRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -320,23 +326,22 @@ impl MakeFloatingRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(Leg::new(
@@ -394,14 +399,14 @@ impl MakeFloatingRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -411,23 +416,22 @@ impl MakeFloatingRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &last_date,
-                    &vec![notional],
+                    &[notional],
                     side,
                     currency,
                     CashflowType::Redemption,
                 );
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(Leg::new(
@@ -500,14 +504,14 @@ impl MakeFloatingRateLeg {
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
-                    &vec![notional],
+                    &[notional],
                     side.inverse(),
                     currency,
                     CashflowType::Disbursement,
                 );
                 build_coupons_from_notionals(
                     &mut cashflows,
-                    &schedule.dates(),
+                    schedule.dates(),
                     &notionals,
                     spread,
                     rate_definition,
@@ -524,17 +528,15 @@ impl MakeFloatingRateLeg {
                     currency,
                     CashflowType::Redemption,
                 );
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
 
                 Ok(Leg::new(
@@ -598,17 +600,16 @@ impl MakeFloatingRateLeg {
                     cashflows.push(cashflow);
                 }
 
-                match self.discount_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+                if let Some(id) = self.discount_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_discount_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
-                match self.forecast_curve_id {
-                    Some(id) => cashflows.iter_mut().for_each(|cf| {
+
+                if let Some(id) = self.forecast_curve_id {
+                    cashflows.iter_mut().for_each(|cf| {
                         cf.set_forecast_curve_id(id);
-                    }),
-                    None => (),
+                    })
                 }
                 Ok(Leg::new(
                     structure,
@@ -631,8 +632,8 @@ impl MakeFloatingRateLeg {
 
 fn build_coupons_from_notionals(
     cashflows: &mut Vec<Cashflow>,
-    dates: &Vec<Date>,
-    notionals: &Vec<f64>,
+    dates: &[Date],
+    notionals: &[f64],
     spread: f64,
     rate_definition: RateDefinition,
     side: Side,

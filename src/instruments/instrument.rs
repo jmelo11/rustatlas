@@ -11,7 +11,9 @@ use crate::{
 };
 
 use super::{
-    doublerateinstrument::DoubleRateInstrument, fixedrateinstrument::FixedRateInstrument, floatingrateinstrument::FloatingRateInstrument, hybridrateinstrument::HybridRateInstrument, traits::Structure
+    doublerateinstrument::DoubleRateInstrument, fixedrateinstrument::FixedRateInstrument,
+    floatingrateinstrument::FloatingRateInstrument, hybridrateinstrument::HybridRateInstrument,
+    traits::Structure,
 };
 
 /// # RateType
@@ -211,7 +213,6 @@ impl Instrument {
             Instrument::FloatingRateInstrument(fri) => fri.set_discount_curve_id(id),
             Instrument::HybridRateInstrument(hri) => hri.set_discount_curve_id(id),
             Instrument::DoubleRateInstrument(dri) => dri.set_discount_curve_id(id),
-
         }
     }
 

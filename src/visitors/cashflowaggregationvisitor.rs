@@ -57,6 +57,12 @@ impl CashflowsAggregatorConstVisitor {
     }
 }
 
+impl Default for CashflowsAggregatorConstVisitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
     type Output = Result<()>;
 
@@ -65,17 +71,14 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
             .cashflows()
             .iter()
             .try_for_each(|cf| -> Result<()> {
-                match self.validation_currency {
-                    Some(currency) => {
-                        if cf.currency()? != currency {
-                            return Err(AtlasError::InvalidValueErr(format!(
-                                "Cashflow currency {:?} does not match visitor currency {:?}",
-                                cf.currency()?,
-                                currency
-                            )));
-                        }
+                if let Some(currency) = self.validation_currency {
+                    if cf.currency()? != currency {
+                        return Err(AtlasError::InvalidValueErr(format!(
+                            "Cashflow currency {:?} does not match visitor currency {:?}",
+                            cf.currency()?,
+                            currency
+                        )));
                     }
-                    None => {} // do nothing
                 }
 
                 let side = cf.side();

@@ -38,15 +38,15 @@ impl RateDefinition {
     }
 
     pub fn compounding(&self) -> Compounding {
-        return self.compounding;
+        self.compounding
     }
 
     pub fn frequency(&self) -> Frequency {
-        return self.frequency;
+        self.frequency
     }
 
     pub fn day_counter(&self) -> DayCounter {
-        return self.day_counter;
+        self.day_counter
     }
 }
 
@@ -99,23 +99,23 @@ impl InterestRate {
     }
 
     pub fn rate(&self) -> f64 {
-        return self.rate;
+        self.rate
     }
 
     pub fn rate_definition(&self) -> RateDefinition {
-        return self.rate_definition;
+        self.rate_definition
     }
 
     pub fn compounding(&self) -> Compounding {
-        return self.rate_definition.compounding();
+        self.rate_definition.compounding()
     }
 
     pub fn frequency(&self) -> Frequency {
-        return self.rate_definition.frequency();
+        self.rate_definition.frequency()
     }
 
     pub fn day_counter(&self) -> DayCounter {
-        return self.rate_definition.day_counter();
+        self.rate_definition.day_counter()
     }
 
     pub fn implied_rate(
@@ -165,13 +165,13 @@ impl InterestRate {
                 }
             }
         }
-        return Ok(InterestRate::new(r, comp, freq, result_dc));
+        Ok(InterestRate::new(r, comp, freq, result_dc))
     }
 
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
-        return self.compound_factor_from_yf(year_fraction);
+        self.compound_factor_from_yf(year_fraction)
     }
 
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
@@ -200,7 +200,7 @@ impl InterestRate {
     }
 
     pub fn discount_factor(&self, start: Date, end: Date) -> f64 {
-        return 1.0 / self.compound_factor(start, end);
+        1.0 / self.compound_factor(start, end)
     }
 
     pub fn forward_rate(
@@ -210,7 +210,7 @@ impl InterestRate {
         _comp: Compounding,
         _freq: Frequency,
     ) -> f64 {
-        return self.rate;
+        self.rate
     }
 }
 
@@ -537,7 +537,7 @@ mod tests {
                 precision: 4,
             },
         ];
-        return test_cases;
+        test_cases
     }
     #[test]
     fn test_all_cases() {

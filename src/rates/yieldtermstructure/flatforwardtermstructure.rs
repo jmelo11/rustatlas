@@ -42,7 +42,7 @@ impl FlatForwardTermStructure {
     }
 
     pub fn rate(&self) -> InterestRate {
-        return self.rate;
+        self.rate
     }
 
     pub fn value(&self) -> f64 {
@@ -56,7 +56,7 @@ impl FlatForwardTermStructure {
 
 impl HasReferenceDate for FlatForwardTermStructure {
     fn reference_date(&self) -> Date {
-        return self.reference_date;
+        self.reference_date
     }
 }
 
@@ -69,7 +69,7 @@ impl YieldProvider for FlatForwardTermStructure {
                 self.reference_date()
             )));
         }
-        return Ok(self.rate.discount_factor(self.reference_date(), date));
+        Ok(self.rate.discount_factor(self.reference_date(), date))
     }
     fn forward_rate(
         &self,
@@ -80,14 +80,7 @@ impl YieldProvider for FlatForwardTermStructure {
     ) -> Result<f64> {
         let comp_factor = self.discount_factor(start_date)? / self.discount_factor(end_date)?;
         let t = self.rate.day_counter().year_fraction(start_date, end_date);
-        return Ok(InterestRate::implied_rate(
-            comp_factor,
-            self.rate.day_counter(),
-            comp,
-            freq,
-            t,
-        )?
-        .rate());
+        Ok(InterestRate::implied_rate(comp_factor, self.rate.day_counter(), comp, freq, t)?.rate())
     }
 }
 
@@ -97,19 +90,19 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
-        return Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(FlatForwardTermStructure::new(
             new_reference_date,
             self.value(),
             self.rate_definition(),
-        )));
+        )))
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        return Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(FlatForwardTermStructure::new(
             date,
             self.value(),
             self.rate_definition(),
-        )));
+        )))
     }
 }
 

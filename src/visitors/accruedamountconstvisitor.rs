@@ -51,13 +51,10 @@ impl<T: HasCurrency + HasCashflows> ConstVisit<T> for AccruedAmountConstVisitor 
     type Output = Result<()>;
 
     fn visit(&self, inst: &T) -> Self::Output {
-        match self.validation_currency {
-            Some(currency) => {
-                if inst.currency()? != currency {
-                    return Err(AtlasError::InvalidValueErr("Currency mismatch".to_string()));
-                }
+        if let Some(currency) = self.validation_currency {
+            if inst.currency()? != currency {
+                return Err(AtlasError::InvalidValueErr("Currency mismatch".to_string()));
             }
-            None => {}
         }
         self.evaluation_dates
             .windows(2)
