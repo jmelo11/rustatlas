@@ -172,14 +172,16 @@ impl MakeFixedRateInstrument {
                     rate_definition.day_counter(),
                 ));
             }
-            None => if let Some(rate) = self.rate {
-               self.rate = Some(InterestRate::new(
-                    rate.rate(),
-                    rate_definition.compounding(),
-                     rate_definition.frequency(),
-                    rate_definition.day_counter(),
-                ));
-            },
+            None => {
+                if let Some(rate) = self.rate {
+                    self.rate = Some(InterestRate::new(
+                        rate.rate(),
+                        rate_definition.compounding(),
+                        rate_definition.frequency(),
+                        rate_definition.day_counter(),
+                    ));
+                }
+            }
         }
         self
     }
@@ -196,14 +198,16 @@ impl MakeFixedRateInstrument {
                     rate.day_counter(),
                 ));
             }
-            None => if let Some(rate_definition) = self.rate_definition {
-                self.rate = Some(InterestRate::new(
-                    rate_value,
-                    rate_definition.compounding(),
-                    rate_definition.frequency(),
-                    rate_definition.day_counter(),
-                ));
-            },
+            None => {
+                if let Some(rate_definition) = self.rate_definition {
+                    self.rate = Some(InterestRate::new(
+                        rate_value,
+                        rate_definition.compounding(),
+                        rate_definition.frequency(),
+                        rate_definition.day_counter(),
+                    ));
+                }
+            }
         }
         self
     }
@@ -409,9 +413,11 @@ impl MakeFixedRateInstrument {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -482,9 +488,11 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
                     .1;
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                .iter_mut()
-               .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(FixedRateInstrument::new(
                     *start_date,
@@ -641,9 +649,11 @@ impl MakeFixedRateInstrument {
                 //let infered_cashflows = infer_cashflows_from_amounts(dates, amounts, side, currency);
                 //cashflows.extend(infered_cashflows);
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                 .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -726,9 +736,11 @@ impl MakeFixedRateInstrument {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                .iter_mut()
-               .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -828,9 +840,11 @@ impl MakeFixedRateInstrument {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-               .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(FixedRateInstrument::new(
                     start_date,
@@ -980,13 +994,11 @@ impl From<FixedRateInstrument> for MakeFixedRateInstrument {
     }
 }
 
-
 impl From<&FixedRateInstrument> for MakeFixedRateInstrument {
     fn from(val: &FixedRateInstrument) -> Self {
         MakeFixedRateInstrument::from(val.clone())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

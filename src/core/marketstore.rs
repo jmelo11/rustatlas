@@ -74,8 +74,7 @@ impl MarketStore {
             Some(ccy) => ccy,
             None => self.local_currency,
         };
-       self
-            .exchange_rate_store
+        self.exchange_rate_store
             .get_exchange_rate(first_currency, second_currency)
     }
 

@@ -164,14 +164,16 @@ impl MakeFixedRateLeg {
                     rate_definition.day_counter(),
                 ));
             }
-            None => if let Some(rate) = self.rate {
-                self.rate = Some(InterestRate::new(
-                     rate.rate(),
-                    rate_definition.compounding(),
-                    rate_definition.frequency(),
-                    rate_definition.day_counter(),
-               ));
-            },
+            None => {
+                if let Some(rate) = self.rate {
+                    self.rate = Some(InterestRate::new(
+                        rate.rate(),
+                        rate_definition.compounding(),
+                        rate_definition.frequency(),
+                        rate_definition.day_counter(),
+                    ));
+                }
+            }
         }
         self
     }
@@ -188,14 +190,16 @@ impl MakeFixedRateLeg {
                     rate.day_counter(),
                 ));
             }
-            None => if let Some(rate_definition) = self.rate_definition {
-                self.rate = Some(InterestRate::new(
-                    rate_value,
-                   rate_definition.compounding(),
-                   rate_definition.frequency(),
-                    rate_definition.day_counter(),
-                ));
-            },
+            None => {
+                if let Some(rate_definition) = self.rate_definition {
+                    self.rate = Some(InterestRate::new(
+                        rate_value,
+                        rate_definition.compounding(),
+                        rate_definition.frequency(),
+                        rate_definition.day_counter(),
+                    ));
+                }
+            }
         }
         self
     }
@@ -399,9 +403,11 @@ impl MakeFixedRateLeg {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                .iter_mut()
-                 .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 let leg = Leg::new(
                     structure,
@@ -462,9 +468,11 @@ impl MakeFixedRateLeg {
                     cashflows.push(cashflow);
                 }
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                 .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(Leg::new(
                     structure,
@@ -574,9 +582,11 @@ impl MakeFixedRateLeg {
                 //let infered_cashflows = infer_cashflows_from_amounts(dates, amounts, side, currency);
                 //cashflows.extend(infered_cashflows);
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                 .iter_mut()
-               .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(Leg::new(
                     structure,
@@ -655,9 +665,11 @@ impl MakeFixedRateLeg {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                 .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(Leg::new(
                     structure,
@@ -754,9 +766,11 @@ impl MakeFixedRateLeg {
                     CashflowType::Redemption,
                 );
 
-                if let Some(id) = self.discount_curve_id { cashflows
-                 .iter_mut()
-                 .for_each(|cf| cf.set_discount_curve_id(id)) }
+                if let Some(id) = self.discount_curve_id {
+                    cashflows
+                        .iter_mut()
+                        .for_each(|cf| cf.set_discount_curve_id(id))
+                }
 
                 Ok(Leg::new(
                     structure,

@@ -20,9 +20,7 @@ pub struct DurationConstVisitor<'a> {
 
 impl<'a> DurationConstVisitor<'a> {
     pub fn new(market_data: &'a [MarketData]) -> Self {
-        DurationConstVisitor {
-            market_data,
-        }
+        DurationConstVisitor { market_data }
     }
 }
 

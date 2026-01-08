@@ -1,14 +1,10 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
-use crate::utils::errors::{AtlasError, Result};
 
-use super::{
-    structs::{
-        AUD, BRL, CAD, CHF, CLF, CLP, CNH, CNY, COP, DKK, EUR, GBP, HKD, IDR, INR, JPY, KRW, MXN,
-        NOK, NZD, PEN, SEK, TWD, USD, ZAR,
-    },
-    traits::CurrencyDetails,
-};
+use super::traits::CurrencyDetails;
+use crate::utils::errors::{AtlasError, Result};
 
 /// # Currency
 /// Enum for currencies supported by the library
@@ -41,11 +37,67 @@ pub enum Currency {
     IDR,
 }
 
-impl TryFrom<String> for Currency {
+impl Currency {
+    pub const fn details(self) -> (&'static str, &'static str, &'static str, u8, u16) {
+        match self {
+            Currency::USD => ("USD", "US Dollar", "$", 2, 840),
+            Currency::EUR => ("EUR", "Euro", "€", 2, 978),
+            Currency::JPY => ("JPY", "Japanese Yen", "¥", 0, 392),
+            Currency::ZAR => ("ZAR", "South African Rand", "R", 2, 710),
+            Currency::CLP => ("CLP", "Chilean Peso", "$", 0, 152),
+            Currency::CLF => ("CLF", "Chilean Unidad de Fomento", "UF", 4, 990),
+            Currency::CHF => ("CHF", "Swiss Franc", "Fr", 2, 756),
+            Currency::BRL => ("BRL", "Brazilian Real", "R$", 2, 986),
+            Currency::COP => ("COP", "Colombian Peso", "$", 2, 170),
+            Currency::MXN => ("MXN", "Mexican Peso", "Mex$", 2, 484),
+            Currency::AUD => ("AUD", "Australian Dollar", "A$", 2, 36),
+            Currency::CAD => ("CAD", "Canadian Dollar", "Can$", 2, 124),
+            Currency::CNY => ("CNY", "Chinese Yuan", "¥", 2, 156),
+            Currency::GBP => ("GBP", "British Pound", "£", 2, 826),
+            Currency::NZD => ("NZD", "New Zealand Dollar", "NZ$", 2, 554),
+            Currency::NOK => ("NOK", "Norwegian Krone", "kr", 2, 578),
+            Currency::SEK => ("SEK", "Swedish Krona", "kr", 2, 752),
+            Currency::PEN => ("PEN", "Peruvian Sol", "S/.", 2, 604),
+            Currency::CNH => ("CNH", "Chinese Yuan (offshore)", "¥", 2, 156),
+            Currency::INR => ("INR", "Indian Rupee", "₹", 2, 356),
+            Currency::TWD => ("TWD", "New Taiwan Dollar", "NT$", 2, 901),
+            Currency::HKD => ("HKD", "Hong Kong Dollar", "HK$", 2, 344),
+            Currency::KRW => ("KRW", "South Korean Won", "₩", 0, 410),
+            Currency::DKK => ("DKK", "Danish Krone", "kr", 2, 208),
+            Currency::IDR => ("IDR", "Indonesian Rupiah", "Rp", 2, 360),
+        }
+    }
+
+    pub const fn as_str(self) -> &'static str { self.details().0 }
+    pub const fn name(self) -> &'static str { self.details().1 }
+    pub const fn symbol(self) -> &'static str { self.details().2 }
+    pub const fn precision(self) -> u8 { self.details().3 }
+    pub const fn numeric_code(self) -> u16 { self.details().4 }
+}
+
+impl CurrencyDetails for Currency {
+    fn code(&self) -> &'static str { self.as_str() }
+    fn name(&self) -> &'static str { self.details().1 }
+    fn symbol(&self) -> &'static str { self.details().2 }
+    fn precision(&self) -> u8 { self.details().3 }
+    fn numeric_code(&self) -> u16 { self.details().4 }
+}
+
+
+
+impl fmt::Display for Currency {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl TryFrom<&str> for Currency {
     type Error = AtlasError;
 
-    fn try_from(s: String) -> Result<Self> {
-        match s.as_str() {
+    fn try_from(s: &str) -> Result<Self> {
+        // trim white space
+        let s = s.trim();
+        match s.trim() {
             "USD" => Ok(Currency::USD),
             "EUR" => Ok(Currency::EUR),
             "JPY" => Ok(Currency::JPY),
@@ -79,182 +131,124 @@ impl TryFrom<String> for Currency {
     }
 }
 
-impl From<Currency> for String {
-    fn from(currency: Currency) -> Self {
-        match currency {
-            Currency::USD => "USD".to_string(),
-            Currency::EUR => "EUR".to_string(),
-            Currency::JPY => "JPY".to_string(),
-            Currency::ZAR => "ZAR".to_string(),
-            Currency::CLP => "CLP".to_string(),
-            Currency::CLF => "CLF".to_string(),
-            Currency::CHF => "CHF".to_string(),
-            Currency::BRL => "BRL".to_string(),
-            Currency::COP => "COP".to_string(),
-            Currency::MXN => "MXN".to_string(),
-            Currency::AUD => "AUD".to_string(),
-            Currency::CAD => "CAD".to_string(),
-            Currency::CNY => "CNY".to_string(),
-            Currency::GBP => "GBP".to_string(),
-            Currency::NZD => "NZD".to_string(),
-            Currency::NOK => "NOK".to_string(),
-            Currency::SEK => "SEK".to_string(),
-            Currency::PEN => "PEN".to_string(),
-            Currency::CNH => "CNH".to_string(),
-            Currency::INR => "INR".to_string(),
-            Currency::TWD => "TWD".to_string(),
-            Currency::HKD => "HKD".to_string(),
-            Currency::KRW => "KRW".to_string(),
-            Currency::DKK => "DKK".to_string(),
-            Currency::IDR => "IDR".to_string(),
-        }
+impl TryFrom<String> for Currency {
+    type Error = AtlasError;
+    fn try_from(s: String) -> Result<Self> {
+        Self::try_from(s.as_str())
     }
 }
 
-impl CurrencyDetails for Currency {
-    fn code(&self) -> String {
-        match self {
-            Currency::USD => USD.code(),
-            Currency::EUR => EUR.code(),
-            Currency::JPY => JPY.code(),
-            Currency::ZAR => ZAR.code(),
-            Currency::CLP => CLP.code(),
-            Currency::CLF => CLF.code(),
-            Currency::CHF => CHF.code(),
-            Currency::BRL => BRL.code(),
-            Currency::COP => COP.code(),
-            Currency::MXN => MXN.code(),
-            Currency::AUD => AUD.code(),
-            Currency::CAD => CAD.code(),
-            Currency::CNY => CNY.code(),
-            Currency::GBP => GBP.code(),
-            Currency::NZD => NZD.code(),
-            Currency::NOK => NOK.code(),
-            Currency::SEK => SEK.code(),
-            Currency::PEN => PEN.code(),
-            Currency::CNH => CNH.code(),
-            Currency::INR => INR.code(),
-            Currency::TWD => TWD.code(),
-            Currency::HKD => HKD.code(),
-            Currency::KRW => KRW.code(),
-            Currency::DKK => DKK.code(),
-            Currency::IDR => IDR.code(),
+impl std::str::FromStr for Currency {
+    type Err = AtlasError;
+    fn from_str(s: &str) -> Result<Self> {
+        Self::try_from(s)
+    }
+}
+
+
+impl From<Currency> for String {
+    fn from(c: Currency) -> Self {
+        c.as_str().to_owned()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    const ALL: &[Currency] = &[
+        Currency::USD,
+        Currency::EUR,
+        Currency::JPY,
+        Currency::ZAR,
+        Currency::CLP,
+        Currency::CLF,
+        Currency::CHF,
+        Currency::BRL,
+        Currency::COP,
+        Currency::MXN,
+        Currency::AUD,
+        Currency::CAD,
+        Currency::CNY,
+        Currency::GBP,
+        Currency::NZD,
+        Currency::NOK,
+        Currency::SEK,
+        Currency::PEN,
+        Currency::CNH,
+        Currency::INR,
+        Currency::TWD,
+        Currency::HKD,
+        Currency::KRW,
+        Currency::DKK,
+        Currency::IDR,
+    ];
+
+    #[test]
+    fn details_are_self_consistent_for_all_currencies() {
+        for &c in ALL {
+            let (code, name, symbol, precision, numeric_code) = c.details();
+
+            assert_eq!(c.as_str(), code);
+            assert_eq!(c.name(), name);
+            assert_eq!(c.symbol(), symbol);
+            assert_eq!(c.precision(), precision);
+            assert_eq!(c.numeric_code(), numeric_code);
+
+            assert_eq!(CurrencyDetails::code(&c), code);
+            assert_eq!(CurrencyDetails::name(&c), name);
+            assert_eq!(CurrencyDetails::symbol(&c), symbol);
+            assert_eq!(CurrencyDetails::precision(&c), precision);
+            assert_eq!(CurrencyDetails::numeric_code(&c), numeric_code);
+
+            assert_eq!(c.to_string(), code);
+
+            let s: String = c.into();
+            assert_eq!(s, code);
         }
     }
-    fn name(&self) -> String {
-        match self {
-            Currency::USD => USD.name(),
-            Currency::EUR => EUR.name(),
-            Currency::JPY => JPY.name(),
-            Currency::ZAR => ZAR.name(),
-            Currency::CLP => CLP.name(),
-            Currency::CLF => CLF.name(),
-            Currency::CHF => CHF.name(),
-            Currency::BRL => BRL.name(),
-            Currency::COP => COP.name(),
-            Currency::MXN => MXN.name(),
-            Currency::AUD => AUD.name(),
-            Currency::CAD => CAD.name(),
-            Currency::CNY => CNY.name(),
-            Currency::GBP => GBP.name(),
-            Currency::NZD => NZD.name(),
-            Currency::NOK => NOK.name(),
-            Currency::SEK => SEK.name(),
-            Currency::PEN => PEN.name(),
-            Currency::CNH => CNH.name(),
-            Currency::INR => INR.name(),
-            Currency::TWD => TWD.name(),
-            Currency::HKD => HKD.name(),
-            Currency::KRW => KRW.name(),
-            Currency::DKK => DKK.name(),
-            Currency::IDR => IDR.name(),
-        }
+
+    #[test]
+    fn try_from_str_parses_known_codes_and_trims() {
+        assert_eq!(Currency::try_from("USD").unwrap(), Currency::USD);
+        assert_eq!(Currency::try_from("  USD ").unwrap(), Currency::USD);
+        assert_eq!(Currency::try_from("\nEUR\t").unwrap(), Currency::EUR);
     }
-    fn symbol(&self) -> String {
-        match self {
-            Currency::USD => USD.symbol(),
-            Currency::EUR => EUR.symbol(),
-            Currency::JPY => JPY.symbol(),
-            Currency::ZAR => ZAR.symbol(),
-            Currency::CLP => CLP.symbol(),
-            Currency::CLF => CLF.symbol(),
-            Currency::CHF => CHF.symbol(),
-            Currency::BRL => BRL.symbol(),
-            Currency::COP => COP.symbol(),
-            Currency::MXN => MXN.symbol(),
-            Currency::AUD => AUD.symbol(),
-            Currency::CAD => CAD.symbol(),
-            Currency::CNY => CNY.symbol(),
-            Currency::GBP => GBP.symbol(),
-            Currency::NZD => NZD.symbol(),
-            Currency::NOK => NOK.symbol(),
-            Currency::SEK => SEK.symbol(),
-            Currency::PEN => PEN.symbol(),
-            Currency::CNH => CNH.symbol(),
-            Currency::INR => INR.symbol(),
-            Currency::TWD => TWD.symbol(),
-            Currency::HKD => HKD.symbol(),
-            Currency::KRW => KRW.symbol(),
-            Currency::DKK => DKK.symbol(),
-            Currency::IDR => IDR.symbol(),
-        }
+
+    #[test]
+    fn try_from_string_parses_same_as_str() {
+        let c = Currency::try_from("JPY".to_string()).unwrap();
+        assert_eq!(c, Currency::JPY);
     }
-    fn precision(&self) -> u8 {
-        match self {
-            Currency::USD => USD.precision(),
-            Currency::EUR => EUR.precision(),
-            Currency::JPY => JPY.precision(),
-            Currency::ZAR => ZAR.precision(),
-            Currency::CLP => CLP.precision(),
-            Currency::CLF => CLF.precision(),
-            Currency::CHF => CHF.precision(),
-            Currency::BRL => BRL.precision(),
-            Currency::COP => COP.precision(),
-            Currency::MXN => MXN.precision(),
-            Currency::AUD => AUD.precision(),
-            Currency::CAD => CAD.precision(),
-            Currency::CNY => CNY.precision(),
-            Currency::GBP => GBP.precision(),
-            Currency::NZD => NZD.precision(),
-            Currency::NOK => NOK.precision(),
-            Currency::SEK => SEK.precision(),
-            Currency::PEN => PEN.precision(),
-            Currency::CNH => CNH.precision(),
-            Currency::INR => INR.precision(),
-            Currency::TWD => TWD.precision(),
-            Currency::HKD => HKD.precision(),
-            Currency::KRW => KRW.precision(),
-            Currency::DKK => DKK.precision(),
-            Currency::IDR => IDR.precision(),
-        }
+
+    #[test]
+    fn from_str_parses_same_as_try_from() {
+        let c = Currency::from_str("GBP").unwrap();
+        assert_eq!(c, Currency::GBP);
     }
-    fn numeric_code(&self) -> u16 {
-        match self {
-            Currency::USD => USD.numeric_code(),
-            Currency::EUR => EUR.numeric_code(),
-            Currency::JPY => JPY.numeric_code(),
-            Currency::ZAR => ZAR.numeric_code(),
-            Currency::CLP => CLP.numeric_code(),
-            Currency::CLF => CLF.numeric_code(),
-            Currency::CHF => CHF.numeric_code(),
-            Currency::BRL => BRL.numeric_code(),
-            Currency::COP => COP.numeric_code(),
-            Currency::MXN => MXN.numeric_code(),
-            Currency::AUD => AUD.numeric_code(),
-            Currency::CAD => CAD.numeric_code(),
-            Currency::CNY => CNY.numeric_code(),
-            Currency::GBP => GBP.numeric_code(),
-            Currency::NZD => NZD.numeric_code(),
-            Currency::NOK => NOK.numeric_code(),
-            Currency::SEK => SEK.numeric_code(),
-            Currency::PEN => PEN.numeric_code(),
-            Currency::CNH => CNH.numeric_code(),
-            Currency::INR => INR.numeric_code(),
-            Currency::TWD => TWD.numeric_code(),
-            Currency::HKD => HKD.numeric_code(),
-            Currency::KRW => KRW.numeric_code(),
-            Currency::DKK => DKK.numeric_code(),
-            Currency::IDR => IDR.numeric_code(),
-        }
+
+    #[test]
+    fn invalid_currency_rejected() {
+        assert!(Currency::try_from("NOPE").is_err());
+        assert!(Currency::from_str("usd").is_err()); 
+        assert!(Currency::try_from("").is_err());
+    }
+
+    #[test]
+    fn spot_checks_for_non_trivial_metadata() {
+        // Precision edge cases
+        assert_eq!(Currency::JPY.precision(), 0);
+        assert_eq!(Currency::CLF.precision(), 4);
+
+        assert_eq!(Currency::USD.numeric_code(), 840);
+        assert_eq!(Currency::EUR.numeric_code(), 978);
+        assert_eq!(Currency::KRW.numeric_code(), 410);
+
+        assert_eq!(Currency::EUR.symbol(), "€");
+        assert_eq!(Currency::KRW.symbol(), "₩");
+
+        assert_eq!(Currency::CNY.numeric_code(), 156);
+        assert_eq!(Currency::CNH.numeric_code(), 156);
     }
 }

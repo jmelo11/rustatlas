@@ -78,8 +78,7 @@ impl HasCurrency for SimpleCashflow {
 
 impl HasDiscountCurveId for SimpleCashflow {
     fn discount_curve_id(&self) -> Result<usize> {
-        self
-            .discount_curve_id
+        self.discount_curve_id
             .ok_or(AtlasError::ValueNotSetErr("Discount curve id".to_string()))
     }
 }
