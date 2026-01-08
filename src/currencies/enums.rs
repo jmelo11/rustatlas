@@ -115,7 +115,7 @@ impl TryFrom<&str> for Currency {
     fn try_from(s: &str) -> Result<Self> {
         // trim white space
         let s = s.trim();
-        match s.trim() {
+        match s {
             "USD" => Ok(Currency::USD),
             "EUR" => Ok(Currency::EUR),
             "JPY" => Ok(Currency::JPY),
