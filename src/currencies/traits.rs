@@ -28,4 +28,3 @@ pub trait AdvanceExchangeRateStoreInTime {
     ) -> Result<ExchangeRateStore>;
     fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<ExchangeRateStore>;
 }
-

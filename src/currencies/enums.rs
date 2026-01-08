@@ -2,7 +2,6 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-
 use super::traits::CurrencyDetails;
 use crate::utils::errors::{AtlasError, Result};
 
@@ -38,6 +37,7 @@ pub enum Currency {
 }
 
 impl Currency {
+    //
     pub const fn details(self) -> (&'static str, &'static str, &'static str, u8, u16) {
         match self {
             Currency::USD => ("USD", "US Dollar", "$", 2, 840),
@@ -68,22 +68,40 @@ impl Currency {
         }
     }
 
-    pub const fn as_str(self) -> &'static str { self.details().0 }
-    pub const fn name(self) -> &'static str { self.details().1 }
-    pub const fn symbol(self) -> &'static str { self.details().2 }
-    pub const fn precision(self) -> u8 { self.details().3 }
-    pub const fn numeric_code(self) -> u16 { self.details().4 }
+    pub const fn as_str(self) -> &'static str {
+        self.details().0
+    }
+    pub const fn name(self) -> &'static str {
+        self.details().1
+    }
+    pub const fn symbol(self) -> &'static str {
+        self.details().2
+    }
+    pub const fn precision(self) -> u8 {
+        self.details().3
+    }
+    pub const fn numeric_code(self) -> u16 {
+        self.details().4
+    }
 }
 
 impl CurrencyDetails for Currency {
-    fn code(&self) -> &'static str { self.as_str() }
-    fn name(&self) -> &'static str { self.details().1 }
-    fn symbol(&self) -> &'static str { self.details().2 }
-    fn precision(&self) -> u8 { self.details().3 }
-    fn numeric_code(&self) -> u16 { self.details().4 }
+    fn code(&self) -> &'static str {
+        self.as_str()
+    }
+    fn name(&self) -> &'static str {
+        self.details().1
+    }
+    fn symbol(&self) -> &'static str {
+        self.details().2
+    }
+    fn precision(&self) -> u8 {
+        self.details().3
+    }
+    fn numeric_code(&self) -> u16 {
+        self.details().4
+    }
 }
-
-
 
 impl fmt::Display for Currency {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -144,7 +162,6 @@ impl std::str::FromStr for Currency {
         Self::try_from(s)
     }
 }
-
 
 impl From<Currency> for String {
     fn from(c: Currency) -> Self {
@@ -231,7 +248,7 @@ mod tests {
     #[test]
     fn invalid_currency_rejected() {
         assert!(Currency::try_from("NOPE").is_err());
-        assert!(Currency::from_str("usd").is_err()); 
+        assert!(Currency::from_str("usd").is_err());
         assert!(Currency::try_from("").is_err());
     }
 
