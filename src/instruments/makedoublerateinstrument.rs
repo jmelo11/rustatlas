@@ -338,7 +338,9 @@ impl MakeDoubleRateInstrument {
         // first coupon date is calculated using first_coupon_date or tenor_grace_period
         let first_coupon_date = match self.first_coupon_date {
             Some(date) => Some(date),
-            None => self.tenor_grace_period.map(|tenor_grace_period| start_date + tenor_grace_period),
+            None => self
+                .tenor_grace_period
+                .map(|tenor_grace_period| start_date + tenor_grace_period),
         };
 
         let schedule_first_part = match first_coupon_date {
@@ -504,13 +506,17 @@ impl MakeDoubleRateInstrument {
             );
         }
 
-        if let Some(id) = self.discount_curve_id { cashflows
-        .iter_mut()
-         .for_each(|cf| cf.set_discount_curve_id(id)) }
+        if let Some(id) = self.discount_curve_id {
+            cashflows
+                .iter_mut()
+                .for_each(|cf| cf.set_discount_curve_id(id))
+        }
 
-        if let Some(id) = self.forecast_curve_id { cashflows
-        .iter_mut()
-       .for_each(|cf| cf.set_forecast_curve_id(id)) }
+        if let Some(id) = self.forecast_curve_id {
+            cashflows
+                .iter_mut()
+                .for_each(|cf| cf.set_forecast_curve_id(id))
+        }
 
         Ok(DoubleRateInstrument::new(
             start_date,

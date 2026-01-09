@@ -6,7 +6,7 @@ pub use crate::{
     },
     core::meta::*,
     core::{marketstore::MarketStore, traits::*},
-    currencies::{enums::*, structs::*, traits::*},
+    currencies::{enums::*, traits::*},
     instruments::{
         fixedrateinstrument::*, floatingrateinstrument::*, instrument::*, leg::*, loandepo::*,
         makefixedrateinstrument::*, makefixedrateleg::*, makefloatingrateinstrument::*,

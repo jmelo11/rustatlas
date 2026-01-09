@@ -9,9 +9,9 @@ use super::exchangeratestore::ExchangeRateStore;
 /// # CurrencyDetails
 /// Trait for currency details
 pub trait CurrencyDetails {
-    fn code(&self) -> String;
-    fn name(&self) -> String;
-    fn symbol(&self) -> String;
+    fn code(&self) -> &'static str;
+    fn name(&self) -> &'static str;
+    fn symbol(&self) -> &'static str;
     fn precision(&self) -> u8;
     fn numeric_code(&self) -> u16;
 }

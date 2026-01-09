@@ -147,8 +147,10 @@ impl FloatingRateInstrument {
 
     pub fn set_spread(mut self, spread: f64) -> Self {
         self.spread = spread;
-        self.mut_cashflows().iter_mut().for_each(|cf| if let Cashflow::FloatingRateCoupon(coupon) = cf {
-           coupon.set_spread(spread);
+        self.mut_cashflows().iter_mut().for_each(|cf| {
+            if let Cashflow::FloatingRateCoupon(coupon) = cf {
+                coupon.set_spread(spread);
+            }
         });
         self
     }
@@ -271,10 +273,12 @@ mod test {
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.02));
 
-        instrument.cashflows().iter().for_each(|cf| if let Cashflow::FloatingRateCoupon(coupon) = cf {
-             assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
-            assert_eq!(coupon.spread(), spread);
-       });
+        instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FloatingRateCoupon(coupon) = cf {
+                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert_eq!(coupon.spread(), spread);
+            }
+        });
 
         let new_spread = 0.01;
         let new_instrument = instrument.set_spread(new_spread);

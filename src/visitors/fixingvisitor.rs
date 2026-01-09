@@ -17,9 +17,7 @@ pub struct FixingVisitor<'a> {
 
 impl<'a> FixingVisitor<'a> {
     pub fn new(market_data: &'a [MarketData]) -> Self {
-        FixingVisitor {
-            market_data,
-        }
+        FixingVisitor { market_data }
     }
 }
 

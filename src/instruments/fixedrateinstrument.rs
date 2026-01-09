@@ -125,9 +125,11 @@ impl FixedRateInstrument {
 
     pub fn set_rate(mut self, rate: InterestRate) -> Self {
         self.rate = rate;
-        self.mut_cashflows().iter_mut().for_each(|cf| if let Cashflow::FixedRateCoupon(coupon) = cf {
-            coupon.set_rate(rate);
-         });
+        self.mut_cashflows().iter_mut().for_each(|cf| {
+            if let Cashflow::FixedRateCoupon(coupon) = cf {
+                coupon.set_rate(rate);
+            }
+        });
         self
     }
 }
@@ -309,10 +311,12 @@ mod tests {
             .bullet()
             .build()?;
 
-        instrument.cashflows().iter().for_each(|cf| if let Cashflow::FixedRateCoupon(coupon) = cf {
-            assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
-            assert_eq!(coupon.rate(), rate);
-         });
+        instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FixedRateCoupon(coupon) = cf {
+                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert_eq!(coupon.rate(), rate);
+            }
+        });
 
         let new_rate = InterestRate::new(
             0.03,
@@ -323,9 +327,11 @@ mod tests {
 
         let new_instrument = instrument.set_rate(new_rate);
 
-        new_instrument.cashflows().iter().for_each(|cf|if let Cashflow::FixedRateCoupon(coupon) = cf {
-             assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
-            assert_eq!(coupon.rate(), new_rate);
+        new_instrument.cashflows().iter().for_each(|cf| {
+            if let Cashflow::FixedRateCoupon(coupon) = cf {
+                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert_eq!(coupon.rate(), new_rate);
+            }
         });
 
         Ok(())

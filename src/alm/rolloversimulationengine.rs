@@ -122,9 +122,7 @@ impl<'a> RolloverSimulationEngine<'a> {
                     outstanding += placement;
                     placement
                 }
-                GrowthMode::PaidAmount => {
-                    redemption * (1.0 + self.growth_rate)
-                }
+                GrowthMode::PaidAmount => redemption * (1.0 + self.growth_rate),
             };
 
             if amount != 0.0 {
@@ -630,12 +628,12 @@ mod tests {
         let eval_date = Date::new(2023, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0* (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
         Ok(())
     }
 }

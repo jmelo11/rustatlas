@@ -74,8 +74,7 @@ impl MarketStore {
             Some(ccy) => ccy,
             None => self.local_currency,
         };
-       self
-            .exchange_rate_store
+        self.exchange_rate_store
             .get_exchange_rate(first_currency, second_currency)
     }
 
@@ -135,7 +134,7 @@ impl fmt::Display for MarketStore {
         msg.push('\n');
         msg.push_str("-------------------------------------\n");
         msg.push_str("> Currency: ");
-        msg.push_str(&self.local_currency.code().to_string());
+        msg.push_str(self.local_currency.code());
         msg.push('\n');
         msg.push_str("-------------------------------------\n");
 
@@ -184,9 +183,9 @@ impl fmt::Display for MarketStore {
         for (currencies, value) in &exchange_rate_map {
             // println!("{} - {}: {}", currencies.0.code(), currencies.1.code(), value);
             msg.push_str(">> ");
-            msg.push_str(&currencies.0.code());
+            msg.push_str(currencies.0.code());
             msg.push_str(" -> ");
-            msg.push_str(&currencies.1.code());
+            msg.push_str(currencies.1.code());
             msg.push_str(": ");
             msg.push_str(&value.to_string());
             msg.push('\n');

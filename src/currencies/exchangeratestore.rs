@@ -55,7 +55,6 @@ impl ExchangeRateStore {
     }
 
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
-
         if first_ccy == second_ccy {
             return Ok(1.0);
         }
@@ -113,7 +112,9 @@ impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
 
     fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<ExchangeRateStore> {
         if self.reference_date() != index_store.reference_date() {
-            return Err(AtlasError::InvalidValueErr("Reference date of exchange rate store and index store do not match".to_string()));
+            return Err(AtlasError::InvalidValueErr(
+                "Reference date of exchange rate store and index store do not match".to_string(),
+            ));
         }
 
         let mut new_store = ExchangeRateStore::new(date);

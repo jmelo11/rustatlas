@@ -222,16 +222,15 @@ impl MarketData {
     }
 
     pub fn df(&self) -> Result<f64> {
-        self.df.ok_or(AtlasError::ValueNotSetErr("df".to_string()))
+        self.df.ok_or(AtlasError::ValueNotSetErr("df".to_owned()))
     }
 
     pub fn fwd(&self) -> Result<f64> {
-        self.fwd
-            .ok_or(AtlasError::ValueNotSetErr("fwd".to_string()))
+        self.fwd.ok_or(AtlasError::ValueNotSetErr("fwd".to_owned()))
     }
 
     pub fn fx(&self) -> Result<f64> {
-        self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_string()))
+        self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_owned()))
     }
 
     pub fn numerarie(&self) -> f64 {

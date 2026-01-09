@@ -91,9 +91,9 @@ impl FloatingRateCoupon {
     pub fn set_spread(&mut self, spread: f64) {
         self.spread = spread;
         // if fixing rate is set, update the cashflow
-if let Some(fixing_rate) = self.fixing_rate {
+        if let Some(fixing_rate) = self.fixing_rate {
             self.set_fixing_rate(fixing_rate);
-         }
+        }
     }
 
     pub fn set_notional(&mut self, notional: f64) {
