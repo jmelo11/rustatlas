@@ -26,13 +26,20 @@ use super::traits::{Expires, Payable};
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimpleCashflow {
+    /// Payment date of the cashflow as a [`Date`]
     payment_date: Date,
+    /// [`Currency`] in which the cashflow amount is denominated
     currency: Currency,
+    /// Direction of the cashflow (Pay or Receive) as a [`Side`]
     side: Side,
+    /// Cashflow amount; must be set before valuation
     amount: Option<f64>,
+    /// Identifier of the discount curve used for discounting this cashflow
     discount_curve_id: Option<usize>,
+    /// Unique registry identifier for this cashflow
     id: Option<usize>,
 }
+
 
 impl SimpleCashflow {
     pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {

@@ -14,11 +14,6 @@ use super::traits::{ConstVisit, HasCashflows};
 
 /// # ZSpreadConstVisitor
 /// ZSpreadConstVisitor is a visitor that calculates the ZSpread of a generic instrument.
-///
-/// ## Parameters
-/// * `market_data` - The market data to use for evaluation
-/// * `rate_definition` - The rate definition to use for the given spread
-/// * `target` - The target npv to match the spread calculation
 pub struct ZSpreadConstVisitor<'a> {
     market_data: &'a [MarketData],
     rate_definition: RateDefinition,
@@ -26,6 +21,12 @@ pub struct ZSpreadConstVisitor<'a> {
 }
 
 impl<'a> ZSpreadConstVisitor<'a> {
+    /// Creates a new instance of `ZSpreadConstVisitor`
+    /// 
+    /// ## Parameters
+    /// * `market_data` - The market data to use for evaluation
+    /// * `rate_definition` - The rate definition to use for the given spread
+    /// * `target` - The target npv to match the spread calculation
     pub fn new(
         market_data: &'a [MarketData],
         rate_definition: RateDefinition,

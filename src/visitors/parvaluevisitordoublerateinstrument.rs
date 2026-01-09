@@ -258,14 +258,14 @@ mod test {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_par_value_floating_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -313,8 +313,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value}, second_rate_par_value: {second_rate_par_value}",
         );
 
         assert!((first_rate_par_value - 0.02).abs() < 1e-6);
@@ -325,7 +324,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_floating_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -373,8 +372,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value}, second_rate_par_value: {second_rate_par_value}",
         );
 
         assert!((first_rate_par_value - 0.05).abs() < 1e-6);
@@ -385,7 +383,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -433,8 +431,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value}, second_rate_par_value: {second_rate_par_value}"
         );
 
         assert!((first_rate_par_value - 0.05).abs() < 1e-6);
