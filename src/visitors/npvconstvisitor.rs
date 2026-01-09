@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn test_npv_floating_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -347,7 +347,7 @@ mod tests {
 
     #[test]
     fn generator_tests() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -375,25 +375,25 @@ mod tests {
                     .with_discount_curve_id(Some(2))
                     .with_notional(notional)
                     .build()
-                    .unwrap()
+                    ?
             })
             .collect(); // Collect the results into a Vec<_>
 
-        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store().unwrap();
+        fn npv(instruments: &mut [FixedRateInstrument]) -> Result<f64> {
+            let store = create_store()?;
             let mut npv = 0.0;
             let indexer = IndexingVisitor::new();
             instruments
                 .iter_mut()
-                .for_each(|inst| indexer.visit(inst).unwrap());
+                .for_each(|inst| indexer.visit(inst)?);
 
             let model = SimpleModel::new(&store);
-            let data = model.gen_market_data(&indexer.request()).unwrap();
+            let data = model.gen_market_data(&indexer.request())?;
 
             let npv_visitor = NPVConstVisitor::new(&data, true);
             instruments
                 .iter()
-                .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
+                .for_each(|inst| npv += npv_visitor.visit(inst)?);
             npv
         }
 
