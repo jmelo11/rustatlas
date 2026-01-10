@@ -138,8 +138,10 @@ pub fn create_store() -> Result<MarketStore> {
 
 use rand::Rng;
 
+#[allow(dead_code)]
 pub struct MockMaker;
 
+#[allow(dead_code)]
 pub trait Mock {
     fn random_frequency() -> Frequency;
 
@@ -153,7 +155,6 @@ pub trait Mock {
 
     fn random_currency() -> Currency;
 
-    #[allow(unused)]
     fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
 }
 

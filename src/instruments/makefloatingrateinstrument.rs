@@ -56,6 +56,7 @@ pub struct MakeFloatingRateInstrument {
 
 /// Constructor, setters and getters.
 impl MakeFloatingRateInstrument {
+    /// Creates a new `MakeFloatingRateInstrument` with all fields initialized to `None`.
     pub fn new() -> MakeFloatingRateInstrument {
         MakeFloatingRateInstrument {
             start_date: None,
@@ -82,11 +83,13 @@ impl MakeFloatingRateInstrument {
         }
     }
 
+    /// Sets the calendar for the instrument.
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateInstrument {
         self.calendar = calendar;
         self
     }
 
+    /// Sets the business day convention for the instrument.
     pub fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
@@ -95,6 +98,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the date generation rule for the instrument.
     pub fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
@@ -103,16 +107,19 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the issue date for the instrument.
     pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateInstrument {
         self.issue_date = Some(issue_date);
         self
     }
 
+    /// Sets the identifier for the instrument.
     pub fn with_id(mut self, id: Option<String>) -> MakeFloatingRateInstrument {
         self.id = id;
         self
     }
 
+    /// Sets the first coupon date for the instrument.
     pub fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
@@ -121,21 +128,25 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the start date for the instrument.
     pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateInstrument {
         self.start_date = Some(start_date);
         self
     }
 
+    /// Sets the end date for the instrument.
     pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateInstrument {
         self.end_date = Some(end_date);
         self
     }
 
+    /// Sets the tenor for the instrument.
     pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateInstrument {
         self.tenor = Some(tenor);
         self
     }
 
+    /// Sets the disbursements schedule for the instrument.
     pub fn with_disbursements(
         mut self,
         disbursements: HashMap<Date, f64>,
@@ -144,6 +155,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the redemptions schedule for the instrument.
     pub fn with_redemptions(
         mut self,
         redemptions: HashMap<Date, f64>,
@@ -152,6 +164,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the additional coupon dates for the instrument.
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
@@ -160,6 +173,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the forecast curve identifier for the instrument.
     pub fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
@@ -168,6 +182,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the discount curve identifier for the instrument.
     pub fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
@@ -176,6 +191,7 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the rate definition for the instrument.
     pub fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
@@ -184,53 +200,63 @@ impl MakeFloatingRateInstrument {
         self
     }
 
+    /// Sets the notional amount for the instrument.
     pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateInstrument {
         self.notional = Some(notional);
         self
     }
 
+    /// Sets the currency for the instrument.
     pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateInstrument {
         self.currency = Some(currency);
         self
     }
 
+    /// Sets the spread for the floating rate instrument.
     pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateInstrument {
         self.spread = Some(spread);
         self
     }
 
+    /// Sets the instrument structure to bullet.
     pub fn bullet(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Bullet);
         self
     }
 
+    /// Sets the instrument structure to equal redemptions.
     pub fn equal_redemptions(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
+    /// Sets the instrument structure to zero with single payment frequency.
     pub fn zero(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
+    /// Sets the instrument structure to other with custom frequency.
     pub fn other(mut self) -> MakeFloatingRateInstrument {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
+    /// Sets the side (Receive or Pay) for the instrument.
     pub fn with_side(mut self, side: Side) -> MakeFloatingRateInstrument {
         self.side = Some(side);
         self
     }
 
+    /// Sets the payment frequency for the instrument.
     pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateInstrument {
         self.payment_frequency = Some(frequency);
         self
     }
 
+    /// Sets the structure for the instrument.
     pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateInstrument {
         self.structure = Some(structure);
         self
@@ -245,6 +271,7 @@ impl Default for MakeFloatingRateInstrument {
 
 /// Build
 impl MakeFloatingRateInstrument {
+    /// Builds and returns a `FloatingRateInstrument` from the configured builder.
     pub fn build(self) -> Result<FloatingRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self

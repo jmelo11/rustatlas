@@ -19,6 +19,10 @@ pub struct DurationConstVisitor<'a> {
 }
 
 impl<'a> DurationConstVisitor<'a> {
+    /// Creates a new DurationConstVisitor with the given market data.
+    ///
+    /// # Arguments
+    /// * `market_data` - A slice of market data to use for duration calculations
     pub fn new(market_data: &'a [MarketData]) -> Self {
         DurationConstVisitor { market_data }
     }

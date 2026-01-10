@@ -26,6 +26,7 @@ pub struct ExchangeRateStore {
 }
 
 impl ExchangeRateStore {
+    /// Creates a new `ExchangeRateStore` with the given reference date.
     pub fn new(date: Date) -> ExchangeRateStore {
         ExchangeRateStore {
             reference_date: date,
@@ -34,6 +35,7 @@ impl ExchangeRateStore {
         }
     }
 
+    /// Sets the exchange rate map for this store.
     pub fn with_exchange_rates(
         &mut self,
         exchange_rate_map: HashMap<(Currency, Currency), f64>,
@@ -42,18 +44,22 @@ impl ExchangeRateStore {
         self
     }
 
+    /// Adds an exchange rate between two currencies to this store.
     pub fn add_exchange_rate(&mut self, currency1: Currency, currency2: Currency, rate: f64) {
         self.exchange_rate_map.insert((currency1, currency2), rate);
     }
 
+    /// Returns the reference date of this exchange rate store.
     pub fn reference_date(&self) -> Date {
         self.reference_date
     }
 
+    /// Returns a clone of the exchange rate map.
     pub fn get_exchange_rate_map(&self) -> HashMap<(Currency, Currency), f64> {
         self.exchange_rate_map.clone()
     }
 
+    /// Returns the exchange rate between two currencies, calculating it via graph traversal if necessary.
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
         if first_ccy == second_ccy {
             return Ok(1.0);

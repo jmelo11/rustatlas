@@ -46,6 +46,7 @@ pub struct CompositeTermStructure {
 }
 
 impl CompositeTermStructure {
+    /// Creates a new `CompositeTermStructure` by combining a spread curve and a base curve.
     pub fn new(
         spread_curve: Arc<dyn YieldTermStructureTrait>,
         base_curve: Arc<dyn YieldTermStructureTrait>,
@@ -57,10 +58,12 @@ impl CompositeTermStructure {
         }
     }
 
+    /// Returns a reference to the spread curve.
     pub fn spread_curve(&self) -> &dyn YieldTermStructureTrait {
         self.spread_curve.as_ref()
     }
 
+    /// Returns a reference to the base curve.
     pub fn base_curve(&self) -> &dyn YieldTermStructureTrait {
         self.base_curve.as_ref()
     }

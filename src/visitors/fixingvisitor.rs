@@ -16,6 +16,10 @@ pub struct FixingVisitor<'a> {
 }
 
 impl<'a> FixingVisitor<'a> {
+    /// Creates a new FixingVisitor with the given market data.
+    ///
+    /// # Arguments
+    /// * `market_data` - A slice of market data to use for fixing rates
     pub fn new(market_data: &'a [MarketData]) -> Self {
         FixingVisitor { market_data }
     }

@@ -22,6 +22,7 @@ pub struct Leg {
 }
 
 impl Leg {
+    /// Creates a new `Leg` with the specified parameters.
     pub fn new(
         structure: Structure,
         rate_type: RateType,
@@ -46,42 +47,52 @@ impl Leg {
         }
     }
 
+    /// Returns a slice of the cashflows in this leg.
     pub fn cashflows(&self) -> &[Cashflow] {
         &self.cashflows
     }
 
+    /// Returns the structure of this leg.
     pub fn structure(&self) -> Structure {
         self.structure
     }
 
+    /// Returns the rate type of this leg.
     pub fn rate_type(&self) -> RateType {
         self.rate_type
     }
 
+    /// Returns the rate value of this leg.
     pub fn rate_value(&self) -> f64 {
         self.rate_value
     }
 
+    /// Returns the rate definition of this leg.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Returns the currency of this leg.
     pub fn currency(&self) -> Currency {
         self.currency
     }
 
+    /// Returns the side of this leg.
     pub fn side(&self) -> Side {
         self.side
     }
 
+    /// Returns the discount curve ID of this leg, if set.
     pub fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
+    /// Returns the forecast curve ID of this leg, if set.
     pub fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
 
+    /// Clears all cashflows from this leg.
     pub fn clear(&mut self) {
         self.cashflows.clear();
     }

@@ -10,12 +10,19 @@ use super::traits::{ImplCalendar, IsCalendar};
 /// Defines the relevant market for the United States calendar.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Market {
+    /// Settlement market.
     Settlement,
+    /// Libor Impact market.
     LiborImpact,
+    /// New York Stock Exchange market.
     Nyse,
+    /// Government Bond market.
     GovernmentBond,
+    /// North American Electric Reliability Corporation market.
     Nerc,
+    /// Federal Reserve market.
     FederalReserve,
+    /// Secured Overnight Financing Rate market.
     Sofr,
 }
 
@@ -29,6 +36,7 @@ pub struct UnitedStates {
 }
 
 impl UnitedStates {
+    /// Creates a new UnitedStates calendar for the specified market.
     pub fn new(market: Market) -> Self {
         UnitedStates {
             market,
@@ -81,6 +89,7 @@ impl UnitedStates {
             && month == 12
     }
 
+    /// Determines if the given date is a business day for this calendar's market.
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();

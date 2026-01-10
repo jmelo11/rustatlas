@@ -70,6 +70,19 @@ pub struct DiscountTermStructure {
 }
 
 impl DiscountTermStructure {
+    /// Creates a new `DiscountTermStructure` with the given dates, discount factors, day counter, interpolator, and extrapolation setting.
+    ///
+    /// # Arguments
+    ///
+    /// * `dates` - Vector of dates for the discount factors
+    /// * `discount_factors` - Vector of discount factors corresponding to the dates
+    /// * `day_counter` - Day counter convention to use for year fraction calculations
+    /// * `interpolator` - Interpolation method to use
+    /// * `enable_extrapolation` - Whether to allow extrapolation beyond the given dates
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if dates and discount factors have different lengths or if the first discount factor is not 1.0.
     pub fn new(
         dates: Vec<Date>,
         discount_factors: Vec<f64>,
@@ -112,22 +125,27 @@ impl DiscountTermStructure {
         })
     }
 
+    /// Returns a reference to the vector of dates.
     pub fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
+    /// Returns a reference to the vector of discount factors.
     pub fn discount_factors(&self) -> &Vec<f64> {
         &self.discount_factors
     }
 
+    /// Returns the day counter convention used.
     pub fn day_counter(&self) -> DayCounter {
         self.day_counter
     }
 
+    /// Returns whether extrapolation is enabled.
     pub fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
+    /// Returns the interpolator used.
     pub fn interpolator(&self) -> Interpolator {
         self.interpolator
     }

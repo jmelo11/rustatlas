@@ -39,6 +39,15 @@ pub struct TenorBasedZeroRateTermStructure {
 }
 
 impl TenorBasedZeroRateTermStructure {
+    /// Creates a new TenorBasedZeroRateTermStructure.
+    ///
+    /// # Arguments
+    /// * `reference_date` - The reference date of the term structure
+    /// * `tenors` - The tenors of the term structure
+    /// * `spreads` - The spreads of the term structure
+    /// * `rate_definition` - The rate definition of the term structure
+    /// * `interpolation` - The interpolation method of the term structure
+    /// * `enable_extrapolation` - Enable extrapolation
     pub fn new(
         reference_date: Date,
         tenors: Vec<Period>,
@@ -68,10 +77,12 @@ impl TenorBasedZeroRateTermStructure {
         })
     }
 
+    /// Returns the tenors of the term structure.
     pub fn tenors(&self) -> &Vec<Period> {
         &self.tenors
     }
 
+    /// Returns the spreads of the term structure.
     pub fn spreads(&self) -> &Vec<f64> {
         &self.spreads
     }

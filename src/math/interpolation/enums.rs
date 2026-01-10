@@ -17,11 +17,14 @@ use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits
 /// ```
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Interpolator {
+    /// Linear interpolation method.
     Linear,
+    /// Logarithmic linear interpolation method.
     LogLinear,
 }
 
 impl Interpolator {
+    /// Performs interpolation for a given x value using the specified interpolation method.
     pub fn interpolate(&self, x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         match self {
             Interpolator::Linear => {

@@ -23,11 +23,17 @@ use std::ops::{Add, AddAssign, Sub, SubAssign};
 /// assert_eq!(date.advance(15, TimeUnit::Days), NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
 /// ```
 pub trait NaiveDateExt {
+    /// Returns the number of days in the month of this date.
     fn days_in_month(&self) -> i32;
+    /// Returns the number of days in the year of this date.
     fn days_in_year(&self) -> i32;
+    /// Returns the day of year (1-366) for this date.
     fn day_of_year(&self) -> i32;
+    /// Returns whether this date falls in a leap year.
     fn date_has_leap_year(&self) -> bool;
+    /// Advances the date by `n` units of the specified `TimeUnit`.
     fn advance(&self, n: i32, units: TimeUnit) -> NaiveDate;
+    /// Returns the last day of the month for the given date.
     fn end_of_month(date: NaiveDate) -> NaiveDate;
 }
 
@@ -186,6 +192,7 @@ impl<'de> Deserialize<'de> for Date {
 }
 
 impl Date {
+    /// Creates a new `Date` from the given year, month, and day.
     pub fn new(year: i32, month: u32, day: u32) -> Date {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
         match base_date {
@@ -194,64 +201,76 @@ impl Date {
         }
     }
 
+    /// Parses a date string using the specified format.
     pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
         Ok(Date::from(base_date))
     }
 
+    /// Formats this date as a string using the specified format.
     pub fn to_str(&self, fmt: &str) -> String {
         self.base_date.format(fmt).to_string()
     }
 
+    /// Returns the underlying `NaiveDate`.
     pub fn base_date(&self) -> NaiveDate {
         self.base_date
     }
 
+    /// Returns the day of the month (1-31).
     pub fn day(&self) -> u32 {
         self.base_date.day()
     }
 
+    /// Returns the month of the year (1-12).
     pub fn month(&self) -> u32 {
         self.base_date.month()
     }
 
+    /// Returns the year.
     pub fn year(&self) -> i32 {
         self.base_date.year()
     }
 
+    /// Returns the number of days in the month of this date.
     pub fn days_in_month(&self) -> i32 {
         self.base_date.days_in_month()
     }
 
+    /// Returns the day of year (1-366) for this date.
     pub fn day_of_year(&self) -> i32 {
         self.base_date.day_of_year()
     }
 
+    /// Returns whether this date falls in a leap year.
     pub fn date_has_leap_year(&self) -> bool {
         self.base_date.date_has_leap_year()
     }
 
+    /// Returns whether the given year is a leap year.
     pub fn is_leap_year(year: i32) -> bool {
         year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
     }
 
+    /// Advances this date by `n` units of the specified `TimeUnit`.
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
         let base_date = self.base_date.advance(n, units);
         Date::from(base_date)
     }
 
+    /// Adds a `Period` to this date.
     pub fn add_period(&self, period: Period) -> Date {
         let base_date = self.base_date + period;
         Date::from(base_date)
     }
 
-    // testing needed
+    /// Returns the last day of the month for the given date.
     pub fn end_of_month(date: Date) -> Date {
         let base_date = NaiveDate::end_of_month(date.base_date);
         Date::from(base_date)
     }
 
-    // testing needed
+    /// Returns the nth occurrence of the specified weekday in the given month and year.
     pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
         let base_date = Date::new(year, month, 1);
         let first = base_date.weekday();
@@ -261,12 +280,13 @@ impl Date {
         Date::from(base_date)
     }
 
-    // testing needed
+    /// Returns the next occurrence of the specified weekday after the given date.
     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
         let wd = date.weekday();
         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
     }
 
+    /// Returns the day of the week for this date.
     pub fn weekday(&self) -> Weekday {
         match self.base_date.weekday() {
             chrono::Weekday::Mon => Weekday::Monday,
@@ -279,6 +299,7 @@ impl Date {
         }
     }
 
+    /// Returns the minimum representable date.
     pub fn empty() -> Date {
         //min
         Date::from(NaiveDate::MIN)

@@ -30,6 +30,7 @@ pub struct CashflowsAggregatorConstVisitor {
 }
 
 impl CashflowsAggregatorConstVisitor {
+    /// Creates a new instance of `CashflowsAggregatorConstVisitor`.
     pub fn new() -> Self {
         Self {
             redemptions: Mutex::new(BTreeMap::new()),
@@ -39,19 +40,23 @@ impl CashflowsAggregatorConstVisitor {
         }
     }
 
+    /// Sets the currency to validate against the instrument's currency.
     pub fn with_validate_currency(mut self, currency: Currency) -> Self {
         self.validation_currency = Some(currency);
         self
     }
 
+    /// Returns the aggregated redemptions by date.
     pub fn redemptions(&self) -> BTreeMap<Date, f64> {
         self.redemptions.lock().unwrap().clone()
     }
 
+    /// Returns the aggregated disbursements by date.
     pub fn disbursements(&self) -> BTreeMap<Date, f64> {
         self.disbursements.lock().unwrap().clone()
     }
 
+    /// Returns the aggregated interest payments by date.
     pub fn interest(&self) -> BTreeMap<Date, f64> {
         self.interest.lock().unwrap().clone()
     }

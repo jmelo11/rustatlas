@@ -1,8 +1,8 @@
+use crate::time::calendars::traits::IsCalendar;
 use crate::utils::errors::{AtlasError, Result};
 
 use super::calendar::*;
 use super::calendars::nullcalendar::NullCalendar;
-use super::calendars::traits::*;
 use super::date::Date;
 use super::enums::*;
 use super::imm::IMM;
@@ -76,6 +76,7 @@ pub struct Schedule {
 }
 
 impl Schedule {
+    /// Creates a new Schedule with the specified parameters.
     pub fn new(
         tenor: Period,
         calendar: Calendar,
@@ -102,6 +103,7 @@ impl Schedule {
         }
     }
 
+    /// Creates an empty Schedule with default values.
     pub fn empty() -> Schedule {
         Schedule {
             tenor: Period::empty(),
@@ -117,42 +119,52 @@ impl Schedule {
         }
     }
 
+    /// Returns a reference to the dates of the schedule.
     pub fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
+    /// Returns a reference to the regularity vector of the schedule.
     pub fn is_regular(&self) -> &Vec<bool> {
         &self.is_regular
     }
 
+    /// Returns the tenor of the schedule.
     pub fn tenor(&self) -> Period {
         self.tenor
     }
 
+    /// Returns the calendar of the schedule.
     pub fn calendar(&self) -> Calendar {
         self.calendar.clone()
     }
 
+    /// Returns the business day convention of the schedule.
     pub fn convention(&self) -> BusinessDayConvention {
         self.convention
     }
 
+    /// Returns the termination date convention of the schedule.
     pub fn termination_date_convention(&self) -> BusinessDayConvention {
         self.termination_date_convention
     }
 
+    /// Returns the date generation rule of the schedule.
     pub fn rule(&self) -> DateGenerationRule {
         self.rule
     }
 
+    /// Returns the end of month flag of the schedule.
     pub fn end_of_month(&self) -> bool {
         self.end_of_month
     }
 
+    /// Returns the first date of the schedule.
     pub fn first_date(&self) -> Date {
         self.first_date
     }
 
+    /// Returns the next to last date of the schedule.
     pub fn next_to_last_date(&self) -> Date {
         self.next_to_last_date
     }
@@ -290,6 +302,7 @@ impl MakeSchedule {
 
 /// Build method
 impl MakeSchedule {
+    /// Builds and returns a Schedule from the current configuration.
     pub fn build(&mut self) -> Result<Schedule> {
         if self.tenor.length() < 0 {
             return Err(AtlasError::MakeScheduleErr(format!(

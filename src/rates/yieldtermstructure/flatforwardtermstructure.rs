@@ -29,6 +29,7 @@ pub struct FlatForwardTermStructure {
 }
 
 impl FlatForwardTermStructure {
+    /// Creates a new `FlatForwardTermStructure` with the specified reference date, rate, and rate definition.
     pub fn new(
         reference_date: Date,
         rate: f64,
@@ -41,14 +42,17 @@ impl FlatForwardTermStructure {
         }
     }
 
+    /// Returns the underlying interest rate.
     pub fn rate(&self) -> InterestRate {
         self.rate
     }
 
+    /// Returns the rate value.
     pub fn value(&self) -> f64 {
         self.rate.rate()
     }
 
+    /// Returns the rate definition.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate.rate_definition()
     }

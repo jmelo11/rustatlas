@@ -48,6 +48,7 @@ pub struct RolloverStrategy {
 }
 
 impl RolloverStrategy {
+    /// Creates a new RolloverStrategy with the specified parameters.
     pub fn new(
         weight: f64,
         structure: Structure,
@@ -72,38 +73,47 @@ impl RolloverStrategy {
         }
     }
 
+    /// Returns the weight of the strategy.
     pub fn weight(&self) -> f64 {
         self.weight
     }
 
+    /// Returns the structure of the strategy.
     pub fn structure(&self) -> Structure {
         self.structure
     }
 
+    /// Returns the payment frequency of the strategy.
     pub fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
+    /// Returns the tenor of the strategy.
     pub fn tenor(&self) -> Period {
         self.tenor
     }
 
+    /// Returns the side of the strategy.
     pub fn side(&self) -> Side {
         self.side
     }
 
+    /// Returns the rate type of the strategy.
     pub fn rate_type(&self) -> RateType {
         self.rate_type
     }
 
+    /// Returns the rate definition of the strategy.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Returns the discount curve ID of the strategy.
     pub fn discount_curve_id(&self) -> usize {
         self.discount_curve_id
     }
 
+    /// Returns the forecast curve ID of the strategy.
     pub fn forecast_curve_id(&self) -> usize {
         self.forecast_curve_id.expect("No forecast curve id")
     }
@@ -124,6 +134,7 @@ pub struct PositionGenerator<'a> {
 }
 
 impl<'a> PositionGenerator<'a> {
+    /// Creates a new PositionGenerator with the specified currency and strategies.
     pub fn new(
         new_positions_currency: Currency,
         strategies: Vec<RolloverStrategy>,
@@ -136,11 +147,13 @@ impl<'a> PositionGenerator<'a> {
         }
     }
 
+    /// Sets the amount for position generation.
     pub fn with_amount(mut self, amount: f64) -> PositionGenerator<'a> {
         self.amount = Some(amount);
         self
     }
 
+    /// Sets the market store for position generation.
     pub fn with_market_store(mut self, market_store: &'a MarketStore) -> PositionGenerator<'a> {
         self.market_store = Some(market_store);
         self
@@ -174,6 +187,7 @@ impl<'a> PositionGenerator<'a> {
         par_visitor.visit(&instrument)
     }
 
+    /// Generates a single position based on the provided strategy.
     pub fn generate_position(&self, strategies: &RolloverStrategy) -> Result<Instrument> {
         let structure = strategies.structure();
         let amount = self
@@ -237,6 +251,7 @@ impl<'a> PositionGenerator<'a> {
         }
     }
 
+    /// Generates all positions based on the configured strategies.
     pub fn generate(&self) -> Vec<Instrument> {
         let positions = self
             .strategies

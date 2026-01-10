@@ -21,6 +21,7 @@ pub struct ExchangeRateRequest {
 }
 
 impl ExchangeRateRequest {
+    /// Creates a new `ExchangeRateRequest`.
     pub fn new(
         first_currency: Currency,
         second_currency: Option<Currency>,
@@ -33,14 +34,17 @@ impl ExchangeRateRequest {
         }
     }
 
+    /// Returns the first currency.
     pub fn first_currency(&self) -> Currency {
         self.first_currency
     }
 
+    /// Returns the second currency.
     pub fn second_currency(&self) -> Option<Currency> {
         self.second_currency
     }
 
+    /// Returns the reference date.
     pub fn reference_date(&self) -> Option<Date> {
         self.reference_date
     }
@@ -60,14 +64,17 @@ pub struct DiscountFactorRequest {
 }
 
 impl DiscountFactorRequest {
+    /// Creates a new `DiscountFactorRequest`.
     pub fn new(provider_id: usize, date: Date) -> DiscountFactorRequest {
         DiscountFactorRequest { provider_id, date }
     }
 
+    /// Returns the provider id.
     pub fn provider_id(&self) -> usize {
         self.provider_id
     }
 
+    /// Returns the date.
     pub fn date(&self) -> Date {
         self.date
     }
@@ -94,6 +101,7 @@ pub struct ForwardRateRequest {
 }
 
 impl ForwardRateRequest {
+    /// Creates a new `ForwardRateRequest`.
     pub fn new(
         provider_id: usize,
         fixing_date: Date,
@@ -112,22 +120,27 @@ impl ForwardRateRequest {
         }
     }
 
+    /// Returns the provider id.
     pub fn provider_id(&self) -> usize {
         self.provider_id
     }
 
+    /// Returns the start date.
     pub fn start_date(&self) -> Date {
         self.start_date
     }
 
+    /// Returns the end date.
     pub fn end_date(&self) -> Date {
         self.end_date
     }
 
+    /// Returns the compounding.
     pub fn compounding(&self) -> Compounding {
         self.compounding
     }
 
+    /// Returns the frequency.
     pub fn frequency(&self) -> Frequency {
         self.frequency
     }
@@ -150,6 +163,7 @@ pub struct MarketRequest {
 }
 
 impl MarketRequest {
+    /// Creates a new `MarketRequest`.
     pub fn new(
         id: usize,
         df: Option<DiscountFactorRequest>,
@@ -159,18 +173,22 @@ impl MarketRequest {
         MarketRequest { id, df, fwd, fx }
     }
 
+    /// Returns the id.
     pub fn id(&self) -> usize {
         self.id
     }
 
+    /// Returns the discount factor request.
     pub fn df(&self) -> Option<DiscountFactorRequest> {
         self.df
     }
 
+    /// Returns the forward rate request.
     pub fn fwd(&self) -> Option<ForwardRateRequest> {
         self.fwd
     }
 
+    /// Returns the exchange rate request.
     pub fn fx(&self) -> Option<ExchangeRateRequest> {
         self.fx
     }
@@ -195,6 +213,7 @@ pub struct MarketData {
 }
 
 impl MarketData {
+    /// Creates a new `MarketData`.
     pub fn new(
         id: usize,
         reference_date: Date,
@@ -213,26 +232,32 @@ impl MarketData {
         }
     }
 
+    /// Returns the id.
     pub fn id(&self) -> usize {
         self.id
     }
 
+    /// Returns the reference date.
     pub fn reference_date(&self) -> Date {
         self.reference_date
     }
 
+    /// Returns the discount factor.
     pub fn df(&self) -> Result<f64> {
         self.df.ok_or(AtlasError::ValueNotSetErr("df".to_owned()))
     }
 
+    /// Returns the forward rate.
     pub fn fwd(&self) -> Result<f64> {
         self.fwd.ok_or(AtlasError::ValueNotSetErr("fwd".to_owned()))
     }
 
+    /// Returns the exchange rate.
     pub fn fx(&self) -> Result<f64> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_owned()))
     }
 
+    /// Returns the numeraire.
     pub fn numerarie(&self) -> f64 {
         self.numerarie
     }

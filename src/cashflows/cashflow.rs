@@ -23,11 +23,14 @@ use super::{
 /// Enum that represents the side of a cashflow.
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Side {
+    /// A payment obligation.
     Pay,
+    /// A payment receipt.
     Receive,
 }
 
 impl Side {
+    /// Returns the sign of the side as a multiplier (-1.0 for Pay, 1.0 for Receive).
     pub fn sign(&self) -> f64 {
         match self {
             Side::Pay => -1.0,
@@ -35,6 +38,7 @@ impl Side {
         }
     }
 
+    /// Returns the inverse side (Pay becomes Receive, and vice versa).
     pub fn inverse(&self) -> Side {
         match self {
             Side::Pay => Side::Receive,
@@ -68,13 +72,18 @@ impl From<Side> for String {
 /// Enum that represents a cashflow.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Cashflow {
+    /// A redemption cashflow.
     Redemption(SimpleCashflow),
+    /// A disbursement cashflow.
     Disbursement(SimpleCashflow),
+    /// A fixed rate coupon cashflow.
     FixedRateCoupon(FixedRateCoupon),
+    /// A floating rate coupon cashflow.
     FloatingRateCoupon(FloatingRateCoupon),
 }
 
 impl Cashflow {
+    /// Sets the discount curve ID for this cashflow.
     pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
             Cashflow::Redemption(cashflow) => cashflow.set_discount_curve_id(id),
@@ -84,6 +93,7 @@ impl Cashflow {
         }
     }
 
+    /// Sets the forecast curve ID for floating rate coupons.
     pub fn set_forecast_curve_id(&mut self, id: usize) {
         if let Cashflow::FloatingRateCoupon(coupon) = self {
             coupon.set_forecast_curve_id(id)
@@ -266,9 +276,13 @@ impl Display for Cashflow {
 /// Enum that represents the type of a cashflow.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum CashflowType {
+    /// A redemption type.
     Redemption,
+    /// A disbursement type.
     Disbursement,
+    /// A fixed rate coupon type.
     FixedRateCoupon,
+    /// A floating rate coupon type.
     FloatingRateCoupon,
 }
 

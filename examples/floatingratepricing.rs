@@ -1,3 +1,5 @@
+//! Example demonstrating pricing of floating rate instruments using the rustatlas library.
+
 extern crate rustatlas;
 
 use rustatlas::{

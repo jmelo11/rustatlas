@@ -31,7 +31,9 @@ use crate::{
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period.
 pub trait AdvanceTermStructureInTime {
+    /// Advances the term structure to a given period.
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>>;
+    /// Advances the term structure to a given date.
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>>;
 }
 

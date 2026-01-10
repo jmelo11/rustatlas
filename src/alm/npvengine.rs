@@ -35,6 +35,7 @@ pub struct NPVEngine<'a> {
 }
 
 impl<'a> NPVEngine<'a> {
+    /// Creates a new NPVEngine with default chunk size of 1000.
     pub fn new(instruments: &'a mut [Instrument], market_store: &'a MarketStore) -> Self {
         NPVEngine {
             instruments,
@@ -43,11 +44,13 @@ impl<'a> NPVEngine<'a> {
         }
     }
 
+    /// Sets the chunk size for parallel processing and returns self for method chaining.
     pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
         self.chunk_size = chunk_size;
         self
     }
 
+    /// Executes the NPV calculation on the instruments and returns a map of NPV values by date.
     pub fn run(&mut self) -> Result<BTreeMap<Date, f64>> {
         // indexing
         let indexing_visitor = IndexingVisitor::new();

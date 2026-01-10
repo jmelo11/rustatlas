@@ -42,6 +42,7 @@ pub struct FixedRateInstrument {
 }
 
 impl FixedRateInstrument {
+    /// Creates a new `FixedRateInstrument` with the specified parameters.
     pub fn new(
         start_date: Date,
         end_date: Date,
@@ -74,46 +75,57 @@ impl FixedRateInstrument {
         }
     }
 
+    /// Returns the identifier of this instrument.
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
+    /// Returns the start date of this instrument.
     pub fn start_date(&self) -> Date {
         self.start_date
     }
 
+    /// Returns the end date (maturity) of this instrument.
     pub fn end_date(&self) -> Date {
         self.end_date
     }
 
+    /// Returns the notional amount of this instrument.
     pub fn notional(&self) -> f64 {
         self.notional
     }
 
+    /// Returns the fixed interest rate of this instrument.
     pub fn rate(&self) -> InterestRate {
         self.rate
     }
 
+    /// Returns the structure of this instrument.
     pub fn structure(&self) -> Structure {
         self.structure
     }
 
+    /// Returns the payment frequency of this instrument.
     pub fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
+    /// Returns the identifier of the discount curve used for valuation.
     pub fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
+    /// Returns the side (pay or receive) of this instrument.
     pub fn side(&self) -> Side {
         self.side
     }
 
+    /// Returns the issue date of this instrument.
     pub fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
+    /// Sets the discount curve identifier and updates all cashflows.
     pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self.mut_cashflows()
@@ -123,6 +135,7 @@ impl FixedRateInstrument {
         self
     }
 
+    /// Sets the interest rate and updates all fixed rate coupons.
     pub fn set_rate(mut self, rate: InterestRate) -> Self {
         self.rate = rate;
         self.mut_cashflows().iter_mut().for_each(|cf| {
@@ -145,8 +158,10 @@ impl HasCurrency for FixedRateInstrument {
 /// The yield rate is used to discount the cashflows to between the start and
 /// end dates and calculate the accrued amount.
 pub trait BondAccrual: HasCashflows {
+    /// Returns the yield rate used for bond accrual calculations.
     fn yield_rate(&self) -> Option<InterestRate>;
 
+    /// Calculates the accrued amount for a bond between two dates.
     fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let ini_pv = self.discounted_cashflows(start_date)?;
         let end_pv = self.discounted_cashflows(end_date)?;
@@ -180,6 +195,7 @@ pub trait BondAccrual: HasCashflows {
         Ok(amount)
     }
 
+    /// Calculates the present value of cashflows from the evaluation date forward using the yield rate.
     fn discounted_cashflows(&self, evaluation_date: Date) -> Result<f64> {
         let rate = self
             .yield_rate()

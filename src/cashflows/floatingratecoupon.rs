@@ -46,6 +46,7 @@ pub struct FloatingRateCoupon {
 }
 
 impl FloatingRateCoupon {
+    /// Creates a new floating rate coupon with the specified parameters.
     pub fn new(
         notional: f64,
         spread: f64,
@@ -70,24 +71,29 @@ impl FloatingRateCoupon {
         }
     }
 
+    /// Sets the discount curve ID and returns the modified coupon.
     pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
         self.cashflow.with_discount_curve_id(id);
         self
     }
 
+    /// Sets the forecast curve ID and returns the modified coupon.
     pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
         self.forecast_curve_id = Some(id);
         self
     }
 
+    /// Sets the discount curve ID.
     pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    /// Sets the forecast curve ID.
     pub fn set_forecast_curve_id(&mut self, id: usize) {
         self.forecast_curve_id = Some(id);
     }
 
+    /// Sets the spread and updates the cashflow if a fixing rate is set.
     pub fn set_spread(&mut self, spread: f64) {
         self.spread = spread;
         // if fixing rate is set, update the cashflow
@@ -96,22 +102,27 @@ impl FloatingRateCoupon {
         }
     }
 
+    /// Sets the notional amount.
     pub fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
     }
 
+    /// Returns the notional amount.
     pub fn notional(&self) -> f64 {
         self.notional
     }
 
+    /// Returns the spread.
     pub fn spread(&self) -> f64 {
         self.spread
     }
 
+    /// Returns the rate definition.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Returns the fixing date, or the accrual start date if no fixing date is set.
     pub fn fixing_date(&self) -> Date {
         match self.fixing_date {
             Some(date) => date,
@@ -119,6 +130,7 @@ impl FloatingRateCoupon {
         }
     }
 
+    /// Returns the fixing rate if set.
     pub fn fixing_rate(&self) -> Option<f64> {
         self.fixing_rate
     }

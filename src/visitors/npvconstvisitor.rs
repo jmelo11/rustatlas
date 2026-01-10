@@ -19,12 +19,14 @@ pub struct NPVConstVisitor<'a> {
 }
 
 impl<'a> NPVConstVisitor<'a> {
+    /// Creates a new NPVConstVisitor with the given market data and flag.
     pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data,
             include_today_cashflows,
         }
     }
+    /// Sets whether to include cashflows with payment date equal to the reference date.
     pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }

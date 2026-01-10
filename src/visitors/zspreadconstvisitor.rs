@@ -26,6 +26,7 @@ pub struct ZSpreadConstVisitor<'a> {
 }
 
 impl<'a> ZSpreadConstVisitor<'a> {
+    /// Creates a new ZSpreadConstVisitor with the given market data, rate definition, and target NPV.
     pub fn new(
         market_data: &'a [MarketData],
         rate_definition: RateDefinition,

@@ -61,6 +61,7 @@ pub struct MakeFixedRateLeg {
 
 /// New, setters and getters
 impl MakeFixedRateLeg {
+    /// Creates a new MakeFixedRateLeg builder with default values.
     pub fn new() -> MakeFixedRateLeg {
         MakeFixedRateLeg {
             start_date: None,
@@ -88,6 +89,7 @@ impl MakeFixedRateLeg {
         }
     }
 
+    /// Sets the end of month flag.
     pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFixedRateLeg {
         self.end_of_month = end_of_month;
         self
@@ -126,16 +128,19 @@ impl MakeFixedRateLeg {
         self
     }
 
+    /// Sets the yield rate.
     pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateLeg {
         self.yield_rate = Some(yield_rate);
         self
     }
 
+    /// Sets the calendar.
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateLeg {
         self.calendar = calendar;
         self
     }
 
+    /// Sets the business day convention.
     pub fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
@@ -144,6 +149,7 @@ impl MakeFixedRateLeg {
         self
     }
 
+    /// Sets the date generation rule.
     pub fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
@@ -307,6 +313,7 @@ impl Default for MakeFixedRateLeg {
 }
 
 impl MakeFixedRateLeg {
+    /// Builds the Leg from the configured MakeFixedRateLeg builder.
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self

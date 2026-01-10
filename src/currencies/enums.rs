@@ -9,30 +9,55 @@ use crate::utils::errors::{AtlasError, Result};
 /// Enum for currencies supported by the library
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Currency {
+    /// US Dollar
     USD,
+    /// Euro
     EUR,
+    /// Japanese Yen
     JPY,
+    /// South African Rand
     ZAR,
+    /// Chilean Peso
     CLP,
+    /// Chilean Unidad de Fomento
     CLF,
+    /// Swiss Franc
     CHF,
+    /// Brazilian Real
     BRL,
+    /// Colombian Peso
     COP,
+    /// Mexican Peso
     MXN,
+    /// Australian Dollar
     AUD,
+    /// Canadian Dollar
     CAD,
+    /// Chinese Yuan
     CNY,
+    /// British Pound
     GBP,
+    /// New Zealand Dollar
     NZD,
+    /// Norwegian Krone
     NOK,
+    /// Swedish Krona
     SEK,
+    /// Peruvian Sol
     PEN,
+    /// Chinese Yuan (offshore)
     CNH,
+    /// Indian Rupee
     INR,
+    /// New Taiwan Dollar
     TWD,
+    /// Hong Kong Dollar
     HKD,
+    /// South Korean Won
     KRW,
+    /// Danish Krone
     DKK,
+    /// Indonesian Rupiah
     IDR,
 }
 
@@ -69,18 +94,23 @@ impl Currency {
         }
     }
 
+    /// Returns the alphabetic code of the currency.
     pub const fn as_str(self) -> &'static str {
         self.details().0
     }
+    /// Returns the display name of the currency.
     pub const fn name(self) -> &'static str {
         self.details().1
     }
+    /// Returns the symbol of the currency.
     pub const fn symbol(self) -> &'static str {
         self.details().2
     }
+    /// Returns the decimal precision of the currency.
     pub const fn precision(self) -> u8 {
         self.details().3
     }
+    /// Returns the numeric ISO 4217 code of the currency.
     pub const fn numeric_code(self) -> u16 {
         self.details().4
     }

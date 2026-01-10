@@ -34,6 +34,17 @@ pub struct FixedRateCoupon {
 }
 
 impl FixedRateCoupon {
+    /// Creates a new fixed rate coupon.
+    ///
+    /// # Arguments
+    ///
+    /// * `notional` - The notional amount of the coupon
+    /// * `rate` - The fixed interest rate
+    /// * `accrual_start_date` - The date from which interest accrues
+    /// * `accrual_end_date` - The date until which interest accrues
+    /// * `payment_date` - The date on which the coupon is paid
+    /// * `currency` - The currency of the coupon
+    /// * `side` - Whether this is a Pay or Receive side
     pub fn new(
         notional: f64,
         rate: InterestRate,
@@ -54,20 +65,24 @@ impl FixedRateCoupon {
         }
     }
 
+    /// Sets the discount curve ID and returns self for method chaining.
     pub fn with_discount_curve_id(mut self, id: usize) -> FixedRateCoupon {
         self.cashflow.set_discount_curve_id(id);
         self
     }
 
+    /// Sets the discount curve ID.
     pub fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    /// Sets the interest rate value.
     pub fn set_rate_value(&mut self, rate_value: f64) {
         let rate = InterestRate::from_rate_definition(rate_value, self.rate.rate_definition());
         self.set_rate(rate);
     }
 
+    /// Sets the interest rate and updates the cashflow amount.
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
         // Update the cashflow amount
@@ -77,6 +92,7 @@ impl FixedRateCoupon {
         );
     }
 
+    /// Sets the notional amount and updates the cashflow amount.
     pub fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
         self.cashflow.set_amount(
@@ -88,10 +104,12 @@ impl FixedRateCoupon {
         );
     }
 
+    /// Returns the notional amount.
     pub fn notional(&self) -> f64 {
         self.notional
     }
 
+    /// Returns the interest rate.
     pub fn rate(&self) -> InterestRate {
         self.rate
     }

@@ -58,6 +58,7 @@ pub struct MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
+    /// Creates a new instance of MakeDoubleRateInstrument with default values.
     pub fn new() -> Self {
         MakeDoubleRateInstrument {
             start_date: None,
@@ -116,6 +117,7 @@ impl MakeDoubleRateInstrument {
         self
     }
 
+    /// Sets the instrument identifier.
     pub fn with_id(mut self, id: String) -> MakeDoubleRateInstrument {
         self.id = Some(id);
         self
@@ -240,6 +242,7 @@ impl Default for MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
+    /// Builds and returns a DoubleRateInstrument from the configured parameters.
     pub fn build(self) -> Result<DoubleRateInstrument> {
         // vector to store cashflows
         let mut cashflows = Vec::new();
@@ -754,7 +757,7 @@ mod test {
         instrument
             .mut_cashflows()
             .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.03));
+            .for_each(|cf: &mut Cashflow| cf.set_fixing_rate(0.03));
 
         instrument.cashflows().iter().for_each(|cf| match cf {
             Cashflow::FixedRateCoupon(coupon) => {

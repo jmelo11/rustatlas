@@ -1,3 +1,4 @@
+//! Benchmark for fixed rate pricing calculations.
 extern crate rustatlas;
 
 use std::sync::Arc;
@@ -31,6 +32,7 @@ use crate::common::common::*;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
+/// Benchmark function that creates and processes 150,000 fixed rate instruments in parallel.
 fn multiple() {
     let market_store = create_store().unwrap();
     let ref_date = market_store.reference_date();

@@ -19,6 +19,13 @@ pub struct NPVByDateConstVisitor<'a> {
 }
 
 impl<'a> NPVByDateConstVisitor<'a> {
+    /// Creates a new NPVByDateConstVisitor.
+    ///
+    /// # Arguments
+    ///
+    /// * `reference_date` - The reference date for NPV calculations
+    /// * `market_data` - A slice of market data for discount factors and FX rates
+    /// * `include_today_cashflows` - Whether to include cashflows on the reference date
     pub fn new(
         reference_date: Date,
         market_data: &'a [MarketData],
@@ -30,6 +37,7 @@ impl<'a> NPVByDateConstVisitor<'a> {
             include_today_cashflows,
         }
     }
+    /// Sets whether to include cashflows on the reference date.
     pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }

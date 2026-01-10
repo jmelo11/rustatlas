@@ -13,15 +13,22 @@ use crate::{
 /// Day count convention enum.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DayCounter {
+    /// Actual/360 day count convention
     Actual360,
+    /// Actual/365 day count convention
     Actual365,
+    /// 30/360 day count convention
     Thirty360,
+    /// 30/360 US day count convention
     Thirty360US,
+    /// Actual/Actual day count convention
     ActualActual,
+    /// Business/252 day count convention
     Business252,
 }
 
 impl DayCounter {
+    /// Calculates the day count between two dates using the selected day count convention.
     pub fn day_count(&self, start: Date, end: Date) -> i64 {
         match self {
             DayCounter::Actual360 => Actual360::day_count(start, end),
@@ -33,6 +40,7 @@ impl DayCounter {
         }
     }
 
+    /// Calculates the year fraction between two dates using the selected day count convention.
     pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
         match self {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),

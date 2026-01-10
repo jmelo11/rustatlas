@@ -20,11 +20,17 @@ use super::{
 /// Represents the type of rate.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
+    /// Fixed rate type.
     Fixed,
+    /// Floating rate type.
     Floating,
+    /// Fixed then floating rate type.
     FixedThenFloating,
+    /// Floating then fixed rate type.
     FloatingThenFixed,
+    /// Fixed then fixed rate type.
     FixedThenFixed,
+    /// Shuffled rate type.
     Suffled,
 }
 
@@ -63,9 +69,13 @@ impl From<RateType> for String {
 /// Represents an instrument. This is a wrapper around the FixedRateInstrument and FloatingRateInstrument.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Instrument {
+    /// Fixed rate instrument.
     FixedRateInstrument(FixedRateInstrument),
+    /// Floating rate instrument.
     FloatingRateInstrument(FloatingRateInstrument),
+    /// Hybrid rate instrument.
     HybridRateInstrument(HybridRateInstrument),
+    /// Double rate instrument.
     DoubleRateInstrument(DoubleRateInstrument),
 }
 
@@ -90,6 +100,7 @@ impl HasCashflows for Instrument {
 }
 
 impl Instrument {
+    /// Returns the notional value of the instrument.
     pub fn notional(&self) -> f64 {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.notional(),
@@ -99,6 +110,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the start date of the instrument.
     pub fn start_date(&self) -> Date {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.start_date(),
@@ -108,6 +120,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the end date of the instrument.
     pub fn end_date(&self) -> Date {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.end_date(),
@@ -117,6 +130,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the identifier of the instrument.
     pub fn id(&self) -> Option<String> {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.id(),
@@ -126,6 +140,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the structure of the instrument.
     pub fn structure(&self) -> Structure {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.structure(),
@@ -135,6 +150,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the payment frequency of the instrument.
     pub fn payment_frequency(&self) -> Frequency {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.payment_frequency(),
@@ -144,6 +160,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the side of the instrument.
     pub fn side(&self) -> Option<Side> {
         match self {
             Instrument::FixedRateInstrument(fri) => Some(fri.side()),
@@ -153,6 +170,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the issue date of the instrument.
     pub fn issue_date(&self) -> Option<Date> {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.issue_date(),
@@ -162,6 +180,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the rate type of the instrument.
     pub fn rate_type(&self) -> RateType {
         match self {
             Instrument::FixedRateInstrument(_) => RateType::Fixed,
@@ -171,6 +190,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the fixed rate of the instrument, if applicable.
     pub fn rate(&self) -> Option<f64> {
         match self {
             Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate()),
@@ -180,6 +200,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the spread of the instrument, if applicable.
     pub fn spread(&self) -> Option<f64> {
         match self {
             Instrument::FixedRateInstrument(_) => None,
@@ -189,6 +210,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the forecast curve identifier of the instrument.
     pub fn forecast_curve_id(&self) -> Option<usize> {
         match self {
             Instrument::FixedRateInstrument(_) => None,
@@ -198,6 +220,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the discount curve identifier of the instrument.
     pub fn discount_curve_id(&self) -> Option<usize> {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.discount_curve_id(),
@@ -207,6 +230,7 @@ impl Instrument {
         }
     }
 
+    /// Sets the discount curve identifier for the instrument.
     pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
             Instrument::FixedRateInstrument(fri) => fri.set_discount_curve_id(id),
@@ -216,6 +240,7 @@ impl Instrument {
         }
     }
 
+    /// Sets the forecast curve identifier for the instrument.
     pub fn set_forecast_curve_id(&mut self, id: usize) {
         match self {
             Instrument::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
@@ -225,6 +250,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the first rate definition of the instrument.
     pub fn first_rate_definition(&self) -> Option<RateDefinition> {
         match self {
             Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate_definition()),
@@ -234,6 +260,7 @@ impl Instrument {
         }
     }
 
+    /// Returns the second rate definition of the instrument.
     pub fn second_rate_definition(&self) -> Option<RateDefinition> {
         match self {
             Instrument::FixedRateInstrument(_) => None,

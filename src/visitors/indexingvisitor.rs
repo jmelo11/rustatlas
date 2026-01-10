@@ -14,12 +14,14 @@ pub struct IndexingVisitor {
 }
 
 impl IndexingVisitor {
+    /// Creates a new IndexingVisitor instance.
     pub fn new() -> Self {
         IndexingVisitor {
             request: RefCell::new(Vec::new()),
         }
     }
 
+    /// Returns a clone of the collected market requests.
     pub fn request(&self) -> Vec<MarketRequest> {
         self.request.borrow().clone()
     }

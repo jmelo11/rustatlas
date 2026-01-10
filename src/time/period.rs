@@ -26,10 +26,40 @@ pub struct Period {
 }
 
 impl Period {
+    /// Creates a new Period with the given length and time unit.
+    ///
+    /// # Arguments
+    /// * `length` - The length of the period as an integer
+    /// * `units` - The time unit of the period
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.length(), 5);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
     pub fn new(length: i32, units: TimeUnit) -> Period {
         Period { length, units }
     }
 
+    /// Creates a Period from a Frequency.
+    ///
+    /// # Arguments
+    /// * `freq` - The frequency to convert to a Period
+    ///
+    /// # Returns
+    /// Some(Period) if the frequency can be converted, None for OtherFrequency
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::from_frequency(Frequency::Annual).unwrap();
+    /// assert_eq!(p.length(), 1);
+    /// assert_eq!(p.units(), TimeUnit::Years);
+    /// ```
     pub fn from_frequency(freq: Frequency) -> Option<Period> {
         match freq {
             Frequency::NoFrequency => Some(Self {
@@ -64,6 +94,15 @@ impl Period {
         }
     }
 
+    /// Returns the Frequency equivalent of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(1, TimeUnit::Years);
+    /// assert_eq!(p.frequency(), Frequency::Annual);
+    /// ```
     pub fn frequency(&self) -> Frequency {
         let length = self.length.abs(); // assuming `length` is i32 or some integer type
 
@@ -114,6 +153,19 @@ impl Period {
         }
     }
 
+    /// Normalizes the Period by converting to higher time units when possible.
+    ///
+    /// For example, 7 Days becomes 1 Week, and 12 Months becomes 1 Year.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let mut p = Period::new(12, TimeUnit::Months);
+    /// p.normalize();
+    /// assert_eq!(p.length(), 1);
+    /// assert_eq!(p.units(), TimeUnit::Years);
+    /// ```
     pub fn normalize(&mut self) {
         if self.length == 0 {
             self.units = TimeUnit::Days;
@@ -136,14 +188,42 @@ impl Period {
         }
     }
 
+    /// Returns the length of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.length(), 5);
+    /// ```
     pub fn length(&self) -> i32 {
         self.length
     }
 
+    /// Returns the time unit of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
     pub fn units(&self) -> TimeUnit {
         self.units
     }
 
+    /// Creates an empty Period with zero length in Days.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::empty();
+    /// assert_eq!(p.length(), 0);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
     pub fn empty() -> Self {
         Self {
             length: 0,
@@ -151,6 +231,19 @@ impl Period {
         }
     }
 
+    /// Parses a tenor string (e.g., "1Y", "6M", "1Y6M") into a Period.
+    ///
+    /// # Arguments
+    /// * `tenor` - A string in the format like "1Y" or "1Y6M"
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::from_str("1Y6M").unwrap();
+    /// assert_eq!(p.length(), 18);
+    /// assert_eq!(p.units(), TimeUnit::Months);
+    /// ```
     pub fn from_str(tenor: &str) -> Result<Period> {
         // parse multiple periods and add them
         let chars = tenor.chars();
@@ -202,6 +295,15 @@ impl Period {
         Ok(Period::new(length, units))
     }
 
+    /// Returns the fraction of a year represented by this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(6, TimeUnit::Months);
+    /// assert_eq!(p.period_in_year(), 0.5);
+    /// ```
     pub fn period_in_year(&self) -> f64 {
         match self.units {
             TimeUnit::Years => self.length as f64,

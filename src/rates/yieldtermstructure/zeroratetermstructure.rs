@@ -52,6 +52,20 @@ pub struct ZeroRateTermStructure {
 }
 
 impl ZeroRateTermStructure {
+    /// Creates a new ZeroRateTermStructure.
+    ///
+    /// # Arguments
+    ///
+    /// * `reference_date` - The reference date for the term structure
+    /// * `dates` - Vector of dates for the rates
+    /// * `rates` - Vector of zero rates corresponding to each date
+    /// * `rate_definition` - The rate definition (day counter, compounding, frequency)
+    /// * `interpolator` - The interpolation method to use
+    /// * `enable_extrapolation` - Whether to allow extrapolation beyond the last date
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if dates and rates have different lengths or if the first date is not the reference date.
     pub fn new(
         reference_date: Date,
         dates: Vec<Date>,
@@ -94,22 +108,27 @@ impl ZeroRateTermStructure {
         })
     }
 
+    /// Returns a reference to the vector of dates.
     pub fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
+    /// Returns a reference to the vector of zero rates.
     pub fn rates(&self) -> &Vec<f64> {
         &self.rates
     }
 
+    /// Returns the rate definition used by this term structure.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Returns whether extrapolation is enabled for this term structure.
     pub fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
+    /// Returns the interpolator used by this term structure.
     pub fn interpolator(&self) -> Interpolator {
         self.interpolator
     }

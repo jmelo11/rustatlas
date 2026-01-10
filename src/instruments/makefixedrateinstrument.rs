@@ -63,6 +63,7 @@ pub struct MakeFixedRateInstrument {
 
 /// New, setters and getters
 impl MakeFixedRateInstrument {
+    /// Creates a new MakeFixedRateInstrument builder with default values.
     pub fn new() -> MakeFixedRateInstrument {
         MakeFixedRateInstrument {
             start_date: None,
@@ -126,21 +127,25 @@ impl MakeFixedRateInstrument {
         self
     }
 
+    /// Sets the instrument id.
     pub fn with_id(mut self, id: Option<String>) -> MakeFixedRateInstrument {
         self.id = id;
         self
     }
 
+    /// Sets the yield rate.
     pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
         self.yield_rate = Some(yield_rate);
         self
     }
 
+    /// Sets the calendar.
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateInstrument {
         self.calendar = calendar;
         self
     }
 
+    /// Sets the business day convention.
     pub fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
@@ -149,6 +154,7 @@ impl MakeFixedRateInstrument {
         self
     }
 
+    /// Sets the date generation rule.
     pub fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
@@ -318,6 +324,7 @@ impl Default for MakeFixedRateInstrument {
 }
 
 impl MakeFixedRateInstrument {
+    /// Builds and returns a FixedRateInstrument from the configured builder.
     pub fn build(self) -> Result<FixedRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self

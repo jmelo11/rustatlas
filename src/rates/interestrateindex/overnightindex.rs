@@ -36,6 +36,7 @@ pub struct OvernightIndex {
 }
 
 impl OvernightIndex {
+    /// Creates a new `OvernightIndex` with the given reference date.
     pub fn new(reference_date: Date) -> OvernightIndex {
         OvernightIndex {
             name: None,
@@ -47,30 +48,36 @@ impl OvernightIndex {
         }
     }
 
+    /// Sets the name of this overnight index.
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.name = name;
         self
     }
 
+    /// Returns the rate definition of this overnight index.
     pub fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Sets the rate definition for this overnight index.
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
     }
 
+    /// Sets the fixings for this overnight index.
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
         self
     }
 
+    /// Sets the term structure for this overnight index.
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
 
+    /// Calculates the average overnight rate between two dates.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;

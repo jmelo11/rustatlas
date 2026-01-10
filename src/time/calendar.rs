@@ -25,11 +25,17 @@ use std::collections::HashSet;
 /// * `UnitedStates` - A calendar for the United States.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Calendar {
+    /// A null calendar that considers all days as business days.
     NullCalendar(NullCalendar),
+    /// A calendar that considers only weekends as non-business days.
     WeekendsOnly(WeekendsOnly),
+    /// TARGET Eurosystem calendar for business days.
     TARGET(TARGET),
+    /// A calendar for the United States.
     UnitedStates(UnitedStates),
+    /// A calendar for Brazil.
     Brazil(Brazil),
+    /// A calendar for Chile.
     Chile(Chile),
 }
 

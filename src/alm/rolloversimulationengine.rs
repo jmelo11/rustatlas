@@ -40,10 +40,16 @@ use crate::{
 /// ## Details
 /// - Requires redemptions and the currency of the redemptions
 pub enum GrowthMode {
+    /// Annual growth mode applies growth rate on an annual basis to the outstanding amount.
     Annual,
+    /// Paid amount growth mode applies growth rate to each redemption payment.
     PaidAmount,
 }
 
+/// Simulation engine for rolling over positions with market data indexing and fixing.
+///
+/// This engine generates new positions based on redemption schedules and growth strategies,
+/// applies market indexing and fixing, and aggregates redemption cashflows.
 pub struct RolloverSimulationEngine<'a> {
     market_store: &'a MarketStore,
     base_redemptions: BTreeMap<Date, f64>,
@@ -54,6 +60,7 @@ pub struct RolloverSimulationEngine<'a> {
 }
 
 impl<'a> RolloverSimulationEngine<'a> {
+    /// Creates a new `RolloverSimulationEngine` with the specified market store, redemptions, and horizon.
     pub fn new(
         market_store: &'a MarketStore,
         base_redemptions: BTreeMap<Date, f64>,
@@ -80,16 +87,19 @@ impl<'a> RolloverSimulationEngine<'a> {
         }
     }
 
+    /// Sets the growth mode for the simulation engine.
     pub fn with_growth_mode(mut self, mode: GrowthMode) -> Self {
         self.growth_mode = mode;
         self
     }
 
+    /// Sets the growth rate for the simulation engine.
     pub fn with_growth_rate(mut self, rate: f64) -> Self {
         self.growth_rate = rate;
         self
     }
 
+    /// Runs the simulation engine with the given rollover strategies and returns the simulated instruments.
     pub fn run(&self, strategies: Vec<RolloverStrategy>) -> Result<Vec<Instrument>> {
         let mut redemptions = self.base_redemptions.clone(); // redemptions for target portfolio
 

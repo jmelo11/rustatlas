@@ -11,18 +11,31 @@ use crate::utils::errors::{AtlasError, Result};
 /// Enum representing a financial frequency.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub enum Frequency {
+    /// No frequency.
     NoFrequency = -1,
+    /// Once.
     Once = 0,
+    /// Annual frequency.
     Annual = 1,
+    /// Semiannual frequency.
     Semiannual = 2,
+    /// Every fourth month frequency.
     EveryFourthMonth = 3,
+    /// Quarterly frequency.
     Quarterly = 4,
+    /// Bimonthly frequency.
     Bimonthly = 6,
+    /// Monthly frequency.
     Monthly = 12,
+    /// Every fourth week frequency.
     EveryFourthWeek = 13,
+    /// Biweekly frequency.
     Biweekly = 26,
+    /// Weekly frequency.
     Weekly = 52,
+    /// Daily frequency.
     Daily = 365,
+    /// Other frequency.
     OtherFrequency = 999,
 }
 
@@ -76,9 +89,13 @@ impl From<Frequency> for String {
 /// Enum representing a time unit.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum TimeUnit {
+    /// Days.
     Days,
+    /// Weeks.
     Weeks,
+    /// Months.
     Months,
+    /// Years.
     Years,
 }
 
@@ -114,17 +131,29 @@ impl From<TimeUnit> for String {
 /// Enum representing a month.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Month {
+    /// January.
     January = 1,
+    /// February.
     February,
+    /// March.
     March,
+    /// April.
     April,
+    /// May.
     May,
+    /// June.
     June,
+    /// July.
     July,
+    /// August.
     August,
+    /// September.
     September,
+    /// October.
     October,
+    /// November.
     November,
+    /// December.
     December,
 }
 
@@ -173,17 +202,29 @@ impl From<Month> for String {
 /// Enum representing an IMM month.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum IMMMonth {
+    /// F.
     F = 1,
+    /// G.
     G = 2,
+    /// H.
     H = 3,
+    /// J.
     J = 4,
+    /// K.
     K = 5,
+    /// M.
     M = 6,
+    /// N.
     N = 7,
+    /// Q.
     Q = 8,
+    /// U.
     U = 9,
+    /// V.
     V = 10,
+    /// X.
     X = 11,
+    /// Z.
     Z = 12,
 }
 
@@ -191,15 +232,25 @@ pub enum IMMMonth {
 /// Enum representing a date generation rule.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum DateGenerationRule {
+    /// Backward generation rule.
     Backward,
+    /// Forward generation rule.
     Forward,
+    /// Zero generation rule.
     Zero,
+    /// Third Wednesday generation rule.
     ThirdWednesday,
+    /// Third Wednesday inclusive generation rule.
     ThirdWednesdayInclusive,
+    /// Twentieth generation rule.
     Twentieth,
+    /// Twentieth IMM generation rule.
     TwentiethIMM,
+    /// Old CDS generation rule.
     OldCDS,
+    /// CDS generation rule.
     CDS,
+    /// CDS 2015 generation rule.
     CDS2015,
 }
 
@@ -259,12 +310,19 @@ impl From<DateGenerationRule> for String {
 ///   unless that day falls in the first half of the month, in which case choose the first business day before the given holiday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize, Hash)]
 pub enum BusinessDayConvention {
+    /// Following convention.
     Following,
+    /// Modified following convention.
     ModifiedFollowing,
+    /// Preceding convention.
     Preceding,
+    /// Modified preceding convention.
     ModifiedPreceding,
+    /// Unadjusted convention.
     Unadjusted,
+    /// Half month modified following convention.
     HalfMonthModifiedFollowing,
+    /// Nearest convention.
     Nearest,
 }
 
@@ -308,12 +366,19 @@ impl From<BusinessDayConvention> for String {
 /// Enum representing a weekday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Weekday {
+    /// Sunday.
     Sunday = 1,
+    /// Monday.
     Monday,
+    /// Tuesday.
     Tuesday,
+    /// Wednesday.
     Wednesday,
+    /// Thursday.
     Thursday,
+    /// Friday.
     Friday,
+    /// Saturday.
     Saturday,
 }
 

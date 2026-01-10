@@ -26,7 +26,9 @@ pub struct IndexStore {
     currency_curve: HashMap<Currency, usize>,
 }
 
+/// Trait for reading an interest rate index.
 pub trait ReadIndex {
+    /// Returns a read guard to the interest rate index.
     fn read_index(&self) -> Result<RwLockReadGuard<'_, dyn InterestRateIndexTrait>>;
 }
 
@@ -38,6 +40,7 @@ impl ReadIndex for Arc<RwLock<dyn InterestRateIndexTrait>> {
 }
 
 impl IndexStore {
+    /// Creates a new `IndexStore` with the given reference date.
     pub fn new(reference_date: Date) -> IndexStore {
         IndexStore {
             reference_date,
@@ -46,14 +49,17 @@ impl IndexStore {
         }
     }
 
+    /// Returns the reference date of this index store.
     pub fn reference_date(&self) -> Date {
         self.reference_date
     }
 
+    /// Adds a currency curve mapping to the store.
     pub fn add_currency_curve(&mut self, currency: Currency, fx_curve: usize) {
         self.currency_curve.insert(currency, fx_curve);
     }
 
+    /// Retrieves the curve ID for the given currency.
     pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
         self.currency_curve
             .get(&currency)
@@ -64,6 +70,7 @@ impl IndexStore {
             )))
     }
 
+    /// Links a yield term structure to the index with the given ID.
     pub fn link_term_structure(
         &self,
         id: usize,
@@ -81,6 +88,7 @@ impl IndexStore {
         Ok(())
     }
 
+    /// Adds an index to the store with the given ID.
     pub fn add_index(
         &mut self,
         id: usize,
@@ -110,6 +118,7 @@ impl IndexStore {
         Ok(())
     }
 
+    /// Replaces an existing index in the store with the given ID.
     pub fn replace_index(
         &mut self,
         id: usize,
@@ -139,6 +148,7 @@ impl IndexStore {
         Ok(())
     }
 
+    /// Retrieves an index from the store by its ID.
     pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         self.index_map
             .get(&id)
@@ -149,6 +159,7 @@ impl IndexStore {
             )))
     }
 
+    /// Retrieves an index from the store by its name.
     pub fn get_index_by_name(
         &self,
         name: String,
@@ -164,6 +175,7 @@ impl IndexStore {
         )))
     }
 
+    /// Returns a vector of all index names in the store.
     pub fn get_index_names(&self) -> Result<Vec<String>> {
         let mut names = Vec::new();
         for index in self.index_map.values() {
@@ -172,6 +184,7 @@ impl IndexStore {
         Ok(names)
     }
 
+    /// Returns a mapping of index names to their IDs.
     pub fn get_index_map(&self) -> Result<HashMap<String, usize>> {
         let mut map = HashMap::new();
         for (id, index) in self.index_map.iter() {
@@ -180,6 +193,7 @@ impl IndexStore {
         Ok(map)
     }
 
+    /// Returns all indices stored in this store.
     pub fn get_all_indices(&self) -> Vec<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut indices = Vec::new();
         for index in self.index_map.values() {
@@ -188,6 +202,7 @@ impl IndexStore {
         indices
     }
 
+    /// Returns the next available index ID.
     pub fn next_available_id(&self) -> usize {
         let keys = self.index_map.keys();
         let mut max = 0;
@@ -199,6 +214,7 @@ impl IndexStore {
         max + 1
     }
 
+    /// Advances the index store to a new reference date by the given period.
     pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
         let reference_date = self.reference_date + period;
         let mut store = IndexStore::new(reference_date);
@@ -214,17 +230,19 @@ impl IndexStore {
         Ok(store)
     }
 
+    /// Advances the index store to a specific date.
     pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
         let days = (date - self.reference_date) as i32;
         self.advance_to_period(Period::new(days, TimeUnit::Days))
     }
 
-    /// # swaps the index with the given id to the given index
+    /// Swaps the index with the given source ID to the given target ID.
     pub fn swap_index_by_id(&mut self, from: usize, to: usize) {
         let index = self.index_map.remove(&from).unwrap();
         self.index_map.insert(to, index);
     }
 
+    /// Calculates the currency forecast factor between two currencies at a given date.
     pub fn currency_forescast_factor(
         &self,
         first_currency: Currency,

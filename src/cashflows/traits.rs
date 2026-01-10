@@ -5,9 +5,13 @@ use super::cashflow::Side;
 /// # InterestAccrual
 /// A trait that defines the accrual period of an instrument.
 pub trait InterestAccrual {
+    /// Returns the start date of the accrual period.
     fn accrual_start_date(&self) -> Result<Date>;
+    /// Returns the end date of the accrual period.
     fn accrual_end_date(&self) -> Result<Date>;
+    /// Calculates the accrued amount between two dates.
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64>;
+    /// Returns the relevant accrual dates that intersect with the given date range.
     fn relevant_accrual_dates(&self, start_date: Date, end_date: Date) -> Result<(Date, Date)> {
         let accrual_start = self.accrual_start_date()?;
         let accrual_end = self.accrual_end_date()?;
@@ -38,20 +42,25 @@ pub trait InterestAccrual {
 /// # RequiresFixingRate
 /// A trait that defines if an instrument requires a fixing rate.
 pub trait RequiresFixingRate: InterestAccrual {
+    /// Sets the fixing rate for the instrument.
     fn set_fixing_rate(&mut self, fixing_rate: f64);
 }
 
 /// # Payable
 /// A trait that defines the payment of an instrument.
 pub trait Payable {
+    /// Returns the payment amount.
     fn amount(&self) -> Result<f64>;
+    /// Returns the side of the payment (pay or receive).
     fn side(&self) -> Side;
+    /// Returns the payment date.
     fn payment_date(&self) -> Date;
 }
 
 /// # Expires
 /// A trait that defines if an instrument expires.
 pub trait Expires {
+    /// Checks if the instrument has expired at the given date.
     fn is_expired(&self, date: Date) -> bool;
 }
 

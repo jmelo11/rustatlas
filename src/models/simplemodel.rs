@@ -25,6 +25,13 @@ pub struct SimpleModel<'a> {
 }
 
 impl<'a> SimpleModel<'a> {
+    /// Creates a new `SimpleModel` instance.
+    ///
+    /// # Arguments
+    /// * `market_store` - A reference to the market store containing market data.
+    ///
+    /// # Returns
+    /// A new `SimpleModel` instance with currency transformation disabled by default.
     pub fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
         SimpleModel {
             market_store,
@@ -32,6 +39,13 @@ impl<'a> SimpleModel<'a> {
         }
     }
 
+    /// Enables or disables currency transformation to the local currency.
+    ///
+    /// # Arguments
+    /// * `flag` - If `true`, currencies will be transformed to the local currency of the market store.
+    ///
+    /// # Returns
+    /// The modified `SimpleModel` instance for method chaining.
     pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel<'a> {
         self.transform_currencies = flag;
         self

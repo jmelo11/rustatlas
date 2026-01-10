@@ -1,3 +1,5 @@
+//! Example demonstrating fixed rate instrument pricing with various scenarios.
+
 extern crate rustatlas;
 
 use rustatlas::{

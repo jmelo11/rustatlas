@@ -24,8 +24,11 @@ use crate::utils::errors::Result;
 /// Struct that defines a cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SimpleCashlowGroup {
+    /// The discount curve identifier
     pub discount_curve_id: Option<usize>,
+    /// The payment date
     pub payment_date: Date,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -39,10 +42,15 @@ impl Hash for SimpleCashlowGroup {
 /// # FixedRateCashflowGroup
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FixedRateCashflowGroup {
+    /// The accrual start date
     pub accrual_start_date: Date,
+    /// The accrual end date
     pub accrual_end_date: Date,
+    /// The discount curve identifier
     pub discount_curve_id: usize,
+    /// The rate definition
     pub rate_definition: RateDefinition,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -60,12 +68,19 @@ impl Hash for FixedRateCashflowGroup {
 /// Struct that defines a floating rate cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FloatingRateCashflowGroup {
+    /// The accrual start date
     pub accrual_start_date: Date,
+    /// The accrual end date
     pub accrual_end_date: Date,
+    /// The fixing date
     pub fixing_date: Date,
+    /// The discount curve identifier
     pub discount_curve_id: usize,
+    /// The forecast curve identifier
     pub forecast_curve_id: usize,
+    /// The rate definition
     pub rate_definition: RateDefinition,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -106,6 +121,7 @@ pub struct CashflowCompressorConstVisitor {
 }
 
 impl CashflowCompressorConstVisitor {
+    /// Creates a new CashflowCompressorConstVisitor with the specified currency.
     pub fn new(currency: Currency) -> Self {
         Self {
             disbursements: RefCell::new(HashMap::new()),
@@ -119,6 +135,7 @@ impl CashflowCompressorConstVisitor {
         }
     }
 
+    /// Converts the compressed cashflows into an Instrument.
     pub fn as_instrument(&self) -> Result<Instrument> {
         let mut cashflows = Vec::new();
 

@@ -36,6 +36,7 @@ pub struct MarketStore {
 }
 
 impl MarketStore {
+    /// Creates a new MarketStore with the given reference date and local currency.
     pub fn new(reference_date: Date, local_currency: Currency) -> MarketStore {
         MarketStore {
             reference_date,
@@ -45,26 +46,34 @@ impl MarketStore {
         }
     }
 
+    /// Returns the local currency of this market store.
     pub fn local_currency(&self) -> Currency {
         self.local_currency
     }
 
+    /// Returns a reference to the exchange rate store.
     pub fn exchange_rate_store(&self) -> &ExchangeRateStore {
         &self.exchange_rate_store
     }
 
+    /// Returns a mutable reference to the exchange rate store.
     pub fn mut_exchange_rate_store(&mut self) -> &mut ExchangeRateStore {
         &mut self.exchange_rate_store
     }
 
+    /// Returns a reference to the index store.
     pub fn index_store(&self) -> &IndexStore {
         &self.index_store
     }
 
+    /// Returns a mutable reference to the index store.
     pub fn mut_index_store(&mut self) -> &mut IndexStore {
         &mut self.index_store
     }
 
+    /// Gets the exchange rate between two currencies.
+    ///
+    /// If no second currency is provided, uses the local currency.
     pub fn get_exchange_rate(
         &self,
         first_currency: Currency,
@@ -78,10 +87,12 @@ impl MarketStore {
             .get_exchange_rate(first_currency, second_currency)
     }
 
+    /// Gets an interest rate index by its ID.
     pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         self.index_store.get_index(id)
     }
 
+    /// Advances the market store to a new date by the given period.
     pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
         if period.length() < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
@@ -103,6 +114,7 @@ impl MarketStore {
         })
     }
 
+    /// Advances the market store to a specific date.
     pub fn advance_to_date(&self, date: Date) -> Result<MarketStore> {
         if date < self.reference_date {
             return Err(AtlasError::InvalidValueErr(format!(

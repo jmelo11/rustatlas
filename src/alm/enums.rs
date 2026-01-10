@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 /// This enum is used to differentiate between base and simulated positions
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum PositionType {
+    /// Base position type
     Base,
+    /// Simulated position type
     Simulated,
 }
 
@@ -53,6 +55,7 @@ pub struct Portfolio {
 }
 
 impl Portfolio {
+    /// Creates a new Portfolio with default empty values.
     pub fn new() -> Self {
         Portfolio {
             id: None,
@@ -66,82 +69,100 @@ impl Portfolio {
         }
     }
 
+    /// Returns the portfolio id.
     pub fn id(&self) -> Option<usize> {
         self.id
     }
 
+    /// Returns the portfolio segment.
     pub fn segment(&self) -> Option<String> {
         self.segment.clone()
     }
 
+    /// Returns the portfolio product family.
     pub fn product_family(&self) -> Option<String> {
         self.product_family.clone()
     }
 
+    /// Returns the portfolio area.
     pub fn area(&self) -> Option<String> {
         self.area.clone()
     }
 
+    /// Returns the portfolio position type.
     pub fn position_type(&self) -> Option<PositionType> {
         self.position_type
     }
 
+    /// Returns the portfolio rate type.
     pub fn rate_type(&self) -> Option<RateType> {
         self.rate_type
     }
 
+    /// Returns the portfolio currency.
     pub fn currency(&self) -> Option<Currency> {
         self.currency
     }
 
+    /// Sets the portfolio currency.
     pub fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
+    /// Sets the portfolio rate type.
     pub fn with_rate_type(mut self, rate_type: RateType) -> Self {
         self.rate_type = Some(rate_type);
         self
     }
 
+    /// Sets the portfolio id.
     pub fn with_id(mut self, id: usize) -> Self {
         self.id = Some(id);
         self
     }
 
+    /// Sets the portfolio segment.
     pub fn with_segment(mut self, segment: String) -> Self {
         self.segment = Some(segment);
         self
     }
 
+    /// Sets the portfolio product family.
     pub fn with_product_family(mut self, product_family: String) -> Self {
         self.product_family = Some(product_family);
         self
     }
 
+    /// Sets the portfolio area.
     pub fn with_area(mut self, area: String) -> Self {
         self.area = Some(area);
         self
     }
 
+    /// Sets the portfolio position type.
     pub fn with_position_type(mut self, position_type: PositionType) -> Self {
         self.position_type = Some(position_type);
         self
     }
 
+    /// Sets the portfolio instruments.
     pub fn with_instruments(mut self, instruments: Vec<Instrument>) -> Self {
         self.instruments = instruments;
         self
     }
 
+    /// Adds an instrument to the portfolio.
     pub fn add_instrument(&mut self, instrument: Instrument) {
         self.instruments.push(instrument);
     }
 
+    /// Returns a reference to the portfolio instruments.
     pub fn instruments(&self) -> &[Instrument] {
         &self.instruments
     }
 
+    /// Returns a mutable reference to the portfolio instruments.
     pub fn instruments_mut(&mut self) -> &mut [Instrument] {
         &mut self.instruments
     }
@@ -157,10 +178,15 @@ impl Default for Portfolio {
 /// A struct that contains the information needed to define an account type.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AccountType {
+    /// Asset account type
     Asset,
+    /// Liability account type
     Liability,
+    /// Equity account type
     Equity,
+    /// Revenue account type
     Revenue,
+    /// Expense account type
     Expense,
 }
 
@@ -199,7 +225,9 @@ impl From<AccountType> for String {
 /// an evaluation mode when running simulations and building instruments.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub enum EvaluationMode {
+    /// FTP rate evaluation mode
     FTPRate,
+    /// Client rate evaluation mode
     ClientRate,
 }
 

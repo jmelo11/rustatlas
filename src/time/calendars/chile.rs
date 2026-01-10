@@ -11,9 +11,11 @@ use crate::time::date::Date;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Market {
-    SSE, // Santiago Stock Exchange
+    /// Santiago Stock Exchange
+    SSE,
 }
 
+/// Chile calendar for business day calculations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Chile {
     market: Market,
@@ -22,6 +24,7 @@ pub struct Chile {
 }
 
 impl Chile {
+    /// Creates a new Chile calendar instance for the specified market.
     pub fn new(market: Market) -> Self {
         Chile {
             market,
@@ -119,6 +122,7 @@ impl Chile {
         day == 31 && month == 12
     }
 
+    /// Determines if a given date is a business day in the Chilean market.
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();

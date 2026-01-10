@@ -6,10 +6,15 @@ use crate::utils::errors::{AtlasError, Result};
 /// Enumerate the different compounding methods.
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Compounding {
+    /// Simple interest compounding method.
     Simple,
+    /// Compounded interest compounding method.
     Compounded,
+    /// Continuous interest compounding method.
     Continuous,
+    /// Simple interest followed by compounded interest.
     SimpleThenCompounded,
+    /// Compounded interest followed by simple interest.
     CompoundedThenSimple,
 }
 

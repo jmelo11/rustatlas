@@ -19,6 +19,7 @@ pub struct NPVByTenorConstVisitor<'a> {
 }
 
 impl<'a> NPVByTenorConstVisitor<'a> {
+    /// Creates a new NPVByTenorConstVisitor with the specified market data, tenors, and cashflow inclusion setting.
     pub fn new(
         market_data: &'a [MarketData],
         tenors: Vec<(Period, Period)>,
@@ -30,14 +31,17 @@ impl<'a> NPVByTenorConstVisitor<'a> {
             include_today_cashflows,
         }
     }
+    /// Sets whether cashflows on the reference date should be included in the NPV calculation.
     pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 
+    /// Sets the tenors to be used for NPV calculation.
     pub fn set_tenors(&mut self, tenors: Vec<(Period, Period)>) {
         self.tenors = tenors;
     }
 
+    /// Returns a copy of the current tenors.
     pub fn tenors(&self) -> Vec<(Period, Period)> {
         self.tenors.clone()
     }

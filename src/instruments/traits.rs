@@ -14,10 +14,15 @@ use std::collections::{HashMap, HashSet};
 /// A struct that contains the information needed to define a structure.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Structure {
+    /// Bullet structure.
     Bullet,
+    /// Equal redemptions structure.
     EqualRedemptions,
+    /// Zero structure.
     Zero,
+    /// Equal payments structure.
     EqualPayments,
+    /// Other structure.
     Other,
 }
 
@@ -79,7 +84,7 @@ impl From<CashflowType> for String {
     }
 }
 
-// Infer cashflows from amounts to handle negative amounts and sides.
+/// Infer cashflows from amounts to handle negative amounts and sides.
 pub fn infer_cashflows_from_amounts(
     dates: &[Date],
     amounts: &[f64],
@@ -125,7 +130,7 @@ pub fn add_cashflows_to_vec(
     });
 }
 
-// Calculate the notionals for a given structure
+/// Calculate the notionals for a given structure
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
     match structure {
         Structure::Bullet => vec![notional; n],
@@ -144,7 +149,7 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
     }
 }
 
-// Calculate the outstanding amounts for a given set of disbursements and redemptions
+/// Calculate the outstanding amounts for a given set of disbursements and redemptions
 pub fn calculate_outstanding(
     disbursements: &HashMap<Date, f64>,
     redemptions: &HashMap<Date, f64>,

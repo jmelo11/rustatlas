@@ -34,6 +34,17 @@ pub struct OvernightCompoundedRateIndex {
     overnight_index: OvernightIndex,
 }
 
+/// Calculates the overnight index value for a given period.
+///
+/// # Arguments
+/// * `start_date` - The start date of the period
+/// * `end_date` - The end date of the period
+/// * `index` - The current index value
+/// * `rate` - The overnight rate for the period
+/// * `rate_definition` - The rate definition containing day counter information
+///
+/// # Returns
+/// The updated index value
 pub fn calculate_overnight_index(
     start_date: Date,
     end_date: Date,
@@ -47,6 +58,14 @@ pub fn calculate_overnight_index(
     (1.0 + rate * year_fraction) * index
 }
 
+/// Composes a fixing index from overnight fixing rates.
+///
+/// # Arguments
+/// * `fixings_rates` - A map of dates to overnight rates
+/// * `rate_definition` - The rate definition containing day counter information
+///
+/// # Returns
+/// A map of dates to computed index values
 pub fn compose_fixing_rate(
     fixings_rates: HashMap<Date, f64>,
     rate_definition: RateDefinition,
@@ -71,6 +90,7 @@ pub fn compose_fixing_rate(
 }
 
 impl OvernightCompoundedRateIndex {
+    /// Creates a new `OvernightCompoundedRateIndex` with the given reference date.
     pub fn new(reference_date: Date) -> OvernightCompoundedRateIndex {
         OvernightCompoundedRateIndex {
             fixings_rates: HashMap::new(),
@@ -78,20 +98,24 @@ impl OvernightCompoundedRateIndex {
         }
     }
 
+    /// Sets the name for this index.
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.overnight_index = self.overnight_index.with_name(name);
         self
     }
 
+    /// Returns the rate definition for this index.
     pub fn rate_definition(&self) -> RateDefinition {
         self.overnight_index.rate_definition()
     }
 
+    /// Sets the rate definition for this index.
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.overnight_index = self.overnight_index.with_rate_definition(rate_definition);
         self
     }
 
+    /// Sets the overnight fixing rates for this index.
     pub fn with_fixings_rates(mut self, fixings_rates: HashMap<Date, f64>) -> Self {
         self.fixings_rates = fixings_rates.clone();
         let fixing_index = compose_fixing_rate(fixings_rates, self.rate_definition());
@@ -99,15 +123,18 @@ impl OvernightCompoundedRateIndex {
         self
     }
 
+    /// Returns a reference to the fixing rates map.
     pub fn fixings_rates(&self) -> &HashMap<Date, f64> {
         &self.fixings_rates
     }
 
+    /// Sets the yield term structure for this index.
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.overnight_index = self.overnight_index.with_term_structure(term_structure);
         self
     }
 
+    /// Calculates the average overnight rate between two dates.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         self.overnight_index.average_rate(start_date, end_date)
     }
