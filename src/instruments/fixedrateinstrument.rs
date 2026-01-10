@@ -14,7 +14,7 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
-/// # FixedRateInstrument
+/// # `FixedRateInstrument`
 /// A fixed rate instrument.
 ///
 /// ## Parameters
@@ -153,7 +153,7 @@ impl HasCurrency for FixedRateInstrument {
     }
 }
 
-/// # BondAccrual
+/// # `BondAccrual`
 /// Implements fixed rate bond accrual using a yield rate.  
 /// The yield rate is used to discount the cashflows to between the start and
 /// end dates and calculate the accrued amount.

@@ -17,7 +17,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # ZeroRateTermStructure
+/// # `ZeroRateTermStructure`
 /// Struct that defines a zero rate term structure.
 ///
 /// # Example
@@ -52,7 +52,7 @@ pub struct ZeroRateTermStructure {
 }
 
 impl ZeroRateTermStructure {
-    /// Creates a new ZeroRateTermStructure.
+    /// Creates a new `ZeroRateTermStructure`.
     ///
     /// # Arguments
     ///
@@ -188,7 +188,7 @@ impl YieldProvider for ZeroRateTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for ZeroRateTermStructure
+/// # `AdvanceTermStructureInTime` for `ZeroRateTermStructure`
 impl AdvanceTermStructureInTime for ZeroRateTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
@@ -262,7 +262,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "ZeroRateTermStructure::new should succeed in test_reference_date: {e}"
+        ));
 
         assert_eq!(zero_rate_curve.reference_date(), reference_date);
         assert_eq!(
@@ -303,7 +305,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "ZeroRateTermStructure::new should succeed in test_forward_rate: {e}"
+        ));
 
         let fr = zero_rate_curve.forward_rate(
             Date::new(2021, 1, 1),
@@ -312,7 +316,10 @@ mod tests {
             rate_definition.frequency(),
         );
 
-        println!("fr: {:?}", fr);
-        assert!(fr.unwrap() - 0.02972519115024655 < 0.000000001);
+        let fr = fr.unwrap_or_else(|e| panic!(
+            "forward_rate should succeed in test_forward_rate: {e}"
+        ));
+        println!("fr: {fr:?}");
+        assert!((fr - 0.02972519115024655).abs() < 0.000000001);
     }
 }

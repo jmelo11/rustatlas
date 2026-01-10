@@ -12,7 +12,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # FlatForwardTermStructure
+/// # `FlatForwardTermStructure`
 /// Struct that defines a flat forward term structure.
 /// # Example
 /// ```
@@ -88,7 +88,7 @@ impl YieldProvider for FlatForwardTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for FlatForwardTermStructure
+/// # `AdvanceTermStructureInTime` for `FlatForwardTermStructure`
 impl AdvanceTermStructureInTime for FlatForwardTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
@@ -139,7 +139,7 @@ mod tests {
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
 
-        assert_eq!(actual_discount, expected_discount);
+        assert!((actual_discount - expected_discount).abs() < 1e-10);
         Ok(())
     }
 
@@ -158,7 +158,7 @@ mod tests {
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
 
-        assert_eq!(actual_discount, expected_discount);
+        assert!((actual_discount - expected_discount).abs() < 1e-10);
         Ok(())
     }
 
@@ -190,7 +190,7 @@ mod tests {
                 .rate();
         let actual_forward_rate = term_structure.forward_rate(start_date, end_date, comp, freq)?;
 
-        assert_eq!(actual_forward_rate, expected_forward_rate);
+        assert!((actual_forward_rate - expected_forward_rate).abs() < 1e-10);
 
         Ok(())
     }

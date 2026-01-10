@@ -26,7 +26,7 @@ use super::{
     },
 };
 
-/// # OvernightCompoundedRateIndex
+/// # `OvernightCompoundedRateIndex`
 /// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
 #[derive(Clone)]
 pub struct OvernightCompoundedRateIndex {
@@ -79,11 +79,16 @@ pub fn compose_fixing_rate(
     fixing_index.insert(fixings_rates[0].0, index);
 
     for i in 1..fixings_rates.len() {
-        let (previus_date, previus_rate) = fixings_rates[i - 1];
-        let date = fixings_rates[i].0;
-        let new_index =
-            calculate_overnight_index(previus_date, date, index, previus_rate, rate_definition);
-        fixing_index.insert(date, new_index);
+        let (fixing_date, applied_rate) = fixings_rates[i - 1];
+        let current_date = fixings_rates[i].0;
+        let new_index = calculate_overnight_index(
+            fixing_date,
+            current_date,
+            index,
+            applied_rate,
+            rate_definition,
+        );
+        fixing_index.insert(current_date, new_index);
         index = new_index;
     }
     fixing_index
@@ -274,7 +279,7 @@ mod tests {
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
         let average_rate = overnight_index
             .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
-            .unwrap();
+            .unwrap_or_else(|e| panic!("average_rate should succeed in test_average_rate: {e}"));
         assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
@@ -294,20 +299,24 @@ mod tests {
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
         let average_rate = overnight_index
             .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!("average_rate should succeed in test_average_rate_disordered: {e}")
+            });
         assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
     #[test]
-    fn test_fixing() -> Result<()> {
+    fn test_fixing() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         let overnight_index =
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
 
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 1000.0);
-        Ok(())
+        let fixing = overnight_index
+            .fixing(Date::new(2021, 1, 1))
+            .unwrap_or_else(|e| panic!("fixing should succeed in test_fixing: {e}"));
+        assert!((fixing - 1000.0).abs() < 1e-10);
     }
 
     #[test]
@@ -341,11 +350,11 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_provider_overnight() -> Result<()> {
+    fn test_fixing_provider_overnight() {
         let fixing: HashMap<Date, f64> =
             [(Date::new(2023, 6, 2), 2.5), (Date::new(2023, 6, 5), 3.0)]
                 .iter()
-                .cloned()
+                .copied()
                 .collect();
 
         let mut overnight_index =
@@ -357,11 +366,12 @@ mod tests {
             (overnight_index
                 .fixings()
                 .get(&Date::new(2023, 6, 3))
-                .unwrap()
+                .unwrap_or_else(|| panic!(
+                    "fixings map should contain interpolated fixing for 2023-06-03"
+                ))
                 - 1006.944444)
                 .abs()
                 < 0.001
         );
-        Ok(())
     }
 }

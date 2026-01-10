@@ -13,7 +13,7 @@ use crate::{
 use super::cashflow::Side;
 use super::traits::{Expires, Payable};
 
-/// # SimpleCashflow
+/// # `SimpleCashflow`
 /// A simple cashflow that is payable at a given date.
 ///
 /// ## Example
@@ -35,9 +35,9 @@ pub struct SimpleCashflow {
 }
 
 impl SimpleCashflow {
-    /// Creates a new SimpleCashflow with the given payment date, currency, and side.
+    /// Creates a new `SimpleCashflow` with the given payment date, currency, and side.
     pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
-        SimpleCashflow {
+        Self {
             payment_date,
             currency,
             side,
@@ -48,19 +48,22 @@ impl SimpleCashflow {
     }
 
     /// Sets the amount for this cashflow and returns self for method chaining.
-    pub fn with_amount(mut self, amount: f64) -> SimpleCashflow {
+    #[must_use]
+    pub fn with_amount(mut self, amount: f64) -> Self {
         self.amount = Some(amount);
         self
     }
 
     /// Sets the discount curve ID for this cashflow and returns self for method chaining.
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> SimpleCashflow {
+    #[must_use]
+    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self
     }
 
     /// Sets the registry ID for this cashflow and returns self for method chaining.
-    pub fn with_id(mut self, registry_id: usize) -> SimpleCashflow {
+    #[must_use]
+    pub fn with_id(mut self, registry_id: usize) -> Self {
         self.id = Some(registry_id);
         self
     }

@@ -8,8 +8,8 @@ use crate::{
 use super::traits::{ConstVisit, HasCashflows};
 use std::collections::BTreeMap;
 
-/// # NPVByTenorConstVisitor
-/// NPVByTenorConstVisitor is a visitor that calculates the NPV of an instrument by tenor.
+/// # `NPVByTenorConstVisitor`
+/// `NPVByTenorConstVisitor` is a visitor that calculates the NPV of an instrument by tenor.
 /// Tenor is defined as a tuple of two periods: (start, end).
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByTenorConstVisitor<'a> {
@@ -19,20 +19,21 @@ pub struct NPVByTenorConstVisitor<'a> {
 }
 
 impl<'a> NPVByTenorConstVisitor<'a> {
-    /// Creates a new NPVByTenorConstVisitor with the specified market data, tenors, and cashflow inclusion setting.
-    pub fn new(
+    /// Creates a new `NPVByTenorConstVisitor` with the specified market data, tenors, and cashflow inclusion setting.
+    #[must_use]
+    pub const fn new(
         market_data: &'a [MarketData],
         tenors: Vec<(Period, Period)>,
         include_today_cashflows: bool,
     ) -> Self {
-        NPVByTenorConstVisitor {
+        Self {
             market_data,
             tenors,
             include_today_cashflows,
         }
     }
     /// Sets whether cashflows on the reference date should be included in the NPV calculation.
-    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
+    pub const fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 
@@ -42,12 +43,13 @@ impl<'a> NPVByTenorConstVisitor<'a> {
     }
 
     /// Returns a copy of the current tenors.
+    #[must_use]
     pub fn tenors(&self) -> Vec<(Period, Period)> {
         self.tenors.clone()
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'_> {
     type Output = Result<BTreeMap<(Period, Period), f64>>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let reference_date = self.market_data[0].reference_date();
@@ -55,7 +57,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
         let mut npv_result: BTreeMap<(Period, Period), f64> = BTreeMap::new();
         let tenors = self.tenors();
 
-        for tenor in tenors.iter() {
+        for tenor in &tenors {
             npv_result.insert(*tenor, 0.0);
         }
 
@@ -85,7 +87,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVByTenorConstVisitor<'a> {
                 let amount = cf.amount()?;
                 let npv = amount * df * fx * flag;
 
-                for (key, value) in npv_result.iter_mut() {
+                for (key, value) in &mut npv_result {
                     if cf.payment_date() >= reference_date + key.0
                         && cf.payment_date() < reference_date + key.1
                     {
@@ -191,14 +193,14 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_npv_by_date_const_visitor() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let indexer = IndexingVisitor::new();
 
         let start_date = Date::new(2020, 1, 1);
@@ -262,7 +264,7 @@ mod tests {
         let npv_visitor = NPVByTenorConstVisitor::new(&data, tenors, false);
         let npv_result_inst_1 = npv_visitor.visit(&instrument_1)?;
 
-        println!("NPV by tenor: {:?}", npv_result_inst_1);
+        println!("NPV by tenor: {npv_result_inst_1:?}");
 
         Ok(())
     }

@@ -1,4 +1,4 @@
-/// # Interpolation trait
+/// # `Interpolation` trait
 /// A trait that defines the interpolation of a function.
 pub trait Interpolate {
     /// Interpolates a value at the given point.

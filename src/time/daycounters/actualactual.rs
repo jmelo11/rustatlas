@@ -1,14 +1,14 @@
 use super::traits::DayCountProvider;
 use crate::time::date::Date;
 
-/// # ActualActual
+/// # `ActualActual`
 /// Actual/Actual day count convention.
 /// Calculates the day count fraction according to the formula:
 /// $$
-/// \frac{ActualDays_of_leap_years}{366} + \frac{ActualDays_of_non_leap_years}{365}
+/// \frac{`ActualDays_of_leap_years`}{366} + \frac{`ActualDays_of_non_leap_years`}{365}
 /// $$
-/// where ActualDays of leap years is the number of days between the start date and the end date in leap years
-/// and ActualDays of non-leap years is the number of days between the start date and the end date in non-leap years.
+/// where `ActualDays` of leap years is the number of days between the start date and the end date in leap years
+/// and `ActualDays` of non-leap years is the number of days between the start date and the end date in non-leap years.
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
@@ -81,7 +81,8 @@ mod tests {
         use crate::time::date::Date;
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2020, 2, 1);
-        assert_eq!(ActualActual::year_fraction(start, end), 31.0 / 366.0);
+        let yf = ActualActual::year_fraction(start, end);
+        assert!((yf - 31.0 / 366.0).abs() < 1e-12);
     }
 
     #[test]
@@ -90,7 +91,8 @@ mod tests {
         use crate::time::date::Date;
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2021, 1, 1);
-        assert_eq!(ActualActual::year_fraction(start, end), 1.0);
+        let yf = ActualActual::year_fraction(start, end);
+        assert!((yf - 1.0).abs() < 1e-12);
     }
 
     #[test]
@@ -99,6 +101,7 @@ mod tests {
         use crate::time::date::Date;
         let start = Date::new(2021, 1, 1);
         let end = Date::new(2020, 1, 1);
-        assert_eq!(ActualActual::year_fraction(start, end), -1.0);
+        let yf = ActualActual::year_fraction(start, end);
+        assert!((yf + 1.0).abs() < 1e-12);
     }
 }

@@ -10,7 +10,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-/// # Structure
+/// # `Structure`
 /// A struct that contains the information needed to define a structure.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Structure {

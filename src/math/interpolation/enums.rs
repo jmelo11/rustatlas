@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits::Interpolate};
 
-/// # Interpolator
+/// # `Interpolator`
 /// Enum that represents the type of interpolation.
 ///
 /// ## Example

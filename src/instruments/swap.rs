@@ -1,7 +1,7 @@
 use super::leg::Leg;
 use crate::cashflows::cashflow::Cashflow;
 
-/// # Swap
+/// # `Swap`
 /// A financial swap derivative.
 pub struct Swap {
     cashflows: Vec<Cashflow>,

@@ -262,7 +262,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_year_fractions: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.dates(),
@@ -295,7 +297,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_discount_dactors: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.discount_factors(),
@@ -322,7 +326,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_reference_date: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.reference_date(),
@@ -349,16 +355,14 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_interpolation: {e}"
+        ));
 
-        assert!(
-            (discount_term_structure
-                .discount_factor(Date::new(2020, 6, 1))
-                .unwrap()
-                - 0.9832967032967033)
-                .abs()
-                < 1e-8
-        );
+        let df = discount_term_structure
+            .discount_factor(Date::new(2020, 6, 1))
+            .unwrap_or_else(|e| panic!("discount_factor failed in test_interpolation: {e}"));
+        assert!((df - 0.9832967032967033).abs() < 1e-8);
         //println!("discount_factor: {}", discount_term_structure.discount_factor(Date::new(2020, 6, 1)).unwrap());
     }
 
@@ -382,25 +386,18 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_forward_rate: {e}"
+        ));
 
         let comp = Compounding::Simple;
         let freq = Frequency::Annual;
 
-        assert!(
-            (discount_term_structure
-                .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
-                .unwrap()
-                - 0.04097957689796514)
-                .abs()
-                < 1e-8
-        );
-        println!(
-            "forward_rate: {}",
-            discount_term_structure
-                .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
-                .unwrap()
-        );
+        let fwd = discount_term_structure
+            .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
+            .unwrap_or_else(|e| panic!("forward_rate failed in test_forward_rate: {e}"));
+        assert!((fwd - 0.04097957689796514).abs() < 1e-8);
+        println!("forward_rate: {fwd}");
     }
 
     #[test]

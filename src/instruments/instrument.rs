@@ -16,7 +16,7 @@ use super::{
     traits::Structure,
 };
 
-/// # RateType
+/// # `RateType`
 /// Represents the type of rate.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RateType {
@@ -65,7 +65,7 @@ impl From<RateType> for String {
     }
 }
 
-/// # Instrument
+/// # `Instrument`
 /// Represents an instrument. This is a wrapper around the FixedRateInstrument and FloatingRateInstrument.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Instrument {

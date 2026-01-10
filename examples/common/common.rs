@@ -46,7 +46,10 @@ pub fn print_table(cashflows: &[Cashflow], market_data: &[MarketData]) {
     );
     for (cf, md) in cashflows.iter().zip(market_data) {
         let date = format!("{:10}", cf.payment_date().to_string());
-        let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
+        let amount = match cf.amount() {
+            Ok(value) => format!("{:10.2}", value),
+            Err(_) => "      None".to_string(),
+        };
 
         let df = match md.df() {
             Ok(df) => format!("{:10.2}", df),
@@ -75,9 +78,9 @@ fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
     while seed <= end {
         fixings.insert(seed, init);
         seed = seed + Period::new(1, TimeUnit::Days);
-        init = init * (1.0 + rate * 1.0 / 360.0);
+        init *= 1.0 + rate / 360.0;
     }
-    return fixings;
+    fixings
 }
 
 #[allow(dead_code)]

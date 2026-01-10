@@ -12,8 +12,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # ZSpreadConstVisitor
-/// ZSpreadConstVisitor is a visitor that calculates the ZSpread of a generic instrument.
+/// # `ZSpreadConstVisitor`
+/// `ZSpreadConstVisitor` is a visitor that calculates the `ZSpread` of a generic instrument.
 ///
 /// ## Parameters
 /// * `market_data` - The market data to use for evaluation
@@ -26,7 +26,7 @@ pub struct ZSpreadConstVisitor<'a> {
 }
 
 impl<'a> ZSpreadConstVisitor<'a> {
-    /// Creates a new ZSpreadConstVisitor with the given market data, rate definition, and target NPV.
+    /// Creates a new `ZSpreadConstVisitor` with the given market data, rate definition, and target NPV.
     pub fn new(
         market_data: &'a [MarketData],
         rate_definition: RateDefinition,

@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-/// # NaiveDateExt
-/// Extends the NaiveDate struct from the chrono rustatlas.
+/// # `NaiveDateExt`
+/// Extends the `NaiveDate` struct from the chrono rustatlas.
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
@@ -81,8 +81,8 @@ impl NaiveDateExt for NaiveDate {
         let date = *self;
         let flag = n >= 0;
         match units {
-            TimeUnit::Days => date + Duration::try_days(n as i64).unwrap(),
-            TimeUnit::Weeks => date + Duration::try_days(7 * n as i64).unwrap(),
+            TimeUnit::Days => date + Duration::try_days(i64::from(n)).unwrap(),
+            TimeUnit::Weeks => date + Duration::try_days(i64::from(7 * n)).unwrap(),
             TimeUnit::Months => {
                 if flag {
                     date + Months::new(n as u32)
@@ -110,8 +110,8 @@ impl NaiveDateExt for NaiveDate {
     }
 }
 
-/// # Add`<Period>` for NaiveDate
-/// Adds a Period to a NaiveDate.
+/// # Implementing `Add<Period>` for `NaiveDate`
+/// Adds a `Period` to a `NaiveDate`.
 /// # Examples
 /// ```
 /// use chrono::NaiveDate;
@@ -131,8 +131,8 @@ impl Add<Period> for NaiveDate {
     }
 }
 
-/// # Sub`<Period>` for NaiveDate
-/// Subtracts a Period from a NaiveDate.
+/// # Implementing `Sub<Period>` for `NaiveDate`
+/// Subtracts a `Period` from a `NaiveDate`.
 /// # Examples
 /// ```
 /// use chrono::NaiveDate;
@@ -152,7 +152,7 @@ impl Sub<Period> for NaiveDate {
 }
 
 /// # Date
-/// Wrapper around the NaiveDate struct from the chrono rustatlas.
+/// Wrapper around the `NaiveDate` struct from the chrono rustatlas.
 /// # Examples
 /// ```
 /// use rustatlas::time::date::Date;
@@ -202,6 +202,10 @@ impl Date {
     }
 
     /// Parses a date string using the specified format.
+    ///
+    /// # Errors
+    /// Returns an error if the provided string cannot be parsed into a `Date`
+    /// using the specified format.
     pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
         Ok(Date::from(base_date))
@@ -378,7 +382,7 @@ impl Add<i64> for Date {
     }
 }
 
-/// # AddAssign`<i64>` for Date
+/// # Implementing `AddAssign<i64>` for `Date`
 /// Adds an i64 to a Date.
 /// # Examples
 /// ```
@@ -410,7 +414,7 @@ impl Sub<i64> for Date {
     }
 }
 
-/// # SubAssign`<i64>` for Date
+/// # Implementing `SubAssign<i64>` for `Date`
 /// Subtracts an i64 from a Date.
 /// # Examples
 /// ```
@@ -447,73 +451,79 @@ mod tests {
 
     #[test]
     fn test_days_in_month() {
-        let date = NaiveDate::from_ymd_opt(2020, 2, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 2, 15).expect("date should be valid");
         assert_eq!(date.days_in_month(), 29);
 
-        let date = NaiveDate::from_ymd_opt(2021, 2, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2021, 2, 15).expect("date should be valid");
         assert_eq!(date.days_in_month(), 28);
 
-        let date = NaiveDate::from_ymd_opt(2021, 4, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2021, 4, 15).expect("date should be valid");
         assert_eq!(date.days_in_month(), 30);
 
-        let date = NaiveDate::from_ymd_opt(2021, 7, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2021, 7, 15).expect("date should be valid");
         assert_eq!(date.days_in_month(), 31);
     }
 
     #[test]
     fn test_days_in_year() {
-        let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 5, 15).expect("date should be valid");
         assert_eq!(date.days_in_year(), 366);
 
-        let date = NaiveDate::from_ymd_opt(2021, 5, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2021, 5, 15).expect("date should be valid");
         assert_eq!(date.days_in_year(), 365);
     }
 
     #[test]
     fn test_date_has_leap_year() {
-        let date = NaiveDate::from_ymd_opt(2020, 5, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 5, 15).expect("date should be valid");
         assert!(date.date_has_leap_year());
 
-        let date = NaiveDate::from_ymd_opt(2021, 5, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2021, 5, 15).expect("date should be valid");
         assert!(!date.date_has_leap_year());
     }
 
     #[test]
     fn test_advance() {
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 15).expect("date should be valid");
         assert_eq!(
             date.advance(15, TimeUnit::Days),
-            NaiveDate::from_ymd_opt(2020, 1, 30).unwrap()
+            NaiveDate::from_ymd_opt(2020, 1, 30).expect("date should be valid"),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 15).expect("date should be valid");
         assert_eq!(
             date.advance(3, TimeUnit::Weeks),
-            NaiveDate::from_ymd_opt(2020, 2, 5).unwrap()
+            NaiveDate::from_ymd_opt(2020, 2, 5).expect("date should be valid"),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 15).expect("date should be valid");
         assert_eq!(
             date.advance(2, TimeUnit::Months),
-            NaiveDate::from_ymd_opt(2020, 3, 15).unwrap()
+            NaiveDate::from_ymd_opt(2020, 3, 15).expect("date should be valid"),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 15).expect("date should be valid");
         assert_eq!(
             date.advance(2, TimeUnit::Years),
-            NaiveDate::from_ymd_opt(2022, 1, 15).unwrap()
+            NaiveDate::from_ymd_opt(2022, 1, 15).expect("date should be valid"),
         );
     }
 
     #[test]
     fn test_addition_with_period() {
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 15).expect("date should be valid");
         let period = Period::new(15, TimeUnit::Days);
-        assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
+        assert_eq!(
+            date + period,
+            NaiveDate::from_ymd_opt(2020, 1, 30).expect("date should be valid"),
+        );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
+        let date = NaiveDate::from_ymd_opt(2020, 1, 1).expect("date should be valid");
         let period = Period::new(6, TimeUnit::Months);
-        assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 7, 1).unwrap());
+        assert_eq!(
+            date + period,
+            NaiveDate::from_ymd_opt(2020, 7, 1).expect("date should be valid"),
+        );
     }
 
     #[test]
@@ -559,7 +569,7 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let date = Date::from_str("2020-01-15", "%Y-%m-%d").unwrap();
+        let date = Date::from_str("2020-01-15", "%Y-%m-%d").expect("date should deserialize");
         assert_eq!(date, Date::new(2020, 1, 15));
     }
 }

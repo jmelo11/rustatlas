@@ -30,7 +30,7 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFixedRateLeg
+/// # `MakeFixedRateLeg`
 /// MakeFixedRateLeg is a builder for fixed rate leg. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]

@@ -1,6 +1,6 @@
 use crate::{core::meta::*, time::date::Date, utils::errors::Result};
 
-/// # Model
+/// # `Model`
 /// A model that provides market data based in the current market state.
 pub trait Model {
     /// Returns the reference date for the model.

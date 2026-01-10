@@ -119,45 +119,45 @@ impl Brazil {
         let day = date.day();
         let month = date.month();
         let year = date.year();
-        if Brazil::is_weekend(weekday) {
+        if Self::is_weekend(weekday) {
             return false;
         }
 
         match self.market {
             Market::Settlement => {
-                if Brazil::is_new_years_day(day, month)
-                    || Brazil::is_tiradentes_day(day, month)
-                    || Brazil::is_labor_day(day, month)
-                    || Brazil::is_independence_day(day, month)
-                    || Brazil::is_nossa_senhora_aparecida_day(day, month)
-                    || Brazil::is_all_souls_day(day, month)
-                    || Brazil::is_republic_day(day, month)
-                    || Brazil::is_christmas(day, month)
-                    || Brazil::is_passion_of_christ(day, month, year)
-                    || Brazil::is_carnival(day, month, year)
-                    || Brazil::is_corpus_christi(day, month, year)
+                if Self::is_new_years_day(day, month)
+                    || Self::is_tiradentes_day(day, month)
+                    || Self::is_labor_day(day, month)
+                    || Self::is_independence_day(day, month)
+                    || Self::is_nossa_senhora_aparecida_day(day, month)
+                    || Self::is_all_souls_day(day, month)
+                    || Self::is_republic_day(day, month)
+                    || Self::is_christmas(day, month)
+                    || Self::is_passion_of_christ(day, month, year)
+                    || Self::is_carnival(day, month, year)
+                    || Self::is_corpus_christi(day, month, year)
                 {
                     return false;
                 }
                 true
             }
             Market::Exchange => {
-                if Brazil::is_new_years_day(day, month)
-                    || Brazil::is_sao_paulo_city_day(day, month)
-                    || Brazil::is_tiradentes_day(day, month)
-                    || Brazil::is_labor_day(day, month)
-                    || Brazil::is_revolution_day(day, month)
-                    || Brazil::is_independence_day(day, month)
-                    || Brazil::is_nossa_senhora_aparecida_day(day, month)
-                    || Brazil::is_all_souls_day(day, month)
-                    || Brazil::is_republic_day(day, month)
-                    || Brazil::is_black_consciousness_day(day, month, year)
-                    || Brazil::is_christmas_eve(day, month)
-                    || Brazil::is_christmas(day, month)
-                    || Brazil::is_passion_of_christ(day, month, year)
-                    || Brazil::is_carnival(day, month, year)
-                    || Brazil::is_corpus_christi(day, month, year)
-                    || Brazil::is_last_business_day_of_year(day, month, year)
+                if Self::is_new_years_day(day, month)
+                    || Self::is_sao_paulo_city_day(day, month)
+                    || Self::is_tiradentes_day(day, month)
+                    || Self::is_labor_day(day, month)
+                    || Self::is_revolution_day(day, month)
+                    || Self::is_independence_day(day, month)
+                    || Self::is_nossa_senhora_aparecida_day(day, month)
+                    || Self::is_all_souls_day(day, month)
+                    || Self::is_republic_day(day, month)
+                    || Self::is_black_consciousness_day(day, month, year)
+                    || Self::is_christmas_eve(day, month)
+                    || Self::is_christmas(day, month)
+                    || Self::is_passion_of_christ(day, month, year)
+                    || Self::is_carnival(day, month, year)
+                    || Self::is_corpus_christi(day, month, year)
+                    || Self::is_last_business_day_of_year(day, month, year)
                 {
                     return false;
                 }

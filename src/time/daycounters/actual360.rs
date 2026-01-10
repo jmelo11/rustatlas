@@ -7,7 +7,7 @@ use crate::time::date::Date;
 /// $$
 /// \frac{ActualDays}{360}
 /// $$
-/// where ActualDays is the number of days between the start date and the end date.
+/// where `ActualDays` is the number of days between the start date and the end date.
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;

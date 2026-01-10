@@ -17,7 +17,7 @@ use super::{
     traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
 };
 
-/// # FloatingRateCoupon
+/// # `FloatingRateCoupon`
 /// A floating rate coupon is a cashflow that pays a floating rate of interest on a notional amount.
 ///
 /// ## Parameters
@@ -57,8 +57,8 @@ impl FloatingRateCoupon {
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
-    ) -> FloatingRateCoupon {
-        FloatingRateCoupon {
+    ) -> Self {
+        Self {
             notional,
             spread,
             fixing_rate: None,
@@ -72,13 +72,13 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the discount curve ID and returns the modified coupon.
-    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
-        self.cashflow.with_discount_curve_id(id);
+    pub fn with_discount_curve_id(mut self, id: usize) -> Self {
+        self.cashflow = self.cashflow.with_discount_curve_id(id);
         self
     }
 
     /// Sets the forecast curve ID and returns the modified coupon.
-    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
+    pub fn with_forecast_curve_id(mut self, id: usize) -> Self {
         self.forecast_curve_id = Some(id);
         self
     }

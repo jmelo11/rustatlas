@@ -9,7 +9,7 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
-/// # CashAccount
+/// # `CashAccount`
 /// Struct that defines a cash account. It is used to keep track of the cash inflows and outflows
 /// of an account.
 pub struct CashAccount {
@@ -27,7 +27,8 @@ impl HasCurrency for CashAccount {
 
 impl CashAccount {
     /// Creates a new empty cash account.
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             amount: RefCell::new(BTreeMap::new()),
             currency: None,
@@ -35,12 +36,17 @@ impl CashAccount {
     }
 
     /// Sets the currency for this cash account.
-    pub fn with_currency(mut self, currency: Currency) -> Self {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
     /// Adds cash flows from an instrument to this cash account.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if cashflow amounts or currencies cannot be evaluated.
     pub fn add_flows_from_instrument(&self, instrument: &dyn HasCashflows) -> Result<()> {
         let account_currency = self.currency()?;
         instrument
@@ -65,6 +71,10 @@ impl CashAccount {
     }
 
     /// Adds cash flows from a map of dates to amounts.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the internal amount map cannot be updated.
     pub fn add_flows_from_map(&self, map: &BTreeMap<Date, f64>) -> Result<()> {
         let mut amount_map = self.amount.borrow_mut();
         for (date, amount) in map {
@@ -75,6 +85,10 @@ impl CashAccount {
     }
 
     /// Adds a cash flow from a new position at a specific date.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the internal amount map cannot be updated.
     pub fn add_flows_from_new_position(&self, date: Date, value: f64) -> Result<()> {
         let mut amount_map = self.amount.borrow_mut();
         let entry = amount_map.entry(date).or_insert(0.0);
@@ -83,7 +97,12 @@ impl CashAccount {
     }
 
     /// Adds all cash flows from another cash account to this account.
-    pub fn add_flows_from_cash_account(&self, cash_account: &CashAccount) -> Result<()> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if account currencies do not match or the
+    /// underlying amount map cannot be updated.
+    pub fn add_flows_from_cash_account(&self, cash_account: &Self) -> Result<()> {
         let amount_map = cash_account.amount.borrow();
         if self.currency != cash_account.currency {
             return Err(AtlasError::InvalidValueErr(
@@ -94,10 +113,12 @@ impl CashAccount {
     }
 
     /// Returns the cumulative cash account evolution for a given set of evaluation dates.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying data cannot be accessed.
     pub fn cash_account_evolution(&self, evals_dates: Vec<Date>) -> Result<BTreeMap<Date, f64>> {
         let amount_map = self.amount.borrow();
-        let mut dates = amount_map.keys().cloned().collect::<Vec<Date>>();
-        dates.sort();
         let mut cash_account = BTreeMap::new();
         let mut amount = 0.0;
         for date in evals_dates {

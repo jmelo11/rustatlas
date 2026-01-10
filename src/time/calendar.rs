@@ -15,7 +15,7 @@ use crate::{
 };
 use std::collections::HashSet;
 
-/// # Calendar
+/// # `Calendar`
 /// A calendar.
 ///
 /// ## Enums

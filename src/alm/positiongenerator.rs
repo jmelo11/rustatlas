@@ -21,8 +21,8 @@ use crate::{
     },
 };
 
-/// # RolloverStrategy
-/// Configuration for a loan. It holds the data required to generate a loan.
+/// # `RolloverStrategy`
+/// Configuration for a loan rollover strategy. It holds the data required to generate a loan.
 ///
 /// ## Fields
 /// * `weight` - Weight of the loan in the portfolio
@@ -48,8 +48,9 @@ pub struct RolloverStrategy {
 }
 
 impl RolloverStrategy {
-    /// Creates a new RolloverStrategy with the specified parameters.
-    pub fn new(
+    /// Creates a new `RolloverStrategy` with the specified parameters.
+    #[must_use]
+    pub const fn new(
         weight: f64,
         structure: Structure,
         payment_frequency: Frequency,
@@ -59,8 +60,8 @@ impl RolloverStrategy {
         rate_definition: RateDefinition,
         discount_curve_id: usize,
         forecast_curve_id: Option<usize>,
-    ) -> RolloverStrategy {
-        RolloverStrategy {
+    ) -> Self {
+        Self {
             weight,
             structure,
             payment_frequency,
@@ -74,52 +75,64 @@ impl RolloverStrategy {
     }
 
     /// Returns the weight of the strategy.
-    pub fn weight(&self) -> f64 {
+    #[must_use]
+    pub const fn weight(&self) -> f64 {
         self.weight
     }
 
     /// Returns the structure of the strategy.
-    pub fn structure(&self) -> Structure {
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
     /// Returns the payment frequency of the strategy.
-    pub fn payment_frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
     /// Returns the tenor of the strategy.
-    pub fn tenor(&self) -> Period {
+    #[must_use]
+    pub const fn tenor(&self) -> Period {
         self.tenor
     }
 
     /// Returns the side of the strategy.
-    pub fn side(&self) -> Side {
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
     /// Returns the rate type of the strategy.
-    pub fn rate_type(&self) -> RateType {
+    #[must_use]
+    pub const fn rate_type(&self) -> RateType {
         self.rate_type
     }
 
     /// Returns the rate definition of the strategy.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Returns the discount curve ID of the strategy.
-    pub fn discount_curve_id(&self) -> usize {
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> usize {
         self.discount_curve_id
     }
 
     /// Returns the forecast curve ID of the strategy.
-    pub fn forecast_curve_id(&self) -> usize {
-        self.forecast_curve_id.expect("No forecast curve id")
+    #[must_use]
+    pub const fn forecast_curve_id(&self) -> usize {
+        match self.forecast_curve_id {
+            Some(id) => id,
+            None => panic!("No forecast curve id"),
+        }
     }
 }
 
-/// # PositionGenerator
+/// # `PositionGenerator`
 /// Generates a loan based on a configuration and a market store.
 ///
 /// ## Fields
@@ -134,12 +147,10 @@ pub struct PositionGenerator<'a> {
 }
 
 impl<'a> PositionGenerator<'a> {
-    /// Creates a new PositionGenerator with the specified currency and strategies.
-    pub fn new(
-        new_positions_currency: Currency,
-        strategies: Vec<RolloverStrategy>,
-    ) -> PositionGenerator<'a> {
-        PositionGenerator {
+    /// Creates a new `PositionGenerator` with the specified currency and strategies.
+    #[must_use]
+    pub const fn new(new_positions_currency: Currency, strategies: Vec<RolloverStrategy>) -> Self {
+        Self {
             new_positions_currency,
             strategies,
             market_store: None,
@@ -148,13 +159,15 @@ impl<'a> PositionGenerator<'a> {
     }
 
     /// Sets the amount for position generation.
-    pub fn with_amount(mut self, amount: f64) -> PositionGenerator<'a> {
+    #[must_use]
+    pub const fn with_amount(mut self, amount: f64) -> Self {
         self.amount = Some(amount);
         self
     }
 
     /// Sets the market store for position generation.
-    pub fn with_market_store(mut self, market_store: &'a MarketStore) -> PositionGenerator<'a> {
+    #[must_use]
+    pub const fn with_market_store(mut self, market_store: &'a MarketStore) -> Self {
         self.market_store = Some(market_store);
         self
     }
@@ -188,6 +201,10 @@ impl<'a> PositionGenerator<'a> {
     }
 
     /// Generates a single position based on the provided strategy.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if required configuration is missing or if pricing/indexing visitors fail.
     pub fn generate_position(&self, strategies: &RolloverStrategy) -> Result<Instrument> {
         let structure = strategies.structure();
         let amount = self
@@ -252,13 +269,16 @@ impl<'a> PositionGenerator<'a> {
     }
 
     /// Generates all positions based on the configured strategies.
+    #[must_use]
     pub fn generate(&self) -> Vec<Instrument> {
-        let positions = self
-            .strategies
+        self.strategies
             .iter()
-            .map(|c| self.generate_position(c).unwrap())
-            .collect();
-        positions
+            .map(|c| {
+                self.generate_position(c).unwrap_or_else(|e| {
+                    panic!("generate_position should succeed in PositionGenerator::generate: {e}")
+                })
+            })
+            .collect()
     }
 }
 

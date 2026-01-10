@@ -37,7 +37,7 @@ impl DayCountProvider for Thirty360 {
     }
 }
 
-/// # Thirty360US
+/// # `Thirty360US`
 /// convention: if the starting date is the 31st of a month or
 /// the last day of February, it becomes equal to the 30th of the
 /// same month.  If the ending date is the 31st of a month and the

@@ -50,7 +50,7 @@ impl Period {
     /// * `freq` - The frequency to convert to a Period
     ///
     /// # Returns
-    /// Some(Period) if the frequency can be converted, None for OtherFrequency
+    /// `Some(Period)` if the frequency can be converted, `None` for `OtherFrequency`.
     ///
     /// # Examples
     /// ```
@@ -244,6 +244,10 @@ impl Period {
     /// assert_eq!(p.length(), 18);
     /// assert_eq!(p.units(), TimeUnit::Months);
     /// ```
+    /// Parses a tenor string into a `Period`.
+    ///
+    /// # Errors
+    /// Returns an error if the tenor string cannot be parsed into a valid `Period`.
     pub fn from_str(tenor: &str) -> Result<Period> {
         // parse multiple periods and add them
         let chars = tenor.chars();
@@ -376,8 +380,8 @@ impl Serialize for Period {
     }
 }
 
-/// # PartialEq for Period
-/// Compares two Periods.
+/// # `PartialEq` for `Period`
+/// Compares two `Period` values.
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
@@ -395,8 +399,8 @@ impl PartialOrd for Period {
     }
 }
 
-/// # Ord for Period
-/// Compares two Periods.
+/// # `Ord` for `Period`
+/// Compares two `Period` values.
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
@@ -599,7 +603,7 @@ impl Mul<i32> for Period {
     }
 }
 
-/// # MulAssign`<i32>` for Period
+/// # Implementing `MulAssign<i32>` for `Period`
 /// Multiplies a Period by an integer.
 /// # Examples
 /// ```
@@ -642,7 +646,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).expect("period addition should succeed");
         assert_eq!(p3.length, 8);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -657,7 +661,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 - p2).unwrap();
+        let p3 = (p1 - p2).expect("period subtraction should succeed");
         assert_eq!(p3.length, 2);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -705,7 +709,7 @@ mod tests {
             length: 6,
             units: TimeUnit::Months,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).expect("period addition should succeed");
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -720,7 +724,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).expect("period addition should succeed");
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -735,7 +739,7 @@ mod tests {
             length: 1,
             units: TimeUnit::Weeks,
         };
-        let p3: Period = (p1 + p2).unwrap();
+        let p3: Period = (p1 + p2).expect("period addition should succeed");
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -750,7 +754,7 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).expect("period addition should succeed");
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -796,15 +800,15 @@ mod tests {
 
     #[test]
     fn test_period_parsing() {
-        let p = Period::from_str("1Y").unwrap();
+        let p = Period::from_str("1Y").expect("period parsing should succeed");
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Years);
 
-        let p = Period::from_str("1M").unwrap();
+        let p = Period::from_str("1M").expect("period parsing should succeed");
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Months);
 
-        let p = Period::from_str("1Y1M").unwrap();
+        let p = Period::from_str("1Y1M").expect("period parsing should succeed");
         assert_eq!(p.length(), 13);
         assert_eq!(p.units(), TimeUnit::Months);
     }

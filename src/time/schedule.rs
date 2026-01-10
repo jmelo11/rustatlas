@@ -1,10 +1,10 @@
 use crate::time::calendars::traits::IsCalendar;
 use crate::utils::errors::{AtlasError, Result};
 
-use super::calendar::*;
+use super::calendar::Calendar;
 use super::calendars::nullcalendar::NullCalendar;
 use super::date::Date;
-use super::enums::*;
+use super::enums::{BusinessDayConvention, DateGenerationRule, Frequency, TimeUnit, Weekday};
 use super::imm::IMM;
 use super::period::Period;
 
@@ -20,8 +20,13 @@ fn next_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     {
         let m = result.month();
         if !m.is_multiple_of(3) {
-            let skip = 3 - m % 3;
-            result = result + Period::new(skip as i32, TimeUnit::Months);
+            let skip = match m % 3 {
+                0 => 3_i32,
+                1 => 2_i32,
+                2 => 1_i32,
+                _ => unreachable!(),
+            };
+            result = result + Period::new(skip, TimeUnit::Months);
         }
     }
     result
@@ -39,15 +44,20 @@ fn previous_twentieth(date: Date, rule: DateGenerationRule) -> Date {
     {
         let m = result.month();
         if !m.is_multiple_of(3) {
-            let skip = 3 - m % 3;
-            result = result - Period::new(skip as i32, TimeUnit::Months);
+            let skip = match m % 3 {
+                0 => 3_i32,
+                1 => 2_i32,
+                2 => 1_i32,
+                _ => unreachable!(),
+            };
+            result = result - Period::new(skip, TimeUnit::Months);
         }
     }
     result
 }
 
-/// # Schedule
-/// A schedule is a sequence of dates. It is defined by an effective date, a termination date and
+/// # `Schedule`
+/// A `Schedule` is a sequence of dates. It is defined by an effective date, a termination date and
 /// a tenor.
 ///
 /// ## Parameters
@@ -76,7 +86,7 @@ pub struct Schedule {
 }
 
 impl Schedule {
-    /// Creates a new Schedule with the specified parameters.
+    /// Creates a new `Schedule` with the specified parameters.
     pub fn new(
         tenor: Period,
         calendar: Calendar,
@@ -103,7 +113,7 @@ impl Schedule {
         }
     }
 
-    /// Creates an empty Schedule with default values.
+    /// Creates an empty `Schedule` with default values.
     pub fn empty() -> Schedule {
         Schedule {
             tenor: Period::empty(),
@@ -170,7 +180,7 @@ impl Schedule {
     }
 }
 
-/// # MakeSchedule
+/// # `MakeSchedule`
 /// This struct is used to build a schedule.
 ///
 /// ## Example
@@ -212,7 +222,7 @@ pub struct MakeSchedule {
 
 /// Constructor, setters and getters
 impl MakeSchedule {
-    /// Returns a new instance of MakeSchedule.
+    /// Returns a new instance of `MakeSchedule`.
     pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
@@ -300,9 +310,14 @@ impl MakeSchedule {
     }
 }
 
-/// Build method
+/// `MakeSchedule` build method
 impl MakeSchedule {
-    /// Builds and returns a Schedule from the current configuration.
+    /// Builds and returns a `Schedule` from the current configuration.
+    ///
+    /// # Errors
+    /// Returns an error if the configuration is inconsistent, such as an invalid tenor,
+    /// incompatible first or next-to-last dates, or an end-of-month convention that
+    /// conflicts with the selected date generation rule.
     pub fn build(&mut self) -> Result<Schedule> {
         if self.tenor.length() < 0 {
             return Err(AtlasError::MakeScheduleErr(format!(
@@ -434,17 +449,16 @@ impl MakeSchedule {
                             self.is_regular.insert(0, false);
                         }
                         break;
-                    } else {
-                        // skip dates that would result in duplicates
-                        // after adjustment
-                        if self.calendar.adjust(self.dates[0], Some(self.convention))
-                            != self.calendar.adjust(temp, Some(self.convention))
-                        {
-                            self.dates.insert(0, temp);
-                            self.is_regular.insert(0, true);
-                        }
-                        periods += 1;
                     }
+                    // skip dates that would result in duplicates
+                    // after adjustment
+                    if self.calendar.adjust(self.dates[0], Some(self.convention))
+                        != self.calendar.adjust(temp, Some(self.convention))
+                    {
+                        self.dates.insert(0, temp);
+                        self.is_regular.insert(0, true);
+                    }
+                    periods += 1;
                 }
 
                 if self.calendar.adjust(self.dates[0], Some(self.convention))
@@ -558,19 +572,18 @@ impl MakeSchedule {
                             self.is_regular.push(false);
                         }
                         break;
-                    } else {
-                        // skip dates that would result in duplicates
-                        // after adjustment
-                        if self
-                            .calendar
-                            .adjust(*self.dates.last().unwrap(), Some(self.convention))
-                            != self.calendar.adjust(temp, Some(self.convention))
-                        {
-                            self.dates.push(temp);
-                            self.is_regular.push(true);
-                        }
-                        periods += 1;
                     }
+                    // skip dates that would result in duplicates
+                    // after adjustment
+                    if self
+                        .calendar
+                        .adjust(*self.dates.last().unwrap(), Some(self.convention))
+                        != self.calendar.adjust(temp, Some(self.convention))
+                    {
+                        self.dates.push(temp);
+                        self.is_regular.push(true);
+                    }
+                    periods += 1;
                 }
 
                 if self.calendar.adjust(
@@ -1051,7 +1064,7 @@ mod tests {
             .with_tenor(tenor)
             .with_first_date(first_date)
             .build()
-            .unwrap();
+            .expect("schedule build should succeed");
         let dates = schedule.dates();
         assert_eq!(dates[0], from);
         assert_eq!(dates[1], first_date);

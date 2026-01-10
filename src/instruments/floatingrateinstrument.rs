@@ -15,7 +15,7 @@ use crate::{
 use super::traits::Structure;
 use crate::utils::errors::Result;
 
-/// # FloatingRateInstrument
+/// # `FloatingRateInstrument`
 /// A floating rate instrument.
 ///
 /// ## Parameters

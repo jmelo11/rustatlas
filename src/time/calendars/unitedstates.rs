@@ -26,7 +26,7 @@ pub enum Market {
     Sofr,
 }
 
-/// # UnitedStates
+/// # `UnitedStates`
 /// A calendar for the United States.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnitedStates {
@@ -36,9 +36,9 @@ pub struct UnitedStates {
 }
 
 impl UnitedStates {
-    /// Creates a new UnitedStates calendar for the specified market.
+    /// Creates a new `UnitedStates` calendar for the specified market.
     pub fn new(market: Market) -> Self {
-        UnitedStates {
+        Self {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
@@ -96,7 +96,7 @@ impl UnitedStates {
         let month = date.month();
         let year = date.year();
 
-        if UnitedStates::is_weekend(weekday) {
+        if Self::is_weekend(weekday) {
             return false;
         }
 
@@ -108,11 +108,11 @@ impl UnitedStates {
             | Market::Nerc
             | Market::FederalReserve
             | Market::Sofr => {
-                UnitedStates::is_washington_birthday(day, month, year, weekday)
-                    || UnitedStates::is_memorial_day(day, month, year, weekday)
-                    || UnitedStates::is_independence_day(day, month, weekday)
-                    || UnitedStates::is_thanksgiving(day, month, weekday)
-                    || UnitedStates::is_christmas(day, month, weekday)
+                Self::is_washington_birthday(day, month, year, weekday)
+                    || Self::is_memorial_day(day, month, year, weekday)
+                    || Self::is_independence_day(day, month, weekday)
+                    || Self::is_thanksgiving(day, month, weekday)
+                    || Self::is_christmas(day, month, weekday)
             }
         }
     }

@@ -143,7 +143,7 @@ impl InterestRate {
             ));
         }
         let r: f64;
-        let f = freq as i64 as f64;
+        let f = f64::from(freq as i32);
         if compound == 1.0 {
             if t < 0.0 {
                 return Err(AtlasError::InvalidValueErr(
@@ -191,7 +191,7 @@ impl InterestRate {
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
         let rate = self.rate();
         let compounding = self.compounding();
-        let f = self.frequency() as i64 as f64;
+        let f = f64::from(self.frequency() as i32);
         match compounding {
             Compounding::Simple => 1.0 + rate * year_fraction,
             Compounding::Compounded => (1.0 + rate / f).powf(f * year_fraction),
@@ -572,7 +572,11 @@ mod tests {
                 test_case.frequency2,
                 test_case.time,
             )
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "implied_rate should succeed in test_implied_rate_for_compounding_and_frequency: {e}"
+                )
+            });
             assert!(
                 (implied_rate.rate() - test_case.rate2).abs()
                     < (test_case.precision as f64) / 100.0

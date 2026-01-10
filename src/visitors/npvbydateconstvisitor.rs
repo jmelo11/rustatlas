@@ -8,8 +8,8 @@ use crate::{
 use super::traits::{ConstVisit, HasCashflows};
 use std::collections::BTreeMap;
 
-/// # NPVByDateConstVisitor
-/// NPVByDateConstVisitor is a visitor that calculates the NPV of an instrument and returns the result in a BTreeMap
+/// # `NPVByDateConstVisitor`
+/// `NPVByDateConstVisitor` is a visitor that calculates the NPV of an instrument and returns the result in a `BTreeMap`
 /// where the key is the payment date of the cashflow and the value is the NPV of the cashflow.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 pub struct NPVByDateConstVisitor<'a> {
@@ -19,31 +19,32 @@ pub struct NPVByDateConstVisitor<'a> {
 }
 
 impl<'a> NPVByDateConstVisitor<'a> {
-    /// Creates a new NPVByDateConstVisitor.
+    /// Creates a new `NPVByDateConstVisitor`.
     ///
     /// # Arguments
     ///
     /// * `reference_date` - The reference date for NPV calculations
     /// * `market_data` - A slice of market data for discount factors and FX rates
     /// * `include_today_cashflows` - Whether to include cashflows on the reference date
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         reference_date: Date,
         market_data: &'a [MarketData],
         include_today_cashflows: bool,
     ) -> Self {
-        NPVByDateConstVisitor {
-            reference_date,
+        Self {
             market_data,
             include_today_cashflows,
+            reference_date,
         }
     }
     /// Sets whether to include cashflows on the reference date.
-    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
+    pub const fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'_> {
     type Output = Result<BTreeMap<Date, f64>>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let mut npv_result = BTreeMap::new();
@@ -174,7 +175,7 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }

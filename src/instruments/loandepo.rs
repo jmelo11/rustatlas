@@ -22,7 +22,7 @@ use super::{
     traits::Structure,
 };
 
-/// # LoanDepo
+/// # `LoanDepo`
 /// Struct that represents a serialized loan or deposit. Used for serialization purposes.
 // #[deprecated(note = "LoanDepo is deprecated and will be removed in future versions. Use specific instrument implementations instead.")]
 #[derive(Serialize, Deserialize, Clone)]

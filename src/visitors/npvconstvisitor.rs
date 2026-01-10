@@ -6,8 +6,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # `NPVConstVisitor`
+/// `NPVConstVisitor` is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 ///
 /// ## Parameters
@@ -19,7 +19,7 @@ pub struct NPVConstVisitor<'a> {
 }
 
 impl<'a> NPVConstVisitor<'a> {
-    /// Creates a new NPVConstVisitor with the given market data and flag.
+    /// Creates a new `NPVConstVisitor` with the given market data and flag.
     pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data,
@@ -170,14 +170,14 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_npv_fixed_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -218,7 +218,7 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_npv_floating_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -302,7 +302,7 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn generator_tests() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store().expect("market store creation should succeed");
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -377,25 +377,31 @@ mod tests {
                     .with_discount_curve_id(Some(2))
                     .with_notional(notional)
                     .build()
-                    .unwrap()
+                    .expect("instrument build should succeed")
             })
             .collect(); // Collect the results into a Vec<_>
 
         fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store().unwrap();
+            let store = create_store().expect("market store creation should succeed");
             let mut npv = 0.0;
             let indexer = IndexingVisitor::new();
-            instruments
-                .iter_mut()
-                .for_each(|inst| indexer.visit(inst).unwrap());
+            for inst in instruments.iter_mut() {
+                indexer
+                    .visit(inst)
+                    .expect("indexing visit should succeed");
+            }
 
             let model = SimpleModel::new(&store);
-            let data = model.gen_market_data(&indexer.request()).unwrap();
+            let data = model
+                .gen_market_data(&indexer.request())
+                .expect("market data generation should succeed");
 
             let npv_visitor = NPVConstVisitor::new(&data, true);
-            instruments
-                .iter()
-                .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
+            for inst in instruments.iter() {
+                npv += npv_visitor
+                    .visit(inst)
+                    .expect("npv visit should succeed");
+            }
             npv
         }
 

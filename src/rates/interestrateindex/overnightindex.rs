@@ -303,21 +303,24 @@ mod tests {
             .with_fixings(fixings)
             .with_rate_definition(RateDefinition::default());
 
-        let average_rate = overnight_index.average_rate(start_date, end_date).unwrap();
+        let average_rate = overnight_index
+            .average_rate(start_date, end_date)
+            .unwrap_or_else(|e| panic!("average_rate should succeed in test_average_rate: {e}"));
 
-        // Add your assertions here based on how average_rate is calculated
         assert!(average_rate > 0.0);
     }
 
     #[test]
-    fn test_fixing() -> Result<()> {
+    fn test_fixing() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         let overnight_index = OvernightIndex::new(date).with_fixings(fixings);
 
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 0.02);
-        Ok(())
+        let fixing = overnight_index
+            .fixing(Date::new(2021, 1, 1))
+            .unwrap_or_else(|e| panic!("fixing should succeed in test_fixing: {e}"));
+        assert!((fixing - 0.02).abs() < 1e-10);
     }
 
     #[test]
@@ -351,13 +354,13 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_provider_overnight() -> Result<()> {
+    fn test_fixing_provider_overnight() {
         let fixing: HashMap<Date, f64> = [
             (Date::new(2023, 6, 2), 21945.57),
             (Date::new(2023, 6, 5), 21966.14),
         ]
         .iter()
-        .cloned()
+        .copied()
         .collect();
 
         let mut overnight_index = OvernightIndex::new(Date::new(2023, 6, 5)).with_fixings(fixing);
@@ -368,22 +371,21 @@ mod tests {
             overnight_index
                 .fixings()
                 .get(&Date::new(2023, 6, 3))
-                .unwrap()
+                .unwrap_or_else(|| panic!(
+                    "fixings map should contain interpolated fixing for 2023-06-03"
+                ))
                 - 21952.4266666
                 < 0.001
         );
-        Ok(())
     }
 
     #[test]
-    fn test_advance_to_period() -> Result<()> {
+    fn test_advance_to_period() {
         let mut fixing: HashMap<Date, f64> = HashMap::new();
         fixing.insert(Date::new(2023, 6, 2), 21945.57);
         fixing.insert(Date::new(2023, 6, 5), 21966.14);
 
         let mut overnight_index = OvernightIndex::new(Date::new(2023, 7, 6)).with_fixings(fixing);
         overnight_index.fill_missing_fixings(Interpolator::Linear);
-
-        Ok(())
     }
 }

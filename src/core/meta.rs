@@ -5,7 +5,7 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-/// # ExchangeRateRequest
+/// # `ExchangeRateRequest`
 /// Meta data for an exchange rate. Holds the first currency, the second currency and the reference
 /// date required to fetch the exchange rate.
 ///
@@ -50,7 +50,7 @@ impl ExchangeRateRequest {
     }
 }
 
-/// # DiscountFactorRequest
+/// # `DiscountFactorRequest`
 /// Meta data for a discount factor. Holds the discount curve id and the reference date required to
 /// fetch the discount factor.
 ///
@@ -80,7 +80,7 @@ impl DiscountFactorRequest {
     }
 }
 
-/// # ForwardRateRequest
+/// # `ForwardRateRequest`
 /// Meta data for a forward rate. Holds the forward curve id and the start and end dates required
 /// to fetch the forward rate.
 ///
@@ -146,7 +146,7 @@ impl ForwardRateRequest {
     }
 }
 
-/// # MarketRequest
+/// # `MarketRequest`
 /// Meta data for market data. Holds all the meta data required to fetch the market data.
 ///
 /// ## Parameters
@@ -194,7 +194,7 @@ impl MarketRequest {
     }
 }
 
-/// # MarketDataNode
+/// # `MarketDataNode`
 /// Market data. Holds all the data required to price a cashflow.
 ///
 /// ## Parameters

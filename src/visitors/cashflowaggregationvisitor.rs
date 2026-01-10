@@ -15,8 +15,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # CashflowsAggregatorConstVisitor
-/// Visitor for aggregating cashflows.
+/// # `CashflowsAggregatorConstVisitor`
+/// `CashflowsAggregatorConstVisitor` is a visitor for aggregating cashflows.
 /// The visitor will aggregate the cashflows by date and side.
 ///
 /// ## Parameters
@@ -31,7 +31,8 @@ pub struct CashflowsAggregatorConstVisitor {
 
 impl CashflowsAggregatorConstVisitor {
     /// Creates a new instance of `CashflowsAggregatorConstVisitor`.
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             redemptions: Mutex::new(BTreeMap::new()),
             disbursements: Mutex::new(BTreeMap::new()),
@@ -41,24 +42,34 @@ impl CashflowsAggregatorConstVisitor {
     }
 
     /// Sets the currency to validate against the instrument's currency.
-    pub fn with_validate_currency(mut self, currency: Currency) -> Self {
+    #[must_use]
+    pub const fn with_validate_currency(mut self, currency: Currency) -> Self {
         self.validation_currency = Some(currency);
         self
     }
 
     /// Returns the aggregated redemptions by date.
     pub fn redemptions(&self) -> BTreeMap<Date, f64> {
-        self.redemptions.lock().unwrap().clone()
+        self.redemptions
+            .lock()
+            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .clone()
     }
 
     /// Returns the aggregated disbursements by date.
     pub fn disbursements(&self) -> BTreeMap<Date, f64> {
-        self.disbursements.lock().unwrap().clone()
+        self.disbursements
+            .lock()
+            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .clone()
     }
 
     /// Returns the aggregated interest payments by date.
     pub fn interest(&self) -> BTreeMap<Date, f64> {
-        self.interest.lock().unwrap().clone()
+        self.interest
+            .lock()
+            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .clone()
     }
 }
 
@@ -93,28 +104,46 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
                 };
                 match cf {
                     Cashflow::FixedRateCoupon(cashflow) => {
-                        let mut interest = self.interest.lock().unwrap();
+                        let mut interest = self.interest.lock().map_err(|e| {
+                            AtlasError::EvaluationErr(format!(
+                                "Interest mutex poisoned in CashflowsAggregatorConstVisitor: {e}",
+                            ))
+                        })?;
                         interest
                             .entry(cashflow.payment_date())
                             .and_modify(|e| *e += amount)
                             .or_insert(amount);
                     }
                     Cashflow::FloatingRateCoupon(cashflow) => {
-                        let mut interest = self.interest.lock().unwrap();
+                        let mut interest = self.interest.lock().map_err(|e| {
+                            AtlasError::EvaluationErr(format!(
+                                "Interest mutex poisoned in CashflowsAggregatorConstVisitor: {e}",
+                            ))
+                        })?;
                         interest
                             .entry(cashflow.payment_date())
                             .and_modify(|e| *e += amount)
                             .or_insert(amount);
                     }
                     Cashflow::Disbursement(cashflow) => {
-                        let mut disbursements = self.disbursements.lock().unwrap();
+                        let mut disbursements =
+                            self.disbursements.lock().map_err(|e| {
+                                AtlasError::EvaluationErr(format!(
+                                    "Disbursements mutex poisoned in CashflowsAggregatorConstVisitor: {e}",
+                                ))
+                            })?;
                         disbursements
                             .entry(cashflow.payment_date())
                             .and_modify(|e| *e += amount)
                             .or_insert(amount);
                     }
                     Cashflow::Redemption(cashflow) => {
-                        let mut redemptions = self.redemptions.lock().unwrap();
+                        let mut redemptions =
+                            self.redemptions.lock().map_err(|e| {
+                                AtlasError::EvaluationErr(format!(
+                                    "Redemptions mutex poisoned in CashflowsAggregatorConstVisitor: {e}",
+                                ))
+                            })?;
                         redemptions
                             .entry(cashflow.payment_date())
                             .and_modify(|e| *e += amount)
@@ -162,7 +191,7 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()
-            .unwrap();
+            .expect("instrument_1 build should succeed");
 
         let instrument_2 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
@@ -174,7 +203,7 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()
-            .unwrap();
+            .expect("instrument_2 build should succeed");
 
         let visitor = CashflowsAggregatorConstVisitor::new().with_validate_currency(Currency::USD);
         let _ = visitor.visit(&instrument_1);
@@ -188,6 +217,9 @@ mod tests {
 
         assert!(interest.contains_key(&end_date));
 
-        assert_eq!(*redemptions.get(&end_date).unwrap(), 100.0);
+        let redemption = redemptions
+            .get(&end_date)
+            .expect("redemptions map should contain end_date");
+        assert!((*redemption - 100.0).abs() < 1e-12);
     }
 }

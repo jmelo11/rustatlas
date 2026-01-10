@@ -188,7 +188,9 @@ mod test {
             Compounding::Compounded,
             Frequency::Annual,
         );
-        assert!((fr.unwrap() - 0.03) < 0.0001);
+        let fr =
+            fr.unwrap_or_else(|e| panic!("forward_rate should succeed in test_forward_rate: {e}"));
+        assert!((fr - 0.03).abs() < 0.0001);
     }
 
     #[test]
@@ -215,9 +217,23 @@ mod test {
 
         let spreaded_curve = CompositeTermStructure::new(spread_curve, base_curve);
 
-        let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));
-        println!("df: {:?}", df);
+        let target_date = Date::new(2021, 1, 1);
 
-        assert!(df.unwrap() - 0.9702040771633191 < 0.00001);
+        let df = spreaded_curve
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+
+        let df_spread = spreaded_curve
+            .spread_curve()
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+        let df_base = spreaded_curve
+            .base_curve()
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+
+        let expected_df = df_spread * df_base;
+
+        assert!((df - expected_df).abs() < 1e-10);
     }
 }

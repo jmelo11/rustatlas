@@ -11,7 +11,7 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-/// # ExchangeRateStore
+/// # `ExchangeRateStore`
 /// A store for exchange rates.
 /// Exchange rates are stored as a map of pairs of currencies to rates.
 ///

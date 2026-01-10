@@ -282,7 +282,15 @@ mod tests {
         .collect();
         let mut ibor_index = IborIndex::new(Date::new(2023, 11, 6)).with_fixings(fixing);
         ibor_index.fill_missing_fixings(Interpolator::Linear);
-        assert!(ibor_index.fixings().get(&Date::new(2023, 6, 3)).unwrap() - 21952.4266666 < 0.001);
+        let interpolated = ibor_index
+            .fixings()
+            .get(&Date::new(2023, 6, 3))
+            .unwrap_or_else(|| {
+                panic!(
+                    "fixings should contain interpolated value in test_fixing_interpolation_ibor"
+                )
+            });
+        assert!((*interpolated - 21952.4266666).abs() < 0.001);
         Ok(())
     }
 
@@ -320,20 +328,52 @@ mod tests {
         ibor_index.link_to(base_term_structure.clone());
         let df = ibor_index
             .term_structure()
-            .unwrap()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "term_structure should be set in test_relink_term_structure (base term structure): {e}"
+                )
+            })
             .discount_factor(eval_date)
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed in test_relink_term_structure (base term structure): {e}"
+                )
+            });
 
-        assert_eq!(df, base_term_structure.discount_factor(eval_date).unwrap());
+        let base_df = base_term_structure
+            .discount_factor(eval_date)
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed on base_term_structure in test_relink_term_structure: {e}"
+                )
+            });
+
+        assert!((df - base_df).abs() < 1e-10);
 
         ibor_index.link_to(new_term_structure.clone());
 
         let df = ibor_index
             .term_structure()
-            .unwrap()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "term_structure should be set in test_relink_term_structure (composite term structure): {e}"
+                )
+            })
             .discount_factor(eval_date)
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed in test_relink_term_structure (composite term structure): {e}"
+                )
+            });
 
-        assert_eq!(df, new_term_structure.discount_factor(eval_date).unwrap());
+        let composite_df = new_term_structure
+            .discount_factor(eval_date)
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed on new_term_structure in test_relink_term_structure: {e}"
+                )
+            });
+
+        assert!((df - composite_df).abs() < 1e-10);
     }
 }

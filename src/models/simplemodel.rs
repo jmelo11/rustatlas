@@ -10,7 +10,7 @@ use crate::{
 
 use super::traits::Model;
 
-/// # SimpleModel
+/// # `SimpleModel`
 /// A simple model that provides market data based on the current market state. Uses the
 /// market store to get the market data (curves, currencies and others). All values are calculated using the
 /// reference date and local currency of the market store.

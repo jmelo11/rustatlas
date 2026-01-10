@@ -10,8 +10,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # AccruedAmountConstVisitor
-/// Visitor for calculating accrued amounts.
+/// # `AccruedAmountConstVisitor`
+/// `AccruedAmountConstVisitor` is a visitor for calculating accrued amounts.
 ///
 /// ## Parameters
 /// * `evaluation_date` - The evaluation date
@@ -136,8 +136,10 @@ mod tests {
 
         visitor.visit(&instrument)?;
         let accrued_amounts = visitor.accrued_amounts();
-        let size = start_date + Period::new(5, TimeUnit::Years) - start_date;
-        assert_eq!(accrued_amounts.len(), size as usize);
+        let horizon_days = start_date + Period::new(5, TimeUnit::Years) - start_date;
+        let expected_size = usize::try_from(horizon_days)
+            .unwrap_or_else(|_| panic!("horizon_days does not fit into usize: {horizon_days}"));
+        assert_eq!(accrued_amounts.len(), expected_size);
 
         Ok(())
     }

@@ -90,7 +90,7 @@ impl DoubleRateInstrument {
     }
 
     /// Returns the notional amount at the rate change date, if specified.
-    pub fn notional_at_change_rate(&self) -> Option<f64> {
+    pub const fn notional_at_change_rate(&self) -> Option<f64> {
         self.notional_at_change_rate
     }
 

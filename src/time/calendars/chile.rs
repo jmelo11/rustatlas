@@ -26,7 +26,7 @@ pub struct Chile {
 impl Chile {
     /// Creates a new Chile calendar instance for the specified market.
     pub fn new(market: Market) -> Self {
-        Chile {
+        Self {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
@@ -134,23 +134,23 @@ impl Chile {
 
         match self.market {
             Market::SSE => {
-                if Chile::is_new_years_day(day, month, year)
-                    || Chile::is_good_friday(day, month, year)
-                    || Chile::is_easter_saturday(day, month, year)
-                    || Chile::is_labour_day(day, month)
-                    || Chile::is_navy_day(day, month)
-                    || Chile::is_aboriginal_peoples_day(day, month, year)
-                    || Chile::is_saint_peter_and_saint_paul_day(day, month)
-                    || Chile::is_our_lady_of_mount_carmel_day(day, month)
-                    || Chile::is_assumption_day(day, month)
-                    || Chile::is_independence_day(day, month, year)
-                    || Chile::is_army_day(day, month, year)
-                    || Chile::is_discovery_of_two_worlds(day, month)
-                    || Chile::is_reformation_day(day, month, year)
-                    || Chile::is_all_saints_day(day, month)
-                    || Chile::is_immaculate_conception(day, month)
-                    || Chile::is_christmas_day(day, month)
-                    || Chile::is_bank_holiday(day, month)
+                if Self::is_new_years_day(day, month, year)
+                    || Self::is_good_friday(day, month, year)
+                    || Self::is_easter_saturday(day, month, year)
+                    || Self::is_labour_day(day, month)
+                    || Self::is_navy_day(day, month)
+                    || Self::is_aboriginal_peoples_day(day, month, year)
+                    || Self::is_saint_peter_and_saint_paul_day(day, month)
+                    || Self::is_our_lady_of_mount_carmel_day(day, month)
+                    || Self::is_assumption_day(day, month)
+                    || Self::is_independence_day(day, month, year)
+                    || Self::is_army_day(day, month, year)
+                    || Self::is_discovery_of_two_worlds(day, month)
+                    || Self::is_reformation_day(day, month, year)
+                    || Self::is_all_saints_day(day, month)
+                    || Self::is_immaculate_conception(day, month)
+                    || Self::is_christmas_day(day, month)
+                    || Self::is_bank_holiday(day, month)
                 {
                     return false;
                 }

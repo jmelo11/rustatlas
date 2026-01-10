@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
-/// # Linear Interpolator
+/// # `Linear Interpolator`
 /// Basic linear interpolator.
 #[derive(Clone)]
 pub struct LinearInterpolator {}
@@ -45,6 +45,6 @@ mod tests {
         let x_ = vec![0.0, 1.0];
         let y_ = vec![0.0, 1.0];
         let y = LinearInterpolator::interpolate(x, &x_, &y_, true);
-        assert_eq!(y, 0.5);
+        assert!((y - 0.5).abs() < 1e-12);
     }
 }

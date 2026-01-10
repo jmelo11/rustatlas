@@ -19,7 +19,7 @@ use crate::{
     },
 };
 
-/// # MarketStore
+/// # `MarketStore`
 /// A store for market data.
 ///
 /// ## Parameters
@@ -36,9 +36,10 @@ pub struct MarketStore {
 }
 
 impl MarketStore {
-    /// Creates a new MarketStore with the given reference date and local currency.
-    pub fn new(reference_date: Date, local_currency: Currency) -> MarketStore {
-        MarketStore {
+    /// Creates a new `MarketStore` with the given reference date and local currency.
+    #[must_use]
+    pub fn new(reference_date: Date, local_currency: Currency) -> Self {
+        Self {
             reference_date,
             local_currency,
             exchange_rate_store: ExchangeRateStore::new(reference_date),
@@ -47,11 +48,13 @@ impl MarketStore {
     }
 
     /// Returns the local currency of this market store.
+    #[must_use]
     pub fn local_currency(&self) -> Currency {
         self.local_currency
     }
 
     /// Returns a reference to the exchange rate store.
+    #[must_use]
     pub fn exchange_rate_store(&self) -> &ExchangeRateStore {
         &self.exchange_rate_store
     }
@@ -62,6 +65,7 @@ impl MarketStore {
     }
 
     /// Returns a reference to the index store.
+    #[must_use]
     pub fn index_store(&self) -> &IndexStore {
         &self.index_store
     }
@@ -74,30 +78,38 @@ impl MarketStore {
     /// Gets the exchange rate between two currencies.
     ///
     /// If no second currency is provided, uses the local currency.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the exchange rate cannot be retrieved.
     pub fn get_exchange_rate(
         &self,
         first_currency: Currency,
         second_currency: Option<Currency>,
     ) -> Result<f64> {
-        let second_currency = match second_currency {
-            Some(ccy) => ccy,
-            None => self.local_currency,
-        };
+        let second_currency = second_currency.unwrap_or(self.local_currency);
         self.exchange_rate_store
             .get_exchange_rate(first_currency, second_currency)
     }
 
     /// Gets an interest rate index by its ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the index cannot be found.
     pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         self.index_store.get_index(id)
     }
 
     /// Advances the market store to a new date by the given period.
-    pub fn advance_to_period(&self, period: Period) -> Result<MarketStore> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the period is negative or advancing fails.
+    pub fn advance_to_period(&self, period: Period) -> Result<Self> {
         if period.length() < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Negative periods are not allowed when advancing market store in time ({:?})",
-                period
+                "Negative periods are not allowed when advancing market store in time ({period:?})",
             )));
         }
         let new_reference_date = self.reference_date + period;
@@ -106,7 +118,7 @@ impl MarketStore {
             .advance_to_period(period, &self.index_store)?;
         let new_index_store = self.index_store.advance_to_period(period)?;
 
-        Ok(MarketStore {
+        Ok(Self {
             reference_date: new_reference_date,
             local_currency: self.local_currency,
             exchange_rate_store: new_exchange_rate_store,
@@ -115,14 +127,23 @@ impl MarketStore {
     }
 
     /// Advances the market store to a specific date.
-    pub fn advance_to_date(&self, date: Date) -> Result<MarketStore> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the date is before the reference date or advancing fails.
+    pub fn advance_to_date(&self, date: Date) -> Result<Self> {
         if date < self.reference_date {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {} is before reference date {}",
-                date, self.reference_date
+                "Date {date} is before reference date {}",
+                self.reference_date
             )));
         }
-        let days = (date - self.reference_date) as i32;
+        let days = i32::try_from(date - self.reference_date).map_err(|_| {
+            AtlasError::InvalidValueErr(format!(
+                "Date {date} is too far from reference date {} to convert to days",
+                self.reference_date
+            ))
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -158,32 +179,30 @@ impl fmt::Display for MarketStore {
 
         for indice in all_indices {
             indice_name = match indice.read_index() {
-                Ok(indice) => indice.name().unwrap().to_string(),
-                Err(_) => "".to_string(),
+                Ok(indice) => indice.name().unwrap_or_default(),
+                Err(_) => String::new(),
             };
             if !indice_name.is_empty() {
                 indices_names.push(indice_name);
             }
         }
+        if let Ok(indices_map) = index_store.get_index_map() {
+            indices_names = tools::sort_strings_alphabetically(&indices_names);
 
-        let indices_map = index_store.get_index_map().unwrap();
+            msg.push_str("> Indices (");
+            msg.push_str(&indices_names.len().to_string());
+            msg.push_str("):\n");
+            for indice_name in indices_names {
+                let indice_idx = indices_map
+                    .get(&indice_name)
+                    .map_or_else(String::new, |idx| idx.to_string());
 
-        indices_names = tools::sort_strings_alphabetically(&indices_names);
-
-        msg.push_str("> Indices (");
-        msg.push_str(&indices_names.len().to_string());
-        msg.push_str("):\n");
-        for indice_name in indices_names {
-            let indice_idx = match indices_map.get(&indice_name) {
-                Some(idx) => idx.to_string(),
-                None => "".to_string(),
-            };
-
-            msg.push_str(">> ");
-            msg.push_str(&indice_idx);
-            msg.push_str(" -> ");
-            msg.push_str(&indice_name);
-            msg.push('\n');
+                msg.push_str(">> ");
+                msg.push_str(&indice_idx);
+                msg.push_str(" -> ");
+                msg.push_str(&indice_name);
+                msg.push('\n');
+            }
         }
 
         let exchange_rate_store = self.exchange_rate_store();
@@ -205,6 +224,6 @@ impl fmt::Display for MarketStore {
 
         msg.push_str("=====================================\n");
 
-        write!(f, "{}", msg)
+        write!(f, "{msg}")
     }
 }

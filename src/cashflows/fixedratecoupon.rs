@@ -13,7 +13,7 @@ use crate::{
     utils::errors::Result,
 };
 
-/// # FixedRateCoupon
+/// # `FixedRateCoupon`
 /// A fixed rate coupon is a cashflow that pays a fixed rate of interest on a notional amount.
 ///
 /// ## Parameters
@@ -53,10 +53,10 @@ impl FixedRateCoupon {
         payment_date: Date,
         currency: Currency,
         side: Side,
-    ) -> FixedRateCoupon {
+    ) -> Self {
         let amount = notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
         let cashflow = SimpleCashflow::new(payment_date, currency, side).with_amount(amount);
-        FixedRateCoupon {
+        Self {
             notional,
             rate,
             accrual_start_date,
@@ -66,7 +66,7 @@ impl FixedRateCoupon {
     }
 
     /// Sets the discount curve ID and returns self for method chaining.
-    pub fn with_discount_curve_id(mut self, id: usize) -> FixedRateCoupon {
+    pub fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow.set_discount_curve_id(id);
         self
     }

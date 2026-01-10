@@ -9,7 +9,7 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-/// # DayCounter
+/// # `DayCounter`
 /// Day count convention enum.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DayCounter {
@@ -123,21 +123,25 @@ mod tests {
         assert_eq!(day_count, -1);
     }
 
+    fn almost_eq(a: f64, b: f64, eps: f64) -> bool {
+        (a - b).abs() < eps
+    }
+
     #[test]
     fn test_year_fraction() {
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2020, 1, 2);
 
         let year_fraction = DayCounter::Actual360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Actual365.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 365.0);
+        assert!(almost_eq(year_fraction, 1.0 / 365.0, 1e-12));
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Thirty360US.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::ActualActual.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 366.0);
+        assert!(almost_eq(year_fraction, 1.0 / 366.0, 1e-12));
     }
 
     #[test]
@@ -146,15 +150,15 @@ mod tests {
         let end = Date::new(2020, 1, 2);
 
         let year_fraction = DayCounter::Actual360.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Actual365.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 365.0);
+        assert!(almost_eq(year_fraction, -1.0 / 365.0, 1e-12));
         let year_fraction = DayCounter::Thirty360.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Thirty360US.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::ActualActual.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 366.0);
+        assert!(almost_eq(year_fraction, -1.0 / 366.0, 1e-12));
     }
 
     #[test]
@@ -165,7 +169,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -176,7 +180,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_eq!(yf_1, yf_2);
+        assert!(almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -199,7 +203,7 @@ mod tests {
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
 
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -211,6 +215,6 @@ mod tests {
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
 
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 }

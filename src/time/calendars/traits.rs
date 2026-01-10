@@ -193,9 +193,8 @@ pub trait IsCalendar: ImplCalendar {
                 }
                 if self.is_holiday(&d1) {
                     return d2;
-                } else {
-                    return d1;
                 }
+                return d1;
             }
         }
         d1
