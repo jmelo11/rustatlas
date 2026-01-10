@@ -82,12 +82,14 @@ impl TenorBasedZeroRateTermStructure {
     }
 
     /// Returns the tenors of the term structure.
-    pub fn tenors(&self) -> &Vec<Period> {
+    #[must_use]
+    pub const fn tenors(&self) -> &Vec<Period> {
         &self.tenors
     }
 
     /// Returns the spreads of the term structure.
-    pub fn spreads(&self) -> &Vec<f64> {
+    #[must_use]
+    pub const fn spreads(&self) -> &Vec<f64> {
         &self.spreads
     }
 }

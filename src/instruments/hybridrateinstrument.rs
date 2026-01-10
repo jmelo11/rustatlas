@@ -35,7 +35,8 @@ pub struct HybridRateInstrument {
 
 impl HybridRateInstrument {
     /// Creates a new hybrid rate instrument.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         start_date: Date,
         end_date: Date,
         notional: f64,
@@ -76,88 +77,105 @@ impl HybridRateInstrument {
     }
 
     /// Returns the notional amount of the instrument.
-    pub fn notional(&self) -> f64 {
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
     /// Returns the payment frequency of the instrument.
-    pub fn payment_frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
     /// Returns the structure of the instrument.
-    pub fn structure(&self) -> Structure {
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
     /// Returns the side of the instrument.
-    pub fn side(&self) -> Option<Side> {
+    #[must_use]
+    pub const fn side(&self) -> Option<Side> {
         self.side
     }
 
     /// Returns the identifier of the instrument.
+    #[must_use]
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
     /// Returns the forecast curve identifier.
-    pub fn forecast_curve_id(&self) -> Option<usize> {
+    #[must_use]
+    pub const fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
 
     /// Returns the discount curve identifier.
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
     /// Returns the start date of the instrument.
-    pub fn start_date(&self) -> Date {
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
     /// Returns the end date of the instrument.
-    pub fn end_date(&self) -> Date {
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
     /// Returns the issue date of the instrument.
-    pub fn issue_date(&self) -> Option<Date> {
+    #[must_use]
+    pub const fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
     /// Returns the rate type of the instrument.
-    pub fn rate_type(&self) -> RateType {
+    #[must_use]
+    pub const fn rate_type(&self) -> RateType {
         self.rate_type
     }
 
     /// Returns the first rate definition of the instrument.
-    pub fn first_rate_definition(&self) -> Option<RateDefinition> {
+    #[must_use]
+    pub const fn first_rate_definition(&self) -> Option<RateDefinition> {
         self.first_rate_definition
     }
 
     /// Returns the first rate of the instrument.
-    pub fn first_rate(&self) -> Option<f64> {
+    #[must_use]
+    pub const fn first_rate(&self) -> Option<f64> {
         self.first_rate
     }
 
     /// Returns the second rate definition of the instrument.
-    pub fn second_rate_definition(&self) -> Option<RateDefinition> {
+    #[must_use]
+    pub const fn second_rate_definition(&self) -> Option<RateDefinition> {
         self.second_rate_definition
     }
 
     /// Returns the second rate of the instrument.
-    pub fn second_rate(&self) -> Option<f64> {
+    #[must_use]
+    pub const fn second_rate(&self) -> Option<f64> {
         self.second_rate
     }
 
     /// Sets the discount curve identifier.
-    pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
+    #[must_use]
+    pub const fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self
     }
 
     /// Sets the forecast curve identifier.
-    pub fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
+    #[must_use]
+    pub const fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
         self.forecast_curve_id = Some(forecast_curve_id);
         self
     }

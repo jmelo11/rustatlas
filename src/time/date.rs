@@ -193,6 +193,7 @@ impl<'de> Deserialize<'de> for Date {
 
 impl Date {
     /// Creates a new `Date` from the given year, month, and day.
+    #[must_use]
     pub fn new(year: i32, month: u32, day: u32) -> Date {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
         match base_date {
@@ -212,69 +213,82 @@ impl Date {
     }
 
     /// Formats this date as a string using the specified format.
+    #[must_use]
     pub fn to_str(&self, fmt: &str) -> String {
         self.base_date.format(fmt).to_string()
     }
 
     /// Returns the underlying `NaiveDate`.
-    pub fn base_date(&self) -> NaiveDate {
+    #[must_use]
+    pub const fn base_date(&self) -> NaiveDate {
         self.base_date
     }
 
     /// Returns the day of the month (1-31).
+    #[must_use]
     pub fn day(&self) -> u32 {
         self.base_date.day()
     }
 
     /// Returns the month of the year (1-12).
+    #[must_use]
     pub fn month(&self) -> u32 {
         self.base_date.month()
     }
 
     /// Returns the year.
+    #[must_use]
     pub fn year(&self) -> i32 {
         self.base_date.year()
     }
 
     /// Returns the number of days in the month of this date.
+    #[must_use]
     pub fn days_in_month(&self) -> i32 {
         self.base_date.days_in_month()
     }
 
     /// Returns the day of year (1-366) for this date.
+    #[must_use]
     pub fn day_of_year(&self) -> i32 {
         self.base_date.day_of_year()
     }
 
     /// Returns whether this date falls in a leap year.
+    #[must_use]
     pub fn date_has_leap_year(&self) -> bool {
         self.base_date.date_has_leap_year()
     }
 
     /// Returns whether the given year is a leap year.
-    pub fn is_leap_year(year: i32) -> bool {
+    #[must_use]
+    pub const fn is_leap_year(year: i32) -> bool {
         year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
     }
 
     /// Advances this date by `n` units of the specified `TimeUnit`.
+    #[must_use]
     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
         let base_date = self.base_date.advance(n, units);
         Date::from(base_date)
     }
 
     /// Adds a `Period` to this date.
+    #[must_use]
     pub fn add_period(&self, period: Period) -> Date {
         let base_date = self.base_date + period;
         Date::from(base_date)
     }
 
     /// Returns the last day of the month for the given date.
+    #[must_use]
     pub fn end_of_month(date: Date) -> Date {
         let base_date = NaiveDate::end_of_month(date.base_date);
         Date::from(base_date)
     }
 
     /// Returns the nth occurrence of the specified weekday in the given month and year.
+    #[must_use]
     pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
         let base_date = Date::new(year, month, 1);
         let first = base_date.weekday();
@@ -285,12 +299,14 @@ impl Date {
     }
 
     /// Returns the next occurrence of the specified weekday after the given date.
+    #[must_use]
     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
         let wd = date.weekday();
         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
     }
 
     /// Returns the day of the week for this date.
+    #[must_use]
     pub fn weekday(&self) -> Weekday {
         match self.base_date.weekday() {
             chrono::Weekday::Mon => Weekday::Monday,
@@ -304,6 +320,7 @@ impl Date {
     }
 
     /// Returns the minimum representable date.
+    #[must_use]
     pub fn empty() -> Date {
         //min
         Date::from(NaiveDate::MIN)

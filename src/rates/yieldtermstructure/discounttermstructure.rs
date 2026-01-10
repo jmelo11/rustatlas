@@ -126,27 +126,32 @@ impl DiscountTermStructure {
     }
 
     /// Returns a reference to the vector of dates.
-    pub fn dates(&self) -> &Vec<Date> {
+    #[must_use]
+    pub const fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
     /// Returns a reference to the vector of discount factors.
-    pub fn discount_factors(&self) -> &Vec<f64> {
+    #[must_use]
+    pub const fn discount_factors(&self) -> &Vec<f64> {
         &self.discount_factors
     }
 
     /// Returns the day counter convention used.
-    pub fn day_counter(&self) -> DayCounter {
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.day_counter
     }
 
     /// Returns whether extrapolation is enabled.
-    pub fn enable_extrapolation(&self) -> bool {
+    #[must_use]
+    pub const fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
     /// Returns the interpolator used.
-    pub fn interpolator(&self) -> Interpolator {
+    #[must_use]
+    pub const fn interpolator(&self) -> Interpolator {
         self.interpolator
     }
 }

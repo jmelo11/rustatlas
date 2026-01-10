@@ -64,6 +64,7 @@ pub enum Currency {
 impl Currency {
     /// Returns static metadata about the currency as
     /// (alphabetic code, display name, symbol, decimal precision, numeric ISO 4217 code).
+    #[must_use]
     pub const fn details(self) -> (&'static str, &'static str, &'static str, u8, u16) {
         match self {
             Self::USD => ("USD", "US Dollar", "$", 2, 840),
@@ -95,22 +96,27 @@ impl Currency {
     }
 
     /// Returns the alphabetic code of the currency.
+    #[must_use]
     pub const fn as_str(self) -> &'static str {
         self.details().0
     }
     /// Returns the display name of the currency.
+    #[must_use]
     pub const fn name(self) -> &'static str {
         self.details().1
     }
     /// Returns the symbol of the currency.
+    #[must_use]
     pub const fn symbol(self) -> &'static str {
         self.details().2
     }
     /// Returns the decimal precision of the currency.
+    #[must_use]
     pub const fn precision(self) -> u8 {
         self.details().3
     }
     /// Returns the numeric ISO 4217 code of the currency.
+    #[must_use]
     pub const fn numeric_code(self) -> u16 {
         self.details().4
     }

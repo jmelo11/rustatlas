@@ -25,6 +25,7 @@ pub struct AccruedAmountConstVisitor {
 
 impl AccruedAmountConstVisitor {
     /// Creates a new `AccruedAmountConstVisitor` with the specified evaluation date and horizon.
+    #[must_use]
     pub fn new(evaluation_date: Date, horizon: Period) -> Self {
         let schedule = MakeSchedule::new(evaluation_date, evaluation_date + horizon)
             .with_tenor(Period::new(1, TimeUnit::Days))
@@ -39,7 +40,7 @@ impl AccruedAmountConstVisitor {
     }
 
     /// Sets the currency to validate against the instrument's currency.
-    pub fn with_validate_currency(mut self, currency: Currency) -> Self {
+    pub const fn with_validate_currency(mut self, currency: Currency) -> Self {
         self.validation_currency = Some(currency);
         self
     }

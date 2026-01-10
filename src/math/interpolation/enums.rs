@@ -25,6 +25,7 @@ pub enum Interpolator {
 
 impl Interpolator {
     /// Performs interpolation for a given x value using the specified interpolation method.
+    #[must_use]
     pub fn interpolate(&self, x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         match self {
             Interpolator::Linear => {

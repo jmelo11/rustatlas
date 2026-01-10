@@ -25,6 +25,7 @@ pub struct Chile {
 
 impl Chile {
     /// Creates a new Chile calendar instance for the specified market.
+    #[must_use]
     pub fn new(market: Market) -> Self {
         Self {
             market,
@@ -54,15 +55,15 @@ impl Chile {
         dd == easter_saturday
     }
 
-    fn is_labour_day(day: u32, month: u32) -> bool {
+    const fn is_labour_day(day: u32, month: u32) -> bool {
         day == 1 && month == 5
     }
 
-    fn is_navy_day(day: u32, month: u32) -> bool {
+    const fn is_navy_day(day: u32, month: u32) -> bool {
         day == 21 && month == 5
     }
 
-    fn is_aboriginal_peoples_day(day: u32, month: u32, year: i32) -> bool {
+    const fn is_aboriginal_peoples_day(day: u32, month: u32, year: i32) -> bool {
         day == 21 && month == 6 && year >= 2021
     }
 
@@ -72,11 +73,11 @@ impl Chile {
             || day == 2 && month == 7 && w == Weekday::Mon
     }
 
-    fn is_our_lady_of_mount_carmel_day(day: u32, month: u32) -> bool {
+    const fn is_our_lady_of_mount_carmel_day(day: u32, month: u32) -> bool {
         day == 16 && month == 7
     }
 
-    fn is_assumption_day(day: u32, month: u32) -> bool {
+    const fn is_assumption_day(day: u32, month: u32) -> bool {
         day == 15 && month == 8
     }
 
@@ -106,23 +107,24 @@ impl Chile {
             && year >= 2008
     }
 
-    fn is_all_saints_day(day: u32, month: u32) -> bool {
+    const fn is_all_saints_day(day: u32, month: u32) -> bool {
         day == 1 && month == 11
     }
 
-    fn is_immaculate_conception(day: u32, month: u32) -> bool {
+    const fn is_immaculate_conception(day: u32, month: u32) -> bool {
         day == 8 && month == 12
     }
 
-    fn is_christmas_day(day: u32, month: u32) -> bool {
+    const fn is_christmas_day(day: u32, month: u32) -> bool {
         day == 25 && month == 12
     }
 
-    fn is_bank_holiday(day: u32, month: u32) -> bool {
+    const fn is_bank_holiday(day: u32, month: u32) -> bool {
         day == 31 && month == 12
     }
 
     /// Determines if a given date is a business day in the Chilean market.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();

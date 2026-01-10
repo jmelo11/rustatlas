@@ -59,11 +59,13 @@ impl CompositeTermStructure {
     }
 
     /// Returns a reference to the spread curve.
+    #[must_use]
     pub fn spread_curve(&self) -> &dyn YieldTermStructureTrait {
         self.spread_curve.as_ref()
     }
 
     /// Returns a reference to the base curve.
+    #[must_use]
     pub fn base_curve(&self) -> &dyn YieldTermStructureTrait {
         self.base_curve.as_ref()
     }

@@ -59,7 +59,8 @@ pub struct MakeDoubleRateInstrument {
 
 impl MakeDoubleRateInstrument {
     /// Creates a new instance of MakeDoubleRateInstrument with default values.
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         MakeDoubleRateInstrument {
             start_date: None,
             end_date: None,
@@ -88,79 +89,92 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the issue date.
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> MakeDoubleRateInstrument {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeDoubleRateInstrument {
         self.first_coupon_date = Some(first_coupon_date);
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> MakeDoubleRateInstrument {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
-    pub fn with_side(mut self, side: Side) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> MakeDoubleRateInstrument {
         self.side = Some(side);
         self
     }
 
     /// Sets the notional.
-    pub fn with_notional(mut self, notional: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> MakeDoubleRateInstrument {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the instrument identifier.
+    #[must_use]
     pub fn with_id(mut self, id: String) -> MakeDoubleRateInstrument {
         self.id = Some(id);
         self
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> MakeDoubleRateInstrument {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> MakeDoubleRateInstrument {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the discount curve id.
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the forecast curve id.
-    pub fn with_forecast_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_forecast_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
         self.forecast_curve_id = id;
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeDoubleRateInstrument {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the change rate date.
-    pub fn with_tenor_change_rate(mut self, tenor_change_rate: Period) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_tenor_change_rate(mut self, tenor_change_rate: Period) -> MakeDoubleRateInstrument {
         self.tenor_change_rate = Some(tenor_change_rate);
         self
     }
 
     /// Sets the tenor grace period.
-    pub fn with_tenor_grace_period(
+    #[must_use]
+    pub const fn with_tenor_grace_period(
         mut self,
         tenor_grace_period: Period,
     ) -> MakeDoubleRateInstrument {
@@ -169,19 +183,22 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> MakeDoubleRateInstrument {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the change rate date.
+    #[must_use]
     pub fn with_calendar(mut self, calendar: Calendar) -> MakeDoubleRateInstrument {
         self.calendar = Some(calendar);
         self
     }
 
     /// Sets the business day convention.
-    pub fn with_business_day_convention(
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: BusinessDayConvention,
     ) -> MakeDoubleRateInstrument {
@@ -190,7 +207,8 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the date generation rule.
-    pub fn with_date_generation_rule(
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: DateGenerationRule,
     ) -> MakeDoubleRateInstrument {
@@ -199,13 +217,15 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the rate type.
-    pub fn with_rate_type(mut self, rate_type: RateType) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_rate_type(mut self, rate_type: RateType) -> MakeDoubleRateInstrument {
         self.rate_type = Some(rate_type);
         self
     }
 
     /// Sets the rate definition for the first part.
-    pub fn with_first_part_rate_definition(
+    #[must_use]
+    pub const fn with_first_part_rate_definition(
         mut self,
         rate_definition: RateDefinition,
     ) -> MakeDoubleRateInstrument {
@@ -214,13 +234,15 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the rate value for the first part.
-    pub fn with_first_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_first_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
         self.first_part_rate = Some(rate);
         self
     }
 
     /// Sets the rate definition for the second part.
-    pub fn with_second_part_rate_definition(
+    #[must_use]
+    pub const fn with_second_part_rate_definition(
         mut self,
         rate_definition: RateDefinition,
     ) -> MakeDoubleRateInstrument {
@@ -229,7 +251,8 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the rate value for the second part.
-    pub fn with_second_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_second_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
         self.second_part_rate = Some(rate);
         self
     }

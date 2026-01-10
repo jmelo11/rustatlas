@@ -41,6 +41,7 @@ impl ReadIndex for Arc<RwLock<dyn InterestRateIndexTrait>> {
 
 impl IndexStore {
     /// Creates a new `IndexStore` with the given reference date.
+    #[must_use]
     pub fn new(reference_date: Date) -> IndexStore {
         IndexStore {
             reference_date,
@@ -50,7 +51,8 @@ impl IndexStore {
     }
 
     /// Returns the reference date of this index store.
-    pub fn reference_date(&self) -> Date {
+    #[must_use]
+    pub const fn reference_date(&self) -> Date {
         self.reference_date
     }
 
@@ -194,6 +196,7 @@ impl IndexStore {
     }
 
     /// Returns all indices stored in this store.
+    #[must_use]
     pub fn get_all_indices(&self) -> Vec<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut indices = Vec::new();
         for index in self.index_map.values() {
@@ -203,6 +206,7 @@ impl IndexStore {
     }
 
     /// Returns the next available index ID.
+    #[must_use]
     pub fn next_available_id(&self) -> usize {
         let keys = self.index_map.keys();
         let mut max = 0;
