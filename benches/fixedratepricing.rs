@@ -30,7 +30,7 @@ use rustatlas::{
 mod common;
 use crate::common::common::*;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::Criterion;
 
 /// Benchmark function that creates and processes 150,000 fixed rate instruments in parallel.
 fn multiple() {
@@ -66,6 +66,7 @@ fn multiple() {
         })
         .collect(); // Collect the results into a Vec<_>
 
+    /// par npv
     fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
         let store = Arc::new(create_store().unwrap());
         let mut npv = 0.0;
@@ -90,9 +91,12 @@ fn multiple() {
     });
 }
 
+/// Benchmark criterion for fixed rate pricing calculations.
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("multiple", |b| b.iter(|| multiple()));
 }
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+fn main() {
+    let mut c = Criterion::default().configure_from_args();
+    criterion_benchmark(&mut c);
+}
