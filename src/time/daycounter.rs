@@ -29,6 +29,7 @@ pub enum DayCounter {
 
 impl DayCounter {
     /// Calculates the day count between two dates using the selected day count convention.
+    #[must_use]
     pub fn day_count(&self, start: Date, end: Date) -> i64 {
         match self {
             DayCounter::Actual360 => Actual360::day_count(start, end),
@@ -41,6 +42,7 @@ impl DayCounter {
     }
 
     /// Calculates the year fraction between two dates using the selected day count convention.
+    #[must_use]
     pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
         match self {
             DayCounter::Actual360 => Actual360::year_fraction(start, end),

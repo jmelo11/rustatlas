@@ -11,7 +11,8 @@ pub struct Swap {
 
 impl Swap {
     /// Create a new swap.
-    pub fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
+    #[must_use]
+    pub const fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
         Swap {
             cashflows,
             legs,
@@ -27,17 +28,20 @@ impl Swap {
     }
 
     /// Get the legs of the swap.
-    pub fn legs(&self) -> &Vec<Leg> {
+    #[must_use]
+    pub const fn legs(&self) -> &Vec<Leg> {
         &self.legs
     }
 
     /// Get the cashflows of the swap.
-    pub fn cashflows(&self) -> &Vec<Cashflow> {
+    #[must_use]
+    pub const fn cashflows(&self) -> &Vec<Cashflow> {
         &self.cashflows
     }
 
     /// Get the id of the swap.
-    pub fn id(&self) -> &Option<String> {
+    #[must_use]
+    pub const fn id(&self) -> &Option<String> {
         &self.id
     }
 

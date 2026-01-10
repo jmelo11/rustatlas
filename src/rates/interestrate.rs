@@ -26,7 +26,8 @@ pub struct RateDefinition {
 
 impl RateDefinition {
     /// Creates a new `RateDefinition` with the specified day counter, compounding, and frequency.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         day_counter: DayCounter,
         compounding: Compounding,
         frequency: Frequency,
@@ -39,17 +40,20 @@ impl RateDefinition {
     }
 
     /// Returns the compounding method of this rate definition.
-    pub fn compounding(&self) -> Compounding {
+    #[must_use]
+    pub const fn compounding(&self) -> Compounding {
         self.compounding
     }
 
     /// Returns the frequency of this rate definition.
-    pub fn frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         self.frequency
     }
 
     /// Returns the day counter of this rate definition.
-    pub fn day_counter(&self) -> DayCounter {
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.day_counter
     }
 }
@@ -84,7 +88,8 @@ pub struct InterestRate {
 
 impl InterestRate {
     /// Creates a new `InterestRate` with the specified rate value and rate definition parameters.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         rate: f64,
         compounding: Compounding,
         frequency: Frequency,
@@ -97,7 +102,8 @@ impl InterestRate {
     }
 
     /// Creates a new `InterestRate` from a rate value and a `RateDefinition`.
-    pub fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> InterestRate {
+    #[must_use]
+    pub const fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> InterestRate {
         InterestRate {
             rate,
             rate_definition,
@@ -105,27 +111,32 @@ impl InterestRate {
     }
 
     /// Returns the rate value of this interest rate.
-    pub fn rate(&self) -> f64 {
+    #[must_use]
+    pub const fn rate(&self) -> f64 {
         self.rate
     }
 
     /// Returns the rate definition of this interest rate.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Returns the compounding method of this interest rate.
-    pub fn compounding(&self) -> Compounding {
+    #[must_use]
+    pub const fn compounding(&self) -> Compounding {
         self.rate_definition.compounding()
     }
 
     /// Returns the frequency of this interest rate.
-    pub fn frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         self.rate_definition.frequency()
     }
 
     /// Returns the day counter of this interest rate.
-    pub fn day_counter(&self) -> DayCounter {
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.rate_definition.day_counter()
     }
 
@@ -181,6 +192,7 @@ impl InterestRate {
     }
 
     /// Calculates the compound factor between two dates using the day counter.
+    #[must_use]
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
@@ -188,6 +200,7 @@ impl InterestRate {
     }
 
     /// Calculates the compound factor from a year fraction.
+    #[must_use]
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
         let rate = self.rate();
         let compounding = self.compounding();
@@ -214,12 +227,14 @@ impl InterestRate {
     }
 
     /// Calculates the discount factor between two dates.
+    #[must_use]
     pub fn discount_factor(&self, start: Date, end: Date) -> f64 {
         1.0 / self.compound_factor(start, end)
     }
 
     /// Calculates the forward rate between two dates with specified compounding and frequency.
-    pub fn forward_rate(
+    #[must_use]
+    pub const fn forward_rate(
         &self,
         _start_date: Date,
         _end_date: Date,

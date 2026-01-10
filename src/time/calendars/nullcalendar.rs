@@ -14,6 +14,7 @@ pub struct NullCalendar {
 
 impl NullCalendar {
     /// Creates a new instance of `NullCalendar`.
+    #[must_use]
     pub fn new() -> Self {
         NullCalendar {
             added_holidays: HashSet::new(),

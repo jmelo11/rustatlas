@@ -45,6 +45,7 @@ pub struct OvernightCompoundedRateIndex {
 ///
 /// # Returns
 /// The updated index value
+#[must_use]
 pub fn calculate_overnight_index(
     start_date: Date,
     end_date: Date,
@@ -66,6 +67,7 @@ pub fn calculate_overnight_index(
 ///
 /// # Returns
 /// A map of dates to computed index values
+#[must_use]
 pub fn compose_fixing_rate(
     fixings_rates: HashMap<Date, f64>,
     rate_definition: RateDefinition,
@@ -96,6 +98,7 @@ pub fn compose_fixing_rate(
 
 impl OvernightCompoundedRateIndex {
     /// Creates a new `OvernightCompoundedRateIndex` with the given reference date.
+    #[must_use]
     pub fn new(reference_date: Date) -> OvernightCompoundedRateIndex {
         OvernightCompoundedRateIndex {
             fixings_rates: HashMap::new(),
@@ -104,23 +107,27 @@ impl OvernightCompoundedRateIndex {
     }
 
     /// Sets the name for this index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.overnight_index = self.overnight_index.with_name(name);
         self
     }
 
     /// Returns the rate definition for this index.
+    #[must_use]
     pub fn rate_definition(&self) -> RateDefinition {
         self.overnight_index.rate_definition()
     }
 
     /// Sets the rate definition for this index.
+    #[must_use]
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.overnight_index = self.overnight_index.with_rate_definition(rate_definition);
         self
     }
 
     /// Sets the overnight fixing rates for this index.
+    #[must_use]
     pub fn with_fixings_rates(mut self, fixings_rates: HashMap<Date, f64>) -> Self {
         self.fixings_rates = fixings_rates.clone();
         let fixing_index = compose_fixing_rate(fixings_rates, self.rate_definition());
@@ -129,7 +136,8 @@ impl OvernightCompoundedRateIndex {
     }
 
     /// Returns a reference to the fixing rates map.
-    pub fn fixings_rates(&self) -> &HashMap<Date, f64> {
+    #[must_use]
+    pub const fn fixings_rates(&self) -> &HashMap<Date, f64> {
         &self.fixings_rates
     }
 

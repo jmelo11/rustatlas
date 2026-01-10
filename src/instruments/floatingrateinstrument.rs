@@ -48,7 +48,8 @@ pub struct FloatingRateInstrument {
 
 impl FloatingRateInstrument {
     /// Creates a new `FloatingRateInstrument`.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         start_date: Date,
         end_date: Date,
         notional: f64,
@@ -83,66 +84,79 @@ impl FloatingRateInstrument {
     }
 
     /// Returns the issue date.
-    pub fn issue_date(&self) -> Option<Date> {
+    #[must_use]
+    pub const fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
     /// Returns the identifier.
+    #[must_use]
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
     /// Returns the start date.
-    pub fn start_date(&self) -> Date {
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
     /// Returns the end date.
-    pub fn end_date(&self) -> Date {
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
     /// Returns the notional.
-    pub fn notional(&self) -> f64 {
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
     /// Returns the spread.
-    pub fn spread(&self) -> f64 {
+    #[must_use]
+    pub const fn spread(&self) -> f64 {
         self.spread
     }
 
     /// Returns the side.
-    pub fn side(&self) -> Side {
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
     /// Returns the payment frequency.
-    pub fn payment_frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
     /// Returns the rate definition.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Returns the structure.
-    pub fn structure(&self) -> Structure {
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
     /// Returns the discount curve identifier.
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
     /// Returns the forecast curve identifier.
-    pub fn forecast_curve_id(&self) -> Option<usize> {
+    #[must_use]
+    pub const fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
 
     /// Sets the discount curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self.mut_cashflows()
@@ -152,6 +166,7 @@ impl FloatingRateInstrument {
     }
 
     /// Sets the forecast curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
         self.forecast_curve_id = Some(forecast_curve_id);
         self.mut_cashflows()
@@ -161,6 +176,7 @@ impl FloatingRateInstrument {
     }
 
     /// Sets the spread and updates all floating rate coupons.
+    #[must_use]
     pub fn set_spread(mut self, spread: f64) -> Self {
         self.spread = spread;
         self.mut_cashflows().iter_mut().for_each(|cf| {

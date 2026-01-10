@@ -45,6 +45,7 @@ impl FixedRateCoupon {
     /// * `payment_date` - The date on which the coupon is paid
     /// * `currency` - The currency of the coupon
     /// * `side` - Whether this is a Pay or Receive side
+    #[must_use]
     pub fn new(
         notional: f64,
         rate: InterestRate,
@@ -66,6 +67,7 @@ impl FixedRateCoupon {
     }
 
     /// Sets the discount curve ID and returns self for method chaining.
+    #[must_use]
     pub fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow.set_discount_curve_id(id);
         self
@@ -105,12 +107,14 @@ impl FixedRateCoupon {
     }
 
     /// Returns the notional amount.
-    pub fn notional(&self) -> f64 {
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
     /// Returns the interest rate.
-    pub fn rate(&self) -> InterestRate {
+    #[must_use]
+    pub const fn rate(&self) -> InterestRate {
         self.rate
     }
 }

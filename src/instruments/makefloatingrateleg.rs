@@ -55,7 +55,8 @@ pub struct MakeFloatingRateLeg {
 /// Constructor, setters and getters.
 impl MakeFloatingRateLeg {
     /// Creates a new `MakeFloatingRateLeg` builder with default values.
-    pub fn new() -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn new() -> MakeFloatingRateLeg {
         MakeFloatingRateLeg {
             start_date: None,
             end_date: None,
@@ -82,19 +83,22 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the end of month flag.
-    pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFloatingRateLeg {
         self.end_of_month = end_of_month;
         self
     }
 
     /// Sets the calendar for business day adjustments.
+    #[must_use]
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateLeg {
         self.calendar = calendar;
         self
     }
 
     /// Sets the business day convention.
-    pub fn with_business_day_convention(
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
     ) -> MakeFloatingRateLeg {
@@ -103,7 +107,8 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the date generation rule.
-    pub fn with_date_generation_rule(
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
     ) -> MakeFloatingRateLeg {
@@ -112,13 +117,15 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the issue date.
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateLeg {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(
+    #[must_use]
+    pub const fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
     ) -> MakeFloatingRateLeg {
@@ -127,36 +134,42 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLeg {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateLeg {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLeg {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the disbursement schedule.
+    #[must_use]
     pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFloatingRateLeg {
         self.disbursements = Some(disbursements);
         self
     }
 
     /// Sets the redemption schedule.
+    #[must_use]
     pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFloatingRateLeg {
         self.redemptions = Some(redemptions);
         self
     }
 
     /// Sets additional coupon dates.
+    #[must_use]
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
@@ -166,7 +179,8 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the forecast curve ID.
-    pub fn with_forecast_curve_id(
+    #[must_use]
+    pub const fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
     ) -> MakeFloatingRateLeg {
@@ -175,7 +189,8 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the discount curve ID.
-    pub fn with_discount_curve_id(
+    #[must_use]
+    pub const fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
     ) -> MakeFloatingRateLeg {
@@ -184,69 +199,80 @@ impl MakeFloatingRateLeg {
     }
 
     /// Sets the rate definition.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLeg {
         self.rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the notional amount.
-    pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> MakeFloatingRateLeg {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> MakeFloatingRateLeg {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the spread.
-    pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_spread(mut self, spread: f64) -> MakeFloatingRateLeg {
         self.spread = Some(spread);
         self
     }
 
     /// Sets the structure to bullet.
-    pub fn bullet(mut self) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn bullet(mut self) -> MakeFloatingRateLeg {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the structure to equal redemptions.
-    pub fn equal_redemptions(mut self) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn equal_redemptions(mut self) -> MakeFloatingRateLeg {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the structure to zero.
-    pub fn zero(mut self) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn zero(mut self) -> MakeFloatingRateLeg {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
     /// Sets the structure to other.
-    pub fn other(mut self) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn other(mut self) -> MakeFloatingRateLeg {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
     /// Sets the side of the transaction.
-    pub fn with_side(mut self, side: Side) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> MakeFloatingRateLeg {
         self.side = Some(side);
         self
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLeg {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure.
-    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLeg {
+    #[must_use]
+    pub const fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLeg {
         self.structure = Some(structure);
         self
     }
