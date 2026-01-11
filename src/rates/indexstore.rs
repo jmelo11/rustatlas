@@ -14,7 +14,7 @@ use super::{
     yieldtermstructure::traits::YieldTermStructureTrait,
 };
 
-/// # IndexStore
+/// # `IndexStore`
 /// A store for interest rate indices.
 ///
 /// ## Parameters
@@ -29,6 +29,9 @@ pub struct IndexStore {
 /// Trait for reading an interest rate index.
 pub trait ReadIndex {
     /// Returns a read guard to the interest rate index.
+    ///
+    /// # Errors
+    /// Returns an error if the index lock cannot be acquired for reading.
     fn read_index(&self) -> Result<RwLockReadGuard<'_, dyn InterestRateIndexTrait>>;
 }
 
@@ -62,6 +65,9 @@ impl IndexStore {
     }
 
     /// Retrieves the curve ID for the given currency.
+    ///
+    /// # Errors
+    /// Returns an error if no curve is mapped to the requested currency.
     pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
         self.currency_curve
             .get(&currency)
@@ -73,6 +79,9 @@ impl IndexStore {
     }
 
     /// Links a yield term structure to the index with the given ID.
+    ///
+    /// # Errors
+    /// Returns an error if the index cannot be found or its lock cannot be written.
     pub fn link_term_structure(
         &self,
         id: usize,
@@ -91,6 +100,9 @@ impl IndexStore {
     }
 
     /// Adds an index to the store with the given ID.
+    ///
+    /// # Errors
+    /// Returns an error if the index reference date does not match or the ID already exists.
     pub fn add_index(
         &mut self,
         id: usize,
@@ -121,6 +133,9 @@ impl IndexStore {
     }
 
     /// Replaces an existing index in the store with the given ID.
+    ///
+    /// # Errors
+    /// Returns an error if the index reference date does not match or the ID is missing.
     pub fn replace_index(
         &mut self,
         id: usize,
@@ -151,6 +166,9 @@ impl IndexStore {
     }
 
     /// Retrieves an index from the store by its ID.
+    ///
+    /// # Errors
+    /// Returns an error if the index ID is not found.
     pub fn get_index(&self, id: usize) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         self.index_map
             .get(&id)
@@ -162,6 +180,9 @@ impl IndexStore {
     }
 
     /// Retrieves an index from the store by its name.
+    ///
+    /// # Errors
+    /// Returns an error if the index cannot be read or the name is not found.
     pub fn get_index_by_name(
         &self,
         name: String,
@@ -178,6 +199,9 @@ impl IndexStore {
     }
 
     /// Returns a vector of all index names in the store.
+    ///
+    /// # Errors
+    /// Returns an error if any index cannot be read to retrieve its name.
     pub fn get_index_names(&self) -> Result<Vec<String>> {
         let mut names = Vec::new();
         for index in self.index_map.values() {
@@ -187,6 +211,9 @@ impl IndexStore {
     }
 
     /// Returns a mapping of index names to their IDs.
+    ///
+    /// # Errors
+    /// Returns an error if any index cannot be read to retrieve its name.
     pub fn get_index_map(&self) -> Result<HashMap<String, usize>> {
         let mut map = HashMap::new();
         for (id, index) in self.index_map.iter() {
@@ -219,6 +246,9 @@ impl IndexStore {
     }
 
     /// Advances the index store to a new reference date by the given period.
+    ///
+    /// # Errors
+    /// Returns an error if any index cannot be advanced or reinserted.
     pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
         let reference_date = self.reference_date + period;
         let mut store = IndexStore::new(reference_date);
@@ -235,6 +265,9 @@ impl IndexStore {
     }
 
     /// Advances the index store to a specific date.
+    ///
+    /// # Errors
+    /// Returns an error if the store cannot be advanced to the target date.
     pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
         let days = (date - self.reference_date) as i32;
         self.advance_to_period(Period::new(days, TimeUnit::Days))
@@ -247,6 +280,9 @@ impl IndexStore {
     }
 
     /// Calculates the currency forecast factor between two currencies at a given date.
+    ///
+    /// # Errors
+    /// Returns an error if required currency curves or indices are missing.
     pub fn currency_forescast_factor(
         &self,
         first_currency: Currency,

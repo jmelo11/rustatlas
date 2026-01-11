@@ -23,8 +23,9 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # OvernightIndex
-/// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
+/// # `OvernightIndex`
+/// Overnight index, used for overnight rates. Uses a price index (such as `ICP`) to calculate the
+/// overnight rates.
 #[derive(Clone)]
 pub struct OvernightIndex {
     name: Option<String>,
@@ -83,6 +84,9 @@ impl OvernightIndex {
     }
 
     /// Calculates the average overnight rate between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required fixings or rate data are unavailable.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;

@@ -11,7 +11,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # CompositeTermStructure
+/// # `CompositeTermStructure`
 /// Struct that defines a term structure made with a combination of two curves. It's defined as:
 /// $$
 ///    df_{spreaded}(t) = df_{spread}(t) * df_{base}(t)
@@ -102,7 +102,7 @@ impl YieldProvider for CompositeTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for CompositeTermStructure
+/// # `AdvanceTermStructureInTime` for `CompositeTermStructure`
 impl AdvanceTermStructureInTime for CompositeTermStructure {
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;

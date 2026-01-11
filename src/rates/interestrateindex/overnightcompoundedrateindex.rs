@@ -148,6 +148,9 @@ impl OvernightCompoundedRateIndex {
     }
 
     /// Calculates the average overnight rate between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required fixings or rate data are unavailable.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         self.overnight_index.average_rate(start_date, end_date)
     }

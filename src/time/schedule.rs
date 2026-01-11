@@ -263,7 +263,8 @@ impl MakeSchedule {
     /// Sets the frequency.
     #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
-        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self.tenor = Period::from_frequency(frequency)
+            .unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 
@@ -1088,7 +1089,7 @@ mod tests {
             .with_tenor(tenor)
             .with_first_date(first_date)
             .build()
-            .expect("schedule build should succeed");
+            .unwrap_or_else(|e| panic!("schedule build should succeed: {e}"));
         let dates = schedule.dates();
         assert_eq!(dates[0], from);
         assert_eq!(dates[1], first_date);

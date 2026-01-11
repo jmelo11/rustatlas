@@ -26,11 +26,13 @@ use super::{
     doublerateinstrument::DoubleRateInstrument, instrument::RateType, traits::add_cashflows_to_vec,
 };
 
-/// MakeDoubleRateInstrument
-/// MakeDoubleRateInstrument is a builder for DoubleRateInstrument struct.
-/// Three different types of rates are supported: FixedThenFixed, FixedThenFloating and FloatingThenFixed
-/// In the case of floating part, te values "first_part_rate_definition", "first_part_rate" or "second_part_rate_definition" and "second_part_rate" make reference to the spread over the fixing rate
-/// In the case of fixed part, theses values make reference to the fixed rate
+/// # `MakeDoubleRateInstrument`
+/// `MakeDoubleRateInstrument` is a builder for the `DoubleRateInstrument` struct.
+/// Three different types of rates are supported: `FixedThenFixed`, `FixedThenFloating`, and
+/// `FloatingThenFixed`.
+/// In the case of the floating part, the values `first_part_rate_definition`, `first_part_rate`,
+/// `second_part_rate_definition`, and `second_part_rate` refer to the spread over the fixing rate.
+/// In the case of the fixed part, these values refer to the fixed rate.
 pub struct MakeDoubleRateInstrument {
     start_date: Option<Date>,
     end_date: Option<Date>,
@@ -265,7 +267,10 @@ impl Default for MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
-    /// Builds and returns a DoubleRateInstrument from the configured parameters.
+    /// Builds and returns a `DoubleRateInstrument` from the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<DoubleRateInstrument> {
         // vector to store cashflows
         let mut cashflows = Vec::new();

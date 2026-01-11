@@ -17,7 +17,7 @@ use super::{
     makefloatingrateleg::MakeFloatingRateLeg, swap::Swap, traits::Structure,
 };
 
-/// A builder for creating a Swap instrument with two customized legs.
+/// A builder for creating a `Swap` instrument with two customized legs.
 pub struct MakeSwap {
     first_leg_rate_type: Option<RateType>,
     first_leg_rate_value: Option<f64>,
@@ -397,6 +397,9 @@ impl MakeSwap {
     }
 
     /// Builds the Swap instrument from the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Swap> {
         let first_rate_type = self
             .first_leg_rate_type
@@ -778,9 +781,10 @@ impl Default for MakeSwap {
     }
 }
 
-/// MakeFixFloatSwap
+/// # `MakeFixFloatSwap`
 ///
-/// Simplified version of the MakeSwap struct that only allows for a fixed and floating leg, with same notional, start and end dates and currency.
+/// Simplified version of the `MakeSwap` struct that only allows for a fixed and floating leg, with
+/// the same notional, start and end dates, and currency.
 pub struct MakeFixFloatSwap {
     rate_value: Option<f64>,
     rate_definition: Option<RateDefinition>,
@@ -916,6 +920,9 @@ impl MakeFixFloatSwap {
     }
 
     /// Builds the fixed-floating Swap instrument.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Swap> {
         let rate_value = self
             .rate_value

@@ -63,6 +63,9 @@ impl ExchangeRateStore {
     }
 
     /// Returns the exchange rate between two currencies, calculating it via graph traversal if necessary.
+    ///
+    /// # Errors
+    /// Returns an error if no conversion path between the currencies can be found.
     pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
         if first_ccy == second_ccy {
             return Ok(1.0);

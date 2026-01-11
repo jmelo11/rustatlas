@@ -31,7 +31,7 @@ use super::{
 };
 
 /// # `MakeFixedRateLeg`
-/// MakeFixedRateLeg is a builder for fixed rate leg. Uses the builder pattern.
+/// `MakeFixedRateLeg` is a builder for a fixed rate leg. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
 pub struct MakeFixedRateLeg {
@@ -342,6 +342,9 @@ impl Default for MakeFixedRateLeg {
 
 impl MakeFixedRateLeg {
     /// Builds the Leg from the configured MakeFixedRateLeg builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self

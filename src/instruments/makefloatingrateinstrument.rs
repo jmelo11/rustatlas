@@ -27,7 +27,7 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFloatingRateInstrument
+/// # `MakeFloatingRateInstrument`
 /// Builder for a floating rate loan.
 #[derive(Debug, Clone)]
 pub struct MakeFloatingRateInstrument {
@@ -298,6 +298,9 @@ impl Default for MakeFloatingRateInstrument {
 /// Build
 impl MakeFloatingRateInstrument {
     /// Builds and returns a `FloatingRateInstrument` from the configured builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<FloatingRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -684,7 +687,9 @@ impl MakeFloatingRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
                     .1;
 
-                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
+                let payment_frequency = self
+                    .payment_frequency
+                    .unwrap_or_else(|| panic!("Payment frequency not set"));
 
                 if let Some(id) = self.discount_curve_id {
                     cashflows.iter_mut().for_each(|cf| {

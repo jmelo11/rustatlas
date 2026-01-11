@@ -15,7 +15,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # DiscountTermStructure
+/// # `DiscountTermStructure`
 /// A discount factors term structure.
 ///
 /// ## Parameters
@@ -203,7 +203,7 @@ impl YieldProvider for DiscountTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for DiscountTermStructure
+/// # `AdvanceTermStructureInTime` for `DiscountTermStructure`
 impl AdvanceTermStructureInTime for DiscountTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_dates: Vec<Date> = self

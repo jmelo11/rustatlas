@@ -22,8 +22,8 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # IborIndex
-/// Struct that defines an Ibor index.
+/// # `IborIndex`
+/// Struct that defines an `IborIndex`.
 ///
 /// # Example
 /// ```
@@ -84,7 +84,8 @@ impl IborIndex {
     /// Sets the tenor from a frequency for this index.
     #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> Self {
-        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self.tenor = Period::from_frequency(frequency)
+            .unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 

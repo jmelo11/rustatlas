@@ -7,7 +7,7 @@ use crate::{
 
 use super::enums::Compounding;
 
-/// # RateDefinition
+/// # `RateDefinition`
 /// Struct that defines a rate.
 /// # Example
 /// ```
@@ -68,7 +68,7 @@ impl Default for RateDefinition {
     }
 }
 
-/// # InterestRate
+/// # `InterestRate`
 /// Struct that defines an interest rate.
 ///
 /// ## Example

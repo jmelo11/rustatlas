@@ -653,7 +653,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 8);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -668,7 +669,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 - p2).expect("period subtraction should succeed");
+        let p3 = (p1 - p2)
+            .unwrap_or_else(|e| panic!("period subtraction should succeed: {e}"));
         assert_eq!(p3.length, 2);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -716,7 +718,8 @@ mod tests {
             length: 6,
             units: TimeUnit::Months,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -731,7 +734,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -746,7 +750,8 @@ mod tests {
             length: 1,
             units: TimeUnit::Weeks,
         };
-        let p3: Period = (p1 + p2).expect("period addition should succeed");
+        let p3: Period = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -761,7 +766,8 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -807,15 +813,18 @@ mod tests {
 
     #[test]
     fn test_period_parsing() {
-        let p = Period::from_str("1Y").expect("period parsing should succeed");
+        let p = Period::from_str("1Y")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Years);
 
-        let p = Period::from_str("1M").expect("period parsing should succeed");
+        let p = Period::from_str("1M")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Months);
 
-        let p = Period::from_str("1Y1M").expect("period parsing should succeed");
+        let p = Period::from_str("1Y1M")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 13);
         assert_eq!(p.units(), TimeUnit::Months);
     }

@@ -191,7 +191,7 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()
-            .expect("instrument_1 build should succeed");
+            .unwrap_or_else(|e| panic!("instrument_1 build should succeed: {e}"));
 
         let instrument_2 = MakeFixedRateInstrument::new()
             .with_start_date(start_date)
@@ -203,7 +203,7 @@ mod tests {
             .with_currency(Currency::USD)
             .bullet()
             .build()
-            .expect("instrument_2 build should succeed");
+            .unwrap_or_else(|e| panic!("instrument_2 build should succeed: {e}"));
 
         let visitor = CashflowsAggregatorConstVisitor::new().with_validate_currency(Currency::USD);
         let _ = visitor.visit(&instrument_1);
@@ -219,7 +219,7 @@ mod tests {
 
         let redemption = redemptions
             .get(&end_date)
-            .expect("redemptions map should contain end_date");
+            .unwrap_or_else(|| panic!("redemptions map should contain end_date"));
         assert!((*redemption - 100.0).abs() < 1e-12);
     }
 }

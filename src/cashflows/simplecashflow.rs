@@ -50,7 +50,6 @@ impl SimpleCashflow {
 
     /// Sets the amount for this cashflow and returns self for method chaining.
     #[must_use]
-    #[must_use]
     pub const fn with_amount(mut self, amount: f64) -> Self {
         self.amount = Some(amount);
         self

@@ -32,8 +32,8 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFixedRateInstrument
-/// MakeFixedRateInstrument is a builder for FixedRateInstrument. Uses the builder pattern.
+/// # `MakeFixedRateInstrument`
+/// `MakeFixedRateInstrument` is a builder for `FixedRateInstrument`. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
 pub struct MakeFixedRateInstrument {
@@ -353,6 +353,9 @@ impl Default for MakeFixedRateInstrument {
 
 impl MakeFixedRateInstrument {
     /// Builds and returns a FixedRateInstrument from the configured builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<FixedRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -986,7 +989,7 @@ fn calculate_equal_payment_redemptions(
     Ok(redemptions)
 }
 
-/// Implementations for FixedRateInstrument
+/// Implementations for `FixedRateInstrument`
 impl From<FixedRateInstrument> for MakeFixedRateInstrument {
     fn from(val: FixedRateInstrument) -> Self {
         let mut disbursements = HashMap::new();

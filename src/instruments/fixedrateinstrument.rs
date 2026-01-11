@@ -175,6 +175,9 @@ pub trait BondAccrual: HasCashflows {
     fn yield_rate(&self) -> Option<InterestRate>;
 
     /// Calculates the accrued amount for a bond between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required rate data is missing to discount cashflows.
     fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let ini_pv = self.discounted_cashflows(start_date)?;
         let end_pv = self.discounted_cashflows(end_date)?;
@@ -189,6 +192,9 @@ pub trait BondAccrual: HasCashflows {
     }
 
     /// Calculates the accrual of cash paid between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if underlying cashflow data is unavailable.
     fn matured_amount_accrual(&self, from: Date, to: Date) -> Result<f64> {
         // let rate = self
         //     .yield_rate()
@@ -209,6 +215,9 @@ pub trait BondAccrual: HasCashflows {
     }
 
     /// Calculates the present value of cashflows from the evaluation date forward using the yield rate.
+    ///
+    /// # Errors
+    /// Returns an error if a yield rate is not available to discount cashflows.
     fn discounted_cashflows(&self, evaluation_date: Date) -> Result<f64> {
         let rate = self
             .yield_rate()

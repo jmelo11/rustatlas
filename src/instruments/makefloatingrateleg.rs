@@ -25,7 +25,7 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFloatingRateLeg
+/// # `MakeFloatingRateLeg`
 /// Builder for a floating rate loan.
 #[derive(Debug, Clone)]
 pub struct MakeFloatingRateLeg {
@@ -287,6 +287,9 @@ impl Default for MakeFloatingRateLeg {
 /// Build
 impl MakeFloatingRateLeg {
     /// Builds the floating rate leg with the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self
