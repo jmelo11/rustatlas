@@ -142,7 +142,6 @@ impl fmt::Display for MarketStore {
         let all_indices = index_store.get_all_indices();
 
         let mut indices_names: Vec<String> = vec![];
-        // let mut indice_name: String;
         for indice in all_indices {
             if let Ok(indice) = indice.read_index() {
                 if let Ok(name) = indice.name() {
