@@ -86,7 +86,7 @@ pub enum Cashflow {
 
 impl Cashflow {
     /// Sets the discount curve ID for this cashflow.
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         match self {
             Self::Redemption(cashflow) | Self::Disbursement(cashflow) => {
                 cashflow.set_discount_curve_id(id);
@@ -97,7 +97,7 @@ impl Cashflow {
     }
 
     /// Sets the forecast curve ID for floating rate coupons.
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
+    pub const fn set_forecast_curve_id(&mut self, id: usize) {
         if let Self::FloatingRateCoupon(coupon) = self {
             coupon.set_forecast_curve_id(id);
         }

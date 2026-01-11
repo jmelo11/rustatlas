@@ -23,9 +23,8 @@ impl Swap {
 
     /// Add a leg to the swap.
     pub fn add_leg(&mut self, leg: Leg) {
-        self.legs.push(leg.clone());
-        self.cashflows
-            .extend(leg.clone().cashflows().iter().cloned());
+        self.cashflows.extend(leg.cashflows().iter().copied());
+        self.legs.push(leg);
     }
 
     /// Get the legs of the swap.

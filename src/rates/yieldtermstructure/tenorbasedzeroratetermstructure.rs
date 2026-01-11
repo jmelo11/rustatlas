@@ -12,7 +12,7 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::Result,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
@@ -157,7 +157,9 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date) as i32;
+        let days = i32::try_from(date - self.reference_date).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }

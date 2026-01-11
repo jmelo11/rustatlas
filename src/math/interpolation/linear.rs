@@ -14,14 +14,14 @@ impl Interpolate for LinearInterpolator {
                 Ok(index) | Err(index) => index,
             };
 
-        let (first_x, last_x) = match (x_.first(), x_.last()) {
-            (Some(first), Some(last)) => (first, last),
-            _ => panic!("Interpolation data must contain at least one x value."),
+        let (Some(first_x), Some(last_x)) = (x_.first(), x_.last()) else {
+            panic!("Interpolation data must contain at least one x value.");
         };
 
-        if !enable_extrapolation && (x < *first_x || x > *last_x) {
-            panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-        }
+        assert!(
+            enable_extrapolation || (x >= *first_x && x <= *last_x),
+            "Extrapolation is not enabled, and the provided value is outside the range."
+        );
 
         match index {
             0 => y_[0] + (x - x_[0]) * (y_[1] - y_[0]) / (x_[1] - x_[0]),

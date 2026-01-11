@@ -49,7 +49,8 @@ pub fn easter_monday(y: i32) -> i32 {
         108, 92, 112, 104, 89, 108, 100, 85, 105, 96, // 2180-2189
         116, 101, 93, 112, 97, 89, 109, 100, 85, 105, // 2190-2199
     ];
-    easter_monday[(y - 1901) as usize]
+    let index = usize::try_from(y - 1901).unwrap_or_else(|_| panic!("valid easter index"));
+    easter_monday[index]
 }
 
 /// Trait defining the implementation interface for calendar operations.
@@ -149,10 +150,7 @@ pub trait IsCalendar: ImplCalendar {
     fn adjust(&self, date: Date, convention: Option<BusinessDayConvention>) -> Date {
         assert!(date != Date::empty(), "null date");
 
-        let conv = match convention {
-            Some(convention) => convention,
-            None => BusinessDayConvention::Following,
-        };
+        let conv = convention.unwrap_or(BusinessDayConvention::Following);
 
         let mut d1 = date;
         match conv {
@@ -169,7 +167,7 @@ pub trait IsCalendar: ImplCalendar {
                     if d1.month() != date.month() {
                         return self.adjust(date, Some(BusinessDayConvention::Preceding));
                     }
-                    if let BusinessDayConvention::HalfMonthModifiedFollowing = conv {
+                    if conv == BusinessDayConvention::HalfMonthModifiedFollowing {
                         if date.day() <= 15 && d1.day() > 15 {
                             return self.adjust(date, Some(BusinessDayConvention::Preceding));
                         }
@@ -180,7 +178,7 @@ pub trait IsCalendar: ImplCalendar {
                 while self.is_holiday(&d1) {
                     d1 -= 1;
                 }
-                if let BusinessDayConvention::ModifiedPreceding = conv {
+                if conv == BusinessDayConvention::ModifiedPreceding {
                     if d1.month() != date.month() {
                         return self.adjust(date, Some(BusinessDayConvention::Following));
                     }
@@ -209,11 +207,7 @@ pub trait IsCalendar: ImplCalendar {
         include_first: bool,
         include_last: bool,
     ) -> i64 {
-        let mut res = if include_last && self.is_business_day(&to) {
-            1
-        } else {
-            0
-        };
+        let mut res = i64::from(include_last && self.is_business_day(&to));
         let mut d = if include_first { from } else { from + 1 };
         while d < to {
             if self.is_business_day(&d) {

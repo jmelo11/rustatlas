@@ -188,6 +188,7 @@ impl CashflowCompressorConstVisitor {
 impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
     type Output = Result<()>;
 
+    #[allow(clippy::too_many_lines)]
     fn visit(&self, visitable: &T) -> Self::Output {
         visitable
             .cashflows()

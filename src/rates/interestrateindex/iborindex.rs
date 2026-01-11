@@ -48,7 +48,7 @@ pub struct IborIndex {
 }
 
 impl IborIndex {
-    /// Creates a new IborIndex with the given reference date.
+    /// Creates a new `IborIndex` with the given reference date.
     #[must_use]
     pub fn new(reference_date: Date) -> Self {
         Self {
@@ -104,6 +104,7 @@ impl IborIndex {
     }
 
     /// Sets the term structure for this index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
@@ -114,7 +115,7 @@ impl FixingProvider for IborIndex {
     fn fixing(&self, date: Date) -> Result<f64> {
         self.fixings
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "No fixing for date {date} for index {name:?}",
                 name = self.name
@@ -126,9 +127,10 @@ impl FixingProvider for IborIndex {
     }
 
     fn add_fixing(&mut self, date: Date, rate: f64) {
-        if date > self.reference_date() {
-            panic!("Date must be less than reference date");
-        }
+        assert!(
+            date <= self.reference_date(),
+            "Date must be less than reference date"
+        );
         self.fixings.insert(date, rate);
     }
 }
@@ -217,7 +219,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
         }
         let new_curve = curve.advance_to_period(period)?;
         Ok(Arc::new(RwLock::new(
-            IborIndex::new(new_curve.reference_date())
+            Self::new(new_curve.reference_date())
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
@@ -227,7 +229,9 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
                 "Date {date} is before reference date {reference_date}",
@@ -276,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_interpolation_ibor() -> Result<()> {
+    fn test_fixing_interpolation_ibor() {
         let fixing: HashMap<Date, f64> = [
             (Date::new(2023, 6, 1), 21938.71),
             (Date::new(2023, 6, 2), 21945.57),
@@ -284,7 +288,7 @@ mod tests {
             (Date::new(2023, 6, 6), 21973.0),
         ]
         .iter()
-        .cloned()
+        .copied()
         .collect();
         let mut ibor_index = IborIndex::new(Date::new(2023, 11, 6)).with_fixings(fixing);
         ibor_index.fill_missing_fixings(Interpolator::Linear);
@@ -297,7 +301,6 @@ mod tests {
                 )
             });
         assert!((*interpolated - 21952.4266666).abs() < 0.001);
-        Ok(())
     }
 
     #[test]
@@ -326,10 +329,9 @@ mod tests {
             RateDefinition::default(),
         ));
 
-        let new_term_structure = Arc::new(CompositeTermStructure::new(
-            spread_term_structure.clone(),
-            base_term_structure.clone(),
-        ));
+        let spread_curve: Arc<dyn YieldTermStructureTrait> = spread_term_structure;
+        let base_curve: Arc<dyn YieldTermStructureTrait> = base_term_structure.clone();
+        let new_term_structure = Arc::new(CompositeTermStructure::new(spread_curve, base_curve));
 
         ibor_index.link_to(base_term_structure.clone());
         let df = ibor_index

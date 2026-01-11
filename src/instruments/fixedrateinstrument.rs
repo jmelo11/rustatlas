@@ -168,7 +168,7 @@ impl HasCurrency for FixedRateInstrument {
 }
 
 /// # `BondAccrual`
-/// Implements fixed rate bond accrual using a yield rate.  
+/// Implements fixed rate bond accrual using a yield rate.
 /// The yield rate is used to discount the cashflows to between the start and
 /// end dates and calculate the accrued amount.
 pub trait BondAccrual: HasCashflows {

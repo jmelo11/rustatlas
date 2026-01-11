@@ -56,7 +56,7 @@ pub fn calculate_overnight_index(
     let year_fraction = rate_definition
         .day_counter()
         .year_fraction(start_date, end_date);
-    (1.0 + rate * year_fraction) * index
+    rate.mul_add(year_fraction, 1.0) * index
 }
 
 /// Composes a fixing index from overnight fixing rates.
@@ -69,10 +69,10 @@ pub fn calculate_overnight_index(
 /// A map of dates to computed index values
 #[must_use]
 pub fn compose_fixing_rate(
-    fixings_rates: HashMap<Date, f64>,
+    fixings_rates: &HashMap<Date, f64, impl std::hash::BuildHasher>,
     rate_definition: RateDefinition,
 ) -> HashMap<Date, f64> {
-    let mut fixings_rates = fixings_rates.into_iter().collect::<Vec<_>>();
+    let mut fixings_rates = fixings_rates.iter().map(|(k, v)| (*k, *v)).collect::<Vec<_>>();
     fixings_rates.sort_by(|a, b| a.0.cmp(&b.0));
 
     let mut fixing_index = HashMap::new();
@@ -129,8 +129,8 @@ impl OvernightCompoundedRateIndex {
     /// Sets the overnight fixing rates for this index.
     #[must_use]
     pub fn with_fixings_rates(mut self, fixings_rates: HashMap<Date, f64>) -> Self {
-        self.fixings_rates = fixings_rates.clone();
-        let fixing_index = compose_fixing_rate(fixings_rates, self.rate_definition());
+        let fixing_index = compose_fixing_rate(&fixings_rates, self.rate_definition());
+        self.fixings_rates = fixings_rates;
         self.overnight_index = self.overnight_index.with_fixings(fixing_index);
         self
     }
@@ -142,6 +142,7 @@ impl OvernightCompoundedRateIndex {
     }
 
     /// Sets the yield term structure for this index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.overnight_index = self.overnight_index.with_term_structure(term_structure);
         self
@@ -161,7 +162,7 @@ impl FixingProvider for OvernightCompoundedRateIndex {
         self.overnight_index
             .fixings()
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "No fixing for date {date} for index {name:?}",
                 name = self.overnight_index.name()
@@ -218,7 +219,9 @@ impl AdvanceInterestRateIndexInTime for OvernightCompoundedRateIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }

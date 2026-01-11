@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
     actual360::Actual360, actual365::Actual365, actualactual::ActualActual,
-    business252::Business252, thirty360::*, traits::DayCountProvider,
+    business252::Business252, thirty360::{Thirty360, Thirty360US}, traits::DayCountProvider,
 };
 use crate::{
     time::date::Date,

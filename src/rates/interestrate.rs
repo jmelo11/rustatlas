@@ -141,6 +141,10 @@ impl InterestRate {
     }
 
     /// Calculates the implied interest rate from a compound factor.
+    ///
+    /// # Errors
+    /// Returns an error if the compound factor or time are invalid for the
+    /// requested compounding convention.
     pub fn implied_rate(
         compound: f64,
         result_dc: DayCounter,
@@ -174,16 +178,16 @@ impl InterestRate {
                 Compounding::Continuous => r = (compound).ln() / t,
                 Compounding::SimpleThenCompounded => {
                     if t <= 1.0 / f {
-                        r = (compound - 1.0) / t
+                        r = (compound - 1.0) / t;
                     } else {
-                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f
+                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f;
                     }
                 }
                 Compounding::CompoundedThenSimple => {
                     if t > 1.0 / f {
-                        r = (compound - 1.0) / t
+                        r = (compound - 1.0) / t;
                     } else {
-                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f
+                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f;
                     }
                 }
             }
@@ -206,19 +210,19 @@ impl InterestRate {
         let compounding = self.compounding();
         let f = f64::from(self.frequency() as i32);
         match compounding {
-            Compounding::Simple => 1.0 + rate * year_fraction,
+            Compounding::Simple => rate.mul_add(year_fraction, 1.0),
             Compounding::Compounded => (1.0 + rate / f).powf(f * year_fraction),
             Compounding::Continuous => (rate * year_fraction).exp(),
             Compounding::SimpleThenCompounded => {
                 if year_fraction <= 1.0 / f {
-                    1.0 + rate * year_fraction
+                    rate.mul_add(year_fraction, 1.0)
                 } else {
                     (1.0 + rate / f).powf(year_fraction * f)
                 }
             }
             Compounding::CompoundedThenSimple => {
                 if year_fraction > 1.0 / f {
-                    1.0 + rate * year_fraction
+                    rate.mul_add(year_fraction, 1.0)
                 } else {
                     (1.0 + rate / f).powf(year_fraction * f)
                 }
@@ -266,6 +270,7 @@ mod tests {
         rate2: f64,
         precision: i64,
     }
+    #[allow(clippy::too_many_lines)]
     fn test_cases() -> Vec<InterestRateData> {
         let test_cases = vec![
             InterestRateData {

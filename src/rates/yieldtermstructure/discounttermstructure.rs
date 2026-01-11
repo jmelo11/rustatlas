@@ -103,7 +103,7 @@ impl DiscountTermStructure {
         let (dates, discount_factors): (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
 
         // discount_factors[0] needs to be 1.0
-        if discount_factors[0] != 1.0 {
+        if (discount_factors[0] - 1.0).abs() > 1e-12 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
             ));
@@ -221,7 +221,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             })
             .collect();
 
-        Ok(Arc::new(DiscountTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_dates,
             shifted_dfs?,
             self.day_counter(),
@@ -231,7 +231,10 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date()) as i32;
+        let days =
+            i32::try_from(date - self.reference_date()).map_err(|_| {
+                AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+            })?;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(
                 "Date needs to be greater than reference date".to_string(),

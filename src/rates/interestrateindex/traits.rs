@@ -43,7 +43,11 @@ pub trait FixingProvider {
 
             let x: Vec<f64> = aux_btreemap
                 .keys()
-                .map(|&d| (d - first_date) as f64)
+                .map(|&d| {
+                    let days = i32::try_from(d - first_date)
+                        .unwrap_or_else(|_| panic!("fixing day count should fit in i32"));
+                    f64::from(days)
+                })
                 .collect::<Vec<f64>>();
 
             let y = aux_btreemap.values().copied().collect::<Vec<f64>>();
@@ -52,7 +56,9 @@ pub trait FixingProvider {
 
             while current_date <= last_date {
                 if !self.fixings().contains_key(&current_date) {
-                    let days = (current_date - first_date) as f64;
+                    let days = i32::try_from(current_date - first_date)
+                        .unwrap_or_else(|_| panic!("fixing day count should fit in i32"));
+                    let days = f64::from(days);
                     let rate = interpolator.interpolate(days, &x, &y, false);
                     self.add_fixing(current_date, rate);
                 }

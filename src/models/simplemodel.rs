@@ -24,6 +24,7 @@ pub struct SimpleModel<'a> {
     transform_currencies: bool,
 }
 
+#[allow(clippy::elidable_lifetime_names)]
 impl<'a> SimpleModel<'a> {
     /// Creates a new `SimpleModel` instance.
     ///
@@ -55,6 +56,7 @@ impl<'a> SimpleModel<'a> {
     }
 }
 
+#[allow(clippy::elidable_lifetime_names)]
 impl<'a> Model for SimpleModel<'a> {
     fn reference_date(&self) -> Date {
         self.market_store.reference_date()
@@ -97,16 +99,16 @@ impl<'a> Model for SimpleModel<'a> {
 
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
         let first_currency = fx.first_currency();
-        let second_currency = match fx.second_currency() {
-            Some(ccy) => ccy,
-            None => {
+        let second_currency = fx.second_currency().map_or_else(
+            || {
                 if self.transform_currencies {
                     self.market_store.local_currency()
                 } else {
                     first_currency
                 }
-            }
-        };
+            },
+            |ccy| ccy,
+        );
 
         match fx.reference_date() {
             Some(date) => {

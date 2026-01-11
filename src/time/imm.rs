@@ -1,5 +1,5 @@
 use super::date::Date;
-use super::enums::*;
+use super::enums::Weekday;
 
 /// Represents IMM (International Monetary Market) dates and codes for futures contracts.
 pub struct IMM {}
@@ -30,7 +30,7 @@ impl IMM {
     /// * `in_` - The code string to validate (e.g., "F3")
     /// * `main_cycle` - If true, only validates main cycle codes
     #[must_use]
-    pub fn is_imm_code(in_: String, main_cycle: bool) -> bool {
+    pub fn is_imm_code(in_: &str, main_cycle: bool) -> bool {
         if in_.len() != 2 {
             return false;
         }
@@ -57,9 +57,10 @@ impl IMM {
     /// Panics if the date is not a valid IMM date
     #[must_use]
     pub fn code(imm_date: Date) -> String {
-        if !Self::is_imm_date(imm_date, false) {
-            panic!("{imm_date} is not an IMM date");
-        }
+        assert!(
+            Self::is_imm_date(imm_date, false),
+            "{imm_date} is not an IMM date"
+        );
         let y = imm_date.year() % 10;
         match imm_date.month() {
             1 => format!("F{y}"),
@@ -87,10 +88,11 @@ impl IMM {
     /// # Panics
     /// Panics if the reference date is empty or the code is invalid
     #[must_use]
-    pub fn date(imm_code: String, reference_date: Date) -> Date {
-        if reference_date == Date::empty() {
-            panic!("No reference date provided");
-        }
+    pub fn date(imm_code: &str, reference_date: Date) -> Date {
+        assert!(
+            reference_date != Date::empty(),
+            "No reference date provided"
+        );
 
         let code = imm_code.to_uppercase();
         let ms = &code[0..1];
@@ -136,9 +138,10 @@ impl IMM {
     /// Panics if the reference date is empty
     #[must_use]
     pub fn next_date(reference_date: Date, main_cycle: bool) -> Date {
-        if reference_date == Date::empty() {
-            panic!("No reference date provided");
-        }
+        assert!(
+            reference_date != Date::empty(),
+            "No reference date provided"
+        );
         let y = reference_date.year();
         let m = reference_date.month();
         let offset = if main_cycle { 3 } else { 1 };
@@ -167,7 +170,7 @@ impl IMM {
     /// * `main_cycle` - If true, only finds dates in main cycle months
     /// * `reference_date` - A reference date to resolve the code
     #[must_use]
-    pub fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
+    pub fn next_date_with_code(imm_code: &str, main_cycle: bool, reference_date: Date) -> Date {
         let imm_date = Self::date(imm_code, reference_date);
         Self::next_date(imm_date + 1, main_cycle)
     }
@@ -190,7 +193,7 @@ impl IMM {
     /// * `main_cycle` - If true, only considers main cycle months
     /// * `reference_date` - A reference date to resolve the code
     #[must_use]
-    pub fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
+    pub fn next_code_with_code(imm_code: &str, main_cycle: bool, reference_date: Date) -> String {
         let imm_date = Self::date(imm_code, reference_date);
         let next = Self::next_date(imm_date, main_cycle);
         Self::code(next)
@@ -221,16 +224,16 @@ mod tests {
     #[test]
     fn test_is_imm_code() {
         let s = "F3".to_string();
-        assert!(IMM::is_imm_code(s, false));
+        assert!(IMM::is_imm_code(&s, false));
 
         let s = "F3".to_string();
-        assert!(!IMM::is_imm_code(s, true));
+        assert!(!IMM::is_imm_code(&s, true));
 
         let s = "Z3".to_string();
-        assert!(IMM::is_imm_code(s, true));
+        assert!(IMM::is_imm_code(&s, true));
 
         let s = "Z3".to_string();
-        assert!(IMM::is_imm_code(s, false));
+        assert!(IMM::is_imm_code(&s, false));
     }
 
     #[test]
@@ -246,10 +249,10 @@ mod tests {
     fn test_date() {
         let d = Date::new(2023, 8, 16);
         let code1 = "Q3".to_string();
-        assert_eq!(IMM::date(code1, d), d);
+        assert_eq!(IMM::date(&code1, d), d);
 
         let code2 = "U3".to_string();
-        assert_eq!(IMM::date(code2, d), Date::new(2023, 9, 20));
+        assert_eq!(IMM::date(&code2, d), Date::new(2023, 9, 20));
     }
 
     #[test]
@@ -272,21 +275,21 @@ mod tests {
         let d = Date::new(2023, 8, 16);
         let code = "Q3".to_string();
         assert_eq!(
-            IMM::next_date_with_code(code, false, d),
+            IMM::next_date_with_code(&code, false, d),
             Date::new(2023, 9, 20)
         );
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
         assert_eq!(
-            IMM::next_date_with_code(code, false, d),
+            IMM::next_date_with_code(&code, false, d),
             Date::new(2023, 10, 18)
         );
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
         assert_eq!(
-            IMM::next_date_with_code(code, true, d),
+            IMM::next_date_with_code(&code, true, d),
             Date::new(2023, 12, 20)
         );
     }
@@ -310,14 +313,14 @@ mod tests {
     fn test_next_code_with_code() {
         let d = Date::new(2023, 8, 16);
         let code = "Q3".to_string();
-        assert_eq!(IMM::next_code_with_code(code, false, d), "U3");
+        assert_eq!(IMM::next_code_with_code(&code, false, d), "U3");
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
-        assert_eq!(IMM::next_code_with_code(code, false, d), "V3");
+        assert_eq!(IMM::next_code_with_code(&code, false, d), "V3");
 
         let d = Date::new(2023, 8, 16);
         let code = "U3".to_string();
-        assert_eq!(IMM::next_code_with_code(code, true, d), "Z3");
+        assert_eq!(IMM::next_code_with_code(&code, true, d), "Z3");
     }
 }

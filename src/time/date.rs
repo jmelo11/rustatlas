@@ -1,4 +1,4 @@
-use super::enums::*;
+use super::enums::{TimeUnit, Weekday};
 use super::period::Period;
 use crate::utils::errors::Result;
 use chrono::{Datelike, Duration, Months, NaiveDate};
@@ -66,7 +66,7 @@ impl NaiveDateExt for NaiveDate {
         let mut day = 0;
         for m in 1..self.month() {
             day += NaiveDate::from_ymd_opt(self.year(), m, 1)
-                .expect("valid date for month start")
+                .unwrap_or_else(|| panic!("valid date for month start"))
                 .days_in_month();
         }
         day + self.day() as i32
@@ -81,22 +81,34 @@ impl NaiveDateExt for NaiveDate {
         let date = *self;
         let flag = n >= 0;
         match units {
-            TimeUnit::Days => date + Duration::try_days(i64::from(n)).expect("valid day count"),
+            TimeUnit::Days => {
+                date + Duration::try_days(i64::from(n)).unwrap_or_else(|| panic!("valid day count"))
+            }
             TimeUnit::Weeks => {
-                date + Duration::try_days(i64::from(7 * n)).expect("valid day count")
+                date + Duration::try_days(i64::from(7 * n)).unwrap_or_else(|| {
+                    panic!("valid day count")
+                })
             }
             TimeUnit::Months => {
                 if flag {
-                    date + Months::new(n as u32)
+                    date + Months::new(u32::try_from(n).unwrap_or_else(|_| {
+                        panic!("valid month count")
+                    }))
                 } else {
-                    date - Months::new((-n) as u32)
+                    date - Months::new(u32::try_from(-n).unwrap_or_else(|_| {
+                        panic!("valid month count")
+                    }))
                 }
             }
             TimeUnit::Years => {
                 if flag {
-                    date + Months::new(12 * n as u32)
+                    date + Months::new(u32::try_from(12 * n).unwrap_or_else(|_| {
+                        panic!("valid year count")
+                    }))
                 } else {
-                    date - Months::new((-12 * n) as u32)
+                    date - Months::new(u32::try_from(-12 * n).unwrap_or_else(|_| {
+                        panic!("valid year count")
+                    }))
                 }
             }
         }
@@ -106,9 +118,10 @@ impl NaiveDateExt for NaiveDate {
         let month = date.month();
         let year = date.year();
         let mut end_of_month =
-            NaiveDate::from_ymd_opt(year, month, 1).expect("valid date for month start");
+            NaiveDate::from_ymd_opt(year, month, 1)
+                .unwrap_or_else(|| panic!("valid date for month start"));
         end_of_month = end_of_month + Months::new(1);
-        end_of_month -= Duration::try_days(1).expect("valid day count");
+        end_of_month -= Duration::try_days(1).unwrap_or_else(|| panic!("valid day count"));
         end_of_month
     }
 }
@@ -295,10 +308,14 @@ impl Date {
     pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
         let base_date = Self::new(year, month, 1);
         let first = base_date.weekday();
-        let skip = n - if day_of_week >= first { 1 } else { 0 };
+        let skip = n - i32::from(day_of_week >= first);
         let day = 1 + day_of_week + skip * 7 - first;
-        let base_date = NaiveDate::from_ymd_opt(year, month, day as u32)
-            .expect("valid date for nth weekday");
+        let base_date = NaiveDate::from_ymd_opt(
+            year,
+            month,
+            u32::try_from(day).unwrap_or_else(|_| panic!("valid day for nth weekday")),
+        )
+        .unwrap_or_else(|| panic!("valid date for nth weekday"));
         Self::from(base_date)
     }
 
@@ -306,7 +323,7 @@ impl Date {
     #[must_use]
     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
         let wd = date.weekday();
-        date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
+        date + i64::from((if wd > weekday { 7 } else { 0 }) - wd + weekday)
     }
 
     /// Returns the day of the week for this date.
@@ -364,7 +381,7 @@ impl Add<Period> for Date {
 
     fn add(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date + rhs;
-        Date::from(base_date)
+        Self::from(base_date)
     }
 }
 
@@ -382,7 +399,7 @@ impl Sub<Period> for Date {
 
     fn sub(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date - rhs;
-        Date::from(base_date)
+        Self::from(base_date)
     }
 }
 
@@ -400,7 +417,7 @@ impl Add<i64> for Date {
     fn add(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate =
             self.base_date + Duration::try_days(rhs).expect("valid day count");
-        Date::from(base_date)
+        Self::from(base_date)
     }
 }
 
@@ -435,7 +452,7 @@ impl Sub<i64> for Date {
     fn sub(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate =
             self.base_date - Duration::try_days(rhs).expect("valid day count");
-        Date::from(base_date)
+        Self::from(base_date)
     }
 }
 
