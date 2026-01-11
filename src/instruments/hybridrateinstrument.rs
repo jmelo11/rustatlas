@@ -56,7 +56,7 @@ impl HybridRateInstrument {
         discount_curve_id: Option<usize>,
         cashflows: Vec<Cashflow>,
     ) -> Self {
-        HybridRateInstrument {
+        Self {
             start_date,
             end_date,
             notional,

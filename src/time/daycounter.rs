@@ -32,12 +32,12 @@ impl DayCounter {
     #[must_use]
     pub fn day_count(&self, start: Date, end: Date) -> i64 {
         match self {
-            DayCounter::Actual360 => Actual360::day_count(start, end),
-            DayCounter::Actual365 => Actual365::day_count(start, end),
-            DayCounter::Thirty360 => Thirty360::day_count(start, end),
-            DayCounter::Thirty360US => Thirty360US::day_count(start, end),
-            DayCounter::ActualActual => ActualActual::day_count(start, end),
-            DayCounter::Business252 => Business252::day_count(start, end),
+            Self::Actual360 => Actual360::day_count(start, end),
+            Self::Actual365 => Actual365::day_count(start, end),
+            Self::Thirty360 => Thirty360::day_count(start, end),
+            Self::Thirty360US => Thirty360US::day_count(start, end),
+            Self::ActualActual => ActualActual::day_count(start, end),
+            Self::Business252 => Business252::day_count(start, end),
         }
     }
 
@@ -45,12 +45,12 @@ impl DayCounter {
     #[must_use]
     pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
         match self {
-            DayCounter::Actual360 => Actual360::year_fraction(start, end),
-            DayCounter::Actual365 => Actual365::year_fraction(start, end),
-            DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
-            DayCounter::Thirty360US => Thirty360US::year_fraction(start, end),
-            DayCounter::ActualActual => ActualActual::year_fraction(start, end),
-            DayCounter::Business252 => Business252::year_fraction(start, end),
+            Self::Actual360 => Actual360::year_fraction(start, end),
+            Self::Actual365 => Actual365::year_fraction(start, end),
+            Self::Thirty360 => Thirty360::year_fraction(start, end),
+            Self::Thirty360US => Thirty360US::year_fraction(start, end),
+            Self::ActualActual => ActualActual::year_fraction(start, end),
+            Self::Business252 => Business252::year_fraction(start, end),
         }
     }
 }
@@ -60,12 +60,12 @@ impl TryFrom<String> for DayCounter {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Actual360" => Ok(DayCounter::Actual360),
-            "Actual365" => Ok(DayCounter::Actual365),
-            "Thirty360" => Ok(DayCounter::Thirty360), // to match curveengine
-            "Thirty360US" => Ok(DayCounter::Thirty360US),
-            "ActualActual" => Ok(DayCounter::ActualActual),
-            "Business252" => Ok(DayCounter::Business252),
+            "Actual360" => Ok(Self::Actual360),
+            "Actual365" => Ok(Self::Actual365),
+            "Thirty360" => Ok(Self::Thirty360), // to match curveengine
+            "Thirty360US" => Ok(Self::Thirty360US),
+            "ActualActual" => Ok(Self::ActualActual),
+            "Business252" => Ok(Self::Business252),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid day counter: {}",
                 s

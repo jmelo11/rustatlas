@@ -50,8 +50,8 @@ pub struct IborIndex {
 impl IborIndex {
     /// Creates a new IborIndex with the given reference date.
     #[must_use]
-    pub fn new(reference_date: Date) -> IborIndex {
-        IborIndex {
+    pub fn new(reference_date: Date) -> Self {
+        Self {
             name: None,
             reference_date,
             tenor: Period::empty(),

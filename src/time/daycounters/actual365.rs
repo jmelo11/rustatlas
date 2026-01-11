@@ -25,6 +25,6 @@ impl DayCountProvider for Actual365 {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Actual365::day_count(start, end) as f64 / 365.0
+        Self::day_count(start, end) as f64 / 365.0
     }
 }

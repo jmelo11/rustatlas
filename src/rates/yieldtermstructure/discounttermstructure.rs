@@ -89,7 +89,7 @@ impl DiscountTermStructure {
         day_counter: DayCounter,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<DiscountTermStructure> {
+    ) -> Result<Self> {
         // check if year_fractions and discount_factors have the same size
         if dates.len() != discount_factors.len() {
             return Err(AtlasError::InvalidValueErr(
@@ -114,7 +114,7 @@ impl DiscountTermStructure {
             .map(|x| day_counter.year_fraction(reference_date, *x))
             .collect();
 
-        Ok(DiscountTermStructure {
+        Ok(Self {
             reference_date,
             dates,
             year_fractions,
