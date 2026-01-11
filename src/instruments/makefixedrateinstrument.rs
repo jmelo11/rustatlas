@@ -1587,8 +1587,9 @@ mod tests_equal_payment {
             .for_each(|cf| println!("{}", cf));
 
         instrument.cashflows().iter().for_each(|cf| match &cf {
-            Cashflow::Disbursement(c) => assert!(c.amount().unwrap() > 0.0),
-            Cashflow::Redemption(c) => assert!(c.amount().unwrap() > 0.0),
+            Cashflow::Disbursement(c) | Cashflow::Redemption(c) => {
+                assert!(c.amount().unwrap() > 0.0)
+            }
             _ => (),
         });
 

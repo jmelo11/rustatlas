@@ -279,8 +279,7 @@ impl Instrument {
     #[must_use]
     pub const fn second_rate_definition(&self) -> Option<RateDefinition> {
         match self {
-            Self::FixedRateInstrument(_) => None,
-            Self::FloatingRateInstrument(_) => None,
+            Self::FixedRateInstrument(_) | Self::FloatingRateInstrument(_) => None,
             Self::HybridRateInstrument(hri) => hri.second_rate_definition(),
             Self::DoubleRateInstrument(dri) => dri.second_rate_definition(),
         }

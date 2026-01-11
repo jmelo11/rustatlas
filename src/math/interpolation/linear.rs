@@ -11,8 +11,7 @@ impl Interpolate for LinearInterpolator {
     fn interpolate(x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Equal)) {
-                Ok(index) => index,
-                Err(index) => index,
+                Ok(index) | Err(index) => index,
             };
 
         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
