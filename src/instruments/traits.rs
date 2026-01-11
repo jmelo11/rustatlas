@@ -168,7 +168,7 @@ pub fn calculate_outstanding(
     // Combine disbursements and redemptions into a timeline of events
     let mut timeline: Vec<(Date, f64)> = disbursements.iter().map(|(k, v)| (*k, *v)).collect();
 
-    for (date, amount) in redemptions.iter() {
+    for (date, amount) in redemptions {
         match timeline.iter_mut().find(|(d, _)| *d == *date) {
             Some((_, a)) => *a -= amount,
             None => timeline.push((*date, -amount)),

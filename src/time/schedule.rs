@@ -89,6 +89,8 @@ impl Schedule {
     /// Creates a new `Schedule` with the specified parameters.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         tenor: Period,
         calendar: Calendar,

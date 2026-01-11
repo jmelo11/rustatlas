@@ -316,14 +316,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .end_of_month(self.end_of_month.unwrap_or(false))
@@ -397,15 +396,15 @@ impl MakeFloatingRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -425,14 +424,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -493,15 +491,15 @@ impl MakeFloatingRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -521,14 +519,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .end_of_month(self.end_of_month.unwrap_or(false))
@@ -567,7 +564,10 @@ impl MakeFloatingRateLeg {
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
                 let first_date = vec![*schedule
                     .dates()
@@ -592,7 +592,7 @@ impl MakeFloatingRateLeg {
                     currency,
                 );
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
@@ -602,14 +602,14 @@ impl MakeFloatingRateLeg {
                     CashflowType::Redemption,
                 );
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -644,7 +644,7 @@ impl MakeFloatingRateLeg {
                 let timeline =
                     calculate_outstanding(&disbursements, &redemptions, &additional_dates);
 
-                for (date, amount) in disbursements.iter() {
+                for (date, amount) in &disbursements {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
@@ -666,7 +666,7 @@ impl MakeFloatingRateLeg {
                     cashflows.push(Cashflow::FloatingRateCoupon(coupon));
                 }
 
-                for (date, amount) in redemptions.iter() {
+                for (date, amount) in &redemptions {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side).with_amount(*amount),
                     );
@@ -674,15 +674,15 @@ impl MakeFloatingRateLeg {
                 }
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
                 Ok(Leg::new(
                     structure,
@@ -696,7 +696,7 @@ impl MakeFloatingRateLeg {
                     cashflows,
                 ))
             }
-            _ => Err(AtlasError::InvalidValueErr(
+            Structure::EqualPayments => Err(AtlasError::InvalidValueErr(
                 "Invalid structure for floating rate loan".into(),
             ))?,
         }

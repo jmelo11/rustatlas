@@ -208,7 +208,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
                 fixings
                     .keys()
                     .max()
-                    .cloned()
+                    .copied()
                     .ok_or(AtlasError::NotFoundErr(
                         "Fixings must include at least one entry".into(),
                     ))?;
@@ -240,7 +240,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let new_curve = curve.advance_to_period(period)?;
 
         Ok(Arc::new(RwLock::new(
-            OvernightIndex::new(new_curve.reference_date())
+            Self::new(new_curve.reference_date())
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
                 .with_term_structure(new_curve)

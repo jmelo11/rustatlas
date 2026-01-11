@@ -50,6 +50,8 @@ impl FloatingRateInstrument {
     /// Creates a new `FloatingRateInstrument`.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         start_date: Date,
         end_date: Date,
@@ -267,8 +269,8 @@ mod test {
 
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
-        assert_eq!(instrument.notional(), 5_000_000.0);
-        assert_eq!(instrument.spread(), spread);
+        assert!((instrument.notional() - 5_000_000.0).abs() < 1e-12);
+        assert!((instrument.spread() - spread).abs() < 1e-12);
         assert_eq!(instrument.side(), Side::Receive);
         assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
         assert_eq!(instrument.rate_definition(), rate_definition);
@@ -309,7 +311,7 @@ mod test {
         for cf in instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
                 assert!((coupon.amount()? - 150000.0).abs() < 1e-6);
-                assert_eq!(coupon.spread(), spread);
+                assert!((coupon.spread() - spread).abs() < 1e-12);
             }
         }
 
@@ -319,7 +321,7 @@ mod test {
         for cf in new_instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
                 assert!((coupon.amount()? - 75000.0).abs() < 1e-6);
-                assert_eq!(coupon.spread(), new_spread);
+                assert!((coupon.spread() - new_spread).abs() < 1e-12);
             }
         }
 

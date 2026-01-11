@@ -21,12 +21,7 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::{
-    collections::HashMap,
-    ops::Deref,
-    rc::Rc,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, rc::Rc, sync::{Arc, RwLock}};
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -36,36 +31,35 @@ pub fn print_separator() {
 #[allow(dead_code)]
 pub fn print_title(title: &str) {
     print_separator();
-    println!("{}", title);
+    println!("{title}");
     print_separator();
 }
 
 #[allow(dead_code)]
-pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
+pub fn print_table(cashflows: &[Cashflow], market_data: &Rc<Vec<MarketData>>) {
     println!(
         "{:10} | {:10} | {:10} | {:10}| {:10}",
         "Date", "Amount", "DF", "FWD", "FX"
     );
-    for (cf, md) in cashflows.iter().zip(market_data.deref()) {
-        let date = format!("{:10}", cf.payment_date().to_string());
-        let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
+    for (cf, md) in cashflows.iter().zip(&**market_data) {
+        let date = format!("{:10}", cf.payment_date());
+        let amount =
+            cf.amount()
+                .map_or_else(|_| "None      ".to_string(), |amount| format!("{amount:10.2}"));
 
-        let df = match md.df() {
-            Ok(df) => format!("{:10.2}", df),
-            _ => "None      ".to_string(), // 10 characters wide
-        };
+        let df = md
+            .df()
+            .map_or_else(|_| "None      ".to_string(), |df| format!("{df:10.2}"));
 
-        let fx = match md.fx() {
-            Ok(fx) => format!("{:10.2}", fx),
-            _ => "None      ".to_string(), // 10 characters wide
-        };
+        let fx = md
+            .fx()
+            .map_or_else(|_| "None      ".to_string(), |fx| format!("{fx:10.2}"));
 
-        let fwd = match md.fwd() {
-            Ok(fwd) => format!("{:9.3}", fwd),
-            _ => "None      ".to_string(), // 10 characters wide
-        };
+        let fwd = md
+            .fwd()
+            .map_or_else(|_| "None      ".to_string(), |fwd| format!("{fwd:9.3}"));
 
-        println!("{} | {} | {} | {} | {}", date, amount, df, fwd, fx);
+        println!("{date} | {amount} | {df} | {fwd} | {fx}");
     }
 }
 
@@ -77,9 +71,9 @@ fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
     while seed <= end {
         fixings.insert(seed, init);
         seed = seed + Period::new(1, TimeUnit::Days);
-        init = init * (1.0 + rate * 1.0 / 360.0);
+        init *= 1.0 + rate * 1.0 / 360.0;
     }
-    return fixings;
+    fixings
 }
 
 #[allow(dead_code)]
@@ -135,7 +129,7 @@ pub fn create_store() -> Result<MarketStore> {
     market_store
         .mut_index_store()
         .add_index(2, Arc::new(RwLock::new(discount_index)))?;
-    return Ok(market_store);
+    Ok(market_store)
 }
 
 use rand::Rng;
@@ -163,7 +157,6 @@ impl Mock for MockMaker {
         let mut rng = rand::thread_rng();
         let freq = rng.gen_range(0..4);
         match freq {
-            0 => Frequency::Annual,
             1 => Frequency::Semiannual,
             2 => Frequency::Quarterly,
             3 => Frequency::Monthly,
@@ -203,7 +196,6 @@ impl Mock for MockMaker {
         let mut rng = rand::thread_rng();
         let freq = rng.gen_range(0..4);
         match freq {
-            0 => Currency::USD,
             1 => Currency::EUR,
             2 => Currency::CLP,
             3 => Currency::CLF,
@@ -212,15 +204,15 @@ impl Mock for MockMaker {
     }
 
     fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument> {
-        let instruments = (0..n)
+        (0..n)
             .into_par_iter() // Create a parallel iterator
             .map(|_| {
-                let start_date = MockMaker::random_start_date(today);
-                let end_date = start_date + MockMaker::random_tenor();
-                let rate = MockMaker::random_rate_value();
-                let notional = MockMaker::random_notional();
-                let random_currency = MockMaker::random_currency();
-                let payment_frequency = MockMaker::random_frequency();
+                let start_date = Self::random_start_date(today);
+                let end_date = start_date + Self::random_tenor();
+                let rate = Self::random_rate_value();
+                let notional = Self::random_notional();
+                let random_currency = Self::random_currency();
+                let payment_frequency = Self::random_frequency();
                 let instrument = MakeFixedRateInstrument::new()
                     .with_start_date(start_date)
                     .with_end_date(end_date)
@@ -232,11 +224,12 @@ impl Mock for MockMaker {
                     .with_side(Side::Receive)
                     .bullet()
                     .build()
-                    .unwrap();
+                    .unwrap_or_else(|err| {
+                        panic!("Failed to build fixed rate instrument: {err}")
+                    });
 
                 Instrument::FixedRateInstrument(instrument)
             })
-            .collect();
-        instruments
+            .collect()
     }
 }

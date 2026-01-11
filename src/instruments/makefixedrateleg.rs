@@ -445,7 +445,7 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    for cf in cashflows.iter_mut() {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
                     }
                 }
@@ -484,7 +484,7 @@ impl MakeFixedRateLeg {
                 let timeline =
                     calculate_outstanding(&disbursements, &redemptions, &additional_dates);
 
-                for (date, amount) in disbursements.iter() {
+                for (date, amount) in &disbursements {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
@@ -502,7 +502,7 @@ impl MakeFixedRateLeg {
                     );
                     cashflows.push(Cashflow::FixedRateCoupon(coupon));
                 }
-                for (date, amount) in redemptions.iter() {
+                for (date, amount) in &redemptions {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side).with_amount(*amount),
                     );
@@ -510,7 +510,7 @@ impl MakeFixedRateLeg {
                 }
 
                 if let Some(id) = self.discount_curve_id {
-                    for cf in cashflows.iter_mut() {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
                     }
                 }
@@ -631,7 +631,7 @@ impl MakeFixedRateLeg {
                 //cashflows.extend(infered_cashflows);
 
                 if let Some(id) = self.discount_curve_id {
-                    for cf in cashflows.iter_mut() {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
                     }
                 }
@@ -719,7 +719,7 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    for cf in cashflows.iter_mut() {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
                     }
                 }
@@ -788,7 +788,10 @@ impl MakeFixedRateLeg {
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -821,7 +824,7 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    for cf in cashflows.iter_mut() {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
                     }
                 }

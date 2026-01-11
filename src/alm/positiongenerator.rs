@@ -50,6 +50,8 @@ pub struct RolloverStrategy {
 impl RolloverStrategy {
     /// Creates a new `RolloverStrategy` with the specified parameters.
     #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub const fn new(
         weight: f64,
         structure: Structure,

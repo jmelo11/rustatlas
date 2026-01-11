@@ -107,15 +107,12 @@ impl IndexStore {
         index: Arc<RwLock<dyn InterestRateIndexTrait>>,
     ) -> Result<()> {
         if self.reference_date != index.read_index()?.reference_date() {
-            return Err(AtlasError::InvalidValueErr(
-                format!(
-                    "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
-                    name = index.read_index()?.name(),
-                    reference_date = index.read_index()?.reference_date(),
-                    store_reference_date = self.reference_date
-                )
-                .to_string(),
-            ));
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
+                name = index.read_index()?.name(),
+                reference_date = index.read_index()?.reference_date(),
+                store_reference_date = self.reference_date
+            )));
         }
         // check if name already exists
         if self.index_map.contains_key(&id) {
@@ -139,15 +136,12 @@ impl IndexStore {
         index: Arc<RwLock<dyn InterestRateIndexTrait>>,
     ) -> Result<()> {
         if self.reference_date != index.read_index()?.reference_date() {
-            return Err(AtlasError::InvalidValueErr(
-                format!(
-                    "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
-                    name = index.read_index()?.name(),
-                    reference_date = index.read_index()?.reference_date(),
-                    store_reference_date = self.reference_date
-                )
-                .to_string(),
-            ));
+            return Err(AtlasError::InvalidValueErr(format!(
+                "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
+                name = index.read_index()?.name(),
+                reference_date = index.read_index()?.reference_date(),
+                store_reference_date = self.reference_date
+            )));
         }
         // check if name already exists
         if !self.index_map.contains_key(&id) {
@@ -182,7 +176,7 @@ impl IndexStore {
         &self,
         name: &str,
     ) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        for (id, index) in self.index_map.iter() {
+        for (id, index) in &self.index_map {
             if index.read_index()?.name()? == name {
                 return self.get_index(*id);
             }
@@ -210,7 +204,7 @@ impl IndexStore {
     /// Returns an error if any index cannot be read to retrieve its name.
     pub fn get_index_map(&self) -> Result<HashMap<String, usize>> {
         let mut map = HashMap::new();
-        for (id, index) in self.index_map.iter() {
+        for (id, index) in &self.index_map {
             map.insert(index.read_index()?.name()?, *id);
         }
         Ok(map)
@@ -243,15 +237,15 @@ impl IndexStore {
     ///
     /// # Errors
     /// Returns an error if any index cannot be advanced or reinserted.
-    pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
+    pub fn advance_to_period(&self, period: Period) -> Result<Self> {
         let reference_date = self.reference_date + period;
         let mut store = Self::new(reference_date);
-        for (id, index) in self.index_map.iter() {
+        for (id, index) in &self.index_map {
             let new_index = index.read_index()?.advance_to_period(period)?;
             store.add_index(*id, new_index)?;
         }
 
-        for (currency, curve) in self.currency_curve.iter() {
+        for (currency, curve) in &self.currency_curve {
             store.add_currency_curve(*currency, *curve);
         }
 
@@ -262,7 +256,7 @@ impl IndexStore {
     ///
     /// # Errors
     /// Returns an error if the store cannot be advanced to the target date.
-    pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
+    pub fn advance_to_date(&self, date: Date) -> Result<Self> {
         let days = i32::try_from(date - self.reference_date).map_err(|_| {
             AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
         })?;

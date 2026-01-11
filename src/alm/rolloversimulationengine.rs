@@ -572,13 +572,13 @@ mod tests {
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
         let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
-        assert!((outstanding + 1800.0 * growth_factor).abs() < 1e-6);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
         let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
-        assert!((outstanding + 1800.0 * growth_factor).abs() < 1e-6);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
         Ok(())
     }
 
@@ -640,13 +640,13 @@ mod tests {
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
         let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
-        assert!((outstanding + 1800.0 * growth_factor).abs() < 1e-6);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
         let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
-        assert!((outstanding + 1800.0 * growth_factor).abs() < 1e-6);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
         Ok(())
     }
 }
