@@ -28,7 +28,7 @@ impl HasCurrency for CashAccount {
 impl CashAccount {
     /// Creates a new empty cash account.
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             amount: RefCell::new(BTreeMap::new()),
             currency: None,
