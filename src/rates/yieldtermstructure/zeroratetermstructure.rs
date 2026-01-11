@@ -73,7 +73,7 @@ impl ZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<ZeroRateTermStructure> {
+    ) -> Result<Self> {
         // check if dates and rates have the same size
         if dates.len() != rates.len() {
             return Err(AtlasError::InvalidValueErr(
@@ -97,7 +97,7 @@ impl ZeroRateTermStructure {
             })
             .collect();
 
-        Ok(ZeroRateTermStructure {
+        Ok(Self {
             reference_date,
             dates,
             year_fractions,
@@ -215,7 +215,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             })
             .collect();
 
-        Ok(Arc::new(ZeroRateTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_reference_date,
             new_dates,
             shifted_dfs?,

@@ -59,8 +59,8 @@ impl MakeFloatingRateInstrument {
     /// Creates a new `MakeFloatingRateInstrument` with all fields initialized to `None`.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn new() -> MakeFloatingRateInstrument {
-        MakeFloatingRateInstrument {
+    pub fn new() -> Self {
+        Self {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -87,7 +87,7 @@ impl MakeFloatingRateInstrument {
 
     /// Sets the calendar for the instrument.
     #[must_use]
-    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateInstrument {
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.calendar = calendar;
         self
     }
@@ -97,7 +97,7 @@ impl MakeFloatingRateInstrument {
     pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.business_day_convention = business_day_convention;
         self
     }
@@ -107,21 +107,21 @@ impl MakeFloatingRateInstrument {
     pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.date_generation_rule = date_generation_rule;
         self
     }
 
     /// Sets the issue date for the instrument.
     #[must_use]
-    pub const fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateInstrument {
+    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the identifier for the instrument.
     #[must_use]
-    pub fn with_id(mut self, id: Option<String>) -> MakeFloatingRateInstrument {
+    pub fn with_id(mut self, id: Option<String>) -> Self {
         self.id = id;
         self
     }
@@ -131,28 +131,28 @@ impl MakeFloatingRateInstrument {
     pub const fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.first_coupon_date = first_coupon_date;
         self
     }
 
     /// Sets the start date for the instrument.
     #[must_use]
-    pub const fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateInstrument {
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date for the instrument.
     #[must_use]
-    pub const fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateInstrument {
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the tenor for the instrument.
     #[must_use]
-    pub const fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateInstrument {
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = Some(tenor);
         self
     }
@@ -162,7 +162,7 @@ impl MakeFloatingRateInstrument {
     pub fn with_disbursements(
         mut self,
         disbursements: HashMap<Date, f64>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.disbursements = Some(disbursements);
         self
     }
@@ -172,7 +172,7 @@ impl MakeFloatingRateInstrument {
     pub fn with_redemptions(
         mut self,
         redemptions: HashMap<Date, f64>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.redemptions = Some(redemptions);
         self
     }
@@ -182,7 +182,7 @@ impl MakeFloatingRateInstrument {
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
@@ -192,7 +192,7 @@ impl MakeFloatingRateInstrument {
     pub const fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.forecast_curve_id = forecast_curve_id;
         self
     }
@@ -202,7 +202,7 @@ impl MakeFloatingRateInstrument {
     pub const fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.discount_curve_id = discount_curve_id;
         self
     }
@@ -212,49 +212,49 @@ impl MakeFloatingRateInstrument {
     pub const fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the notional amount for the instrument.
     #[must_use]
-    pub const fn with_notional(mut self, notional: f64) -> MakeFloatingRateInstrument {
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the currency for the instrument.
     #[must_use]
-    pub const fn with_currency(mut self, currency: Currency) -> MakeFloatingRateInstrument {
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the spread for the floating rate instrument.
     #[must_use]
-    pub const fn with_spread(mut self, spread: f64) -> MakeFloatingRateInstrument {
+    pub const fn with_spread(mut self, spread: f64) -> Self {
         self.spread = Some(spread);
         self
     }
 
     /// Sets the instrument structure to bullet.
     #[must_use]
-    pub const fn bullet(mut self) -> MakeFloatingRateInstrument {
+    pub const fn bullet(mut self) -> Self {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the instrument structure to equal redemptions.
     #[must_use]
-    pub const fn equal_redemptions(mut self) -> MakeFloatingRateInstrument {
+    pub const fn equal_redemptions(mut self) -> Self {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the instrument structure to zero with single payment frequency.
     #[must_use]
-    pub const fn zero(mut self) -> MakeFloatingRateInstrument {
+    pub const fn zero(mut self) -> Self {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
@@ -262,7 +262,7 @@ impl MakeFloatingRateInstrument {
 
     /// Sets the instrument structure to other with custom frequency.
     #[must_use]
-    pub const fn other(mut self) -> MakeFloatingRateInstrument {
+    pub const fn other(mut self) -> Self {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
@@ -270,21 +270,21 @@ impl MakeFloatingRateInstrument {
 
     /// Sets the side (Receive or Pay) for the instrument.
     #[must_use]
-    pub const fn with_side(mut self, side: Side) -> MakeFloatingRateInstrument {
+    pub const fn with_side(mut self, side: Side) -> Self {
         self.side = Some(side);
         self
     }
 
     /// Sets the payment frequency for the instrument.
     #[must_use]
-    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateInstrument {
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure for the instrument.
     #[must_use]
-    pub const fn with_structure(mut self, structure: Structure) -> MakeFloatingRateInstrument {
+    pub const fn with_structure(mut self, structure: Structure) -> Self {
         self.structure = Some(structure);
         self
     }
@@ -794,7 +794,7 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
 }
 
 impl From<&FloatingRateInstrument> for MakeFloatingRateInstrument {
-    fn from(instrument: &FloatingRateInstrument) -> MakeFloatingRateInstrument {
+    fn from(instrument: &FloatingRateInstrument) -> Self {
         instrument.clone().into()
     }
 }

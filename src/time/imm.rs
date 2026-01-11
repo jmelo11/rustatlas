@@ -57,7 +57,7 @@ impl IMM {
     /// Panics if the date is not a valid IMM date
     #[must_use]
     pub fn code(imm_date: Date) -> String {
-        if !IMM::is_imm_date(imm_date, false) {
+        if !Self::is_imm_date(imm_date, false) {
             panic!("{} is not an IMM date", imm_date);
         }
         let y = imm_date.year() % 10;
@@ -119,9 +119,9 @@ impl IMM {
         let reference_year = reference_date.year() % 10;
         y += reference_date.year() - reference_year;
 
-        let result = IMM::next_date(Date::new(y, m, 1), false);
+        let result = Self::next_date(Date::new(y, m, 1), false);
         if result < reference_date {
-            return IMM::next_date(Date::new(y + 10, m, 1), false);
+            return Self::next_date(Date::new(y + 10, m, 1), false);
         }
         result
     }
@@ -155,7 +155,7 @@ impl IMM {
         }
         let result = Date::nth_weekday(3, Weekday::Wednesday, m, y);
         if result <= reference_date {
-            return IMM::next_date(Date::new(y, m, 22), main_cycle);
+            return Self::next_date(Date::new(y, m, 22), main_cycle);
         }
         result
     }
@@ -168,8 +168,8 @@ impl IMM {
     /// * `reference_date` - A reference date to resolve the code
     #[must_use]
     pub fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
-        let imm_date = IMM::date(imm_code, reference_date);
-        IMM::next_date(imm_date + 1, main_cycle)
+        let imm_date = Self::date(imm_code, reference_date);
+        Self::next_date(imm_date + 1, main_cycle)
     }
 
     /// Returns the IMM code for the next IMM date after the given date.
@@ -179,8 +179,8 @@ impl IMM {
     /// * `main_cycle` - If true, only considers main cycle months
     #[must_use]
     pub fn next_code(d: Date, main_cycle: bool) -> String {
-        let next = IMM::next_date(d, main_cycle);
-        IMM::code(next)
+        let next = Self::next_date(d, main_cycle);
+        Self::code(next)
     }
 
     /// Returns the IMM code for the next IMM date after a given IMM code.
@@ -191,9 +191,9 @@ impl IMM {
     /// * `reference_date` - A reference date to resolve the code
     #[must_use]
     pub fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
-        let imm_date = IMM::date(imm_code, reference_date);
-        let next = IMM::next_date(imm_date, main_cycle);
-        IMM::code(next)
+        let imm_date = Self::date(imm_code, reference_date);
+        let next = Self::next_date(imm_date, main_cycle);
+        Self::code(next)
     }
 }
 

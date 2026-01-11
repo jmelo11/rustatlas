@@ -35,9 +35,9 @@ impl FlatForwardTermStructure {
         reference_date: Date,
         rate: f64,
         rate_definition: RateDefinition,
-    ) -> FlatForwardTermStructure {
+    ) -> Self {
         let rate = InterestRate::from_rate_definition(rate, rate_definition);
-        FlatForwardTermStructure {
+        Self {
             reference_date,
             rate,
         }
@@ -98,7 +98,7 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
-        Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_reference_date,
             self.value(),
             self.rate_definition(),
@@ -106,7 +106,7 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(Self::new(
             date,
             self.value(),
             self.rate_definition(),

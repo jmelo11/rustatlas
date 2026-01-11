@@ -60,7 +60,7 @@ impl FixedRateInstrument {
         issue_date: Option<Date>,
         yield_rate: Option<InterestRate>,
     ) -> Self {
-        FixedRateInstrument {
+        Self {
             start_date,
             end_date,
             notional,
