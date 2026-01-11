@@ -23,8 +23,9 @@ impl<'a> DurationConstVisitor<'a> {
     ///
     /// # Arguments
     /// * `market_data` - A slice of market data to use for duration calculations
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(market_data: &'a [MarketData]) -> Self {
+    pub fn new(market_data: &'a [MarketData]) -> Self {
         DurationConstVisitor { market_data }
     }
 }

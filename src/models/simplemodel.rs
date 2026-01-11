@@ -32,8 +32,9 @@ impl<'a> SimpleModel<'a> {
     ///
     /// # Returns
     /// A new `SimpleModel` instance with currency transformation disabled by default.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
+    pub fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
         SimpleModel {
             market_store,
             transform_currencies: false,

@@ -11,8 +11,9 @@ pub struct Swap {
 
 impl Swap {
     /// Create a new swap.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
+    pub fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
         Swap {
             cashflows,
             legs,

@@ -36,8 +36,9 @@ pub struct NPVEngine<'a> {
 
 impl<'a> NPVEngine<'a> {
     /// Creates a new `NPVEngine` with default chunk size of 1000.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(instruments: &'a mut [Instrument], market_store: &'a MarketStore) -> Self {
+    pub fn new(instruments: &'a mut [Instrument], market_store: &'a MarketStore) -> Self {
         Self {
             instruments,
             market_store,

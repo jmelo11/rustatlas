@@ -20,8 +20,9 @@ pub struct NPVByTenorConstVisitor<'a> {
 
 impl<'a> NPVByTenorConstVisitor<'a> {
     /// Creates a new `NPVByTenorConstVisitor` with the specified market data, tenors, and cashflow inclusion setting.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         market_data: &'a [MarketData],
         tenors: Vec<(Period, Period)>,
         include_today_cashflows: bool,

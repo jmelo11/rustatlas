@@ -148,8 +148,9 @@ pub struct PositionGenerator<'a> {
 
 impl<'a> PositionGenerator<'a> {
     /// Creates a new `PositionGenerator` with the specified currency and strategies.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(new_positions_currency: Currency, strategies: Vec<RolloverStrategy>) -> Self {
+    pub fn new(new_positions_currency: Currency, strategies: Vec<RolloverStrategy>) -> Self {
         Self {
             new_positions_currency,
             strategies,

@@ -55,8 +55,9 @@ pub struct Portfolio {
 
 impl Portfolio {
     /// Creates a new Portfolio with default empty values.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             segment: None,

@@ -27,8 +27,9 @@ pub struct ZSpreadConstVisitor<'a> {
 
 impl<'a> ZSpreadConstVisitor<'a> {
     /// Creates a new `ZSpreadConstVisitor` with the given market data, rate definition, and target NPV.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         market_data: &'a [MarketData],
         rate_definition: RateDefinition,
         target: f64,

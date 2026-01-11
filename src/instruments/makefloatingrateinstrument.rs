@@ -57,8 +57,9 @@ pub struct MakeFloatingRateInstrument {
 /// Constructor, setters and getters.
 impl MakeFloatingRateInstrument {
     /// Creates a new `MakeFloatingRateInstrument` with all fields initialized to `None`.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> MakeFloatingRateInstrument {
+    pub fn new() -> MakeFloatingRateInstrument {
         MakeFloatingRateInstrument {
             start_date: None,
             end_date: None,

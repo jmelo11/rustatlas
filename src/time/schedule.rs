@@ -87,8 +87,9 @@ pub struct Schedule {
 
 impl Schedule {
     /// Creates a new `Schedule` with the specified parameters.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         tenor: Period,
         calendar: Calendar,
         convention: BusinessDayConvention,
@@ -235,6 +236,7 @@ pub struct MakeSchedule {
 /// Constructor, setters and getters
 impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {

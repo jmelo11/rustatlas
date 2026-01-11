@@ -15,8 +15,9 @@ pub struct IndexingVisitor {
 
 impl IndexingVisitor {
     /// Creates a new `IndexingVisitor` instance.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             request: RefCell::new(Vec::new()),
         }

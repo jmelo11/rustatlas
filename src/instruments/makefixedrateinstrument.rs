@@ -64,8 +64,9 @@ pub struct MakeFixedRateInstrument {
 /// New, setters and getters
 impl MakeFixedRateInstrument {
     /// Creates a new MakeFixedRateInstrument builder with default values.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> MakeFixedRateInstrument {
+    pub fn new() -> MakeFixedRateInstrument {
         MakeFixedRateInstrument {
             start_date: None,
             end_date: None,
