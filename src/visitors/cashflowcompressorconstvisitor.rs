@@ -414,7 +414,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -465,7 +465,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -518,7 +518,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -570,7 +570,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -629,7 +629,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         instrument.cashflows().iter().for_each(|cf| {

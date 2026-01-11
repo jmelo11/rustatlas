@@ -868,7 +868,7 @@ mod tests {
             .mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -900,7 +900,7 @@ mod tests {
             .mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -933,7 +933,7 @@ mod tests {
             .mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -965,7 +965,7 @@ mod tests {
             .mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         Ok(())
@@ -1011,7 +1011,7 @@ mod tests {
             .mut_cashflows()
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         Ok(())
@@ -1043,7 +1043,7 @@ mod tests {
         let builder = MakeFloatingRateInstrument::from(&instrument);
         let instrument2 = builder.build()?;
 
-        assert_eq!(instrument2.notional(), instrument.notional());
+        assert!((instrument2.notional() - instrument.notional()).abs() < 1e-12);
         assert_eq!(instrument2.start_date(), instrument.start_date());
         assert_eq!(instrument2.end_date(), instrument.end_date());
         assert_eq!(instrument2.rate_definition(), instrument.rate_definition());
@@ -1051,7 +1051,7 @@ mod tests {
             instrument2.payment_frequency(),
             instrument.payment_frequency()
         );
-        assert_eq!(instrument2.spread(), instrument.spread());
+        assert!((instrument2.spread() - instrument.spread()).abs() < 1e-12);
         assert_eq!(instrument2.side(), instrument.side());
         assert_eq!(instrument2.currency()?, instrument.currency()?);
         assert_eq!(

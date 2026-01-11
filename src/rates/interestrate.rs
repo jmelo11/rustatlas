@@ -155,7 +155,7 @@ impl InterestRate {
         }
         let r: f64;
         let f = f64::from(freq as i32);
-        if compound == 1.0 {
+        if (compound - 1.0).abs() < 1e-12 {
             if t < 0.0 {
                 return Err(AtlasError::InvalidValueErr(
                     "Non-negative time required".to_string(),
@@ -628,7 +628,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        assert_eq!(ir.rate(), 0.05);
+        assert!((ir.rate() - 0.05).abs() < 1e-12);
         assert_eq!(ir.compounding(), Compounding::Simple);
         assert_eq!(ir.frequency(), Frequency::Annual);
         assert_eq!(ir.day_counter(), DayCounter::Actual360);
@@ -642,7 +642,7 @@ mod tests {
             Frequency::Annual,
         );
         let ir = InterestRate::from_rate_definition(0.05, rd);
-        assert_eq!(ir.rate(), 0.05);
+        assert!((ir.rate() - 0.05).abs() < 1e-12);
         assert_eq!(ir.compounding(), Compounding::Simple);
         assert_eq!(ir.frequency(), Frequency::Annual);
         assert_eq!(ir.day_counter(), DayCounter::Actual360);

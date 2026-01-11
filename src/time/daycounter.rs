@@ -192,7 +192,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_ne!(yf_1, yf_2);
+        assert!((yf_1 - yf_2).abs() > 1e-12);
     }
 
     #[test]
