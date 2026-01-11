@@ -21,7 +21,11 @@ use rustatlas::{
     },
     utils::errors::Result,
 };
-use std::{collections::HashMap, rc::Rc, sync::{Arc, RwLock}};
+use std::{
+    collections::HashMap,
+    rc::Rc,
+    sync::{Arc, RwLock},
+};
 
 #[allow(dead_code)]
 pub fn print_separator() {
@@ -43,9 +47,10 @@ pub fn print_table(cashflows: &[Cashflow], market_data: &Rc<Vec<MarketData>>) {
     );
     for (cf, md) in cashflows.iter().zip(&**market_data) {
         let date = format!("{:10}", cf.payment_date());
-        let amount =
-            cf.amount()
-                .map_or_else(|_| "None      ".to_string(), |amount| format!("{amount:10.2}"));
+        let amount = cf.amount().map_or_else(
+            |_| "None      ".to_string(),
+            |amount| format!("{amount:10.2}"),
+        );
 
         let df = md
             .df()
@@ -134,8 +139,10 @@ pub fn create_store() -> Result<MarketStore> {
 
 use rand::Rng;
 
+#[allow(dead_code)]
 pub struct MockMaker;
 
+#[allow(dead_code)]
 pub trait Mock {
     fn random_frequency() -> Frequency;
 
@@ -224,9 +231,7 @@ impl Mock for MockMaker {
                     .with_side(Side::Receive)
                     .bullet()
                     .build()
-                    .unwrap_or_else(|err| {
-                        panic!("Failed to build fixed rate instrument: {err}")
-                    });
+                    .unwrap_or_else(|err| panic!("Failed to build fixed rate instrument: {err}"));
 
                 Instrument::FixedRateInstrument(instrument)
             })
