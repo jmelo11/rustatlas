@@ -22,8 +22,8 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # IborIndex
-/// Struct that defines an Ibor index.
+/// # `IborIndex`
+/// Struct that defines an `IborIndex`.
 ///
 /// # Example
 /// ```
@@ -48,7 +48,8 @@ pub struct IborIndex {
 }
 
 impl IborIndex {
-    /// Creates a new IborIndex with the given reference date.
+    /// Creates a new `IborIndex` with the given reference date.
+    #[must_use]
     pub fn new(reference_date: Date) -> IborIndex {
         IborIndex {
             name: None,
@@ -61,35 +62,42 @@ impl IborIndex {
     }
 
     /// Returns the rate definition for this index.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Sets the name for this index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.name = name;
         self
     }
 
     /// Sets the tenor for this index.
-    pub fn with_tenor(mut self, tenor: Period) -> Self {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = tenor;
         self
     }
 
     /// Sets the tenor from a frequency for this index.
+    #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> Self {
-        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self.tenor = Period::from_frequency(frequency)
+            .unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 
     /// Sets the rate definition for this index.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
     }
 
     /// Sets the fixings for this index.
+    #[must_use]
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
         self

@@ -37,6 +37,7 @@ pub struct UnitedStates {
 
 impl UnitedStates {
     /// Creates a new `UnitedStates` calendar for the specified market.
+    #[must_use]
     pub fn new(market: Market) -> Self {
         Self {
             market,
@@ -90,6 +91,7 @@ impl UnitedStates {
     }
 
     /// Determines if the given date is a business day for this calendar's market.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();

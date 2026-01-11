@@ -40,7 +40,8 @@ impl Period {
     /// assert_eq!(p.length(), 5);
     /// assert_eq!(p.units(), TimeUnit::Days);
     /// ```
-    pub fn new(length: i32, units: TimeUnit) -> Period {
+    #[must_use]
+    pub const fn new(length: i32, units: TimeUnit) -> Period {
         Period { length, units }
     }
 
@@ -60,7 +61,8 @@ impl Period {
     /// assert_eq!(p.length(), 1);
     /// assert_eq!(p.units(), TimeUnit::Years);
     /// ```
-    pub fn from_frequency(freq: Frequency) -> Option<Period> {
+    #[must_use]
+    pub const fn from_frequency(freq: Frequency) -> Option<Period> {
         match freq {
             Frequency::NoFrequency => Some(Self {
                 units: TimeUnit::Days,
@@ -103,7 +105,8 @@ impl Period {
     /// let p = Period::new(1, TimeUnit::Years);
     /// assert_eq!(p.frequency(), Frequency::Annual);
     /// ```
-    pub fn frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         let length = self.length.abs(); // assuming `length` is i32 or some integer type
 
         if length == 0 {
@@ -166,7 +169,7 @@ impl Period {
     /// assert_eq!(p.length(), 1);
     /// assert_eq!(p.units(), TimeUnit::Years);
     /// ```
-    pub fn normalize(&mut self) {
+    pub const fn normalize(&mut self) {
         if self.length == 0 {
             self.units = TimeUnit::Days;
         }
@@ -197,7 +200,8 @@ impl Period {
     /// let p = Period::new(5, TimeUnit::Days);
     /// assert_eq!(p.length(), 5);
     /// ```
-    pub fn length(&self) -> i32 {
+    #[must_use]
+    pub const fn length(&self) -> i32 {
         self.length
     }
 
@@ -210,7 +214,8 @@ impl Period {
     /// let p = Period::new(5, TimeUnit::Days);
     /// assert_eq!(p.units(), TimeUnit::Days);
     /// ```
-    pub fn units(&self) -> TimeUnit {
+    #[must_use]
+    pub const fn units(&self) -> TimeUnit {
         self.units
     }
 
@@ -224,7 +229,8 @@ impl Period {
     /// assert_eq!(p.length(), 0);
     /// assert_eq!(p.units(), TimeUnit::Days);
     /// ```
-    pub fn empty() -> Self {
+    #[must_use]
+    pub const fn empty() -> Self {
         Self {
             length: 0,
             units: TimeUnit::Days,
@@ -308,6 +314,7 @@ impl Period {
     /// let p = Period::new(6, TimeUnit::Months);
     /// assert_eq!(p.period_in_year(), 0.5);
     /// ```
+    #[must_use]
     pub fn period_in_year(&self) -> f64 {
         match self.units {
             TimeUnit::Years => self.length as f64,
@@ -646,7 +653,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 8);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -661,7 +669,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 - p2).expect("period subtraction should succeed");
+        let p3 = (p1 - p2)
+            .unwrap_or_else(|e| panic!("period subtraction should succeed: {e}"));
         assert_eq!(p3.length, 2);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -709,7 +718,8 @@ mod tests {
             length: 6,
             units: TimeUnit::Months,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -724,7 +734,8 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -739,7 +750,8 @@ mod tests {
             length: 1,
             units: TimeUnit::Weeks,
         };
-        let p3: Period = (p1 + p2).expect("period addition should succeed");
+        let p3: Period = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -754,7 +766,8 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        let p3 = (p1 + p2).expect("period addition should succeed");
+        let p3 = (p1 + p2)
+            .unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -800,15 +813,18 @@ mod tests {
 
     #[test]
     fn test_period_parsing() {
-        let p = Period::from_str("1Y").expect("period parsing should succeed");
+        let p = Period::from_str("1Y")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Years);
 
-        let p = Period::from_str("1M").expect("period parsing should succeed");
+        let p = Period::from_str("1M")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Months);
 
-        let p = Period::from_str("1Y1M").expect("period parsing should succeed");
+        let p = Period::from_str("1Y1M")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 13);
         assert_eq!(p.units(), TimeUnit::Months);
     }

@@ -33,7 +33,7 @@ struct TmpInstrument {
 
 impl TmpInstrument {
     #[must_use]
-    pub fn new(cashflows: Vec<Cashflow>) -> Self {
+    pub const fn new(cashflows: Vec<Cashflow>) -> Self {
         Self { cashflows }
     }
     pub fn set_rate_value(mut self, rate: f64) -> Self {
@@ -98,7 +98,7 @@ pub struct ParValueConstVisitor<'a> {
 impl<'a> ParValueConstVisitor<'a> {
     /// Creates a new `ParValueConstVisitor` with the given market data.
     #[must_use]
-    pub fn new(market_data: &'a [MarketData]) -> Self {
+    pub const fn new(market_data: &'a [MarketData]) -> Self {
         Self { market_data }
     }
 }
@@ -295,7 +295,8 @@ mod test {
 
     #[test]
     fn test_par_value_floating_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -354,7 +355,8 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_floating_rate() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -413,7 +415,8 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 

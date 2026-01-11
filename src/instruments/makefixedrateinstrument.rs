@@ -32,8 +32,8 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFixedRateInstrument
-/// MakeFixedRateInstrument is a builder for FixedRateInstrument. Uses the builder pattern.
+/// # `MakeFixedRateInstrument`
+/// `MakeFixedRateInstrument` is a builder for `FixedRateInstrument`. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
 pub struct MakeFixedRateInstrument {
@@ -63,8 +63,9 @@ pub struct MakeFixedRateInstrument {
 
 /// New, setters and getters
 impl MakeFixedRateInstrument {
-    /// Creates a new MakeFixedRateInstrument builder with default values.
-    pub fn new() -> MakeFixedRateInstrument {
+    /// Creates a new `MakeFixedRateInstrument` builder with default values.
+    #[must_use]
+    pub const fn new() -> MakeFixedRateInstrument {
         MakeFixedRateInstrument {
             start_date: None,
             end_date: None,
@@ -92,13 +93,15 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the issue date.
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> MakeFixedRateInstrument {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(
+    #[must_use]
+    pub const fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
     ) -> MakeFixedRateInstrument {
@@ -107,13 +110,15 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> MakeFixedRateInstrument {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
-    pub fn with_side(mut self, side: Side) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> MakeFixedRateInstrument {
         self.side = Some(side);
         self
     }
@@ -122,31 +127,36 @@ impl MakeFixedRateInstrument {
     ///
     /// ### Details
     /// Currently does not handle negative amounts.
-    pub fn with_notional(mut self, notional: f64) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> MakeFixedRateInstrument {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the instrument id.
+    #[must_use]
     pub fn with_id(mut self, id: Option<String>) -> MakeFixedRateInstrument {
         self.id = id;
         self
     }
 
     /// Sets the yield rate.
-    pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateInstrument {
         self.yield_rate = Some(yield_rate);
         self
     }
 
     /// Sets the calendar.
+    #[must_use]
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateInstrument {
         self.calendar = calendar;
         self
     }
 
     /// Sets the business day convention.
-    pub fn with_business_day_convention(
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
     ) -> MakeFixedRateInstrument {
@@ -155,7 +165,8 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the date generation rule.
-    pub fn with_date_generation_rule(
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
     ) -> MakeFixedRateInstrument {
@@ -164,6 +175,7 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the rate definition.
+    #[must_use]
     pub fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
@@ -193,6 +205,7 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the rate value.
+    #[must_use]
     pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateInstrument {
         self.rate_value = Some(rate_value);
         match self.rate {
@@ -219,18 +232,21 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> MakeFixedRateInstrument {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> MakeFixedRateInstrument {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the disbursements.
+    #[must_use]
     pub fn with_disbursements(
         mut self,
         disbursements: HashMap<Date, f64>,
@@ -240,12 +256,14 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the redemptions.
+    #[must_use]
     pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFixedRateInstrument {
         self.redemptions = Some(redemptions);
         self
     }
 
     /// Sets the additional coupon dates.
+    #[must_use]
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
@@ -255,63 +273,73 @@ impl MakeFixedRateInstrument {
     }
 
     /// Sets the rate.
-    pub fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateInstrument {
         self.rate = Some(rate);
         self
     }
 
     /// Sets the discount curve id.
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateInstrument {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeFixedRateInstrument {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateInstrument {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure to bullet.
-    pub fn bullet(mut self) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn bullet(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the structure to equal redemptions.
-    pub fn equal_redemptions(mut self) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn equal_redemptions(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the structure to zero.
-    pub fn zero(mut self) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn zero(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
     /// Sets the structure to equal payments.
-    pub fn equal_payments(mut self) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn equal_payments(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::EqualPayments);
         self
     }
 
     /// Sets the structure to other.
-    pub fn other(mut self) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn other(mut self) -> MakeFixedRateInstrument {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
     /// Sets the structure.
-    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateInstrument {
+    #[must_use]
+    pub const fn with_structure(mut self, structure: Structure) -> MakeFixedRateInstrument {
         self.structure = Some(structure);
         self
     }
@@ -325,6 +353,9 @@ impl Default for MakeFixedRateInstrument {
 
 impl MakeFixedRateInstrument {
     /// Builds and returns a FixedRateInstrument from the configured builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<FixedRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -958,7 +989,7 @@ fn calculate_equal_payment_redemptions(
     Ok(redemptions)
 }
 
-/// Implementations for FixedRateInstrument
+/// Implementations for `FixedRateInstrument`
 impl From<FixedRateInstrument> for MakeFixedRateInstrument {
     fn from(val: FixedRateInstrument) -> Self {
         let mut disbursements = HashMap::new();

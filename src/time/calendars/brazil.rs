@@ -27,6 +27,7 @@ pub struct Brazil {
 
 impl Brazil {
     /// Creates a new Brazil calendar with the specified market type.
+    #[must_use]
     pub fn new(market: Market) -> Self {
         Brazil {
             market,
@@ -39,51 +40,51 @@ impl Brazil {
         day == Weekday::Sat || day == Weekday::Sun
     }
 
-    fn is_new_years_day(day: u32, month: u32) -> bool {
+    const fn is_new_years_day(day: u32, month: u32) -> bool {
         day == 1 && month == 1
     }
 
-    fn is_sao_paulo_city_day(day: u32, month: u32) -> bool {
+    const fn is_sao_paulo_city_day(day: u32, month: u32) -> bool {
         day == 25 && month == 1
     }
 
-    fn is_tiradentes_day(day: u32, month: u32) -> bool {
+    const fn is_tiradentes_day(day: u32, month: u32) -> bool {
         day == 21 && month == 4
     }
 
-    fn is_labor_day(day: u32, month: u32) -> bool {
+    const fn is_labor_day(day: u32, month: u32) -> bool {
         day == 1 && month == 5
     }
 
-    fn is_revolution_day(day: u32, month: u32) -> bool {
+    const fn is_revolution_day(day: u32, month: u32) -> bool {
         day == 9 && month == 7
     }
 
-    fn is_independence_day(day: u32, month: u32) -> bool {
+    const fn is_independence_day(day: u32, month: u32) -> bool {
         day == 7 && month == 9
     }
 
-    fn is_nossa_senhora_aparecida_day(day: u32, month: u32) -> bool {
+    const fn is_nossa_senhora_aparecida_day(day: u32, month: u32) -> bool {
         day == 12 && month == 10
     }
 
-    fn is_all_souls_day(day: u32, month: u32) -> bool {
+    const fn is_all_souls_day(day: u32, month: u32) -> bool {
         day == 2 && month == 11
     }
 
-    fn is_republic_day(day: u32, month: u32) -> bool {
+    const fn is_republic_day(day: u32, month: u32) -> bool {
         day == 15 && month == 11
     }
 
-    fn is_black_consciousness_day(day: u32, month: u32, year: i32) -> bool {
+    const fn is_black_consciousness_day(day: u32, month: u32, year: i32) -> bool {
         day == 20 && month == 11 && year >= 2007
     }
 
-    fn is_christmas_eve(day: u32, month: u32) -> bool {
+    const fn is_christmas_eve(day: u32, month: u32) -> bool {
         day == 24 && month == 12
     }
 
-    fn is_christmas(day: u32, month: u32) -> bool {
+    const fn is_christmas(day: u32, month: u32) -> bool {
         day == 25 && month == 12
     }
 
@@ -114,6 +115,7 @@ impl Brazil {
     }
 
     /// Checks if the given date is a business day according to the calendar rules.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();

@@ -32,7 +32,8 @@ impl<'a> SimpleModel<'a> {
     ///
     /// # Returns
     /// A new `SimpleModel` instance with currency transformation disabled by default.
-    pub fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
+    #[must_use]
+    pub const fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
         SimpleModel {
             market_store,
             transform_currencies: false,
@@ -46,7 +47,8 @@ impl<'a> SimpleModel<'a> {
     ///
     /// # Returns
     /// The modified `SimpleModel` instance for method chaining.
-    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel<'a> {
+    #[must_use]
+    pub const fn with_transform_currencies(mut self, flag: bool) -> SimpleModel<'a> {
         self.transform_currencies = flag;
         self
     }

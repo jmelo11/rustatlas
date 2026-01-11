@@ -23,8 +23,9 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # OvernightIndex
-/// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
+/// # `OvernightIndex`
+/// Overnight index, used for overnight rates. Uses a price index (such as `ICP`) to calculate the
+/// overnight rates.
 #[derive(Clone)]
 pub struct OvernightIndex {
     name: Option<String>,
@@ -37,6 +38,7 @@ pub struct OvernightIndex {
 
 impl OvernightIndex {
     /// Creates a new `OvernightIndex` with the given reference date.
+    #[must_use]
     pub fn new(reference_date: Date) -> OvernightIndex {
         OvernightIndex {
             name: None,
@@ -49,23 +51,27 @@ impl OvernightIndex {
     }
 
     /// Sets the name of this overnight index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.name = name;
         self
     }
 
     /// Returns the rate definition of this overnight index.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Sets the rate definition for this overnight index.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
     }
 
     /// Sets the fixings for this overnight index.
+    #[must_use]
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
         self
@@ -78,6 +84,9 @@ impl OvernightIndex {
     }
 
     /// Calculates the average overnight rate between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required fixings or rate data are unavailable.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;

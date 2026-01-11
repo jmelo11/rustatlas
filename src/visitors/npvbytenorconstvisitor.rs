@@ -200,7 +200,8 @@ mod tests {
 
     #[test]
     fn test_npv_by_date_const_visitor() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let indexer = IndexingVisitor::new();
 
         let start_date = Date::new(2020, 1, 1);

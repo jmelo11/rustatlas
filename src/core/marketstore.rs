@@ -49,29 +49,29 @@ impl MarketStore {
 
     /// Returns the local currency of this market store.
     #[must_use]
-    pub fn local_currency(&self) -> Currency {
+    pub const fn local_currency(&self) -> Currency {
         self.local_currency
     }
 
     /// Returns a reference to the exchange rate store.
     #[must_use]
-    pub fn exchange_rate_store(&self) -> &ExchangeRateStore {
+    pub const fn exchange_rate_store(&self) -> &ExchangeRateStore {
         &self.exchange_rate_store
     }
 
     /// Returns a mutable reference to the exchange rate store.
-    pub fn mut_exchange_rate_store(&mut self) -> &mut ExchangeRateStore {
+    pub const fn mut_exchange_rate_store(&mut self) -> &mut ExchangeRateStore {
         &mut self.exchange_rate_store
     }
 
     /// Returns a reference to the index store.
     #[must_use]
-    pub fn index_store(&self) -> &IndexStore {
+    pub const fn index_store(&self) -> &IndexStore {
         &self.index_store
     }
 
     /// Returns a mutable reference to the index store.
-    pub fn mut_index_store(&mut self) -> &mut IndexStore {
+    pub const fn mut_index_store(&mut self) -> &mut IndexStore {
         &mut self.index_store
     }
 

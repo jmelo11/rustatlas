@@ -10,6 +10,7 @@ impl IMM {
     /// # Arguments
     /// * `date` - The date to check
     /// * `main_cycle` - If true, only checks main cycle months (3, 6, 9, 12)
+    #[must_use]
     pub fn is_imm_date(date: Date, main_cycle: bool) -> bool {
         if date.weekday() != Weekday::Wednesday {
             return false;
@@ -28,6 +29,7 @@ impl IMM {
     /// # Arguments
     /// * `in_` - The code string to validate (e.g., "F3")
     /// * `main_cycle` - If true, only validates main cycle codes
+    #[must_use]
     pub fn is_imm_code(in_: String, main_cycle: bool) -> bool {
         if in_.len() != 2 {
             return false;
@@ -53,6 +55,7 @@ impl IMM {
     ///
     /// # Panics
     /// Panics if the date is not a valid IMM date
+    #[must_use]
     pub fn code(imm_date: Date) -> String {
         if !IMM::is_imm_date(imm_date, false) {
             panic!("{} is not an IMM date", imm_date);
@@ -83,6 +86,7 @@ impl IMM {
     ///
     /// # Panics
     /// Panics if the reference date is empty or the code is invalid
+    #[must_use]
     pub fn date(imm_code: String, reference_date: Date) -> Date {
         if reference_date == Date::empty() {
             panic!("No reference date provided");
@@ -130,6 +134,7 @@ impl IMM {
     ///
     /// # Panics
     /// Panics if the reference date is empty
+    #[must_use]
     pub fn next_date(reference_date: Date, main_cycle: bool) -> Date {
         if reference_date == Date::empty() {
             panic!("No reference date provided");
@@ -161,6 +166,7 @@ impl IMM {
     /// * `imm_code` - The IMM code to start from
     /// * `main_cycle` - If true, only finds dates in main cycle months
     /// * `reference_date` - A reference date to resolve the code
+    #[must_use]
     pub fn next_date_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> Date {
         let imm_date = IMM::date(imm_code, reference_date);
         IMM::next_date(imm_date + 1, main_cycle)
@@ -171,6 +177,7 @@ impl IMM {
     /// # Arguments
     /// * `d` - The reference date
     /// * `main_cycle` - If true, only considers main cycle months
+    #[must_use]
     pub fn next_code(d: Date, main_cycle: bool) -> String {
         let next = IMM::next_date(d, main_cycle);
         IMM::code(next)
@@ -182,6 +189,7 @@ impl IMM {
     /// * `imm_code` - The current IMM code
     /// * `main_cycle` - If true, only considers main cycle months
     /// * `reference_date` - A reference date to resolve the code
+    #[must_use]
     pub fn next_code_with_code(imm_code: String, main_cycle: bool, reference_date: Date) -> String {
         let imm_date = IMM::date(imm_code, reference_date);
         let next = IMM::next_date(imm_date, main_cycle);

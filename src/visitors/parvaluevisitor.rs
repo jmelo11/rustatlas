@@ -92,7 +92,7 @@ pub struct ParValueConstVisitor<'a> {
 impl<'a> ParValueConstVisitor<'a> {
     /// Creates a new `ParValueConstVisitor` with the given market data.
     #[must_use]
-    pub fn new(market_data: &'a [MarketData]) -> Self {
+    pub const fn new(market_data: &'a [MarketData]) -> Self {
         Self { market_data }
     }
 }

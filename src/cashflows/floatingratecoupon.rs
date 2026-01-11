@@ -47,6 +47,7 @@ pub struct FloatingRateCoupon {
 
 impl FloatingRateCoupon {
     /// Creates a new floating rate coupon with the specified parameters.
+    #[must_use]
     pub fn new(
         notional: f64,
         spread: f64,
@@ -72,13 +73,15 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the discount curve ID and returns the modified coupon.
+    #[must_use]
     pub fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow = self.cashflow.with_discount_curve_id(id);
         self
     }
 
     /// Sets the forecast curve ID and returns the modified coupon.
-    pub fn with_forecast_curve_id(mut self, id: usize) -> Self {
+    #[must_use]
+    pub const fn with_forecast_curve_id(mut self, id: usize) -> Self {
         self.forecast_curve_id = Some(id);
         self
     }
@@ -89,7 +92,7 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the forecast curve ID.
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
+    pub const fn set_forecast_curve_id(&mut self, id: usize) {
         self.forecast_curve_id = Some(id);
     }
 
@@ -103,27 +106,31 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the notional amount.
-    pub fn set_notional(&mut self, notional: f64) {
+    pub const fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
     }
 
     /// Returns the notional amount.
-    pub fn notional(&self) -> f64 {
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
     /// Returns the spread.
-    pub fn spread(&self) -> f64 {
+    #[must_use]
+    pub const fn spread(&self) -> f64 {
         self.spread
     }
 
     /// Returns the rate definition.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Returns the fixing date, or the accrual start date if no fixing date is set.
-    pub fn fixing_date(&self) -> Date {
+    #[must_use]
+    pub const fn fixing_date(&self) -> Date {
         match self.fixing_date {
             Some(date) => date,
             None => self.accrual_start_date,
@@ -131,7 +138,8 @@ impl FloatingRateCoupon {
     }
 
     /// Returns the fixing rate if set.
-    pub fn fixing_rate(&self) -> Option<f64> {
+    #[must_use]
+    pub const fn fixing_rate(&self) -> Option<f64> {
         self.fixing_rate
     }
 }

@@ -17,7 +17,7 @@ use super::{
     makefloatingrateleg::MakeFloatingRateLeg, swap::Swap, traits::Structure,
 };
 
-/// A builder for creating a Swap instrument with two customized legs.
+/// A builder for creating a `Swap` instrument with two customized legs.
 pub struct MakeSwap {
     first_leg_rate_type: Option<RateType>,
     first_leg_rate_value: Option<f64>,
@@ -63,8 +63,9 @@ pub struct MakeSwap {
 }
 
 impl MakeSwap {
-    /// Creates a new MakeSwap builder with default values.
-    pub fn new() -> Self {
+    /// Creates a new `MakeSwap` builder with default values.
+    #[must_use]
+    pub const fn new() -> Self {
         MakeSwap {
             first_leg_rate_type: None,
             first_leg_rate_value: None,
@@ -111,7 +112,8 @@ impl MakeSwap {
     }
 
     /// Sets the date generation rule for the first leg.
-    pub fn with_first_leg_date_generation_rule(
+    #[must_use]
+    pub const fn with_first_leg_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
     ) -> Self {
@@ -120,7 +122,8 @@ impl MakeSwap {
     }
 
     /// Sets the date generation rule for the second leg.
-    pub fn with_second_leg_date_generation_rule(
+    #[must_use]
+    pub const fn with_second_leg_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
     ) -> Self {
@@ -129,49 +132,57 @@ impl MakeSwap {
     }
 
     /// Sets the notional for the first leg.
-    pub fn with_first_leg_notional(mut self, notional: f64) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_notional(mut self, notional: f64) -> Self {
         self.first_leg_notional = Some(notional);
         self
     }
 
     /// Sets the notional for the second leg.
-    pub fn with_second_leg_notional(mut self, notional: f64) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_notional(mut self, notional: f64) -> Self {
         self.second_leg_notional = Some(notional);
         self
     }
 
     /// Sets the start date for the first leg.
-    pub fn with_first_leg_start_date(mut self, start_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_start_date(mut self, start_date: Date) -> Self {
         self.first_leg_start_date = Some(start_date);
         self
     }
 
     /// Sets the end date for the first leg.
-    pub fn with_first_leg_end_date(mut self, end_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_end_date(mut self, end_date: Date) -> Self {
         self.first_leg_end_date = Some(end_date);
         self
     }
 
     /// Sets the start date for the second leg.
-    pub fn with_second_leg_start_date(mut self, start_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_start_date(mut self, start_date: Date) -> Self {
         self.second_leg_start_date = Some(start_date);
         self
     }
 
     /// Sets the end date for the second leg.
-    pub fn with_second_leg_end_date(mut self, end_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_end_date(mut self, end_date: Date) -> Self {
         self.second_leg_end_date = Some(end_date);
         self
     }
 
     /// Sets the calendar for the first leg.
+    #[must_use]
     pub fn with_first_leg_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.first_leg_calendar = calendar;
         self
     }
 
     /// Sets the business day convention for the first leg.
-    pub fn with_first_leg_business_day_convention(
+    #[must_use]
+    pub const fn with_first_leg_business_day_convention(
         mut self,
         convention: Option<BusinessDayConvention>,
     ) -> Self {
@@ -180,19 +191,22 @@ impl MakeSwap {
     }
 
     /// Sets the end of month flag for the first leg.
-    pub fn with_first_leg_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
         self.first_leg_end_of_month = end_of_month;
         self
     }
 
     /// Sets the calendar for the second leg.
+    #[must_use]
     pub fn with_second_leg_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.second_leg_calendar = calendar;
         self
     }
 
     /// Sets the business day convention for the second leg.
-    pub fn with_second_leg_business_day_convention(
+    #[must_use]
+    pub const fn with_second_leg_business_day_convention(
         mut self,
         convention: Option<BusinessDayConvention>,
     ) -> Self {
@@ -201,162 +215,191 @@ impl MakeSwap {
     }
 
     /// Sets the end of month flag for the second leg.
-    pub fn with_second_leg_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
         self.second_leg_end_of_month = end_of_month;
         self
     }
 
     /// Sets additional coupon dates for the second leg.
+    #[must_use]
     pub fn with_second_leg_additional_coupon_dates(mut self, dates: HashSet<Date>) -> Self {
         self.second_leg_additional_coupon_dates = Some(dates);
         self
     }
 
     /// Sets disbursements for the first leg.
+    #[must_use]
     pub fn with_first_leg_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
         self.first_leg_disbursements = Some(disbursements);
         self
     }
 
     /// Sets redemptions for the first leg.
+    #[must_use]
     pub fn with_first_leg_redemptions(mut self, redemptions: HashMap<Date, f64>) -> Self {
         self.first_leg_redemptions = Some(redemptions);
         self
     }
 
     /// Sets additional coupon dates for the first leg.
+    #[must_use]
     pub fn with_first_leg_additional_coupon_dates(mut self, dates: HashSet<Date>) -> Self {
         self.first_leg_additional_coupon_dates = Some(dates);
         self
     }
 
     /// Sets disbursements for the second leg.
+    #[must_use]
     pub fn with_second_leg_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
         self.second_leg_disbursements = Some(disbursements);
         self
     }
 
     /// Sets redemptions for the second leg.
+    #[must_use]
     pub fn with_second_leg_redemptions(mut self, redemptions: HashMap<Date, f64>) -> Self {
         self.second_leg_redemptions = Some(redemptions);
         self
     }
 
     /// Sets the rate type for the first leg.
-    pub fn with_first_leg_rate_type(mut self, rate_type: RateType) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_rate_type(mut self, rate_type: RateType) -> Self {
         self.first_leg_rate_type = Some(rate_type);
         self
     }
 
     /// Sets the rate value for the first leg.
-    pub fn with_first_leg_rate_value(mut self, rate_value: f64) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_rate_value(mut self, rate_value: f64) -> Self {
         self.first_leg_rate_value = Some(rate_value);
         self
     }
 
     /// Sets the payment frequency for the first leg.
-    pub fn with_first_leg_payment_frequency(mut self, frequency: Frequency) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.first_leg_payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the rate definition for the first leg.
-    pub fn with_first_leg_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.first_leg_rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the currency for the first leg.
-    pub fn with_first_leg_currency(mut self, currency: Currency) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_currency(mut self, currency: Currency) -> Self {
         self.first_leg_currency = Some(currency);
         self
     }
 
     /// Sets the side for the first leg.
-    pub fn with_first_leg_side(mut self, side: Side) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_side(mut self, side: Side) -> Self {
         self.first_leg_side = Some(side);
         self
     }
 
     /// Sets the discount curve ID for the first leg.
-    pub fn with_first_leg_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.first_leg_discount_curve_id = curve_id;
         self
     }
 
     /// Sets the forecast curve ID for the first leg.
-    pub fn with_first_leg_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.first_leg_forecast_curve_id = curve_id;
         self
     }
 
     /// Sets the rate type for the second leg.
-    pub fn with_second_leg_rate_type(mut self, rate_type: RateType) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_rate_type(mut self, rate_type: RateType) -> Self {
         self.second_leg_rate_type = Some(rate_type);
         self
     }
 
     /// Sets the rate value for the second leg.
-    pub fn with_second_leg_rate_value(mut self, rate_value: f64) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_rate_value(mut self, rate_value: f64) -> Self {
         self.second_leg_rate_value = Some(rate_value);
         self
     }
 
     /// Sets the rate definition for the second leg.
-    pub fn with_second_leg_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.second_leg_rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the currency for the second leg.
-    pub fn with_second_leg_currency(mut self, currency: Currency) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_currency(mut self, currency: Currency) -> Self {
         self.second_leg_currency = Some(currency);
         self
     }
 
     /// Sets the side for the second leg.
-    pub fn with_second_leg_side(mut self, side: Side) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_side(mut self, side: Side) -> Self {
         self.second_leg_side = Some(side);
         self
     }
 
     /// Sets the discount curve ID for the second leg.
-    pub fn with_second_leg_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.second_leg_discount_curve_id = curve_id;
         self
     }
 
     /// Sets the forecast curve ID for the second leg.
-    pub fn with_second_leg_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.second_leg_forecast_curve_id = curve_id;
         self
     }
 
     /// Sets the identifier for the instrument.
+    #[must_use]
     pub fn with_id(mut self, id: String) -> Self {
         self.id = Some(id);
         self
     }
 
     /// Sets the structure for the first leg.
-    pub fn with_first_leg_structure(mut self, structure: Structure) -> Self {
+    #[must_use]
+    pub const fn with_first_leg_structure(mut self, structure: Structure) -> Self {
         self.first_leg_structure = Some(structure);
         self
     }
 
     /// Sets the structure for the second leg.
-    pub fn with_second_leg_structure(mut self, structure: Structure) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_structure(mut self, structure: Structure) -> Self {
         self.second_leg_structure = Some(structure);
         self
     }
 
     /// Sets the payment frequency for the second leg.
-    pub fn with_second_leg_payment_frequency(mut self, frequency: Frequency) -> Self {
+    #[must_use]
+    pub const fn with_second_leg_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.second_leg_payment_frequency = Some(frequency);
         self
     }
 
     /// Builds the Swap instrument from the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Swap> {
         let first_rate_type = self
             .first_leg_rate_type
@@ -738,9 +781,10 @@ impl Default for MakeSwap {
     }
 }
 
-/// MakeFixFloatSwap
+/// # `MakeFixFloatSwap`
 ///
-/// Simplified version of the MakeSwap struct that only allows for a fixed and floating leg, with same notional, start and end dates and currency.
+/// Simplified version of the `MakeSwap` struct that only allows for a fixed and floating leg, with
+/// the same notional, start and end dates, and currency.
 pub struct MakeFixFloatSwap {
     rate_value: Option<f64>,
     rate_definition: Option<RateDefinition>,
@@ -758,8 +802,9 @@ pub struct MakeFixFloatSwap {
 }
 
 impl MakeFixFloatSwap {
-    /// Creates a new MakeFixFloatSwap builder with default values.
-    pub fn new() -> Self {
+    /// Creates a new `MakeFixFloatSwap` builder with default values.
+    #[must_use]
+    pub const fn new() -> Self {
         MakeFixFloatSwap {
             rate_value: None,
             rate_definition: None,
@@ -778,67 +823,78 @@ impl MakeFixFloatSwap {
     }
 
     /// Sets the fixed rate value.
-    pub fn with_rate_value(mut self, rate_value: f64) -> Self {
+    #[must_use]
+    pub const fn with_rate_value(mut self, rate_value: f64) -> Self {
         self.rate_value = Some(rate_value);
         self
     }
 
     /// Sets the rate definition.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> Self {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side for the fixed leg.
-    pub fn with_fix_leg_side(mut self, side: Side) -> Self {
+    #[must_use]
+    pub const fn with_fix_leg_side(mut self, side: Side) -> Self {
         self.fix_leg_side = Some(side);
         self
     }
 
     /// Sets the discount curve ID.
-    pub fn with_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.discount_curve_id = curve_id;
         self
     }
 
     /// Sets the forecast curve ID.
-    pub fn with_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
+    #[must_use]
+    pub const fn with_forecast_curve_id(mut self, curve_id: Option<usize>) -> Self {
         self.forecast_curve_id = curve_id;
         self
     }
 
     /// Sets the notional amount.
-    pub fn with_notional(mut self, notional: f64) -> Self {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> Self {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the calendar.
+    #[must_use]
     pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.calendar = calendar;
         self
     }
 
     /// Sets the business day convention.
-    pub fn with_business_day_convention(
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         convention: Option<BusinessDayConvention>,
     ) -> Self {
@@ -847,7 +903,8 @@ impl MakeFixFloatSwap {
     }
 
     /// Sets the date generation rule.
-    pub fn with_date_generation_rule(
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
     ) -> Self {
@@ -856,12 +913,16 @@ impl MakeFixFloatSwap {
     }
 
     /// Sets the identifier.
+    #[must_use]
     pub fn with_id(mut self, id: String) -> Self {
         self.id = Some(id);
         self
     }
 
     /// Builds the fixed-floating Swap instrument.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
     pub fn build(self) -> Result<Swap> {
         let rate_value = self
             .rate_value

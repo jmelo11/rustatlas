@@ -15,6 +15,7 @@ use std::collections::HashSet;
 /// # Returns
 ///
 /// The day of year (1-366) for Easter Monday in the given year
+#[must_use]
 pub fn easter_monday(y: i32) -> i32 {
     let easter_monday = vec![
         98, 90, 103, 95, 114, 106, 91, 111, 102, // 1901-1909

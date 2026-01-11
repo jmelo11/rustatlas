@@ -85,6 +85,7 @@ impl From<CashflowType> for String {
 }
 
 /// Infer cashflows from amounts to handle negative amounts and sides.
+#[must_use]
 pub fn infer_cashflows_from_amounts(
     dates: &[Date],
     amounts: &[f64],
@@ -131,6 +132,7 @@ pub fn add_cashflows_to_vec(
 }
 
 /// Calculate the notionals for a given structure
+#[must_use]
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
     match structure {
         Structure::Bullet => vec![notional; n],
@@ -150,6 +152,7 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
 }
 
 /// Calculate the outstanding amounts for a given set of disbursements and redemptions
+#[must_use]
 pub fn calculate_outstanding(
     disbursements: &HashMap<Date, f64>,
     redemptions: &HashMap<Date, f64>,

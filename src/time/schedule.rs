@@ -87,7 +87,8 @@ pub struct Schedule {
 
 impl Schedule {
     /// Creates a new `Schedule` with the specified parameters.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         tenor: Period,
         calendar: Calendar,
         convention: BusinessDayConvention,
@@ -114,6 +115,7 @@ impl Schedule {
     }
 
     /// Creates an empty `Schedule` with default values.
+    #[must_use]
     pub fn empty() -> Schedule {
         Schedule {
             tenor: Period::empty(),
@@ -130,52 +132,62 @@ impl Schedule {
     }
 
     /// Returns a reference to the dates of the schedule.
-    pub fn dates(&self) -> &Vec<Date> {
+    #[must_use]
+    pub const fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
     /// Returns a reference to the regularity vector of the schedule.
-    pub fn is_regular(&self) -> &Vec<bool> {
+    #[must_use]
+    pub const fn is_regular(&self) -> &Vec<bool> {
         &self.is_regular
     }
 
     /// Returns the tenor of the schedule.
-    pub fn tenor(&self) -> Period {
+    #[must_use]
+    pub const fn tenor(&self) -> Period {
         self.tenor
     }
 
     /// Returns the calendar of the schedule.
+    #[must_use]
     pub fn calendar(&self) -> Calendar {
         self.calendar.clone()
     }
 
     /// Returns the business day convention of the schedule.
-    pub fn convention(&self) -> BusinessDayConvention {
+    #[must_use]
+    pub const fn convention(&self) -> BusinessDayConvention {
         self.convention
     }
 
     /// Returns the termination date convention of the schedule.
-    pub fn termination_date_convention(&self) -> BusinessDayConvention {
+    #[must_use]
+    pub const fn termination_date_convention(&self) -> BusinessDayConvention {
         self.termination_date_convention
     }
 
     /// Returns the date generation rule of the schedule.
-    pub fn rule(&self) -> DateGenerationRule {
+    #[must_use]
+    pub const fn rule(&self) -> DateGenerationRule {
         self.rule
     }
 
     /// Returns the end of month flag of the schedule.
-    pub fn end_of_month(&self) -> bool {
+    #[must_use]
+    pub const fn end_of_month(&self) -> bool {
         self.end_of_month
     }
 
     /// Returns the first date of the schedule.
-    pub fn first_date(&self) -> Date {
+    #[must_use]
+    pub const fn first_date(&self) -> Date {
         self.first_date
     }
 
     /// Returns the next to last date of the schedule.
-    pub fn next_to_last_date(&self) -> Date {
+    #[must_use]
+    pub const fn next_to_last_date(&self) -> Date {
         self.next_to_last_date
     }
 }
@@ -223,6 +235,7 @@ pub struct MakeSchedule {
 /// Constructor, setters and getters
 impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
+    #[must_use]
     pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
@@ -241,31 +254,37 @@ impl MakeSchedule {
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
         self.tenor = tenor;
         self
     }
 
     /// Sets the frequency.
+    #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
-        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self.tenor = Period::from_frequency(frequency)
+            .unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 
     /// Sets the calendar.
+    #[must_use]
     pub fn with_calendar(mut self, calendar: Calendar) -> MakeSchedule {
         self.calendar = calendar;
         self
     }
 
     /// Sets the convention. weekday correccions are applied.
-    pub fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
+    #[must_use]
+    pub const fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
         self
     }
 
     /// Sets the termination date convention.
-    pub fn with_termination_date_convention(
+    #[must_use]
+    pub const fn with_termination_date_convention(
         mut self,
         termination_date_convention: BusinessDayConvention,
     ) -> MakeSchedule {
@@ -274,37 +293,43 @@ impl MakeSchedule {
     }
 
     /// Sets the rule.
-    pub fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
+    #[must_use]
+    pub const fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
         self.rule = rule;
         self
     }
 
     /// Sets the end of month flag.
-    pub fn forwards(mut self) -> MakeSchedule {
+    #[must_use]
+    pub const fn forwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Forward;
         self
     }
 
     /// Sets the date generation rule to backward.
-    pub fn backwards(mut self) -> MakeSchedule {
+    #[must_use]
+    pub const fn backwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Backward;
         self
     }
 
     /// Sets the end of month flag.
-    pub fn end_of_month(mut self, flag: bool) -> MakeSchedule {
+    #[must_use]
+    pub const fn end_of_month(mut self, flag: bool) -> MakeSchedule {
         self.end_of_month = flag;
         self
     }
 
     /// Sets the first date.
-    pub fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
+    #[must_use]
+    pub const fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
         self.first_date = first_date;
         self
     }
 
     /// Sets the next to last date.
-    pub fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
+    #[must_use]
+    pub const fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
         self.next_to_last_date = next_to_last_date;
         self
     }
@@ -1064,7 +1089,7 @@ mod tests {
             .with_tenor(tenor)
             .with_first_date(first_date)
             .build()
-            .expect("schedule build should succeed");
+            .unwrap_or_else(|e| panic!("schedule build should succeed: {e}"));
         let dates = schedule.dates();
         assert_eq!(dates[0], from);
         assert_eq!(dates[1], first_date);

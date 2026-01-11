@@ -20,14 +20,15 @@ pub struct NPVConstVisitor<'a> {
 
 impl<'a> NPVConstVisitor<'a> {
     /// Creates a new `NPVConstVisitor` with the given market data and flag.
-    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
+    #[must_use]
+    pub const fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data,
             include_today_cashflows,
         }
     }
     /// Sets whether to include cashflows with payment date equal to the reference date.
-    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
+    pub const fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 }
@@ -177,7 +178,8 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -218,7 +220,8 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -258,7 +261,8 @@ mod tests {
 
     #[test]
     fn test_npv_floating_bullet() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -302,7 +306,8 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -349,7 +354,8 @@ mod tests {
 
     #[test]
     fn generator_tests() -> Result<()> {
-        let market_store = create_store().expect("market store creation should succeed");
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -377,30 +383,31 @@ mod tests {
                     .with_discount_curve_id(Some(2))
                     .with_notional(notional)
                     .build()
-                    .expect("instrument build should succeed")
+                    .unwrap_or_else(|e| panic!("instrument build should succeed: {e}"))
             })
             .collect(); // Collect the results into a Vec<_>
 
         fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store().expect("market store creation should succeed");
+            let store =
+                create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
             let mut npv = 0.0;
             let indexer = IndexingVisitor::new();
             for inst in instruments.iter_mut() {
                 indexer
                     .visit(inst)
-                    .expect("indexing visit should succeed");
+                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
             }
 
             let model = SimpleModel::new(&store);
             let data = model
                 .gen_market_data(&indexer.request())
-                .expect("market data generation should succeed");
+                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
 
             let npv_visitor = NPVConstVisitor::new(&data, true);
             for inst in instruments.iter() {
                 npv += npv_visitor
                     .visit(inst)
-                    .expect("npv visit should succeed");
+                    .unwrap_or_else(|e| panic!("npv visit should succeed: {e}"));
             }
             npv
         }

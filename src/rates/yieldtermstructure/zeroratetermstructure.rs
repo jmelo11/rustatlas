@@ -109,27 +109,32 @@ impl ZeroRateTermStructure {
     }
 
     /// Returns a reference to the vector of dates.
-    pub fn dates(&self) -> &Vec<Date> {
+    #[must_use]
+    pub const fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
     /// Returns a reference to the vector of zero rates.
-    pub fn rates(&self) -> &Vec<f64> {
+    #[must_use]
+    pub const fn rates(&self) -> &Vec<f64> {
         &self.rates
     }
 
     /// Returns the rate definition used by this term structure.
-    pub fn rate_definition(&self) -> RateDefinition {
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
     /// Returns whether extrapolation is enabled for this term structure.
-    pub fn enable_extrapolation(&self) -> bool {
+    #[must_use]
+    pub const fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
     /// Returns the interpolator used by this term structure.
-    pub fn interpolator(&self) -> Interpolator {
+    #[must_use]
+    pub const fn interpolator(&self) -> Interpolator {
         self.interpolator
     }
 }

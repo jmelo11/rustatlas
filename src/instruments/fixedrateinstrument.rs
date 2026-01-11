@@ -43,7 +43,8 @@ pub struct FixedRateInstrument {
 
 impl FixedRateInstrument {
     /// Creates a new `FixedRateInstrument` with the specified parameters.
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         start_date: Date,
         end_date: Date,
         notional: f64,
@@ -76,56 +77,67 @@ impl FixedRateInstrument {
     }
 
     /// Returns the identifier of this instrument.
+    #[must_use]
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
     /// Returns the start date of this instrument.
-    pub fn start_date(&self) -> Date {
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
     /// Returns the end date (maturity) of this instrument.
-    pub fn end_date(&self) -> Date {
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
     /// Returns the notional amount of this instrument.
-    pub fn notional(&self) -> f64 {
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
     /// Returns the fixed interest rate of this instrument.
-    pub fn rate(&self) -> InterestRate {
+    #[must_use]
+    pub const fn rate(&self) -> InterestRate {
         self.rate
     }
 
     /// Returns the structure of this instrument.
-    pub fn structure(&self) -> Structure {
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
     /// Returns the payment frequency of this instrument.
-    pub fn payment_frequency(&self) -> Frequency {
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
     /// Returns the identifier of the discount curve used for valuation.
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
     /// Returns the side (pay or receive) of this instrument.
-    pub fn side(&self) -> Side {
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
     /// Returns the issue date of this instrument.
-    pub fn issue_date(&self) -> Option<Date> {
+    #[must_use]
+    pub const fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
     /// Sets the discount curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self.mut_cashflows()
@@ -136,6 +148,7 @@ impl FixedRateInstrument {
     }
 
     /// Sets the interest rate and updates all fixed rate coupons.
+    #[must_use]
     pub fn set_rate(mut self, rate: InterestRate) -> Self {
         self.rate = rate;
         self.mut_cashflows().iter_mut().for_each(|cf| {
@@ -162,6 +175,9 @@ pub trait BondAccrual: HasCashflows {
     fn yield_rate(&self) -> Option<InterestRate>;
 
     /// Calculates the accrued amount for a bond between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required rate data is missing to discount cashflows.
     fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let ini_pv = self.discounted_cashflows(start_date)?;
         let end_pv = self.discounted_cashflows(end_date)?;
@@ -176,6 +192,9 @@ pub trait BondAccrual: HasCashflows {
     }
 
     /// Calculates the accrual of cash paid between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if underlying cashflow data is unavailable.
     fn matured_amount_accrual(&self, from: Date, to: Date) -> Result<f64> {
         // let rate = self
         //     .yield_rate()
@@ -196,6 +215,9 @@ pub trait BondAccrual: HasCashflows {
     }
 
     /// Calculates the present value of cashflows from the evaluation date forward using the yield rate.
+    ///
+    /// # Errors
+    /// Returns an error if a yield rate is not available to discount cashflows.
     fn discounted_cashflows(&self, evaluation_date: Date) -> Result<f64> {
         let rate = self
             .yield_rate()

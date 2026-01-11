@@ -13,10 +13,13 @@ use crate::{
     utils::errors::Result,
 };
 
-/// # FixingProvider
+/// # `FixingProvider`
 /// Implement this trait for a struct that provides fixing information.
 pub trait FixingProvider {
     /// Returns the fixing rate for a given date.
+    ///
+    /// # Errors
+    /// Returns an error if the fixing is unavailable for the requested date.
     fn fixing(&self, date: Date) -> Result<f64>;
     /// Returns a reference to the map of all fixings.
     fn fixings(&self) -> &HashMap<Date, f64>;
@@ -77,44 +80,56 @@ pub trait FixingProvider {
 //     }
 // }
 
-/// # AdvanceInterestRateIndexInTime
+/// # `AdvanceInterestRateIndexInTime`
 /// Trait for advancing in time a given object. Returns a represation of the object
 /// as it would be after the given period/time.
 pub trait AdvanceInterestRateIndexInTime {
     /// Advances the index to a given period.
+    ///
+    /// # Errors
+    /// Returns an error if the index cannot be advanced.
     fn advance_to_period(&self, period: Period) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>>;
     /// Advances the index to a given date.
+    ///
+    /// # Errors
+    /// Returns an error if the index cannot be advanced.
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>>;
 }
-/// # HasTenor
+/// # `HasTenor`
 /// Implement this trait for a struct that holds a tenor.
 pub trait HasTenor {
     /// Returns the tenor of the interest rate index.
     fn tenor(&self) -> Period;
 }
 
-/// # HasTermStructure
+/// # `HasTermStructure`
 /// Implement this trait for a struct that holds a term structure.
 pub trait HasTermStructure {
     /// Returns the yield term structure associated with the index.
+    ///
+    /// # Errors
+    /// Returns an error if the term structure is unavailable.
     fn term_structure(&self) -> Result<Arc<dyn YieldTermStructureTrait>>;
 }
 
-/// # HasName
+/// # `HasName`
 /// Implement this trait for a struct that holds a name.
 pub trait HasName {
     /// Returns the name of the interest rate index.
+    ///
+    /// # Errors
+    /// Returns an error if the name is unavailable.
     fn name(&self) -> Result<String>;
 }
 
-/// # RelinkableTermStructure
+/// # `RelinkableTermStructure`
 /// Allows to link a term structure to another.
 pub trait RelinkableTermStructure {
     /// Links the index to a new yield term structure.
     fn link_to(&mut self, term_structure: Arc<dyn YieldTermStructureTrait>);
 }
 
-/// # InterestRateIndexTrait
+/// # `InterestRateIndexTrait`
 /// Implement this trait for a struct that holds interest rate index information.
 pub trait InterestRateIndexTrait:
     FixingProvider
