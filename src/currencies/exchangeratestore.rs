@@ -106,8 +106,7 @@ impl ExchangeRateStore {
             }
         }
         Err(AtlasError::NotFoundErr(format!(
-            "No exchange rate found between {:?} and {:?}",
-            first_ccy, second_ccy
+            "No exchange rate found between {first_ccy:?} and {second_ccy:?}"
         )))
     }
 }

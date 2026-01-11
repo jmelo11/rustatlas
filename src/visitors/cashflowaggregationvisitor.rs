@@ -91,9 +91,8 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowsAggregatorConstVisitor {
                 if let Some(currency) = self.validation_currency {
                     if cf.currency()? != currency {
                         return Err(AtlasError::InvalidValueErr(format!(
-                            "Cashflow currency {:?} does not match visitor currency {:?}",
-                            cf.currency()?,
-                            currency
+                            "Cashflow currency {cashflow_currency:?} does not match visitor currency {currency:?}",
+                            cashflow_currency = cf.currency()?
                         )));
                     }
                 }

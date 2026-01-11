@@ -72,9 +72,8 @@ impl YieldProvider for FlatForwardTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {:?} is before reference date {:?}",
-                date,
-                self.reference_date()
+                "Date {date:?} is before reference date {reference_date:?}",
+                reference_date = self.reference_date()
             )));
         }
         Ok(self.rate.discount_factor(self.reference_date(), date))

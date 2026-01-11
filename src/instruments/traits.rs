@@ -37,8 +37,7 @@ impl TryFrom<String> for Structure {
             "EqualPayments" => Ok(Self::EqualPayments),
             "Other" => Ok(Self::Other),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid structure: {}",
-                s
+                "Invalid structure: {s}"
             ))),
         }
     }
@@ -66,8 +65,7 @@ impl TryFrom<String> for CashflowType {
             "FixedRateCoupon" => Ok(Self::FixedRateCoupon),
             "FloatingRateCoupon" => Ok(Self::FloatingRateCoupon),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid cashflow type: {}",
-                s
+                "Invalid cashflow type: {s}"
             ))),
         }
     }

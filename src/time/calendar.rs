@@ -69,7 +69,7 @@ impl<'de> serde::Deserialize<'de> for Calendar {
             "UnitedStates" => Ok(Self::UnitedStates(UnitedStates::default())),
             "Brazil" => Ok(Self::Brazil(Brazil::default())),
             "Chile" => Ok(Self::Chile(Chile::default())),
-            _ => Err(serde::de::Error::custom(format!("Invalid calendar: {}", s))),
+            _ => Err(serde::de::Error::custom(format!("Invalid calendar: {s}"))),
         }
     }
 }
@@ -86,8 +86,7 @@ impl TryFrom<String> for Calendar {
             "Brazil" => Ok(Self::Brazil(Brazil::default())),
             "Chile" => Ok(Self::Chile(Chile::default())),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid calendar: {}",
-                s
+                "Invalid calendar: {s}"
             ))),
         }
     }

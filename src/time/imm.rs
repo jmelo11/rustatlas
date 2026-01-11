@@ -58,22 +58,22 @@ impl IMM {
     #[must_use]
     pub fn code(imm_date: Date) -> String {
         if !Self::is_imm_date(imm_date, false) {
-            panic!("{} is not an IMM date", imm_date);
+            panic!("{imm_date} is not an IMM date");
         }
         let y = imm_date.year() % 10;
         match imm_date.month() {
-            1 => format!("F{}", y),
-            2 => format!("G{}", y),
-            3 => format!("H{}", y),
-            4 => format!("J{}", y),
-            5 => format!("K{}", y),
-            6 => format!("M{}", y),
-            7 => format!("N{}", y),
-            8 => format!("Q{}", y),
-            9 => format!("U{}", y),
-            10 => format!("V{}", y),
-            11 => format!("X{}", y),
-            12 => format!("Z{}", y),
+            1 => format!("F{y}"),
+            2 => format!("G{y}"),
+            3 => format!("H{y}"),
+            4 => format!("J{y}"),
+            5 => format!("K{y}"),
+            6 => format!("M{y}"),
+            7 => format!("N{y}"),
+            8 => format!("Q{y}"),
+            9 => format!("U{y}"),
+            10 => format!("V{y}"),
+            11 => format!("X{y}"),
+            12 => format!("Z{y}"),
             _ => panic!("Invalid month number"),
         }
     }

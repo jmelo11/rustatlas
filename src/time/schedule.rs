@@ -348,8 +348,8 @@ impl MakeSchedule {
     pub fn build(&mut self) -> Result<Schedule> {
         if self.tenor.length() < 0 {
             return Err(AtlasError::MakeScheduleErr(format!(
-                "non positive tenor ({})",
-                self.tenor.length()
+                "non positive tenor ({tenor_length})",
+                tenor_length = self.tenor.length()
             )));
         }
         if self.tenor.length() == 0 {

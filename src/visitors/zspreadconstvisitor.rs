@@ -59,8 +59,7 @@ where
             .market_data
             .get(id)
             .ok_or(AtlasError::NotFoundErr(format!(
-                "Market data for cashflow with id {}",
-                id
+                "Market data for cashflow with id {id}"
             )))?;
 
         let t = self

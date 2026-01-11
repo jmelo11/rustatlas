@@ -67,8 +67,7 @@ impl TryFrom<String> for DayCounter {
             "ActualActual" => Ok(Self::ActualActual),
             "Business252" => Ok(Self::Business252),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid day counter: {}",
-                s
+                "Invalid day counter: {s}"
             ))),
         }
     }

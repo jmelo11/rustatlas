@@ -179,8 +179,7 @@ impl TryFrom<&str> for Currency {
             "DKK" => Ok(Self::DKK),
             "IDR" => Ok(Self::IDR),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid currency: {}",
-                s
+                "Invalid currency: {s}"
             ))),
         }
     }

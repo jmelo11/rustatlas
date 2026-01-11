@@ -59,8 +59,7 @@ impl<T: HasCashflows> ConstVisit<T> for NPVByDateConstVisitor<'_> {
                     self.market_data
                         .get(id)
                         .ok_or(AtlasError::NotFoundErr(format!(
-                            "Market data for cashflow with id {}",
-                            id
+                            "Market data for cashflow with id {id}"
                         )))?;
 
                 if cf_market_data.reference_date() == cf.payment_date()

@@ -229,9 +229,8 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {:?} is before reference date {:?}",
-                date,
-                self.reference_date()
+                "Date {date:?} is before reference date {reference_date:?}",
+                reference_date = self.reference_date()
             )));
         }
         let period = Period::new(days, TimeUnit::Days);

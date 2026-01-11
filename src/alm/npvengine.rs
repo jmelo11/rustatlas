@@ -81,9 +81,8 @@ impl<'a> NPVEngine<'a> {
                 chunk.iter_mut().try_for_each(|inst| {
                     fixing_visitor.visit(inst).map_err(|e| {
                         AtlasError::EvaluationErr(format!(
-                            "An error was found while processing instrument with id {:?}: {}",
-                            inst.id(),
-                            e
+                            "An error was found while processing instrument with id {id:?}: {e}",
+                            id = inst.id()
                         ))
                     })
                 })
@@ -103,9 +102,8 @@ impl<'a> NPVEngine<'a> {
                             .visit(inst)
                             .map_err(|e| {
                                 AtlasError::EvaluationErr(format!(
-                                "An error was found while processing instrument with id {:?}: {}",
-                                inst.id(),
-                                e
+                                "An error was found while processing instrument with id {id:?}: {e}",
+                                id = inst.id()
                             ))
                             })
                             .unwrap_or_else(|e| {

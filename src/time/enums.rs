@@ -58,8 +58,7 @@ impl TryFrom<String> for Frequency {
             "Daily" => Ok(Self::Daily),
             "OtherFrequency" => Ok(Self::OtherFrequency),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid frequency: {}",
-                s
+                "Invalid frequency: {s}"
             ))),
         }
     }
@@ -109,8 +108,7 @@ impl TryFrom<String> for TimeUnit {
             "Months" => Ok(Self::Months),
             "Years" => Ok(Self::Years),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid time unit: {}",
-                s
+                "Invalid time unit: {s}"
             ))),
         }
     }
@@ -174,7 +172,7 @@ impl TryFrom<String> for Month {
             "October" => Ok(Self::October),
             "November" => Ok(Self::November),
             "December" => Ok(Self::December),
-            _ => Err(AtlasError::InvalidValueErr(format!("Invalid month: {}", s))),
+            _ => Err(AtlasError::InvalidValueErr(format!("Invalid month: {s}"))),
         }
     }
 }
@@ -270,8 +268,7 @@ impl TryFrom<String> for DateGenerationRule {
             "CDS" => Ok(Self::CDS),
             "CDS2015" => Ok(Self::CDS2015),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid date generation rule: {}",
-                s
+                "Invalid date generation rule: {s}"
             ))),
         }
     }
@@ -339,8 +336,7 @@ impl TryFrom<String> for BusinessDayConvention {
             "HalfMonthModifiedFollowing" => Ok(Self::HalfMonthModifiedFollowing),
             "Nearest" => Ok(Self::Nearest),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid business day convention: {}",
-                s
+                "Invalid business day convention: {s}"
             ))),
         }
     }
@@ -395,8 +391,7 @@ impl TryFrom<String> for Weekday {
             "Friday" => Ok(Self::Friday),
             "Saturday" => Ok(Self::Saturday),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid weekday: {}",
-                s
+                "Invalid weekday: {s}"
             ))),
         }
     }

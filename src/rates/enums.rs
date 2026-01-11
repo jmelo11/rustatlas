@@ -29,8 +29,7 @@ impl TryFrom<String> for Compounding {
             "SimpleThenCompounded" => Ok(Self::SimpleThenCompounded),
             "CompoundedThenSimple" => Ok(Self::CompoundedThenSimple),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid compounding: {}",
-                s
+                "Invalid compounding: {s}"
             ))),
         }
     }
