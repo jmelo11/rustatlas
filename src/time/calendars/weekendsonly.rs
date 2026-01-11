@@ -15,7 +15,7 @@ impl WeekendsOnly {
     /// Creates a new `WeekendsOnly` calendar instance.
     #[must_use]
     pub fn new() -> Self {
-        WeekendsOnly {
+        Self {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         }

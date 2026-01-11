@@ -100,8 +100,8 @@ impl Schedule {
         next_to_last_date: Date,
         dates: Vec<Date>,
         is_regular: Vec<bool>,
-    ) -> Schedule {
-        Schedule {
+    ) -> Self {
+        Self {
             tenor,
             calendar,
             convention,
@@ -117,8 +117,8 @@ impl Schedule {
 
     /// Creates an empty `Schedule` with default values.
     #[must_use]
-    pub fn empty() -> Schedule {
-        Schedule {
+    pub fn empty() -> Self {
+        Self {
             tenor: Period::empty(),
             calendar: Calendar::NullCalendar(NullCalendar::new()),
             convention: BusinessDayConvention::Unadjusted,
@@ -238,8 +238,8 @@ impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn new(from: Date, to: Date) -> MakeSchedule {
-        MakeSchedule {
+    pub fn new(from: Date, to: Date) -> Self {
+        Self {
             effective_date: from,
             termination_date: to,
             tenor: Period::empty(),
@@ -257,14 +257,14 @@ impl MakeSchedule {
 
     /// Sets the tenor.
     #[must_use]
-    pub const fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = tenor;
         self
     }
 
     /// Sets the frequency.
     #[must_use]
-    pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
+    pub fn with_frequency(mut self, frequency: Frequency) -> Self {
         self.tenor =
             Period::from_frequency(frequency).unwrap_or_else(|| panic!("Invalid frequency"));
         self
@@ -272,14 +272,14 @@ impl MakeSchedule {
 
     /// Sets the calendar.
     #[must_use]
-    pub fn with_calendar(mut self, calendar: Calendar) -> MakeSchedule {
+    pub fn with_calendar(mut self, calendar: Calendar) -> Self {
         self.calendar = calendar;
         self
     }
 
     /// Sets the convention. weekday correccions are applied.
     #[must_use]
-    pub const fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
+    pub const fn with_convention(mut self, convention: BusinessDayConvention) -> Self {
         self.convention = convention;
         self
     }
@@ -289,49 +289,49 @@ impl MakeSchedule {
     pub const fn with_termination_date_convention(
         mut self,
         termination_date_convention: BusinessDayConvention,
-    ) -> MakeSchedule {
+    ) -> Self {
         self.termination_date_convention = termination_date_convention;
         self
     }
 
     /// Sets the rule.
     #[must_use]
-    pub const fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
+    pub const fn with_rule(mut self, rule: DateGenerationRule) -> Self {
         self.rule = rule;
         self
     }
 
     /// Sets the end of month flag.
     #[must_use]
-    pub const fn forwards(mut self) -> MakeSchedule {
+    pub const fn forwards(mut self) -> Self {
         self.rule = DateGenerationRule::Forward;
         self
     }
 
     /// Sets the date generation rule to backward.
     #[must_use]
-    pub const fn backwards(mut self) -> MakeSchedule {
+    pub const fn backwards(mut self) -> Self {
         self.rule = DateGenerationRule::Backward;
         self
     }
 
     /// Sets the end of month flag.
     #[must_use]
-    pub const fn end_of_month(mut self, flag: bool) -> MakeSchedule {
+    pub const fn end_of_month(mut self, flag: bool) -> Self {
         self.end_of_month = flag;
         self
     }
 
     /// Sets the first date.
     #[must_use]
-    pub const fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
+    pub const fn with_first_date(mut self, first_date: Date) -> Self {
         self.first_date = first_date;
         self
     }
 
     /// Sets the next to last date.
     #[must_use]
-    pub const fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
+    pub const fn with_next_to_last_date(mut self, next_to_last_date: Date) -> Self {
         self.next_to_last_date = next_to_last_date;
         self
     }

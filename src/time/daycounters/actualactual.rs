@@ -34,7 +34,7 @@ impl DayCountProvider for ActualActual {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        let days = ActualActual::day_count(start, end);
+        let days = Self::day_count(start, end);
 
         let y1 = start.year();
         let y2 = end.year();

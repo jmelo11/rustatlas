@@ -33,7 +33,7 @@ impl DayCountProvider for Thirty360 {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Thirty360::day_count(start, end) as f64 / 360.0
+        Self::day_count(start, end) as f64 / 360.0
     }
 }
 
@@ -91,6 +91,6 @@ impl DayCountProvider for Thirty360US {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Thirty360US::day_count(start, end) as f64 / 360.0
+        Self::day_count(start, end) as f64 / 360.0
     }
 }

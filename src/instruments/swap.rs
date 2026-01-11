@@ -14,7 +14,7 @@ impl Swap {
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
-        Swap {
+        Self {
             cashflows,
             legs,
             id,

@@ -31,8 +31,8 @@ impl RateDefinition {
         day_counter: DayCounter,
         compounding: Compounding,
         frequency: Frequency,
-    ) -> RateDefinition {
-        RateDefinition {
+    ) -> Self {
+        Self {
             day_counter,
             compounding,
             frequency,
@@ -60,7 +60,7 @@ impl RateDefinition {
 
 impl Default for RateDefinition {
     fn default() -> Self {
-        RateDefinition::new(
+        Self::new(
             DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
@@ -94,8 +94,8 @@ impl InterestRate {
         compounding: Compounding,
         frequency: Frequency,
         day_counter: DayCounter,
-    ) -> InterestRate {
-        InterestRate {
+    ) -> Self {
+        Self {
             rate,
             rate_definition: RateDefinition::new(day_counter, compounding, frequency),
         }
@@ -103,8 +103,8 @@ impl InterestRate {
 
     /// Creates a new `InterestRate` from a rate value and a `RateDefinition`.
     #[must_use]
-    pub const fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> InterestRate {
-        InterestRate {
+    pub const fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> Self {
+        Self {
             rate,
             rate_definition,
         }
@@ -147,7 +147,7 @@ impl InterestRate {
         comp: Compounding,
         freq: Frequency,
         t: f64,
-    ) -> Result<InterestRate> {
+    ) -> Result<Self> {
         if compound <= 0.0 {
             return Err(AtlasError::InvalidValueErr(
                 "Positive compound factor required".to_string(),
@@ -188,7 +188,7 @@ impl InterestRate {
                 }
             }
         }
-        Ok(InterestRate::new(r, comp, freq, result_dc))
+        Ok(Self::new(r, comp, freq, result_dc))
     }
 
     /// Calculates the compound factor between two dates using the day counter.

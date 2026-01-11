@@ -27,8 +27,8 @@ impl ExchangeRateRequest {
         first_currency: Currency,
         second_currency: Option<Currency>,
         reference_date: Option<Date>,
-    ) -> ExchangeRateRequest {
-        ExchangeRateRequest {
+    ) -> Self {
+        Self {
             first_currency,
             second_currency,
             reference_date,
@@ -70,8 +70,8 @@ pub struct DiscountFactorRequest {
 impl DiscountFactorRequest {
     /// Creates a new `DiscountFactorRequest`.
     #[must_use]
-    pub const fn new(provider_id: usize, date: Date) -> DiscountFactorRequest {
-        DiscountFactorRequest { provider_id, date }
+    pub const fn new(provider_id: usize, date: Date) -> Self {
+        Self { provider_id, date }
     }
 
     /// Returns the provider id.
@@ -117,8 +117,8 @@ impl ForwardRateRequest {
         end_date: Date,
         compounding: Compounding,
         frequency: Frequency,
-    ) -> ForwardRateRequest {
-        ForwardRateRequest {
+    ) -> Self {
+        Self {
             provider_id,
             fixing_date,
             start_date,
@@ -183,8 +183,8 @@ impl MarketRequest {
         df: Option<DiscountFactorRequest>,
         fwd: Option<ForwardRateRequest>,
         fx: Option<ExchangeRateRequest>,
-    ) -> MarketRequest {
-        MarketRequest { id, df, fwd, fx }
+    ) -> Self {
+        Self { id, df, fwd, fx }
     }
 
     /// Returns the id.
@@ -240,8 +240,8 @@ impl MarketData {
         fwd: Option<f64>,
         fx: Option<f64>,
         numerarie: f64,
-    ) -> MarketData {
-        MarketData {
+    ) -> Self {
+        Self {
             id,
             reference_date,
             df,
