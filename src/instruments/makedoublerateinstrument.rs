@@ -283,16 +283,7 @@ impl MakeDoubleRateInstrument {
 
         // Definition of rate use to construct the redemption profile
         let rate = match rate_type {
-            RateType::FixedThenFixed => {
-                let rate_definition = self
-                    .first_part_rate_definition
-                    .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
-                let rate_value = self
-                    .first_part_rate
-                    .ok_or(AtlasError::ValueNotSetErr("Rate value".into()))?;
-                InterestRate::from_rate_definition(rate_value, rate_definition)
-            }
-            RateType::FixedThenFloating => {
+            RateType::FixedThenFixed | RateType::FixedThenFloating => {
                 let rate_definition = self
                     .first_part_rate_definition
                     .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
@@ -605,13 +596,7 @@ fn build_coupons_from_notionals(
         let d2 = date_pair[1];
 
         match rate_type {
-            RateType::FixedThenFixed => {
-                let rate =
-                    InterestRate::from_rate_definition(first_part_rate, first_part_rate_definition);
-                let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
-                cashflows.push(Cashflow::FixedRateCoupon(coupon));
-            }
-            RateType::FixedThenFloating => {
+            RateType::FixedThenFixed | RateType::FixedThenFloating => {
                 let rate =
                     InterestRate::from_rate_definition(first_part_rate, first_part_rate_definition);
                 let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
@@ -643,7 +628,7 @@ fn build_coupons_from_notionals(
         let d2 = date_pair[1];
 
         match rate_type {
-            RateType::FixedThenFixed => {
+            RateType::FixedThenFixed | RateType::FloatingThenFixed => {
                 let rate = InterestRate::from_rate_definition(
                     second_part_rate,
                     second_part_rate_definition,
@@ -664,14 +649,6 @@ fn build_coupons_from_notionals(
                     side,
                 );
                 cashflows.push(Cashflow::FloatingRateCoupon(coupon));
-            }
-            RateType::FloatingThenFixed => {
-                let rate = InterestRate::from_rate_definition(
-                    second_part_rate,
-                    second_part_rate_definition,
-                );
-                let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
-                cashflows.push(Cashflow::FixedRateCoupon(coupon));
             }
             _ => Err(AtlasError::NotImplementedErr("Rate type".into()))?,
         }

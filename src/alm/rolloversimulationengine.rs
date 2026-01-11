@@ -242,13 +242,7 @@ mod tests {
             .map(|inst| {
                 let mut local_sum = 0.0;
                 inst.cashflows().iter().for_each(|cf| match cf {
-                    Cashflow::Disbursement(f) => {
-                        let payment_date = f.payment_date();
-                        if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap() * f.side().sign();
-                        }
-                    }
-                    Cashflow::Redemption(f) => {
+                    Cashflow::Disbursement(f) | Cashflow::Redemption(f) => {
                         let payment_date = f.payment_date();
                         if payment_date <= eval_date {
                             local_sum += f.amount().unwrap() * f.side().sign();
