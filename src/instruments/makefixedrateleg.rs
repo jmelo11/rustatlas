@@ -172,7 +172,10 @@ impl MakeFixedRateLeg {
 
     /// Sets the rate definition.
     #[must_use]
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFixedRateLeg {
+    pub const fn with_rate_definition(
+        mut self,
+        rate_definition: RateDefinition,
+    ) -> MakeFixedRateLeg {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -199,7 +202,7 @@ impl MakeFixedRateLeg {
 
     /// Sets the rate value.
     #[must_use]
-    pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateLeg {
+    pub const fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateLeg {
         self.rate_value = Some(rate_value);
         match self.rate {
             Some(rate) => {

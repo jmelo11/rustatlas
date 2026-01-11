@@ -23,7 +23,7 @@ pub struct ExchangeRateRequest {
 impl ExchangeRateRequest {
     /// Creates a new `ExchangeRateRequest`.
     #[must_use]
-    pub fn new(
+    pub const fn new(
         first_currency: Currency,
         second_currency: Option<Currency>,
         reference_date: Option<Date>,

@@ -92,7 +92,7 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the forecast curve ID.
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
+    pub const fn set_forecast_curve_id(&mut self, id: usize) {
         self.forecast_curve_id = Some(id);
     }
 
@@ -106,7 +106,7 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the notional amount.
-    pub fn set_notional(&mut self, notional: f64) {
+    pub const fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
     }
 

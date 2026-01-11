@@ -115,7 +115,7 @@ impl OvernightCompoundedRateIndex {
 
     /// Returns the rate definition for this index.
     #[must_use]
-    pub fn rate_definition(&self) -> RateDefinition {
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.overnight_index.rate_definition()
     }
 

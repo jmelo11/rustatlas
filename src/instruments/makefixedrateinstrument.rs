@@ -177,7 +177,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the rate definition.
     #[must_use]
-    pub fn with_rate_definition(
+    pub const fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
     ) -> MakeFixedRateInstrument {
@@ -207,7 +207,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the rate value.
     #[must_use]
-    pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateInstrument {
+    pub const fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateInstrument {
         self.rate_value = Some(rate_value);
         match self.rate {
             Some(rate) => {
