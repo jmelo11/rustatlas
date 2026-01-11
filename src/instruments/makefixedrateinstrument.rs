@@ -446,9 +446,9 @@ impl MakeFixedRateInstrument {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(FixedRateInstrument::new(
@@ -521,9 +521,9 @@ impl MakeFixedRateInstrument {
                     .1;
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(FixedRateInstrument::new(
@@ -596,7 +596,7 @@ impl MakeFixedRateInstrument {
                         } else {
                             schedule_builder.build()?
                         };
-                        dates = schedule.dates().clone();
+                        dates.clone_from(schedule.dates());
                 }
 
                 let notional = self
@@ -648,18 +648,15 @@ impl MakeFixedRateInstrument {
                 let mut disbursements = vec![];
 
                 let aux_dates: Vec<Date> = dates.iter().skip(1).copied().collect();
-                aux_dates
-                    .iter()
-                    .zip(redemptions_raw.iter())
-                    .for_each(|(date, amount)| {
-                        if *amount >= 0.0 {
-                            redemption_dates.push(*date);
-                            redemptions.push(*amount);
-                        } else {
-                            disbursement_dates.push(*date);
-                            disbursements.push(-*amount);
-                        }
-                    });
+                for (date, amount) in aux_dates.iter().zip(redemptions_raw.iter()) {
+                    if *amount >= 0.0 {
+                        redemption_dates.push(*date);
+                        redemptions.push(*amount);
+                    } else {
+                        disbursement_dates.push(*date);
+                        disbursements.push(-*amount);
+                    }
+                }
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -685,9 +682,9 @@ impl MakeFixedRateInstrument {
                 //cashflows.extend(infered_cashflows);
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(FixedRateInstrument::new(
@@ -777,9 +774,9 @@ impl MakeFixedRateInstrument {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(FixedRateInstrument::new(
@@ -849,7 +846,10 @@ impl MakeFixedRateInstrument {
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -882,9 +882,9 @@ impl MakeFixedRateInstrument {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(FixedRateInstrument::new(
@@ -1022,11 +1022,11 @@ impl From<FixedRateInstrument> for MakeFixedRateInstrument {
                         additional_coupon_dates.insert(end_date);
                     }
                 }
-                _ => (),
+                Cashflow::FloatingRateCoupon(_) => (),
             }
         }
 
-        let builder = MakeFixedRateInstrument::new()
+        let builder = Self::new()
             .with_start_date(val.start_date())
             .with_end_date(val.end_date())
             .with_rate(val.rate())
@@ -1041,14 +1041,16 @@ impl From<FixedRateInstrument> for MakeFixedRateInstrument {
 
         match val.structure() {
             Structure::EqualPayments => builder.equal_payments(),
-            _ => builder.other(),
+            Structure::Bullet | Structure::EqualRedemptions | Structure::Zero | Structure::Other => {
+                builder.other()
+            }
         }
     }
 }
 
 impl From<&FixedRateInstrument> for MakeFixedRateInstrument {
     fn from(val: &FixedRateInstrument) -> Self {
-        MakeFixedRateInstrument::from(val.clone())
+        Self::from(val.clone())
     }
 }
 
@@ -1131,10 +1133,9 @@ mod tests {
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{cf}"));
+        for cf in instrument.cashflows() {
+            println!("{cf}");
+        }
 
         let mut payments = HashMap::new();
         for cf in instrument.cashflows() {
@@ -1607,10 +1608,9 @@ mod tests_equal_payment {
             .equal_payments()
             .build()?;
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| println!("{cf}"));
+        for cf in instrument.cashflows() {
+            println!("{cf}");
+        }
 
         for cf in instrument.cashflows() {
             match &cf {

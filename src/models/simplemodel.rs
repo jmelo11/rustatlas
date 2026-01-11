@@ -99,16 +99,13 @@ impl<'a> Model for SimpleModel<'a> {
 
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
         let first_currency = fx.first_currency();
-        let second_currency = fx.second_currency().map_or_else(
-            || {
-                if self.transform_currencies {
-                    self.market_store.local_currency()
-                } else {
-                    first_currency
-                }
-            },
-            |ccy| ccy,
-        );
+        let second_currency = fx.second_currency().unwrap_or_else(|| {
+            if self.transform_currencies {
+                self.market_store.local_currency()
+            } else {
+                first_currency
+            }
+        });
 
         match fx.reference_date() {
             Some(date) => {

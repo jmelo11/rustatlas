@@ -536,15 +536,15 @@ impl MakeDoubleRateInstrument {
         }
 
         if let Some(id) = self.discount_curve_id {
-            cashflows
-                .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id));
+            for cf in &mut cashflows {
+                cf.set_discount_curve_id(id);
+            }
         }
 
         if let Some(id) = self.forecast_curve_id {
-            cashflows
-                .iter_mut()
-                .for_each(|cf| cf.set_forecast_curve_id(id));
+            for cf in &mut cashflows {
+                cf.set_forecast_curve_id(id);
+            }
         }
 
         Ok(DoubleRateInstrument::new(
@@ -570,6 +570,8 @@ impl MakeDoubleRateInstrument {
     }
 }
 
+// allowed: high-arity API; refactor deferred
+#[allow(clippy::too_many_arguments)]
 fn build_coupons_from_notionals(
     cashflows: &mut Vec<Cashflow>,
     rate_type: RateType,

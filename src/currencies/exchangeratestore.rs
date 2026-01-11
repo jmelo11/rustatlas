@@ -185,18 +185,16 @@ mod tests {
 
         let rate = manager.get_exchange_rate(USD, EUR)?;
         assert!((rate - 0.85).abs() < 1e-12);
-        assert_eq!(
-            manager
-                .exchange_rate_cache
-                .lock()
-                .map_err(|_| {
-                    AtlasError::EvaluationErr("Exchange rate cache lock poisoned".to_string())
-                })?
-                .get(&(USD, EUR))
-                .copied()
-                .ok_or_else(|| AtlasError::NotFoundErr("Missing cached rate".to_string()))?,
-            0.85
-        );
+        let cached = manager
+            .exchange_rate_cache
+            .lock()
+            .map_err(|_| {
+                AtlasError::EvaluationErr("Exchange rate cache lock poisoned".to_string())
+            })?
+            .get(&(USD, EUR))
+            .copied()
+            .ok_or_else(|| AtlasError::NotFoundErr("Missing cached rate".to_string()))?;
+        assert!((cached - 0.85).abs() < 1e-12);
         Ok(())
     }
 
@@ -242,7 +240,7 @@ mod tests {
         manager.add_exchange_rate(USD, EUR, 1.1);
 
         let clp_eur = manager.get_exchange_rate(CLP, EUR)?;
-        assert!((clp_eur - (1.1 * 800.0)).abs() < 1e-12);
+        assert!((1.1f64.mul_add(-800.0, clp_eur)).abs() < 1e-12);
         let eur_clp = manager.get_exchange_rate(EUR, CLP)?;
         assert!((eur_clp - (1.0 / (1.1 * 800.0))).abs() < 1e-12);
         Ok(())

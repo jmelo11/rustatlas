@@ -48,6 +48,8 @@ pub struct FloatingRateCoupon {
 impl FloatingRateCoupon {
     /// Creates a new floating rate coupon with the specified parameters.
     #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub const fn new(
         notional: f64,
         spread: f64,

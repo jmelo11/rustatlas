@@ -458,8 +458,7 @@ impl MakeSwap {
                     .with_end_of_month(self.first_leg_end_of_month)
                     .with_discount_curve_id(self.first_leg_discount_curve_id);
 
-                match structure {
-                    Structure::Other => {
+                if structure == Structure::Other {
                         let disbursements =
                             self.first_leg_disbursements
                                 .ok_or(AtlasError::ValueNotSetErr(
@@ -480,15 +479,13 @@ impl MakeSwap {
                             .with_redemptions(redemptions)
                             .with_additional_coupon_dates(additional_coupon_dates)
                             .build()?
-                    }
-                    _ => {
-                        let payment_frequency =
-                            self.first_leg_payment_frequency
-                                .ok_or(AtlasError::ValueNotSetErr(
-                                    "First Leg Payment Frequency".to_string(),
-                                ))?;
-                        builder.with_payment_frequency(payment_frequency).build()?
-                    }
+                } else {
+                    let payment_frequency =
+                        self.first_leg_payment_frequency
+                            .ok_or(AtlasError::ValueNotSetErr(
+                                "First Leg Payment Frequency".to_string(),
+                            ))?;
+                    builder.with_payment_frequency(payment_frequency).build()?
                 }
             }
             RateType::Floating => {
@@ -542,8 +539,7 @@ impl MakeSwap {
                     .with_discount_curve_id(self.first_leg_discount_curve_id)
                     .with_forecast_curve_id(self.first_leg_forecast_curve_id);
 
-                match structure {
-                    Structure::Other => {
+                if structure == Structure::Other {
                         let disbursements =
                             self.first_leg_disbursements
                                 .ok_or(AtlasError::ValueNotSetErr(
@@ -564,15 +560,13 @@ impl MakeSwap {
                             .with_redemptions(redemptions)
                             .with_additional_coupon_dates(additional_coupon_dates)
                             .build()?
-                    }
-                    _ => {
-                        let payment_frequency =
-                            self.first_leg_payment_frequency
-                                .ok_or(AtlasError::ValueNotSetErr(
-                                    "First Leg Payment Frequency".to_string(),
-                                ))?;
-                        builder.with_payment_frequency(payment_frequency).build()?
-                    }
+                } else {
+                    let payment_frequency =
+                        self.first_leg_payment_frequency
+                            .ok_or(AtlasError::ValueNotSetErr(
+                                "First Leg Payment Frequency".to_string(),
+                            ))?;
+                    builder.with_payment_frequency(payment_frequency).build()?
                 }
             }
             _ => Err(AtlasError::InvalidValueErr(format!(
@@ -638,8 +632,7 @@ impl MakeSwap {
                     .with_structure(structure)
                     .with_discount_curve_id(self.second_leg_discount_curve_id);
 
-                match structure {
-                    Structure::Other => {
+                if structure == Structure::Other {
                         let disbursements =
                             self.second_leg_disbursements
                                 .ok_or(AtlasError::ValueNotSetErr(
@@ -660,15 +653,13 @@ impl MakeSwap {
                             .with_redemptions(redemptions)
                             .with_additional_coupon_dates(additional_coupon_dates)
                             .build()?
-                    }
-                    _ => {
-                        let payment_frequency =
-                            self.second_leg_payment_frequency
-                                .ok_or(AtlasError::ValueNotSetErr(
-                                    "Second Leg Payment Frequency".to_string(),
-                                ))?;
-                        builder.with_payment_frequency(payment_frequency).build()?
-                    }
+                } else {
+                    let payment_frequency =
+                        self.second_leg_payment_frequency
+                            .ok_or(AtlasError::ValueNotSetErr(
+                                "Second Leg Payment Frequency".to_string(),
+                            ))?;
+                    builder.with_payment_frequency(payment_frequency).build()?
                 }
             }
             RateType::Floating => {
@@ -725,8 +716,7 @@ impl MakeSwap {
                     .with_discount_curve_id(self.second_leg_discount_curve_id)
                     .with_forecast_curve_id(self.second_leg_forecast_curve_id);
 
-                match structure {
-                    Structure::Other => {
+                if structure == Structure::Other {
                         let disbursements =
                             self.second_leg_disbursements
                                 .ok_or(AtlasError::ValueNotSetErr(
@@ -747,15 +737,13 @@ impl MakeSwap {
                             .with_redemptions(redemptions)
                             .with_additional_coupon_dates(additional_coupon_dates)
                             .build()?
-                    }
-                    _ => {
-                        let payment_frequency =
-                            self.second_leg_payment_frequency
-                                .ok_or(AtlasError::ValueNotSetErr(
-                                    "Second leg Payment Frequency".to_string(),
-                                ))?;
-                        builder.with_payment_frequency(payment_frequency).build()?
-                    }
+                } else {
+                    let payment_frequency =
+                        self.second_leg_payment_frequency
+                            .ok_or(AtlasError::ValueNotSetErr(
+                                "Second leg Payment Frequency".to_string(),
+                            ))?;
+                    builder.with_payment_frequency(payment_frequency).build()?
                 }
             }
             _ => Err(AtlasError::InvalidValueErr(format!(
@@ -806,7 +794,7 @@ impl MakeFixFloatSwap {
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {
-        MakeFixFloatSwap {
+        Self {
             rate_value: None,
             rate_definition: None,
             currency: None,

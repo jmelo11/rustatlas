@@ -254,7 +254,12 @@ impl Period {
     ///
     /// # Errors
     /// Returns an error if the tenor string cannot be parsed into a valid `Period`.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(tenor: &str) -> Result<Self> {
+        Self::parse_impl(tenor)
+    }
+
+    fn parse_impl(tenor: &str) -> Result<Self> {
         // parse multiple periods and add them
         let chars = tenor.chars();
         let mut periods = Vec::new();
@@ -333,7 +338,7 @@ impl std::str::FromStr for Period {
     type Err = AtlasError;
 
     fn from_str(s: &str) -> Result<Self> {
-        Period::from_str(s)
+        Self::parse_impl(s)
     }
 }
 

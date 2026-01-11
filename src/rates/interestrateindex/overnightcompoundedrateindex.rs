@@ -174,7 +174,7 @@ impl FixingProvider for OvernightCompoundedRateIndex {
     }
 
     fn add_fixing(&mut self, date: Date, rate: f64) {
-        self.overnight_index.add_fixing(date, rate)
+        self.overnight_index.add_fixing(date, rate);
     }
 }
 

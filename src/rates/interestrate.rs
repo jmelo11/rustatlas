@@ -598,10 +598,10 @@ mod tests {
                     "implied_rate should succeed in test_implied_rate_for_compounding_and_frequency: {e}"
                 )
             });
-            assert!(
-                (implied_rate.rate() - test_case.rate2).abs()
-                    < (test_case.precision as f64) / 100.0
-            );
+            let precision_i32 = i32::try_from(test_case.precision)
+                .unwrap_or_else(|_| panic!("precision should fit in i32"));
+            let precision_limit = f64::from(precision_i32);
+            assert!((implied_rate.rate() - test_case.rate2).abs() < precision_limit / 100.0);
         }
     }
 

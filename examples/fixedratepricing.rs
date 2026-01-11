@@ -25,11 +25,12 @@ use rustatlas::{
 };
 
 mod common;
-use crate::common::common::*;
+use crate::common::common::{create_store, print_separator, print_table, print_title};
 
 fn starting_today_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting today");
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -52,60 +53,64 @@ fn starting_today_pricing() {
         .with_discount_curve_id(Some(2))
         .with_notional(notional)
         .build()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"));
 
     let indexer = IndexingVisitor::new();
-    let result = indexer.visit(&mut instrument);
-    match result {
-        Ok(_) => (),
-        Err(e) => panic!("IndexingVisitor failed with error: {e}"),
-    }
+    indexer
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("IndexingVisitor failed with error: {err}"));
 
     let ref_date = market_store.reference_date();
     let model = SimpleModel::new(&market_store);
 
-    let data = model.gen_market_data(&indexer.request()).unwrap();
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
     print_table(instrument.cashflows(), &data);
 
     let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv.unwrap());
+    println!(
+        "NPV: {}",
+        npv.unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"))
+    );
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        acc + cf
+            .accrued_amount(start_accrual, end_accrual)
+            .unwrap_or_else(|err| panic!("Failed to compute accrued amount: {err}"))
     });
 
-    println!(
-        "Accrued Amount between {} and {}: {}",
-        start_accrual, end_accrual, accrued_amount
-    );
+    println!("Accrued Amount between {start_accrual} and {end_accrual}: {accrued_amount}");
 
     let maturing_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
         if cf.payment_date() == ref_date {
-            acc + cf.amount().unwrap()
+            acc + cf
+                .amount()
+                .unwrap_or_else(|err| panic!("Failed to load cashflow amount: {err}"))
         } else {
             acc
         }
     });
 
-    println!(
-        "Maturing Amount between {} and {}: {}",
-        start_accrual, end_accrual, maturing_amount
-    );
+    println!("Maturing Amount between {start_accrual} and {end_accrual}: {maturing_amount}");
 
     let par_visitor = ParValueConstVisitor::new(&data);
-    let par_value = par_visitor.visit(&instrument).unwrap();
-    println!("Par Value: {}", par_value);
+    let par_value = par_visitor
+        .visit(&instrument)
+        .unwrap_or_else(|err| panic!("Failed to compute par value: {err}"));
+    println!("Par Value: {par_value}");
 }
 
 fn forward_starting_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date + Period::new(6, TimeUnit::Months);
@@ -129,37 +134,44 @@ fn forward_starting_pricing() {
         .with_discount_curve_id(Some(0))
         .with_notional(notional)
         .build()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"));
 
     let indexer = IndexingVisitor::new();
-    let _ = indexer.visit(&mut instrument);
+    indexer
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("IndexingVisitor failed with error: {err}"));
 
     let model = SimpleModel::new(&market_store);
 
-    let data = model.gen_market_data(&indexer.request()).unwrap();
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
     print_table(instrument.cashflows(), &data);
 
     let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv.unwrap());
+    println!(
+        "NPV: {}",
+        npv.unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"))
+    );
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        acc + cf
+            .accrued_amount(start_accrual, end_accrual)
+            .unwrap_or_else(|err| panic!("Failed to compute accrued amount: {err}"))
     });
-    println!(
-        "Accrued Amount between {} and {}: {}",
-        start_accrual, end_accrual, accrued_amount
-    );
+    println!("Accrued Amount between {start_accrual} and {end_accrual}: {accrued_amount}");
 }
 
 fn already_started_pricing() {
     print_title("Pricing of a Fixed Rate Loan starting +2Y");
 
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(2, TimeUnit::Months);
@@ -182,39 +194,43 @@ fn already_started_pricing() {
         .with_discount_curve_id(Some(2))
         .with_notional(notional)
         .build()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"));
 
     let indexer = IndexingVisitor::new();
-    let result = indexer.visit(&mut instrument);
-    match result {
-        Ok(_) => (),
-        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
-    }
+    indexer
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("IndexingVisitor failed with error: {err}"));
 
     let model = SimpleModel::new(&market_store);
 
-    let data = model.gen_market_data(&indexer.request()).unwrap();
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
     print_table(instrument.cashflows(), &data);
 
     let npv_visitor = NPVConstVisitor::new(&data, true);
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv.unwrap());
+    println!(
+        "NPV: {}",
+        npv.unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"))
+    );
 
     let start_accrual = Date::new(2024, 9, 1);
     let end_accrual = Date::new(2024, 10, 1);
     let accrued_amount = instrument.cashflows().iter().fold(0.0, |acc, cf| {
-        acc + cf.accrued_amount(start_accrual, end_accrual).unwrap()
+        acc + cf
+            .accrued_amount(start_accrual, end_accrual)
+            .unwrap_or_else(|err| panic!("Failed to compute accrued amount: {err}"))
     });
-    println!(
-        "Accrued Amount between {} and {}: {}",
-        start_accrual, end_accrual, accrued_amount
-    );
+    println!("Accrued Amount between {start_accrual} and {end_accrual}: {accrued_amount}");
 
     let par_visitor = ParValueConstVisitor::new(&data);
-    let par_value = par_visitor.visit(&instrument).unwrap();
-    println!("Par Value: {}", par_value);
+    let par_value = par_visitor
+        .visit(&instrument)
+        .unwrap_or_else(|err| panic!("Failed to compute par value: {err}"));
+    println!("Par Value: {par_value}");
 }
 
 fn main() {

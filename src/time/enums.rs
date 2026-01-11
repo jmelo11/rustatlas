@@ -453,7 +453,7 @@ impl Sub<Weekday> for i32 {
     type Output = Self;
 
     fn sub(self, rhs: Weekday) -> Self::Output {
-        self + -(rhs as i32)
+        self + -(rhs as Self)
     }
 }
 

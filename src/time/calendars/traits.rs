@@ -4,7 +4,7 @@ use crate::{
     time::period::Period,
 };
 
-use std::collections::HashSet;
+use std::{cmp::Ordering, collections::HashSet};
 
 /// Returns the day of year for Easter Monday for a given year.
 ///
@@ -135,14 +135,12 @@ pub trait IsCalendar: ImplCalendar {
         include_first: bool,
         include_last: bool,
     ) -> i64 {
-        if from < to {
-            self.impl_days_between(from, to, include_first, include_last)
-        } else if from > to {
-            -self.impl_days_between(to, from, include_last, include_first)
-        } else if include_first && include_last && self.is_business_day(&from) {
-            1
-        } else {
-            0
+        match from.cmp(&to) {
+            Ordering::Less => self.impl_days_between(from, to, include_first, include_last),
+            Ordering::Greater => {
+                -self.impl_days_between(to, from, include_last, include_first)
+            }
+            Ordering::Equal => i64::from(include_first && include_last && self.is_business_day(&from)),
         }
     }
 
@@ -167,10 +165,11 @@ pub trait IsCalendar: ImplCalendar {
                     if d1.month() != date.month() {
                         return self.adjust(date, Some(BusinessDayConvention::Preceding));
                     }
-                    if conv == BusinessDayConvention::HalfMonthModifiedFollowing {
-                        if date.day() <= 15 && d1.day() > 15 {
-                            return self.adjust(date, Some(BusinessDayConvention::Preceding));
-                        }
+                    if conv == BusinessDayConvention::HalfMonthModifiedFollowing
+                        && date.day() <= 15
+                        && d1.day() > 15
+                    {
+                        return self.adjust(date, Some(BusinessDayConvention::Preceding));
                     }
                 }
             }
@@ -178,10 +177,9 @@ pub trait IsCalendar: ImplCalendar {
                 while self.is_holiday(&d1) {
                     d1 -= 1;
                 }
-                if conv == BusinessDayConvention::ModifiedPreceding {
-                    if d1.month() != date.month() {
-                        return self.adjust(date, Some(BusinessDayConvention::Following));
-                    }
+                if conv == BusinessDayConvention::ModifiedPreceding && d1.month() != date.month()
+                {
+                    return self.adjust(date, Some(BusinessDayConvention::Following));
                 }
             }
             BusinessDayConvention::Nearest => {
