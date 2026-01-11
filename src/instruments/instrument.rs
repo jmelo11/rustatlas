@@ -38,12 +38,12 @@ impl TryFrom<String> for RateType {
     type Error = AtlasError;
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Fixed" => Ok(RateType::Fixed),
-            "Floating" => Ok(RateType::Floating),
-            "FixedThenFloating" => Ok(RateType::FixedThenFloating),
-            "FloatingThenFixed" => Ok(RateType::FloatingThenFixed),
-            "FixedThenFixed" => Ok(RateType::FixedThenFixed),
-            "Suffled" => Ok(RateType::Suffled),
+            "Fixed" => Ok(Self::Fixed),
+            "Floating" => Ok(Self::Floating),
+            "FixedThenFloating" => Ok(Self::FixedThenFloating),
+            "FloatingThenFixed" => Ok(Self::FloatingThenFixed),
+            "FixedThenFixed" => Ok(Self::FixedThenFixed),
+            "Suffled" => Ok(Self::Suffled),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid rate type: {}",
                 s
@@ -83,19 +83,19 @@ pub enum Instrument {
 impl HasCashflows for Instrument {
     fn cashflows(&self) -> &[Cashflow] {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.cashflows(),
-            Instrument::FloatingRateInstrument(fri) => fri.cashflows(),
-            Instrument::HybridRateInstrument(hri) => hri.cashflows(),
-            Instrument::DoubleRateInstrument(dri) => dri.cashflows(),
+            Self::FixedRateInstrument(fri) => fri.cashflows(),
+            Self::FloatingRateInstrument(fri) => fri.cashflows(),
+            Self::HybridRateInstrument(hri) => hri.cashflows(),
+            Self::DoubleRateInstrument(dri) => dri.cashflows(),
         }
     }
 
     fn mut_cashflows(&mut self) -> &mut [Cashflow] {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.mut_cashflows(),
-            Instrument::FloatingRateInstrument(fri) => fri.mut_cashflows(),
-            Instrument::HybridRateInstrument(hri) => hri.mut_cashflows(),
-            Instrument::DoubleRateInstrument(dri) => dri.mut_cashflows(),
+            Self::FixedRateInstrument(fri) => fri.mut_cashflows(),
+            Self::FloatingRateInstrument(fri) => fri.mut_cashflows(),
+            Self::HybridRateInstrument(hri) => hri.mut_cashflows(),
+            Self::DoubleRateInstrument(dri) => dri.mut_cashflows(),
         }
     }
 }
@@ -105,10 +105,10 @@ impl Instrument {
     #[must_use]
     pub const fn notional(&self) -> f64 {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.notional(),
-            Instrument::FloatingRateInstrument(fri) => fri.notional(),
-            Instrument::HybridRateInstrument(hri) => hri.notional(),
-            Instrument::DoubleRateInstrument(dri) => dri.notional(),
+            Self::FixedRateInstrument(fri) => fri.notional(),
+            Self::FloatingRateInstrument(fri) => fri.notional(),
+            Self::HybridRateInstrument(hri) => hri.notional(),
+            Self::DoubleRateInstrument(dri) => dri.notional(),
         }
     }
 
@@ -116,10 +116,10 @@ impl Instrument {
     #[must_use]
     pub const fn start_date(&self) -> Date {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.start_date(),
-            Instrument::FloatingRateInstrument(fri) => fri.start_date(),
-            Instrument::HybridRateInstrument(hri) => hri.start_date(),
-            Instrument::DoubleRateInstrument(dri) => dri.start_date(),
+            Self::FixedRateInstrument(fri) => fri.start_date(),
+            Self::FloatingRateInstrument(fri) => fri.start_date(),
+            Self::HybridRateInstrument(hri) => hri.start_date(),
+            Self::DoubleRateInstrument(dri) => dri.start_date(),
         }
     }
 
@@ -127,10 +127,10 @@ impl Instrument {
     #[must_use]
     pub const fn end_date(&self) -> Date {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.end_date(),
-            Instrument::FloatingRateInstrument(fri) => fri.end_date(),
-            Instrument::HybridRateInstrument(hri) => hri.end_date(),
-            Instrument::DoubleRateInstrument(dri) => dri.end_date(),
+            Self::FixedRateInstrument(fri) => fri.end_date(),
+            Self::FloatingRateInstrument(fri) => fri.end_date(),
+            Self::HybridRateInstrument(hri) => hri.end_date(),
+            Self::DoubleRateInstrument(dri) => dri.end_date(),
         }
     }
 
@@ -138,10 +138,10 @@ impl Instrument {
     #[must_use]
     pub fn id(&self) -> Option<String> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.id(),
-            Instrument::FloatingRateInstrument(fri) => fri.id(),
-            Instrument::HybridRateInstrument(hri) => hri.id(),
-            Instrument::DoubleRateInstrument(dri) => dri.id(),
+            Self::FixedRateInstrument(fri) => fri.id(),
+            Self::FloatingRateInstrument(fri) => fri.id(),
+            Self::HybridRateInstrument(hri) => hri.id(),
+            Self::DoubleRateInstrument(dri) => dri.id(),
         }
     }
 
@@ -149,9 +149,9 @@ impl Instrument {
     #[must_use]
     pub fn structure(&self) -> Structure {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.structure(),
-            Instrument::FloatingRateInstrument(fri) => fri.structure(),
-            Instrument::HybridRateInstrument(hri) => hri.structure(),
+            Self::FixedRateInstrument(fri) => fri.structure(),
+            Self::FloatingRateInstrument(fri) => fri.structure(),
+            Self::HybridRateInstrument(hri) => hri.structure(),
             _ => todo!(),
         }
     }
@@ -160,10 +160,10 @@ impl Instrument {
     #[must_use]
     pub const fn payment_frequency(&self) -> Frequency {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.payment_frequency(),
-            Instrument::FloatingRateInstrument(fri) => fri.payment_frequency(),
-            Instrument::HybridRateInstrument(hri) => hri.payment_frequency(),
-            Instrument::DoubleRateInstrument(dri) => dri.payment_frequency(),
+            Self::FixedRateInstrument(fri) => fri.payment_frequency(),
+            Self::FloatingRateInstrument(fri) => fri.payment_frequency(),
+            Self::HybridRateInstrument(hri) => hri.payment_frequency(),
+            Self::DoubleRateInstrument(dri) => dri.payment_frequency(),
         }
     }
 
@@ -171,10 +171,10 @@ impl Instrument {
     #[must_use]
     pub const fn side(&self) -> Option<Side> {
         match self {
-            Instrument::FixedRateInstrument(fri) => Some(fri.side()),
-            Instrument::FloatingRateInstrument(fri) => Some(fri.side()),
-            Instrument::HybridRateInstrument(hri) => hri.side(),
-            Instrument::DoubleRateInstrument(dri) => Some(dri.side()),
+            Self::FixedRateInstrument(fri) => Some(fri.side()),
+            Self::FloatingRateInstrument(fri) => Some(fri.side()),
+            Self::HybridRateInstrument(hri) => hri.side(),
+            Self::DoubleRateInstrument(dri) => Some(dri.side()),
         }
     }
 
@@ -182,10 +182,10 @@ impl Instrument {
     #[must_use]
     pub const fn issue_date(&self) -> Option<Date> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.issue_date(),
-            Instrument::FloatingRateInstrument(fri) => fri.issue_date(),
-            Instrument::HybridRateInstrument(hri) => hri.issue_date(),
-            Instrument::DoubleRateInstrument(dri) => dri.issue_date(),
+            Self::FixedRateInstrument(fri) => fri.issue_date(),
+            Self::FloatingRateInstrument(fri) => fri.issue_date(),
+            Self::HybridRateInstrument(hri) => hri.issue_date(),
+            Self::DoubleRateInstrument(dri) => dri.issue_date(),
         }
     }
 
@@ -193,10 +193,10 @@ impl Instrument {
     #[must_use]
     pub const fn rate_type(&self) -> RateType {
         match self {
-            Instrument::FixedRateInstrument(_) => RateType::Fixed,
-            Instrument::FloatingRateInstrument(_) => RateType::Floating,
-            Instrument::HybridRateInstrument(hri) => hri.rate_type(),
-            Instrument::DoubleRateInstrument(dri) => dri.rate_type(),
+            Self::FixedRateInstrument(_) => RateType::Fixed,
+            Self::FloatingRateInstrument(_) => RateType::Floating,
+            Self::HybridRateInstrument(hri) => hri.rate_type(),
+            Self::DoubleRateInstrument(dri) => dri.rate_type(),
         }
     }
 
@@ -204,10 +204,10 @@ impl Instrument {
     #[must_use]
     pub fn rate(&self) -> Option<f64> {
         match self {
-            Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate()),
-            Instrument::FloatingRateInstrument(_) => None,
-            Instrument::HybridRateInstrument(_) => todo!(),
-            Instrument::DoubleRateInstrument(_) => todo!(),
+            Self::FixedRateInstrument(fri) => Some(fri.rate().rate()),
+            Self::FloatingRateInstrument(_) => None,
+            Self::HybridRateInstrument(_) => todo!(),
+            Self::DoubleRateInstrument(_) => todo!(),
         }
     }
 
@@ -215,10 +215,10 @@ impl Instrument {
     #[must_use]
     pub fn spread(&self) -> Option<f64> {
         match self {
-            Instrument::FixedRateInstrument(_) => None,
-            Instrument::FloatingRateInstrument(fri) => Some(fri.spread()),
-            Instrument::HybridRateInstrument(_) => todo!(),
-            Instrument::DoubleRateInstrument(_) => todo!(),
+            Self::FixedRateInstrument(_) => None,
+            Self::FloatingRateInstrument(fri) => Some(fri.spread()),
+            Self::HybridRateInstrument(_) => todo!(),
+            Self::DoubleRateInstrument(_) => todo!(),
         }
     }
 
@@ -226,10 +226,10 @@ impl Instrument {
     #[must_use]
     pub const fn forecast_curve_id(&self) -> Option<usize> {
         match self {
-            Instrument::FixedRateInstrument(_) => None,
-            Instrument::FloatingRateInstrument(fri) => fri.forecast_curve_id(),
-            Instrument::HybridRateInstrument(hri) => hri.forecast_curve_id(),
-            Instrument::DoubleRateInstrument(dri) => dri.forecast_curve_id(),
+            Self::FixedRateInstrument(_) => None,
+            Self::FloatingRateInstrument(fri) => fri.forecast_curve_id(),
+            Self::HybridRateInstrument(hri) => hri.forecast_curve_id(),
+            Self::DoubleRateInstrument(dri) => dri.forecast_curve_id(),
         }
     }
 
@@ -237,29 +237,29 @@ impl Instrument {
     #[must_use]
     pub const fn discount_curve_id(&self) -> Option<usize> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.discount_curve_id(),
-            Instrument::FloatingRateInstrument(fri) => fri.discount_curve_id(),
-            Instrument::HybridRateInstrument(hri) => hri.discount_curve_id(),
-            Instrument::DoubleRateInstrument(dri) => dri.discount_curve_id(),
+            Self::FixedRateInstrument(fri) => fri.discount_curve_id(),
+            Self::FloatingRateInstrument(fri) => fri.discount_curve_id(),
+            Self::HybridRateInstrument(hri) => hri.discount_curve_id(),
+            Self::DoubleRateInstrument(dri) => dri.discount_curve_id(),
         }
     }
 
     /// Sets the discount curve identifier for the instrument.
     pub fn set_discount_curve_id(&mut self, id: usize) {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.set_discount_curve_id(id),
-            Instrument::FloatingRateInstrument(fri) => fri.set_discount_curve_id(id),
-            Instrument::HybridRateInstrument(hri) => hri.set_discount_curve_id(id),
-            Instrument::DoubleRateInstrument(dri) => dri.set_discount_curve_id(id),
+            Self::FixedRateInstrument(fri) => fri.set_discount_curve_id(id),
+            Self::FloatingRateInstrument(fri) => fri.set_discount_curve_id(id),
+            Self::HybridRateInstrument(hri) => hri.set_discount_curve_id(id),
+            Self::DoubleRateInstrument(dri) => dri.set_discount_curve_id(id),
         }
     }
 
     /// Sets the forecast curve identifier for the instrument.
     pub fn set_forecast_curve_id(&mut self, id: usize) {
         match self {
-            Instrument::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
-            Instrument::HybridRateInstrument(hri) => hri.set_forecast_curve_id(id),
-            Instrument::DoubleRateInstrument(dri) => dri.set_forecast_curve_id(id),
+            Self::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
+            Self::HybridRateInstrument(hri) => hri.set_forecast_curve_id(id),
+            Self::DoubleRateInstrument(dri) => dri.set_forecast_curve_id(id),
             _ => {}
         }
     }
@@ -268,10 +268,10 @@ impl Instrument {
     #[must_use]
     pub const fn first_rate_definition(&self) -> Option<RateDefinition> {
         match self {
-            Instrument::FixedRateInstrument(fri) => Some(fri.rate().rate_definition()),
-            Instrument::FloatingRateInstrument(fri) => Some(fri.rate_definition()),
-            Instrument::HybridRateInstrument(hri) => hri.first_rate_definition(),
-            Instrument::DoubleRateInstrument(dri) => dri.first_rate_definition(),
+            Self::FixedRateInstrument(fri) => Some(fri.rate().rate_definition()),
+            Self::FloatingRateInstrument(fri) => Some(fri.rate_definition()),
+            Self::HybridRateInstrument(hri) => hri.first_rate_definition(),
+            Self::DoubleRateInstrument(dri) => dri.first_rate_definition(),
         }
     }
 
@@ -279,10 +279,10 @@ impl Instrument {
     #[must_use]
     pub const fn second_rate_definition(&self) -> Option<RateDefinition> {
         match self {
-            Instrument::FixedRateInstrument(_) => None,
-            Instrument::FloatingRateInstrument(_) => None,
-            Instrument::HybridRateInstrument(hri) => hri.second_rate_definition(),
-            Instrument::DoubleRateInstrument(dri) => dri.second_rate_definition(),
+            Self::FixedRateInstrument(_) => None,
+            Self::FloatingRateInstrument(_) => None,
+            Self::HybridRateInstrument(hri) => hri.second_rate_definition(),
+            Self::DoubleRateInstrument(dri) => dri.second_rate_definition(),
         }
     }
 }
@@ -290,10 +290,10 @@ impl Instrument {
 impl HasCurrency for Instrument {
     fn currency(&self) -> Result<Currency> {
         match self {
-            Instrument::FixedRateInstrument(fri) => fri.currency(),
-            Instrument::FloatingRateInstrument(fri) => fri.currency(),
-            Instrument::HybridRateInstrument(hri) => hri.currency(),
-            Instrument::DoubleRateInstrument(dri) => dri.currency(),
+            Self::FixedRateInstrument(fri) => fri.currency(),
+            Self::FloatingRateInstrument(fri) => fri.currency(),
+            Self::HybridRateInstrument(hri) => hri.currency(),
+            Self::DoubleRateInstrument(dri) => dri.currency(),
         }
     }
 }
