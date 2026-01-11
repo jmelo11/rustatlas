@@ -39,8 +39,8 @@ pub struct OvernightIndex {
 impl OvernightIndex {
     /// Creates a new `OvernightIndex` with the given reference date.
     #[must_use]
-    pub fn new(reference_date: Date) -> OvernightIndex {
-        OvernightIndex {
+    pub fn new(reference_date: Date) -> Self {
+        Self {
             name: None,
             fixings: HashMap::new(),
             term_structure: None,
