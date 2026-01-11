@@ -63,7 +63,7 @@ pub struct MakeSwap {
 }
 
 impl MakeSwap {
-    /// Creates a new `MakeSwap` builder with default values.
+    /// Creates a new MakeSwap builder with default values.
     #[must_use]
     pub const fn new() -> Self {
         MakeSwap {
@@ -802,7 +802,7 @@ pub struct MakeFixFloatSwap {
 }
 
 impl MakeFixFloatSwap {
-    /// Creates a new `MakeFixFloatSwap` builder with default values.
+    /// Creates a new MakeFixFloatSwap builder with default values.
     #[must_use]
     pub const fn new() -> Self {
         MakeFixFloatSwap {

@@ -48,7 +48,7 @@ pub struct IborIndex {
 }
 
 impl IborIndex {
-    /// Creates a new `IborIndex` with the given reference date.
+    /// Creates a new IborIndex with the given reference date.
     #[must_use]
     pub fn new(reference_date: Date) -> IborIndex {
         IborIndex {

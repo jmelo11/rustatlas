@@ -61,7 +61,7 @@ pub struct MakeFixedRateLeg {
 
 /// New, setters and getters
 impl MakeFixedRateLeg {
-    /// Creates a new `MakeFixedRateLeg` builder with default values.
+    /// Creates a new MakeFixedRateLeg builder with default values.
     #[must_use]
     pub const fn new() -> MakeFixedRateLeg {
         MakeFixedRateLeg {

@@ -55,12 +55,14 @@ impl SimpleCashflow {
         self
     }
 
+    #[must_use]
     /// Sets the discount curve ID for this cashflow and returns self for method chaining.
     #[must_use]
     pub const fn with_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self
     }
+#[must_use]
 
     /// Sets the registry ID for this cashflow and returns self for method chaining.
     #[must_use]

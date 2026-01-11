@@ -60,7 +60,7 @@ pub struct MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
-    /// Creates a new instance of `MakeDoubleRateInstrument` with default values.
+    /// Creates a new instance of MakeDoubleRateInstrument with default values.
     #[must_use]
     pub const fn new() -> Self {
         MakeDoubleRateInstrument {

@@ -236,7 +236,7 @@ pub struct MakeSchedule {
 impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
     #[must_use]
-    pub fn new(from: Date, to: Date) -> MakeSchedule {
+    pub const fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
             termination_date: to,

@@ -63,7 +63,7 @@ pub struct MakeFixedRateInstrument {
 
 /// New, setters and getters
 impl MakeFixedRateInstrument {
-    /// Creates a new `MakeFixedRateInstrument` builder with default values.
+    /// Creates a new MakeFixedRateInstrument builder with default values.
     #[must_use]
     pub const fn new() -> MakeFixedRateInstrument {
         MakeFixedRateInstrument {
