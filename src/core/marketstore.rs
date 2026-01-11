@@ -212,7 +212,6 @@ impl fmt::Display for MarketStore {
         msg.push_str(&exchange_rate_map.len().to_string());
         msg.push_str("):\n");
         for (currencies, value) in &exchange_rate_map {
-            // println!("{} - {}: {}", currencies.0.code(), currencies.1.code(), value);
             msg.push_str(">> ");
             msg.push_str(currencies.0.code());
             msg.push_str(" -> ");

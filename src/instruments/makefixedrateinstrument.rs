@@ -102,10 +102,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the first coupon date.
     #[must_use]
-    pub const fn with_first_coupon_date(
-        mut self,
-        first_coupon_date: Option<Date>,
-    ) -> Self {
+    pub const fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> Self {
         self.first_coupon_date = first_coupon_date;
         self
     }
@@ -177,10 +174,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the rate definition.
     #[must_use]
-    pub const fn with_rate_definition(
-        mut self,
-        rate_definition: RateDefinition,
-    ) -> Self {
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -248,10 +242,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the disbursements.
     #[must_use]
-    pub fn with_disbursements(
-        mut self,
-        disbursements: HashMap<Date, f64>,
-    ) -> Self {
+    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
         self.disbursements = Some(disbursements);
         self
     }
@@ -265,10 +256,7 @@ impl MakeFixedRateInstrument {
 
     /// Sets the additional coupon dates.
     #[must_use]
-    pub fn with_additional_coupon_dates(
-        mut self,
-        additional_coupon_dates: HashSet<Date>,
-    ) -> Self {
+    pub fn with_additional_coupon_dates(mut self, additional_coupon_dates: HashSet<Date>) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
@@ -1121,7 +1109,7 @@ mod tests {
         instrument
             .cashflows()
             .iter()
-            .for_each(|cf| println!("{}", cf));
+            .for_each(|cf| println!("{cf}"));
 
         let mut payments = HashMap::new();
         instrument.cashflows().iter().for_each(|cf| match cf {
@@ -1584,7 +1572,7 @@ mod tests_equal_payment {
         instrument
             .cashflows()
             .iter()
-            .for_each(|cf| println!("{}", cf));
+            .for_each(|cf| println!("{cf}"));
 
         instrument.cashflows().iter().for_each(|cf| match &cf {
             Cashflow::Disbursement(c) | Cashflow::Redemption(c) => {

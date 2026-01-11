@@ -302,9 +302,6 @@ mod tests {
         let end_date = Date::new(2024, 3, 1);
         let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
 
-        print!(
-            "Accrued amount between {} and {} is {}",
-            star_date, end_date, accrued_amount
-        );
+        print!("Accrued amount between {star_date} and {end_date} is {accrued_amount}");
     }
 }

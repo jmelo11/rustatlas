@@ -296,7 +296,7 @@ mod tests {
             Side::Receive,
         ));
         let serialized = serde_json::to_string(&cashflow).unwrap();
-        println!("{}", serialized);
+        println!("{serialized}");
 
         let deserialized: Cashflow = serde_json::from_str(&serialized).unwrap();
         assert_eq!(cashflow, deserialized);

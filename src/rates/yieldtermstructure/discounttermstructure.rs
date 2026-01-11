@@ -368,7 +368,6 @@ mod tests {
             .discount_factor(Date::new(2020, 6, 1))
             .unwrap_or_else(|e| panic!("discount_factor failed in test_interpolation: {e}"));
         assert!((df - 0.9832967032967033).abs() < 1e-8);
-        //println!("discount_factor: {}", discount_term_structure.discount_factor(Date::new(2020, 6, 1)).unwrap());
     }
 
     #[test]

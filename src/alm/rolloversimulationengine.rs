@@ -192,7 +192,6 @@ impl<'a> RolloverSimulationEngine<'a> {
 
                 let new_redemptions = aggregator.redemptions();
 
-                //println!("New redemptions: {:?}", new_redemptions);
                 for (key, value) in new_redemptions {
                     let entry = redemptions.entry(key).or_insert(0.0);
                     *entry += value;
@@ -512,7 +511,7 @@ mod tests {
 
         let eval_date = Date::new(2024, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        println!("Outstanding: {}", outstanding);
+        println!("Outstanding: {outstanding}");
         assert_eq!(outstanding, -1800.0);
         Ok(())
     }

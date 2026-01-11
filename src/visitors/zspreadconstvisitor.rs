@@ -238,8 +238,8 @@ mod tests {
         );
         let zspread_visitor = ZSpreadConstVisitor::new(&data, zspread_rate_definition, 100.0);
 
-        let zspread = zspread_visitor.visit(&instrument)?;
-        println!("ZSpread: {}", zspread * 100.0);
+        let zspread = zspread_visitor.visit(&instrument)? * 100.0;
+        println!("ZSpread: {zspread}");
         Ok(())
     }
 }
