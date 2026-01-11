@@ -379,13 +379,11 @@ impl MakeSchedule {
                 | DateGenerationRule::TwentiethIMM
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
-                | DateGenerationRule::CDS2015 => {
+                | DateGenerationRule::CDS2015
+                | DateGenerationRule::ThirdWednesdayInclusive => {
                     return Err(AtlasError::MakeScheduleErr(
                         "first date incompatible with date generation rule".to_string(),
                     ));
-                }
-                _ => {
-                    return Err(AtlasError::MakeScheduleErr("unknown rule".to_string()));
                 }
             }
         }
@@ -413,13 +411,11 @@ impl MakeSchedule {
                 | DateGenerationRule::TwentiethIMM
                 | DateGenerationRule::OldCDS
                 | DateGenerationRule::CDS
-                | DateGenerationRule::CDS2015 => {
+                | DateGenerationRule::CDS2015
+                | DateGenerationRule::ThirdWednesdayInclusive => {
                     return Err(AtlasError::MakeScheduleErr(
                         "next to last date incompatible with date generation rule".to_string(),
                     ));
-                }
-                _ => {
-                    return Err(AtlasError::MakeScheduleErr("unknown rule".to_string()));
                 }
             }
         }
@@ -447,18 +443,16 @@ impl MakeSchedule {
                         Some(self.convention),
                         self.end_of_month,
                     );
-                    if temp != self.next_to_last_date {
-                        self.is_regular.insert(0, false);
-                    } else {
-                        self.is_regular.insert(0, true);
-                    }
+                    self.is_regular
+                        .insert(0, temp == self.next_to_last_date);
                     seed = self.next_to_last_date;
                 }
 
-                let mut exit_date = self.effective_date;
-                if self.first_date != Date::empty() {
-                    exit_date = self.first_date;
-                }
+                let exit_date = if self.first_date != Date::empty() {
+                    self.first_date
+                } else {
+                    self.effective_date
+                };
 
                 loop {
                     let temp = null_calendar.advance(
@@ -575,11 +569,11 @@ impl MakeSchedule {
                     }
                 }
 
-                let mut exit_date = self.termination_date;
-
-                if self.next_to_last_date != Date::empty() {
-                    exit_date = self.next_to_last_date;
-                }
+                let exit_date = if self.next_to_last_date != Date::empty() {
+                    self.next_to_last_date
+                } else {
+                    self.termination_date
+                };
 
                 loop {
                     let temp = null_calendar.advance(
@@ -659,7 +653,7 @@ impl MakeSchedule {
                 );
             }
         } else if self.rule == DateGenerationRule::ThirdWednesdayInclusive {
-            for date in self.dates.iter_mut() {
+            for date in &mut self.dates {
                 *date = Date::nth_weekday(3, Weekday::Wednesday, date.month(), date.year());
             }
         }

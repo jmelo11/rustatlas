@@ -53,7 +53,7 @@ impl CashflowsAggregatorConstVisitor {
     pub fn redemptions(&self) -> BTreeMap<Date, f64> {
         self.redemptions
             .lock()
-            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
@@ -61,7 +61,7 @@ impl CashflowsAggregatorConstVisitor {
     pub fn disbursements(&self) -> BTreeMap<Date, f64> {
         self.disbursements
             .lock()
-            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
@@ -69,7 +69,7 @@ impl CashflowsAggregatorConstVisitor {
     pub fn interest(&self) -> BTreeMap<Date, f64> {
         self.interest
             .lock()
-            .map_or_else(|poison| poison.into_inner(), |guard| guard)
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 }

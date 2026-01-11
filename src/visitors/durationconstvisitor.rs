@@ -30,7 +30,7 @@ impl<'a> DurationConstVisitor<'a> {
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'_> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let duration = visitable

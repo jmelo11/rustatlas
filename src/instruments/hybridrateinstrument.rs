@@ -184,10 +184,10 @@ impl HybridRateInstrument {
 
 impl HasCurrency for HybridRateInstrument {
     fn currency(&self) -> Result<Currency> {
-        match self.currency {
-            Some(currency) => Ok(currency),
-            None => Err(AtlasError::NotFoundErr("Currency not found".to_string())),
-        }
+        self.currency.map_or_else(
+            || Err(AtlasError::NotFoundErr("Currency not found".to_string())),
+            Ok,
+        )
     }
 }
 

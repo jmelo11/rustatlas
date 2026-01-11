@@ -151,7 +151,7 @@ impl Instrument {
             Self::FixedRateInstrument(fri) => fri.structure(),
             Self::FloatingRateInstrument(fri) => fri.structure(),
             Self::HybridRateInstrument(hri) => hri.structure(),
-            _ => todo!(),
+            Self::DoubleRateInstrument(_) => todo!(),
         }
     }
 
@@ -259,7 +259,7 @@ impl Instrument {
             Self::FloatingRateInstrument(fri) => fri.set_forecast_curve_id(id),
             Self::HybridRateInstrument(hri) => hri.set_forecast_curve_id(id),
             Self::DoubleRateInstrument(dri) => dri.set_forecast_curve_id(id),
-            _ => {}
+            Self::FixedRateInstrument(_) => {}
         }
     }
 
