@@ -390,9 +390,7 @@ impl TryFrom<String> for Weekday {
             "Thursday" => Ok(Self::Thursday),
             "Friday" => Ok(Self::Friday),
             "Saturday" => Ok(Self::Saturday),
-            _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid weekday: {s}"
-            ))),
+            _ => Err(AtlasError::InvalidValueErr(format!("Invalid weekday: {s}"))),
         }
     }
 }
@@ -427,18 +425,18 @@ impl Sub<i32> for Weekday {
     }
 }
 
-impl Add<Weekday> for Weekday {
+impl Add<Self> for Weekday {
     type Output = i32;
 
-    fn add(self, rhs: Weekday) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
         rhs as i32 + self as i32
     }
 }
 
-impl Sub<Weekday> for Weekday {
+impl Sub<Self> for Weekday {
     type Output = i32;
 
-    fn sub(self, rhs: Weekday) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         self as i32 + -(rhs as i32)
     }
 }
