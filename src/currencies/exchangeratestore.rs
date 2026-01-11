@@ -28,8 +28,8 @@ pub struct ExchangeRateStore {
 impl ExchangeRateStore {
     /// Creates a new `ExchangeRateStore` with the given reference date.
     #[must_use]
-    pub fn new(date: Date) -> ExchangeRateStore {
-        ExchangeRateStore {
+    pub fn new(date: Date) -> Self {
+        Self {
             reference_date: date,
             exchange_rate_map: HashMap::new(),
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
@@ -117,19 +117,19 @@ impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
         &self,
         period: Period,
         index_store: &IndexStore,
-    ) -> Result<ExchangeRateStore> {
+    ) -> Result<Self> {
         let new_date = self.reference_date + period;
         self.advance_to_date(new_date, index_store)
     }
 
-    fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<ExchangeRateStore> {
+    fn advance_to_date(&self, date: Date, index_store: &IndexStore) -> Result<Self> {
         if self.reference_date() != index_store.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 "Reference date of exchange rate store and index store do not match".to_string(),
             ));
         }
 
-        let mut new_store = ExchangeRateStore::new(date);
+        let mut new_store = Self::new(date);
         for ((ccy1, ccy2), fx) in self.exchange_rate_map.iter() {
             let compound_factor = index_store.currency_forescast_factor(*ccy1, *ccy2, date);
             match compound_factor {

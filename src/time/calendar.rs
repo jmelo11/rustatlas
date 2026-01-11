@@ -45,12 +45,12 @@ impl Serialize for Calendar {
         S: serde::Serializer,
     {
         let s = match self {
-            Calendar::NullCalendar(cal) => cal.impl_name(),
-            Calendar::WeekendsOnly(cal) => cal.impl_name(),
-            Calendar::TARGET(cal) => cal.impl_name(),
-            Calendar::UnitedStates(cal) => cal.impl_name(),
-            Calendar::Brazil(cal) => cal.impl_name(),
-            Calendar::Chile(cal) => cal.impl_name(),
+            Self::NullCalendar(cal) => cal.impl_name(),
+            Self::WeekendsOnly(cal) => cal.impl_name(),
+            Self::TARGET(cal) => cal.impl_name(),
+            Self::UnitedStates(cal) => cal.impl_name(),
+            Self::Brazil(cal) => cal.impl_name(),
+            Self::Chile(cal) => cal.impl_name(),
         };
         serializer.serialize_str(&s)
     }
@@ -63,12 +63,12 @@ impl<'de> serde::Deserialize<'de> for Calendar {
     {
         let s = String::deserialize(deserializer)?;
         match s.as_str() {
-            "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
-            "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
-            "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
-            "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
-            "Brazil" => Ok(Calendar::Brazil(Brazil::default())),
-            "Chile" => Ok(Calendar::Chile(Chile::default())),
+            "NullCalendar" => Ok(Self::NullCalendar(NullCalendar::new())),
+            "WeekendsOnly" => Ok(Self::WeekendsOnly(WeekendsOnly::new())),
+            "TARGET" => Ok(Self::TARGET(TARGET::new())),
+            "UnitedStates" => Ok(Self::UnitedStates(UnitedStates::default())),
+            "Brazil" => Ok(Self::Brazil(Brazil::default())),
+            "Chile" => Ok(Self::Chile(Chile::default())),
             _ => Err(serde::de::Error::custom(format!("Invalid calendar: {}", s))),
         }
     }
@@ -79,12 +79,12 @@ impl TryFrom<String> for Calendar {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "NullCalendar" => Ok(Calendar::NullCalendar(NullCalendar::new())),
-            "WeekendsOnly" => Ok(Calendar::WeekendsOnly(WeekendsOnly::new())),
-            "TARGET" => Ok(Calendar::TARGET(TARGET::new())),
-            "UnitedStates" => Ok(Calendar::UnitedStates(UnitedStates::default())),
-            "Brazil" => Ok(Calendar::Brazil(Brazil::default())),
-            "Chile" => Ok(Calendar::Chile(Chile::default())),
+            "NullCalendar" => Ok(Self::NullCalendar(NullCalendar::new())),
+            "WeekendsOnly" => Ok(Self::WeekendsOnly(WeekendsOnly::new())),
+            "TARGET" => Ok(Self::TARGET(TARGET::new())),
+            "UnitedStates" => Ok(Self::UnitedStates(UnitedStates::default())),
+            "Brazil" => Ok(Self::Brazil(Brazil::default())),
+            "Chile" => Ok(Self::Chile(Chile::default())),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid calendar: {}",
                 s
@@ -109,89 +109,89 @@ impl From<Calendar> for String {
 impl ImplCalendar for Calendar {
     fn impl_name(&self) -> String {
         match self {
-            Calendar::NullCalendar(cal) => cal.impl_name(),
-            Calendar::WeekendsOnly(cal) => cal.impl_name(),
-            Calendar::TARGET(cal) => cal.impl_name(),
-            Calendar::UnitedStates(cal) => cal.impl_name(),
-            Calendar::Brazil(cal) => cal.impl_name(),
-            Calendar::Chile(cal) => cal.impl_name(),
+            Self::NullCalendar(cal) => cal.impl_name(),
+            Self::WeekendsOnly(cal) => cal.impl_name(),
+            Self::TARGET(cal) => cal.impl_name(),
+            Self::UnitedStates(cal) => cal.impl_name(),
+            Self::Brazil(cal) => cal.impl_name(),
+            Self::Chile(cal) => cal.impl_name(),
         }
     }
 
     fn impl_is_business_day(&self, date: &Date) -> bool {
         match self {
-            Calendar::NullCalendar(cal) => cal.impl_is_business_day(date),
-            Calendar::WeekendsOnly(cal) => cal.impl_is_business_day(date),
-            Calendar::TARGET(cal) => cal.impl_is_business_day(date),
-            Calendar::UnitedStates(cal) => cal.impl_is_business_day(date),
-            Calendar::Brazil(cal) => cal.impl_is_business_day(date),
-            Calendar::Chile(cal) => cal.impl_is_business_day(date),
+            Self::NullCalendar(cal) => cal.impl_is_business_day(date),
+            Self::WeekendsOnly(cal) => cal.impl_is_business_day(date),
+            Self::TARGET(cal) => cal.impl_is_business_day(date),
+            Self::UnitedStates(cal) => cal.impl_is_business_day(date),
+            Self::Brazil(cal) => cal.impl_is_business_day(date),
+            Self::Chile(cal) => cal.impl_is_business_day(date),
         }
     }
 
     fn added_holidays(&self) -> HashSet<Date> {
         match self {
-            Calendar::NullCalendar(cal) => cal.added_holidays(),
-            Calendar::WeekendsOnly(cal) => cal.added_holidays(),
-            Calendar::TARGET(cal) => cal.added_holidays(),
-            Calendar::UnitedStates(cal) => cal.added_holidays(),
-            Calendar::Brazil(cal) => cal.added_holidays(),
-            Calendar::Chile(cal) => cal.added_holidays(),
+            Self::NullCalendar(cal) => cal.added_holidays(),
+            Self::WeekendsOnly(cal) => cal.added_holidays(),
+            Self::TARGET(cal) => cal.added_holidays(),
+            Self::UnitedStates(cal) => cal.added_holidays(),
+            Self::Brazil(cal) => cal.added_holidays(),
+            Self::Chile(cal) => cal.added_holidays(),
         }
     }
 
     fn removed_holidays(&self) -> HashSet<Date> {
         match self {
-            Calendar::NullCalendar(cal) => cal.removed_holidays(),
-            Calendar::WeekendsOnly(cal) => cal.removed_holidays(),
-            Calendar::TARGET(cal) => cal.removed_holidays(),
-            Calendar::UnitedStates(cal) => cal.removed_holidays(),
-            Calendar::Brazil(cal) => cal.removed_holidays(),
-            Calendar::Chile(cal) => cal.removed_holidays(),
+            Self::NullCalendar(cal) => cal.removed_holidays(),
+            Self::WeekendsOnly(cal) => cal.removed_holidays(),
+            Self::TARGET(cal) => cal.removed_holidays(),
+            Self::UnitedStates(cal) => cal.removed_holidays(),
+            Self::Brazil(cal) => cal.removed_holidays(),
+            Self::Chile(cal) => cal.removed_holidays(),
         }
     }
 
     fn add_holiday(&mut self, date: Date) {
         match self {
-            Calendar::NullCalendar(cal) => cal.add_holiday(date),
-            Calendar::WeekendsOnly(cal) => cal.add_holiday(date),
-            Calendar::TARGET(cal) => cal.add_holiday(date),
-            Calendar::UnitedStates(cal) => cal.add_holiday(date),
-            Calendar::Brazil(cal) => cal.add_holiday(date),
-            Calendar::Chile(cal) => cal.add_holiday(date),
+            Self::NullCalendar(cal) => cal.add_holiday(date),
+            Self::WeekendsOnly(cal) => cal.add_holiday(date),
+            Self::TARGET(cal) => cal.add_holiday(date),
+            Self::UnitedStates(cal) => cal.add_holiday(date),
+            Self::Brazil(cal) => cal.add_holiday(date),
+            Self::Chile(cal) => cal.add_holiday(date),
         }
     }
 
     fn remove_holiday(&mut self, date: Date) {
         match self {
-            Calendar::NullCalendar(cal) => cal.remove_holiday(date),
-            Calendar::WeekendsOnly(cal) => cal.remove_holiday(date),
-            Calendar::TARGET(cal) => cal.remove_holiday(date),
-            Calendar::UnitedStates(cal) => cal.remove_holiday(date),
-            Calendar::Brazil(cal) => cal.remove_holiday(date),
-            Calendar::Chile(cal) => cal.remove_holiday(date),
+            Self::NullCalendar(cal) => cal.remove_holiday(date),
+            Self::WeekendsOnly(cal) => cal.remove_holiday(date),
+            Self::TARGET(cal) => cal.remove_holiday(date),
+            Self::UnitedStates(cal) => cal.remove_holiday(date),
+            Self::Brazil(cal) => cal.remove_holiday(date),
+            Self::Chile(cal) => cal.remove_holiday(date),
         }
     }
 
     fn holiday_list(&self, from: Date, to: Date, include_weekends: bool) -> Vec<Date> {
         match self {
-            Calendar::NullCalendar(cal) => cal.holiday_list(from, to, include_weekends),
-            Calendar::WeekendsOnly(cal) => cal.holiday_list(from, to, include_weekends),
-            Calendar::TARGET(cal) => cal.holiday_list(from, to, include_weekends),
-            Calendar::UnitedStates(cal) => cal.holiday_list(from, to, include_weekends),
-            Calendar::Brazil(cal) => cal.holiday_list(from, to, include_weekends),
-            Calendar::Chile(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::NullCalendar(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::WeekendsOnly(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::TARGET(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::UnitedStates(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::Brazil(cal) => cal.holiday_list(from, to, include_weekends),
+            Self::Chile(cal) => cal.holiday_list(from, to, include_weekends),
         }
     }
 
     fn business_day_list(&self, from: Date, to: Date) -> Vec<Date> {
         match self {
-            Calendar::NullCalendar(cal) => cal.business_day_list(from, to),
-            Calendar::WeekendsOnly(cal) => cal.business_day_list(from, to),
-            Calendar::TARGET(cal) => cal.business_day_list(from, to),
-            Calendar::UnitedStates(cal) => cal.business_day_list(from, to),
-            Calendar::Brazil(cal) => cal.business_day_list(from, to),
-            Calendar::Chile(cal) => cal.business_day_list(from, to),
+            Self::NullCalendar(cal) => cal.business_day_list(from, to),
+            Self::WeekendsOnly(cal) => cal.business_day_list(from, to),
+            Self::TARGET(cal) => cal.business_day_list(from, to),
+            Self::UnitedStates(cal) => cal.business_day_list(from, to),
+            Self::Brazil(cal) => cal.business_day_list(from, to),
+            Self::Chile(cal) => cal.business_day_list(from, to),
         }
     }
 }

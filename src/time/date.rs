@@ -122,7 +122,7 @@ impl NaiveDateExt for NaiveDate {
 /// assert_eq!(date + period, NaiveDate::from_ymd_opt(2020, 1, 30).unwrap());
 /// ```
 impl Add<Period> for NaiveDate {
-    type Output = NaiveDate;
+    type Output = Self;
 
     fn add(self, rhs: Period) -> Self::Output {
         let n = rhs.length();
@@ -142,7 +142,7 @@ impl Add<Period> for NaiveDate {
 /// assert_eq!(date - period, NaiveDate::from_ymd_opt(2019, 12, 31).unwrap());
 /// ```
 impl Sub<Period> for NaiveDate {
-    type Output = NaiveDate;
+    type Output = Self;
 
     fn sub(self, rhs: Period) -> Self::Output {
         let n = rhs.length();
@@ -168,7 +168,7 @@ pub struct Date {
 
 impl From<NaiveDate> for Date {
     fn from(base_date: NaiveDate) -> Self {
-        Date { base_date }
+        Self { base_date }
     }
 }
 
@@ -182,22 +182,22 @@ impl Serialize for Date {
 }
 
 impl<'de> Deserialize<'de> for Date {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Date, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Date::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
+        Self::from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)
     }
 }
 
 impl Date {
     /// Creates a new `Date` from the given year, month, and day.
     #[must_use]
-    pub fn new(year: i32, month: u32, day: u32) -> Date {
+    pub fn new(year: i32, month: u32, day: u32) -> Self {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
         match base_date {
-            Some(base_date) => Date::from(base_date),
+            Some(base_date) => Self::from(base_date),
             None => panic!("Invalid date: {}-{}-{}", year, month, day),
         }
     }
@@ -207,9 +207,9 @@ impl Date {
     /// # Errors
     /// Returns an error if the provided string cannot be parsed into a `Date`
     /// using the specified format.
-    pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
+    pub fn from_str(date: &str, fmt: &str) -> Result<Self> {
         let base_date = NaiveDate::parse_from_str(date, fmt)?;
-        Ok(Date::from(base_date))
+        Ok(Self::from(base_date))
     }
 
     /// Formats this date as a string using the specified format.
@@ -268,39 +268,39 @@ impl Date {
 
     /// Advances this date by `n` units of the specified `TimeUnit`.
     #[must_use]
-    pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
+    pub fn advance(&self, n: i32, units: TimeUnit) -> Self {
         let base_date = self.base_date.advance(n, units);
-        Date::from(base_date)
+        Self::from(base_date)
     }
 
     /// Adds a `Period` to this date.
     #[must_use]
-    pub fn add_period(&self, period: Period) -> Date {
+    pub fn add_period(&self, period: Period) -> Self {
         let base_date = self.base_date + period;
-        Date::from(base_date)
+        Self::from(base_date)
     }
 
     /// Returns the last day of the month for the given date.
     #[must_use]
-    pub fn end_of_month(date: Date) -> Date {
+    pub fn end_of_month(date: Self) -> Self {
         let base_date = NaiveDate::end_of_month(date.base_date);
-        Date::from(base_date)
+        Self::from(base_date)
     }
 
     /// Returns the nth occurrence of the specified weekday in the given month and year.
     #[must_use]
-    pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
-        let base_date = Date::new(year, month, 1);
+    pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Self {
+        let base_date = Self::new(year, month, 1);
         let first = base_date.weekday();
         let skip = n - if day_of_week >= first { 1 } else { 0 };
         let day = 1 + day_of_week + skip * 7 - first;
         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
-        Date::from(base_date)
+        Self::from(base_date)
     }
 
     /// Returns the next occurrence of the specified weekday after the given date.
     #[must_use]
-    pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
+    pub fn next_weekday(date: Self, weekday: Weekday) -> Self {
         let wd = date.weekday();
         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
     }
@@ -321,9 +321,9 @@ impl Date {
 
     /// Returns the minimum representable date.
     #[must_use]
-    pub fn empty() -> Date {
+    pub fn empty() -> Self {
         //min
-        Date::from(NaiveDate::MIN)
+        Self::from(NaiveDate::MIN)
     }
 }
 
@@ -356,7 +356,7 @@ impl Sub for Date {
 /// assert_eq!(date + period, Date::new(2020, 1, 30));
 /// ```
 impl Add<Period> for Date {
-    type Output = Date;
+    type Output = Self;
 
     fn add(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date + rhs;
@@ -374,7 +374,7 @@ impl Add<Period> for Date {
 /// assert_eq!(date - period, Date::new(2019, 12, 31));
 /// ```
 impl Sub<Period> for Date {
-    type Output = Date;
+    type Output = Self;
 
     fn sub(self, rhs: Period) -> Self::Output {
         let base_date: NaiveDate = self.base_date - rhs;
@@ -391,7 +391,7 @@ impl Sub<Period> for Date {
 /// assert_eq!(date + 15, Date::new(2020, 1, 30));
 /// ```
 impl Add<i64> for Date {
-    type Output = Date;
+    type Output = Self;
 
     fn add(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate = self.base_date + Duration::try_days(rhs).unwrap();
@@ -423,7 +423,7 @@ impl AddAssign<i64> for Date {
 /// assert_eq!(date - 15, Date::new(2020, 1, 15));
 /// ```
 impl Sub<i64> for Date {
-    type Output = Date;
+    type Output = Self;
 
     fn sub(self, rhs: i64) -> Self::Output {
         let base_date: NaiveDate = self.base_date - Duration::try_days(rhs).unwrap();
