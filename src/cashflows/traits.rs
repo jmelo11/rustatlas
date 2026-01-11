@@ -93,7 +93,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_delta_accrued_amount_simple() {
+    fn test_delta_accrued_amount_simple() -> Result<()> {
         let notional = 10000.0;
         let rate = InterestRate::new(
             0.05,
@@ -118,17 +118,18 @@ mod tests {
 
         let mut start_date = Date::new(2023, 1, 1);
         let mut end_date = Date::new(2023, 3, 31);
-        let mut accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
+        let mut accrued_amount = coupon.accrued_amount(start_date, end_date)?;
         assert!((accrued_amount - 125.0).abs() < 0.00001);
 
         start_date = Date::new(2023, 1, 15);
         end_date = Date::new(2023, 1, 16);
-        accrued_amount = coupon.accrued_amount(start_date, end_date).unwrap();
+        accrued_amount = coupon.accrued_amount(start_date, end_date)?;
         assert!((accrued_amount - 125.0 / 90.0).abs() < 0.00001);
+        Ok(())
     }
 
     #[test]
-    fn test_delta_accrued_amount_compounded() {
+    fn test_delta_accrued_amount_compounded() -> Result<()> {
         let notional = 10000.0;
         let rate = InterestRate::new(
             0.05,
@@ -153,8 +154,9 @@ mod tests {
 
         let start_date = Date::new(2023, 1, 30);
         let end_date = Date::new(2023, 3, 31);
-        let accrued_amount = coupon.clone().accrued_amount(start_date, end_date).unwrap();
+        let accrued_amount = coupon.clone().accrued_amount(start_date, end_date)?;
 
         assert!(accrued_amount - 122.72234429 < 0.00001);
+        Ok(())
     }
 }

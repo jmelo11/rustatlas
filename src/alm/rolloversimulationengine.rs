@@ -236,23 +236,21 @@ mod tests {
 
     // function to get the outstanding amount at a given date -- Move to a library?
     pub fn get_outstandings_at_date(instruments: &[Instrument], eval_date: Date) -> Result<f64> {
-        let outstanding = instruments
-            .iter()
-            .map(|inst| {
-                let mut local_sum = 0.0;
-                inst.cashflows().iter().for_each(|cf| match cf {
+        instruments.iter().try_fold(0.0, |acc, inst| {
+            let mut local_sum = 0.0;
+            for cf in inst.cashflows() {
+                match cf {
                     Cashflow::Disbursement(f) | Cashflow::Redemption(f) => {
                         let payment_date = f.payment_date();
                         if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap() * f.side().sign();
+                            local_sum += f.amount()? * f.side().sign();
                         }
                     }
                     _ => {}
-                });
-                local_sum
-            })
-            .sum::<f64>();
-        Ok(outstanding)
+                }
+            }
+            Ok(acc + local_sum)
+        })
     }
 
     fn create_store() -> Result<MarketStore> {
@@ -335,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -396,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine_with_growth_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -454,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -518,7 +516,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode_and_growth_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -584,7 +582,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode_and_growth_rate_2() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [

@@ -263,22 +263,25 @@ mod tests {
     }
 
     #[test]
-    fn try_from_str_parses_known_codes_and_trims() {
-        assert_eq!(Currency::try_from("USD").unwrap(), Currency::USD);
-        assert_eq!(Currency::try_from("  USD ").unwrap(), Currency::USD);
-        assert_eq!(Currency::try_from("\nEUR\t").unwrap(), Currency::EUR);
+    fn try_from_str_parses_known_codes_and_trims() -> Result<()> {
+        assert_eq!(Currency::try_from("USD")?, Currency::USD);
+        assert_eq!(Currency::try_from("  USD ")?, Currency::USD);
+        assert_eq!(Currency::try_from("\nEUR\t")?, Currency::EUR);
+        Ok(())
     }
 
     #[test]
-    fn try_from_string_parses_same_as_str() {
-        let c = Currency::try_from("JPY".to_string()).unwrap();
+    fn try_from_string_parses_same_as_str() -> Result<()> {
+        let c = Currency::try_from("JPY".to_string())?;
         assert_eq!(c, Currency::JPY);
+        Ok(())
     }
 
     #[test]
-    fn from_str_parses_same_as_try_from() {
-        let c = Currency::from_str("GBP").unwrap();
+    fn from_str_parses_same_as_try_from() -> Result<()> {
+        let c = Currency::from_str("GBP")?;
         assert_eq!(c, Currency::GBP);
+        Ok(())
     }
 
     #[test]

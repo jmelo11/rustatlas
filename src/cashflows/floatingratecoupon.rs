@@ -170,10 +170,11 @@ impl InterestAccrual for FloatingRateCoupon {
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
-        let accrual = self
-            .accrued_amount(self.accrual_start_date, self.accrual_end_date)
-            .unwrap();
-        self.cashflow = self.cashflow.with_amount(accrual);
+        if let Ok(accrual) =
+            self.accrued_amount(self.accrual_start_date, self.accrual_end_date)
+        {
+            self.cashflow = self.cashflow.with_amount(accrual);
+        }
     }
 }
 

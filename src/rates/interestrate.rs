@@ -253,6 +253,7 @@ mod tests {
             interestrate::{InterestRate, RateDefinition},
         },
         time::{daycounter::DayCounter, enums::Frequency},
+        utils::errors::Result,
     };
 
     struct InterestRateData {
@@ -650,7 +651,7 @@ mod tests {
     const EPSILON: f64 = 1e-9; // or any other small value that you choose
 
     #[test]
-    fn test_implied_rate() {
+    fn test_implied_rate() -> Result<()> {
         // Choose parameters that make sense for your implied_rate function
         // For example:
         let ir = InterestRate::implied_rate(
@@ -659,10 +660,10 @@ mod tests {
             Compounding::Simple,
             Frequency::Annual,
             1.0,
-        )
-        .unwrap();
+        )?;
         let expected_rate = 0.05;
         assert!((ir.rate() - expected_rate).abs() < EPSILON);
+        Ok(())
     }
 
     #[test]

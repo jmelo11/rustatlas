@@ -289,16 +289,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn serialization_test() {
+    fn serialization_test() -> Result<()> {
         let cashflow = Cashflow::Redemption(SimpleCashflow::new(
             Date::new(2024, 1, 1),
             Currency::USD,
             Side::Receive,
         ));
-        let serialized = serde_json::to_string(&cashflow).unwrap();
+        let serialized = serde_json::to_string(&cashflow)
+            .map_err(|err| AtlasError::SerializationErr(err.to_string()))?;
         println!("{serialized}");
 
-        let deserialized: Cashflow = serde_json::from_str(&serialized).unwrap();
+        let deserialized: Cashflow = serde_json::from_str(&serialized)
+            .map_err(|err| AtlasError::DeserializationErr(err.to_string()))?;
         assert_eq!(cashflow, deserialized);
+        Ok(())
     }
 }

@@ -72,8 +72,15 @@ impl ExchangeRateStore {
         }
 
         let cache_key = (first_ccy, second_ccy);
-        if let Some(cached_rate) = self.exchange_rate_cache.lock().unwrap().get(&cache_key) {
-            return Ok(*cached_rate);
+        let cached_rate = {
+            let cache = self
+                .exchange_rate_cache
+                .lock()
+                .map_err(|_| AtlasError::EvaluationErr("Exchange rate cache lock poisoned".to_string()))?;
+            cache.get(&cache_key).copied()
+        };
+        if let Some(cached_rate) = cached_rate {
+            return Ok(cached_rate);
         }
 
         let mut q: VecDeque<(Currency, f64)> = VecDeque::new();
@@ -81,7 +88,10 @@ impl ExchangeRateStore {
         q.push_back((first_ccy, 1.0));
         visited.insert(first_ccy);
 
-        let mut mutable_cache = self.exchange_rate_cache.lock().unwrap();
+        let mut mutable_cache = self
+            .exchange_rate_cache
+            .lock()
+            .map_err(|_| AtlasError::EvaluationErr("Exchange rate cache lock poisoned".to_string()))?;
         while let Some((current_ccy, rate)) = q.pop_front() {
             for (&(source, dest), &map_rate) in &self.exchange_rate_map {
                 if source == current_ccy && !visited.contains(&dest) {
@@ -149,14 +159,15 @@ mod tests {
     use crate::currencies::enums::Currency::{CLP, EUR, USD};
 
     #[test]
-    fn test_same_currency() {
+    fn test_same_currency() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore::new(ref_date);
-        assert_eq!(manager.get_exchange_rate(USD, USD).unwrap(), 1.0);
+        assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
+        Ok(())
     }
 
     #[test]
-    fn test_cache() {
+    fn test_cache() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
             reference_date: ref_date,
@@ -168,20 +179,24 @@ mod tests {
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
         };
 
-        assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
+        assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
         assert_eq!(
             manager
                 .exchange_rate_cache
                 .lock()
-                .unwrap()
+                .map_err(|_| {
+                    AtlasError::EvaluationErr("Exchange rate cache lock poisoned".to_string())
+                })?
                 .get(&(USD, EUR))
-                .unwrap(),
-            &0.85
+                .copied()
+                .ok_or_else(|| AtlasError::NotFoundErr("Missing cached rate".to_string()))?,
+            0.85
         );
+        Ok(())
     }
 
     #[test]
-    fn test_nonexistent_rate() {
+    fn test_nonexistent_rate() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
             reference_date: ref_date,
@@ -191,10 +206,11 @@ mod tests {
 
         let result = manager.get_exchange_rate(USD, EUR);
         assert!(result.is_err());
+        Ok(())
     }
 
     #[test]
-    fn test_complex_case() {
+    fn test_complex_case() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
             reference_date: ref_date,
@@ -207,21 +223,23 @@ mod tests {
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
         };
 
-        assert_eq!(manager.get_exchange_rate(EUR, USD).unwrap(), 1.0 / 0.85);
-        assert_eq!(manager.get_exchange_rate(USD, EUR).unwrap(), 0.85);
+        assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
+        assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+        Ok(())
     }
 
     #[test]
-    fn test_triangulation_case() {
+    fn test_triangulation_case() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let mut manager = ExchangeRateStore::new(ref_date);
         manager.add_exchange_rate(CLP, USD, 800.0);
         manager.add_exchange_rate(USD, EUR, 1.1);
 
-        assert_eq!(manager.get_exchange_rate(CLP, EUR).unwrap(), 1.1 * 800.0);
+        assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
         assert_eq!(
-            manager.get_exchange_rate(EUR, CLP).unwrap(),
+            manager.get_exchange_rate(EUR, CLP)?,
             1.0 / (1.1 * 800.0)
         );
+        Ok(())
     }
 }

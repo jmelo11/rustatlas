@@ -207,12 +207,10 @@ pub trait BondAccrual: HasCashflows {
             .filter(|cf| cf.payment_date() >= from && cf.payment_date() < to)
             .collect::<Vec<&Cashflow>>();
 
-        let mut amount = 0.0;
-        cashflows.iter().for_each(|cf| {
+        cashflows.iter().try_fold(0.0, |acc, cf| {
             //amount += cf.amount().unwrap() / rate.discount_factor(cf.payment_date(), to);
-            amount += cf.amount().unwrap();
-        });
-        Ok(amount)
+            Ok(acc + cf.amount()?)
+        })
     }
 
     /// Calculates the present value of cashflows from the evaluation date forward using the yield rate.
@@ -224,16 +222,16 @@ pub trait BondAccrual: HasCashflows {
             .yield_rate()
             .ok_or(AtlasError::NotFoundErr("Yield rate".to_string()))?;
 
-        Ok(self
+        self
             .cashflows()
             .iter()
             .filter(|cf| cf.payment_date() >= evaluation_date)
-            .fold(0.0, |acc, cf| {
-                let npv = cf.amount().unwrap()
+            .try_fold(0.0, |acc, cf| {
+                let npv = cf.amount()?
                     * rate.discount_factor(evaluation_date, cf.payment_date())
                     * cf.side().sign();
-                acc + npv
-            }))
+                Ok(acc + npv)
+            })
     }
 }
 
@@ -350,12 +348,12 @@ mod tests {
             .bullet()
             .build()?;
 
-        instrument.cashflows().iter().for_each(|cf| {
+        for cf in instrument.cashflows() {
             if let Cashflow::FixedRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 150000.0).abs() < 1e-6);
                 assert_eq!(coupon.rate(), rate);
             }
-        });
+        }
 
         let new_rate = InterestRate::new(
             0.03,
@@ -366,12 +364,12 @@ mod tests {
 
         let new_instrument = instrument.set_rate(new_rate);
 
-        new_instrument.cashflows().iter().for_each(|cf| {
+        for cf in new_instrument.cashflows() {
             if let Cashflow::FixedRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 75000.0).abs() < 1e-6);
                 assert_eq!(coupon.rate(), new_rate);
             }
-        });
+        }
 
         Ok(())
     }

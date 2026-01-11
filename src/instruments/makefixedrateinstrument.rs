@@ -988,14 +988,22 @@ impl From<FixedRateInstrument> for MakeFixedRateInstrument {
         for cashflow in val.cashflows() {
             match cashflow {
                 Cashflow::Disbursement(c) => {
-                    disbursements.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        disbursements.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::Redemption(c) => {
-                    redemptions.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        redemptions.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::FixedRateCoupon(c) => {
-                    additional_coupon_dates.insert(c.accrual_start_date().unwrap());
-                    additional_coupon_dates.insert(c.accrual_end_date().unwrap());
+                    if let Ok(start_date) = c.accrual_start_date() {
+                        additional_coupon_dates.insert(start_date);
+                    }
+                    if let Ok(end_date) = c.accrual_end_date() {
+                        additional_coupon_dates.insert(end_date);
+                    }
                 }
                 _ => (),
             }
@@ -1008,7 +1016,7 @@ impl From<FixedRateInstrument> for MakeFixedRateInstrument {
             .with_notional(val.notional())
             .with_discount_curve_id(val.discount_curve_id())
             .with_side(val.side())
-            .with_currency(val.currency().unwrap())
+            .with_currency(val.currency().unwrap_or(Currency::USD))
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
             .with_additional_coupon_dates(additional_coupon_dates)
@@ -1112,29 +1120,33 @@ mod tests {
             .for_each(|cf| println!("{cf}"));
 
         let mut payments = HashMap::new();
-        instrument.cashflows().iter().for_each(|cf| match cf {
-            Cashflow::FixedRateCoupon(c) => {
-                if payments.contains_key(&c.payment_date()) {
-                    payments.insert(
-                        c.payment_date(),
-                        payments[&c.payment_date()] + c.amount().unwrap(),
-                    );
-                } else {
-                    payments.insert(c.payment_date(), c.amount().unwrap());
+        for cf in instrument.cashflows() {
+            match cf {
+                Cashflow::FixedRateCoupon(c) => {
+                    let amount = c.amount()?;
+                    if payments.contains_key(&c.payment_date()) {
+                        payments.insert(
+                            c.payment_date(),
+                            payments[&c.payment_date()] + amount,
+                        );
+                    } else {
+                        payments.insert(c.payment_date(), amount);
+                    }
                 }
-            }
-            Cashflow::Redemption(c) => {
-                if payments.contains_key(&c.payment_date()) {
-                    payments.insert(
-                        c.payment_date(),
-                        payments[&c.payment_date()] + c.amount().unwrap(),
-                    );
-                } else {
-                    payments.insert(c.payment_date(), c.amount().unwrap());
+                Cashflow::Redemption(c) => {
+                    let amount = c.amount()?;
+                    if payments.contains_key(&c.payment_date()) {
+                        payments.insert(
+                            c.payment_date(),
+                            payments[&c.payment_date()] + amount,
+                        );
+                    } else {
+                        payments.insert(c.payment_date(), amount);
+                    }
                 }
+                _ => (),
             }
-            _ => (),
-        });
+        }
 
         //check if all equal
         let first = payments.values().next().unwrap();
@@ -1464,7 +1476,7 @@ mod tests_equal_payment {
     };
 
     #[test]
-    fn test_calculate_equal_payment_vector() {
+    fn test_calculate_equal_payment_vector() -> Result<()> {
         let notional = 100.0;
         let dates = vec![
             Date::new(2020, 1, 1),
@@ -1495,12 +1507,12 @@ mod tests_equal_payment {
             DayCounter::Actual360,
         );
 
-        let redemptions =
-            calculate_equal_payment_redemptions(dates.clone(), rate, notional).unwrap();
+        let redemptions = calculate_equal_payment_redemptions(dates.clone(), rate, notional)?;
 
         assert_eq!(redemptions.len(), dates.len() - 1);
         assert!(redemptions[0] < 0.0);
         assert!(redemptions.iter().skip(1).all(|&x| x > 0.0));
+        Ok(())
     }
 
     #[test]
@@ -1528,15 +1540,20 @@ mod tests_equal_payment {
             .equal_payments()
             .build()?;
 
-        instrument
-            .cashflows()
-            .iter()
-            .for_each(|cf| assert!(cf.amount().unwrap() > 0.0));
+        for cf in instrument.cashflows() {
+            assert!(cf.amount()? > 0.0);
+        }
 
-        let notional_calc = instrument.cashflows().iter().fold(0.0, |acc, cf| match cf {
-            Cashflow::Redemption(c) => acc + c.amount().unwrap(),
-            _ => acc,
-        });
+        let notional_calc =
+            instrument
+                .cashflows()
+                .iter()
+                .try_fold(0.0, |acc, cf| -> Result<f64> {
+                    match cf {
+                        Cashflow::Redemption(c) => Ok(acc + c.amount()?),
+                        _ => Ok(acc),
+                    }
+                })?;
 
         assert!(notional_calc > 100.0);
 
@@ -1574,17 +1591,25 @@ mod tests_equal_payment {
             .iter()
             .for_each(|cf| println!("{cf}"));
 
-        instrument.cashflows().iter().for_each(|cf| match &cf {
-            Cashflow::Disbursement(c) | Cashflow::Redemption(c) => {
-                assert!(c.amount().unwrap() > 0.0)
+        for cf in instrument.cashflows() {
+            match &cf {
+                Cashflow::Disbursement(c) | Cashflow::Redemption(c) => {
+                    assert!(c.amount()? > 0.0);
+                }
+                _ => (),
             }
-            _ => (),
-        });
+        }
 
-        let notional_calc = instrument.cashflows().iter().fold(0.0, |acc, cf| match cf {
-            Cashflow::Redemption(c) => acc + c.amount().unwrap(),
-            _ => acc,
-        });
+        let notional_calc =
+            instrument
+                .cashflows()
+                .iter()
+                .try_fold(0.0, |acc, cf| -> Result<f64> {
+                    match cf {
+                        Cashflow::Redemption(c) => Ok(acc + c.amount()?),
+                        _ => Ok(acc),
+                    }
+                })?;
         assert!(notional_calc > notional);
 
         let number_of_disbursements = instrument
@@ -1628,18 +1653,22 @@ mod tests_equal_payment {
         let notional_1 = instrument_1
             .cashflows()
             .iter()
-            .fold(0.0, |acc, cf| match cf {
-                Cashflow::Redemption(c) => acc + c.amount().unwrap(),
-                _ => acc,
-            });
+            .try_fold(0.0, |acc, cf| -> Result<f64> {
+                match cf {
+                    Cashflow::Redemption(c) => Ok(acc + c.amount()?),
+                    _ => Ok(acc),
+                }
+            })?;
 
         let notional_2 = instrument_2
             .cashflows()
             .iter()
-            .fold(0.0, |acc, cf| match cf {
-                Cashflow::Redemption(c) => acc + c.amount().unwrap(),
-                _ => acc,
-            });
+            .try_fold(0.0, |acc, cf| -> Result<f64> {
+                match cf {
+                    Cashflow::Redemption(c) => Ok(acc + c.amount()?),
+                    _ => Ok(acc),
+                }
+            })?;
 
         assert!((notional_1 - notional_2).abs() < 1e-6);
         Ok(())

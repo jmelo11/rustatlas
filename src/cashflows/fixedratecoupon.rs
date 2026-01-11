@@ -235,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_amount_calculation() {
+    fn test_amount_calculation() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -264,15 +264,14 @@ mod tests {
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
         assert_eq!(
-            coupon
-                .accrued_amount(accrual_start_date, accrual_end_date)
-                .unwrap(),
+            coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
             expected_amount
         );
+        Ok(())
     }
 
     #[test]
-    fn test_accrual() {
+    fn test_accrual() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -300,8 +299,9 @@ mod tests {
 
         let star_date = Date::new(2024, 2, 28);
         let end_date = Date::new(2024, 3, 1);
-        let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
+        let accrued_amount = coupon.accrued_amount(star_date, end_date)?;
 
         print!("Accrued amount between {star_date} and {end_date} is {accrued_amount}");
+        Ok(())
     }
 }

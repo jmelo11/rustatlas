@@ -272,7 +272,7 @@ mod test {
         assert_eq!(instrument.side(), Side::Receive);
         assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
         assert_eq!(instrument.rate_definition(), rate_definition);
-        assert_eq!(instrument.currency().unwrap(), Currency::USD);
+        assert_eq!(instrument.currency()?, Currency::USD);
 
         Ok(())
     }
@@ -306,22 +306,22 @@ mod test {
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.02));
 
-        instrument.cashflows().iter().for_each(|cf| {
+        for cf in instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 150000.0).abs() < 1e-6);
                 assert_eq!(coupon.spread(), spread);
             }
-        });
+        }
 
         let new_spread = 0.01;
         let new_instrument = instrument.set_spread(new_spread);
 
-        new_instrument.cashflows().iter().for_each(|cf| {
+        for cf in new_instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 75000.0).abs() < 1e-6);
                 assert_eq!(coupon.spread(), new_spread);
             }
-        });
+        }
 
         Ok(())
     }
