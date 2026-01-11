@@ -300,7 +300,7 @@ mod tests {
         let npv_visitor = NPVConstVisitor::new(&data, true);
         let npv = npv_visitor.visit(&instrument)?;
 
-        assert_ne!(npv, 0.0);
+        assert!(npv.abs() > 1e-12);
         Ok(())
     }
 
