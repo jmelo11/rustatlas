@@ -34,7 +34,7 @@ impl<'a> NPVConstVisitor<'a> {
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'_> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {

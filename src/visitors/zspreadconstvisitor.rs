@@ -49,7 +49,7 @@ struct SpreadedNPV<'a, T> {
     target: f64,
 }
 
-impl<'a, T> SpreadedNPV<'a, T>
+impl<T> SpreadedNPV<'_, T>
 where
     T: HasCashflows,
 {
@@ -93,7 +93,7 @@ where
     }
 }
 
-impl<'a, T> CostFunction for SpreadedNPV<'a, T>
+impl<T> CostFunction for SpreadedNPV<'_, T>
 where
     T: HasCashflows,
 {
@@ -106,19 +106,18 @@ where
             .cashflows()
             .iter()
             .try_fold(0.0, |acc, cf| -> Result<f64> {
-                match cf {
-                    Cashflow::Disbursement(_) => Ok(acc),
-                    _ => {
-                        let cf_npv = self.cashflow_npv(cf, *param)?;
-                        Ok(acc + cf_npv)
-                    }
+                if let Cashflow::Disbursement(_) = cf {
+                    Ok(acc)
+                } else {
+                    let cf_npv = self.cashflow_npv(cf, *param)?;
+                    Ok(acc + cf_npv)
                 }
             })?;
         Ok((npv - self.target).abs())
     }
 }
 
-impl<'a, T> ConstVisit<T> for ZSpreadConstVisitor<'a>
+impl<T> ConstVisit<T> for ZSpreadConstVisitor<'_>
 where
     T: HasCashflows,
 {

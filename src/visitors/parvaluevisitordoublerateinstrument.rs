@@ -120,7 +120,7 @@ impl ConstVisit<DoubleRateInstrument> for ParValueConstVisitor<'_> {
             instrument
                 .cashflows()
                 .iter()
-                .cloned()
+                .copied()
                 .partition(|cf| cf.payment_date() <= change_rate_date);
         // buscar id de cashflow con fecha de pago igual a change rate date
         let id = first_part_cashflows
