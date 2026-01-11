@@ -172,10 +172,7 @@ impl MakeFixedRateLeg {
 
     /// Sets the rate definition.
     #[must_use]
-    pub const fn with_rate_definition(
-        mut self,
-        rate_definition: RateDefinition,
-    ) -> Self {
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -257,10 +254,7 @@ impl MakeFixedRateLeg {
 
     /// Sets the additional coupon dates.
     #[must_use]
-    pub fn with_additional_coupon_dates(
-        mut self,
-        additional_coupon_dates: HashSet<Date>,
-    ) -> Self {
+    pub fn with_additional_coupon_dates(mut self, additional_coupon_dates: HashSet<Date>) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
@@ -448,7 +442,7 @@ impl MakeFixedRateLeg {
                 if let Some(id) = self.discount_curve_id {
                     cashflows
                         .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                        .for_each(|cf| cf.set_discount_curve_id(id));
                 }
 
                 let leg = Leg::new(
@@ -513,7 +507,7 @@ impl MakeFixedRateLeg {
                 if let Some(id) = self.discount_curve_id {
                     cashflows
                         .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                        .for_each(|cf| cf.set_discount_curve_id(id));
                 }
 
                 Ok(Leg::new(
@@ -627,7 +621,7 @@ impl MakeFixedRateLeg {
                 if let Some(id) = self.discount_curve_id {
                     cashflows
                         .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                        .for_each(|cf| cf.set_discount_curve_id(id));
                 }
 
                 Ok(Leg::new(
@@ -710,7 +704,7 @@ impl MakeFixedRateLeg {
                 if let Some(id) = self.discount_curve_id {
                     cashflows
                         .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                        .for_each(|cf| cf.set_discount_curve_id(id));
                 }
 
                 Ok(Leg::new(
@@ -811,7 +805,7 @@ impl MakeFixedRateLeg {
                 if let Some(id) = self.discount_curve_id {
                     cashflows
                         .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                        .for_each(|cf| cf.set_discount_curve_id(id));
                 }
 
                 Ok(Leg::new(
