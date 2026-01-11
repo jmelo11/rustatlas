@@ -55,8 +55,9 @@ pub struct MakeFloatingRateLeg {
 /// Constructor, setters and getters.
 impl MakeFloatingRateLeg {
     /// Creates a new `MakeFloatingRateLeg` builder with default values.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> MakeFloatingRateLeg {
+    pub fn new() -> MakeFloatingRateLeg {
         MakeFloatingRateLeg {
             start_date: None,
             end_date: None,

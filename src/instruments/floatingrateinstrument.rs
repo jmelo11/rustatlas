@@ -48,8 +48,9 @@ pub struct FloatingRateInstrument {
 
 impl FloatingRateInstrument {
     /// Creates a new `FloatingRateInstrument`.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         start_date: Date,
         end_date: Date,
         notional: f64,

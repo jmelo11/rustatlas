@@ -62,8 +62,9 @@ pub struct MakeFixedRateLeg {
 /// New, setters and getters
 impl MakeFixedRateLeg {
     /// Creates a new MakeFixedRateLeg builder with default values.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> MakeFixedRateLeg {
+    pub fn new() -> MakeFixedRateLeg {
         MakeFixedRateLeg {
             start_date: None,
             end_date: None,

@@ -26,8 +26,9 @@ impl<'a> NPVByDateConstVisitor<'a> {
     /// * `reference_date` - The reference date for NPV calculations
     /// * `market_data` - A slice of market data for discount factors and FX rates
     /// * `include_today_cashflows` - Whether to include cashflows on the reference date
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         reference_date: Date,
         market_data: &'a [MarketData],
         include_today_cashflows: bool,

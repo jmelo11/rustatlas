@@ -31,8 +31,9 @@ pub struct CashflowsAggregatorConstVisitor {
 
 impl CashflowsAggregatorConstVisitor {
     /// Creates a new instance of `CashflowsAggregatorConstVisitor`.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             redemptions: Mutex::new(BTreeMap::new()),
             disbursements: Mutex::new(BTreeMap::new()),

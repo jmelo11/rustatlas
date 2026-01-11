@@ -20,8 +20,9 @@ pub struct NPVConstVisitor<'a> {
 
 impl<'a> NPVConstVisitor<'a> {
     /// Creates a new `NPVConstVisitor` with the given market data and flag.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
+    pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data,
             include_today_cashflows,

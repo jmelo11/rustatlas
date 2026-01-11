@@ -42,8 +42,9 @@ pub struct DoubleRateInstrument {
 
 impl DoubleRateInstrument {
     /// Creates a new `DoubleRateInstrument` with the specified parameters.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         start_date: Date,
         end_date: Date,
         notional: f64,

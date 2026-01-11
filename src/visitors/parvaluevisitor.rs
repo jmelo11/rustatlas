@@ -32,6 +32,7 @@ struct ParValue<'a, T> {
 }
 
 impl<'a, T> ParValue<'a, T> {
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data, true);
@@ -91,8 +92,9 @@ pub struct ParValueConstVisitor<'a> {
 
 impl<'a> ParValueConstVisitor<'a> {
     /// Creates a new `ParValueConstVisitor` with the given market data.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(market_data: &'a [MarketData]) -> Self {
+    pub fn new(market_data: &'a [MarketData]) -> Self {
         Self { market_data }
     }
 }

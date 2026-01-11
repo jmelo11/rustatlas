@@ -23,8 +23,9 @@ pub struct Leg {
 
 impl Leg {
     /// Creates a new `Leg` with the specified parameters.
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub const fn new(
+    pub fn new(
         structure: Structure,
         rate_type: RateType,
         rate_value: f64,
