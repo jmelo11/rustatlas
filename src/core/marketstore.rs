@@ -150,8 +150,7 @@ impl fmt::Display for MarketStore {
                 }
             }
         }
-        // fix this and check for tests
-        let indices_map = index_store.get_index_map().unwrap();
+        let indices_map = index_store.get_index_map().unwrap_or_default();
 
         indices_names = tools::sort_strings_alphabetically(&indices_names);
 
