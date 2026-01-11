@@ -142,19 +142,14 @@ impl fmt::Display for MarketStore {
         let all_indices = index_store.get_all_indices();
 
         let mut indices_names: Vec<String> = vec![];
-        let mut indice_name: String;
-
         for indice in all_indices {
-            indice_name = match indice.read_index() {
-                Ok(indice) => indice.name().unwrap().to_string(),
-                Err(_) => "".to_string(),
-            };
-            if !indice_name.is_empty() {
-                indices_names.push(indice_name);
+            if let Ok(indice) = indice.read_index() {
+                if let Ok(name) = indice.name() {
+                    indices_names.push(name);
+                }
             }
         }
-
-        let indices_map = index_store.get_index_map().unwrap();
+        let indices_map = index_store.get_index_map().unwrap_or_default();
 
         indices_names = tools::sort_strings_alphabetically(&indices_names);
 
@@ -194,5 +189,22 @@ impl fmt::Display for MarketStore {
         msg.push_str("=====================================\n");
 
         write!(f, "{}", msg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_does_not_panic() {
+        let reference_date = Date::new(2024, 1, 1);
+        let market_store = MarketStore::new(reference_date, Currency::USD);
+
+        let result = std::panic::catch_unwind(|| {
+            let _ = format!("{}", market_store);
+        });
+
+        assert!(result.is_ok());
     }
 }
