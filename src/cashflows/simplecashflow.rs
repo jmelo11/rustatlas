@@ -37,7 +37,7 @@ pub struct SimpleCashflow {
 impl SimpleCashflow {
     /// Creates a new `SimpleCashflow` with the given payment date, currency, and side.
     #[must_use]
-    pub const fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
+    pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
         Self {
             payment_date,
             currency,
@@ -57,12 +57,10 @@ impl SimpleCashflow {
 
     #[must_use]
     /// Sets the discount curve ID for this cashflow and returns self for method chaining.
-    #[must_use]
     pub const fn with_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self
     }
-#[must_use]
 
     /// Sets the registry ID for this cashflow and returns self for method chaining.
     #[must_use]
@@ -72,12 +70,12 @@ impl SimpleCashflow {
     }
 
     /// Sets the discount curve ID for this cashflow.
-    pub const fn set_discount_curve_id(&mut self, id: usize) {
+    pub fn set_discount_curve_id(&mut self, id: usize) {
         self.discount_curve_id = Some(id);
     }
 
     /// Sets the amount for this cashflow.
-    pub const fn set_amount(&mut self, amount: f64) {
+    pub fn set_amount(&mut self, amount: f64) {
         self.amount = Some(amount);
     }
 }

@@ -63,7 +63,7 @@ struct ParValue<'a, T> {
 
 impl<'a, T> ParValue<'a, T> {
     #[must_use]
-    pub const fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
+    pub fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data, true);
         let fixing_visitor = FixingVisitor::new(market_data);
         ParValue {

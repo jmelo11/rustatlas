@@ -236,7 +236,7 @@ pub struct MakeSchedule {
 impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
     #[must_use]
-    pub const fn new(from: Date, to: Date) -> MakeSchedule {
+    pub fn new(from: Date, to: Date) -> MakeSchedule {
         MakeSchedule {
             effective_date: from,
             termination_date: to,
@@ -263,8 +263,8 @@ impl MakeSchedule {
     /// Sets the frequency.
     #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
-        self.tenor = Period::from_frequency(frequency)
-            .unwrap_or_else(|| panic!("Invalid frequency"));
+        self.tenor =
+            Period::from_frequency(frequency).unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 

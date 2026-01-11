@@ -468,98 +468,92 @@ mod tests {
 
     #[test]
     fn test_days_in_month() {
-        let date = NaiveDate::from_ymd_opt(2020, 2, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 2, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_month(), 29);
 
-        let date = NaiveDate::from_ymd_opt(2021, 2, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2021, 2, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_month(), 28);
 
-        let date = NaiveDate::from_ymd_opt(2021, 4, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2021, 4, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_month(), 30);
 
-        let date = NaiveDate::from_ymd_opt(2021, 7, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2021, 7, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_month(), 31);
     }
 
     #[test]
     fn test_days_in_year() {
-        let date = NaiveDate::from_ymd_opt(2020, 5, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 5, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_year(), 366);
 
-        let date = NaiveDate::from_ymd_opt(2021, 5, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2021, 5, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(date.days_in_year(), 365);
     }
 
     #[test]
     fn test_date_has_leap_year() {
-        let date = NaiveDate::from_ymd_opt(2020, 5, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 5, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert!(date.date_has_leap_year());
 
-        let date = NaiveDate::from_ymd_opt(2021, 5, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2021, 5, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert!(!date.date_has_leap_year());
     }
 
     #[test]
     fn test_advance() {
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(
             date.advance(15, TimeUnit::Days),
-            NaiveDate::from_ymd_opt(2020, 1, 30)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2020, 1, 30).unwrap_or_else(|| panic!("date should be valid")),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(
             date.advance(3, TimeUnit::Weeks),
-            NaiveDate::from_ymd_opt(2020, 2, 5)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2020, 2, 5).unwrap_or_else(|| panic!("date should be valid")),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(
             date.advance(2, TimeUnit::Months),
-            NaiveDate::from_ymd_opt(2020, 3, 15)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2020, 3, 15).unwrap_or_else(|| panic!("date should be valid")),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 15).unwrap_or_else(|| panic!("date should be valid"));
         assert_eq!(
             date.advance(2, TimeUnit::Years),
-            NaiveDate::from_ymd_opt(2022, 1, 15)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2022, 1, 15).unwrap_or_else(|| panic!("date should be valid")),
         );
     }
 
     #[test]
     fn test_addition_with_period() {
-        let date = NaiveDate::from_ymd_opt(2020, 1, 15)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 15).unwrap_or_else(|| panic!("date should be valid"));
         let period = Period::new(15, TimeUnit::Days);
         assert_eq!(
             date + period,
-            NaiveDate::from_ymd_opt(2020, 1, 30)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2020, 1, 30).unwrap_or_else(|| panic!("date should be valid")),
         );
 
-        let date = NaiveDate::from_ymd_opt(2020, 1, 1)
-            .unwrap_or_else(|| panic!("date should be valid"));
+        let date =
+            NaiveDate::from_ymd_opt(2020, 1, 1).unwrap_or_else(|| panic!("date should be valid"));
         let period = Period::new(6, TimeUnit::Months);
         assert_eq!(
             date + period,
-            NaiveDate::from_ymd_opt(2020, 7, 1)
-                .unwrap_or_else(|| panic!("date should be valid")),
+            NaiveDate::from_ymd_opt(2020, 7, 1).unwrap_or_else(|| panic!("date should be valid")),
         );
     }
 

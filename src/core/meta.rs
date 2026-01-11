@@ -23,7 +23,7 @@ pub struct ExchangeRateRequest {
 impl ExchangeRateRequest {
     /// Creates a new `ExchangeRateRequest`.
     #[must_use]
-    pub const fn new(
+    pub fn new(
         first_currency: Currency,
         second_currency: Option<Currency>,
         reference_date: Option<Date>,
@@ -267,7 +267,7 @@ impl MarketData {
     ///
     /// # Errors
     /// Returns an error if the discount factor was not set in this market data.
-    pub const fn df(&self) -> Result<f64> {
+    pub fn df(&self) -> Result<f64> {
         self.df.ok_or(AtlasError::ValueNotSetErr("df".to_owned()))
     }
 
@@ -275,7 +275,7 @@ impl MarketData {
     ///
     /// # Errors
     /// Returns an error if the forward rate was not set in this market data.
-    pub const fn fwd(&self) -> Result<f64> {
+    pub fn fwd(&self) -> Result<f64> {
         self.fwd.ok_or(AtlasError::ValueNotSetErr("fwd".to_owned()))
     }
 
@@ -283,7 +283,7 @@ impl MarketData {
     ///
     /// # Errors
     /// Returns an error if the exchange rate was not set in this market data.
-    pub const fn fx(&self) -> Result<f64> {
+    pub fn fx(&self) -> Result<f64> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_owned()))
     }
 
