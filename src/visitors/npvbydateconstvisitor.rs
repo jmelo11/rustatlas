@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_npv_by_date_const_visitor_expired_instrument() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let indexer = IndexingVisitor::new();
 
         let start_date = Date::new(2010, 1, 1);
@@ -237,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_npv_by_date_const_visitor() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let indexer = IndexingVisitor::new();
 
         let start_date = Date::new(2020, 1, 1);

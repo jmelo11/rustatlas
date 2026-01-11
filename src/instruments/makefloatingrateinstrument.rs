@@ -762,14 +762,22 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
         for cashflow in val.cashflows() {
             match cashflow {
                 Cashflow::Disbursement(c) => {
-                    disbursements.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        disbursements.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::Redemption(c) => {
-                    redemptions.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        redemptions.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::FloatingRateCoupon(c) => {
-                    additional_coupon_dates.insert(c.accrual_start_date().unwrap());
-                    additional_coupon_dates.insert(c.accrual_end_date().unwrap());
+                    if let Ok(start_date) = c.accrual_start_date() {
+                        additional_coupon_dates.insert(start_date);
+                    }
+                    if let Ok(end_date) = c.accrual_end_date() {
+                        additional_coupon_dates.insert(end_date);
+                    }
                 }
                 _ => (),
             }
@@ -785,7 +793,7 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
             .with_forecast_curve_id(val.forecast_curve_id())
             .with_discount_curve_id(val.discount_curve_id())
             .with_payment_frequency(val.payment_frequency())
-            .with_currency(val.currency().unwrap())
+            .with_currency(val.currency().unwrap_or(Currency::USD))
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
             .with_additional_coupon_dates(additional_coupon_dates)
@@ -1030,10 +1038,7 @@ mod tests {
         );
         assert_eq!(instrument2.spread(), instrument.spread());
         assert_eq!(instrument2.side(), instrument.side());
-        assert_eq!(
-            instrument2.currency().unwrap(),
-            instrument.currency().unwrap()
-        );
+        assert_eq!(instrument2.currency()?, instrument.currency()?);
         assert_eq!(
             instrument2.discount_curve_id(),
             instrument.discount_curve_id()

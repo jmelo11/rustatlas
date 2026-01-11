@@ -199,7 +199,7 @@ impl IndexStore {
     pub fn get_index_names(&self) -> Result<Vec<String>> {
         let mut names = Vec::new();
         for index in self.index_map.values() {
-            names.push(index.read_index()?.name().unwrap());
+            names.push(index.read_index()?.name()?);
         }
         Ok(names)
     }
@@ -211,7 +211,7 @@ impl IndexStore {
     pub fn get_index_map(&self) -> Result<HashMap<String, usize>> {
         let mut map = HashMap::new();
         for (id, index) in self.index_map.iter() {
-            map.insert(index.read_index()?.name().unwrap(), *id);
+            map.insert(index.read_index()?.name()?, *id);
         }
         Ok(map)
     }
@@ -268,9 +268,12 @@ impl IndexStore {
     }
 
     /// Swaps the index with the given source ID to the given target ID.
-    pub fn swap_index_by_id(&mut self, from: usize, to: usize) {
-        let index = self.index_map.remove(&from).unwrap();
+    pub fn swap_index_by_id(&mut self, from: usize, to: usize) -> Result<()> {
+        let index = self.index_map.remove(&from).ok_or_else(|| {
+            AtlasError::NotFoundErr(format!("Index with id {from} not found"))
+        })?;
         self.index_map.insert(to, index);
+        Ok(())
     }
 
     /// Calculates the currency forecast factor between two currencies at a given date.

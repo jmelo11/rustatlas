@@ -26,17 +26,16 @@ pub struct AccruedAmountConstVisitor {
 impl AccruedAmountConstVisitor {
     /// Creates a new `AccruedAmountConstVisitor` with the specified evaluation date and horizon.
     #[must_use]
-    pub fn new(evaluation_date: Date, horizon: Period) -> Self {
+    pub fn new(evaluation_date: Date, horizon: Period) -> Result<Self> {
         let schedule = MakeSchedule::new(evaluation_date, evaluation_date + horizon)
             .with_tenor(Period::new(1, TimeUnit::Days))
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self {
+        Ok(Self {
             accrued_amounts: Mutex::new(BTreeMap::new()),
             validation_currency: None,
             evaluation_dates: schedule.dates().clone(),
-        }
+        })
     }
 
     /// Sets the currency to validate against the instrument's currency.
@@ -46,8 +45,11 @@ impl AccruedAmountConstVisitor {
     }
 
     /// Returns a clone of the accrued amounts map.
-    pub fn accrued_amounts(&self) -> BTreeMap<Date, f64> {
-        self.accrued_amounts.lock().unwrap().clone()
+    pub fn accrued_amounts(&self) -> Result<BTreeMap<Date, f64>> {
+        self.accrued_amounts
+            .lock()
+            .map(|map| map.clone())
+            .map_err(|_| AtlasError::EvaluationErr("Accrued amounts lock poisoned".to_string()))
     }
 }
 
@@ -68,19 +70,26 @@ impl<T: HasCurrency + HasCashflows> ConstVisit<T> for AccruedAmountConstVisitor 
                 let accrued_amount = inst
                     .cashflows()
                     .iter()
-                    .filter(|cf| match cf {
-                        Cashflow::FixedRateCoupon(_) | Cashflow::FloatingRateCoupon(_) => {
-                            cf.accrual_start_date().unwrap() <= end_date
-                                && cf.accrual_end_date().unwrap() >= start_date
+                    .try_fold(0.0, |acc, cf| -> Result<f64> {
+                        match cf {
+                            Cashflow::FixedRateCoupon(_) | Cashflow::FloatingRateCoupon(_) => {
+                                let accrual_start = cf.accrual_start_date()?;
+                                let accrual_end = cf.accrual_end_date()?;
+                                if accrual_start <= end_date && accrual_end >= start_date {
+                                    Ok(acc + cf.accrued_amount(start_date, end_date)?)
+                                } else {
+                                    Ok(acc)
+                                }
+                            }
+                            _ => Ok(acc),
                         }
-                        _ => false,
-                    })
-                    .map(|cf| cf.accrued_amount(start_date, end_date).unwrap())
-                    .sum();
+                    })?;
 
                 self.accrued_amounts
                     .lock()
-                    .unwrap()
+                    .map_err(|_| {
+                        AtlasError::EvaluationErr("Accrued amounts lock poisoned".to_string())
+                    })?
                     .entry(end_date)
                     .and_modify(|e| *e += accrued_amount)
                     .or_insert(accrued_amount);
@@ -132,11 +141,11 @@ mod tests {
             .bullet()
             .build()?;
 
-        let visitor = AccruedAmountConstVisitor::new(start_date, Period::new(5, TimeUnit::Years))
+        let visitor = AccruedAmountConstVisitor::new(start_date, Period::new(5, TimeUnit::Years))?
             .with_validate_currency(Currency::USD);
 
         visitor.visit(&instrument)?;
-        let accrued_amounts = visitor.accrued_amounts();
+        let accrued_amounts = visitor.accrued_amounts()?;
         let horizon_days = start_date + Period::new(5, TimeUnit::Years) - start_date;
         let expected_size = usize::try_from(horizon_days)
             .unwrap_or_else(|_| panic!("horizon_days does not fit into usize: {horizon_days}"));
