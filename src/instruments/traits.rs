@@ -9,6 +9,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 
 /// # `Structure`
 /// A struct that contains the information needed to define a structure.
@@ -119,14 +120,14 @@ pub fn add_cashflows_to_vec(
     currency: Currency,
     cashflow_type: CashflowType,
 ) {
-    dates.iter().zip(amounts).for_each(|(date, amount)| {
+    for (date, amount) in dates.iter().zip(amounts) {
         let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
             _ => (),
         }
-    });
+    }
 }
 
 /// Calculate the notionals for a given structure
@@ -135,7 +136,13 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
     match structure {
         Structure::Bullet => vec![notional; n],
         Structure::EqualRedemptions => {
-            let redemptions = vec![notional / n as f64; n];
+            let redemptions = vec![
+                notional
+                    / f64::from(u32::try_from(n).unwrap_or_else(|_| {
+                        panic!("notional schedule length should fit in u32")
+                    }));
+                n
+            ];
             let mut results = Vec::new();
             let mut sum = 0.0;
             for r in redemptions {
@@ -152,9 +159,9 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
 /// Calculate the outstanding amounts for a given set of disbursements and redemptions
 #[must_use]
 pub fn calculate_outstanding(
-    disbursements: &HashMap<Date, f64>,
-    redemptions: &HashMap<Date, f64>,
-    additional_dates: &HashSet<Date>,
+    disbursements: &HashMap<Date, f64, impl BuildHasher>,
+    redemptions: &HashMap<Date, f64, impl BuildHasher>,
+    additional_dates: &HashSet<Date, impl BuildHasher>,
 ) -> Vec<(Date, Date, f64)> {
     let mut outstanding = Vec::new();
 

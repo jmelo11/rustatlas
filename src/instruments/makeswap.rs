@@ -63,7 +63,7 @@ pub struct MakeSwap {
 }
 
 impl MakeSwap {
-    /// Creates a new MakeSwap builder with default values.
+    /// Creates a new `MakeSwap` builder with default values.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {
@@ -397,10 +397,11 @@ impl MakeSwap {
         self
     }
 
-    /// Builds the Swap instrument from the configured parameters.
+    /// Builds the `Swap` instrument from the configured parameters.
     ///
     /// # Errors
     /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<Swap> {
         let first_rate_type = self
             .first_leg_rate_type
@@ -801,7 +802,7 @@ pub struct MakeFixFloatSwap {
 }
 
 impl MakeFixFloatSwap {
-    /// Creates a new MakeFixFloatSwap builder with default values.
+    /// Creates a new `MakeFixFloatSwap` builder with default values.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {

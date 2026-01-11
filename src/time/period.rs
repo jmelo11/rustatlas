@@ -260,10 +260,8 @@ impl Period {
         let mut periods = Vec::new();
         let mut current_period = String::new();
         for c in chars {
-            if c.is_numeric() {
-                current_period.push(c);
-            } else {
-                current_period.push(c);
+            current_period.push(c);
+            if !c.is_numeric() {
                 periods.push(current_period);
                 current_period = String::new();
             }
@@ -315,10 +313,10 @@ impl Period {
     #[must_use]
     pub fn period_in_year(&self) -> f64 {
         match self.units {
-            TimeUnit::Years => self.length as f64,
-            TimeUnit::Months => self.length as f64 / 12.0,
-            TimeUnit::Weeks => self.length as f64 / 52.0,
-            TimeUnit::Days => self.length as f64 / 365.0,
+            TimeUnit::Years => f64::from(self.length),
+            TimeUnit::Months => f64::from(self.length) / 12.0,
+            TimeUnit::Weeks => f64::from(self.length) / 52.0,
+            TimeUnit::Days => f64::from(self.length) / 365.0,
         }
     }
 }
@@ -328,6 +326,14 @@ impl TryFrom<String> for Period {
 
     fn try_from(s: String) -> Result<Self> {
         Self::from_str(&s)
+    }
+}
+
+impl std::str::FromStr for Period {
+    type Err = AtlasError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Period::from_str(s)
     }
 }
 
@@ -350,7 +356,7 @@ impl<'de> serde::Deserialize<'de> for Period {
     {
         struct PeriodVisitor;
 
-        impl<'de> Visitor<'de> for PeriodVisitor {
+        impl Visitor<'_> for PeriodVisitor {
             type Value = Period;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -458,7 +464,7 @@ impl Neg for Period {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Period {
+        Self {
             length: -self.length,
             units: self.units,
         }
@@ -498,7 +504,7 @@ impl Add for Period {
                         )));
                     }
 
-                    _ => {
+                    TimeUnit::Years => {
                         return Err(AtlasError::PeriodOperationErr(format!(
                             "unknown time unit ({:?})",
                             other.units
@@ -516,7 +522,7 @@ impl Add for Period {
                         )));
                     }
 
-                    _ => {
+                    TimeUnit::Months => {
                         return Err(AtlasError::PeriodOperationErr(format!(
                             "unknown time unit ({:?})",
                             other.units
@@ -535,7 +541,7 @@ impl Add for Period {
                         )));
                     }
 
-                    _ => {
+                    TimeUnit::Weeks => {
                         return Err(AtlasError::PeriodOperationErr(format!(
                             "unknown time unit ({:?})",
                             other.units
@@ -553,7 +559,7 @@ impl Add for Period {
                         )));
                     }
 
-                    _ => {
+                    TimeUnit::Days => {
                         return Err(AtlasError::PeriodOperationErr(format!(
                             "unknown time unit ({:?})",
                             other.units
@@ -601,7 +607,7 @@ impl Mul<i32> for Period {
     type Output = Self;
 
     fn mul(self, n: i32) -> Self::Output {
-        Period {
+        Self {
             length: self.length * n,
             units: self.units,
         }
@@ -779,7 +785,7 @@ mod tests {
         let r = p1 + p2;
         match r {
             Err(_) => Ok(()),
-            _ => Err(AtlasError::PeriodOperationErr(
+            Ok(_) => Err(AtlasError::PeriodOperationErr(
                 "impossible addition between 2W and 1Y".to_string(),
             )),
         }
@@ -798,7 +804,7 @@ mod tests {
         let r = p1 + p2;
         match r {
             Err(_) => Ok(()),
-            _ => Err(AtlasError::PeriodOperationErr(
+            Ok(_) => Err(AtlasError::PeriodOperationErr(
                 "impossible addition between 5D and 1Y".to_string(),
             )),
         }

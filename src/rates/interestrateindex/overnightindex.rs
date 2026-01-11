@@ -78,6 +78,7 @@ impl OvernightIndex {
     }
 
     /// Sets the term structure for this overnight index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
@@ -108,7 +109,7 @@ impl FixingProvider for OvernightIndex {
     fn fixing(&self, date: Date) -> Result<f64> {
         self.fixings
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "No fixing for date {date} for index {name:?}",
                 name = self.name
@@ -248,7 +249,9 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }

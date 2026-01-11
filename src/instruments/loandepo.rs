@@ -148,6 +148,7 @@ pub struct LoanDepo {
 impl TryFrom<LoanDepo> for Instrument {
     type Error = AtlasError;
 
+    #[allow(clippy::too_many_lines)]
     fn try_from(value: LoanDepo) -> Result<Self> {
         let mut cashflows = value.cashflows.clone();
         cashflows.iter_mut().try_for_each(|cf| -> Result<()> {

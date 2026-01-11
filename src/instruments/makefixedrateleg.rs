@@ -61,7 +61,7 @@ pub struct MakeFixedRateLeg {
 
 /// New, setters and getters
 impl MakeFixedRateLeg {
-    /// Creates a new MakeFixedRateLeg builder with default values.
+    /// Creates a new `MakeFixedRateLeg` builder with default values.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {
@@ -339,10 +339,11 @@ impl Default for MakeFixedRateLeg {
 }
 
 impl MakeFixedRateLeg {
-    /// Builds the Leg from the configured MakeFixedRateLeg builder.
+    /// Builds the leg from the configured `MakeFixedRateLeg` builder.
     ///
     /// # Errors
     /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -363,14 +364,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
 
                 // this logic should go into a separate function/ Schedule should have accessing methods
@@ -391,17 +391,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -446,9 +445,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in cashflows.iter_mut() {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 let leg = Leg::new(
@@ -511,9 +510,9 @@ impl MakeFixedRateLeg {
                 }
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in cashflows.iter_mut() {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -532,14 +531,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -557,17 +555,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -577,7 +574,7 @@ impl MakeFixedRateLeg {
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
                 let redemptions = calculate_equal_payment_redemptions(
-                    schedule.dates().clone(),
+                    schedule.dates(),
                     rate,
                     notional,
                     side,
@@ -620,7 +617,7 @@ impl MakeFixedRateLeg {
                 );
 
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
@@ -634,9 +631,9 @@ impl MakeFixedRateLeg {
                 //cashflows.extend(infered_cashflows);
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in cashflows.iter_mut() {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -655,14 +652,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -723,9 +719,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in cashflows.iter_mut() {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -744,14 +740,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -769,17 +764,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -815,7 +809,7 @@ impl MakeFixedRateLeg {
                 )?;
 
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -827,9 +821,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id));
+                    for cf in cashflows.iter_mut() {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -896,19 +890,22 @@ impl CostFunction for EqualPaymentCost {
 }
 
 fn calculate_equal_payment_redemptions(
-    dates: Vec<Date>,
+    dates: &[Date],
     rate: InterestRate,
     notional: f64,
     side: Side,
 ) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
-        dates: dates.clone(),
+        dates: dates.to_vec(),
         rate,
     };
     let (min, max) = (-0.1, 1.5);
     let solver = BrentRoot::new(min, max, 1e-6);
 
-    let init_param = 1.0 / (dates.len() as f64);
+    let len = u32::try_from(dates.len()).map_err(|_| {
+        AtlasError::InvalidValueErr("Dates length should fit in u32".to_string())
+    })?;
+    let init_param = 1.0 / f64::from(len);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
         .run()?;

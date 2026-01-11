@@ -19,12 +19,12 @@ pub struct Thirty360;
 
 impl DayCountProvider for Thirty360 {
     fn day_count(start: Date, end: Date) -> i64 {
-        let d1 = start.day() as i64;
-        let d2 = end.day() as i64;
-        let m1 = start.month() as i64;
-        let m2 = end.month() as i64;
-        let y1 = start.year() as i64;
-        let y2 = end.year() as i64;
+        let d1 = i64::from(start.day());
+        let d2 = i64::from(end.day());
+        let m1 = i64::from(start.month());
+        let m2 = i64::from(end.month());
+        let y1 = i64::from(start.year());
+        let y2 = i64::from(end.year());
 
         let dd1 = if d1 == 31 { 30 } else { d1 };
         let dd2 = if d2 == 31 && dd1 == 30 { 30 } else { d2 };
@@ -33,7 +33,9 @@ impl DayCountProvider for Thirty360 {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Self::day_count(start, end) as f64 / 360.0
+        let days = i32::try_from(Self::day_count(start, end))
+            .unwrap_or_else(|_| panic!("day count should fit in i32"));
+        f64::from(days) / 360.0
     }
 }
 
@@ -66,10 +68,10 @@ const fn is_last_of_february(d: i64, m: i64, y: i32) -> bool {
 
 impl DayCountProvider for Thirty360US {
     fn day_count(start: Date, end: Date) -> i64 {
-        let d1 = start.day() as i64;
-        let d2 = end.day() as i64;
-        let m1 = start.month() as i64;
-        let m2 = end.month() as i64;
+        let d1 = i64::from(start.day());
+        let d2 = i64::from(end.day());
+        let m1 = i64::from(start.month());
+        let m2 = i64::from(end.month());
         let y1 = start.year();
         let y2 = end.year();
 
@@ -87,10 +89,12 @@ impl DayCountProvider for Thirty360US {
             dd2
         };
 
-        360 * ((y2 as i64) - (y1 as i64)) + 30 * (m2 - m1) + (dd2 - dd1)
+        360 * (i64::from(y2) - i64::from(y1)) + 30 * (m2 - m1) + (dd2 - dd1)
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Self::day_count(start, end) as f64 / 360.0
+        let days = i32::try_from(Self::day_count(start, end))
+            .unwrap_or_else(|_| panic!("day count should fit in i32"));
+        f64::from(days) / 360.0
     }
 }

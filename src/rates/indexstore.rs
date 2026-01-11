@@ -71,7 +71,7 @@ impl IndexStore {
     pub fn get_currency_curve(&self, currency: Currency) -> Result<usize> {
         self.currency_curve
             .get(&currency)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
                 "Currency curve for currency {currency:?}"
             )))
@@ -180,7 +180,7 @@ impl IndexStore {
     /// Returns an error if the index cannot be read or the name is not found.
     pub fn get_index_by_name(
         &self,
-        name: String,
+        name: &str,
     ) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         for (id, index) in self.index_map.iter() {
             if index.read_index()?.name()? == name {
@@ -221,7 +221,7 @@ impl IndexStore {
     pub fn get_all_indices(&self) -> Vec<Arc<RwLock<dyn InterestRateIndexTrait>>> {
         let mut indices = Vec::new();
         for index in self.index_map.values() {
-            indices.push(index.clone());
+            indices.push(Arc::clone(index));
         }
         indices
     }
@@ -245,7 +245,7 @@ impl IndexStore {
     /// Returns an error if any index cannot be advanced or reinserted.
     pub fn advance_to_period(&self, period: Period) -> Result<IndexStore> {
         let reference_date = self.reference_date + period;
-        let mut store = IndexStore::new(reference_date);
+        let mut store = Self::new(reference_date);
         for (id, index) in self.index_map.iter() {
             let new_index = index.read_index()?.advance_to_period(period)?;
             store.add_index(*id, new_index)?;
@@ -263,11 +263,16 @@ impl IndexStore {
     /// # Errors
     /// Returns an error if the store cannot be advanced to the target date.
     pub fn advance_to_date(&self, date: Date) -> Result<IndexStore> {
-        let days = (date - self.reference_date) as i32;
+        let days = i32::try_from(date - self.reference_date).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         self.advance_to_period(Period::new(days, TimeUnit::Days))
     }
 
     /// Swaps the index with the given source ID to the given target ID.
+    ///
+    /// # Errors
+    /// Returns an error if the source index is missing.
     pub fn swap_index_by_id(&mut self, from: usize, to: usize) -> Result<()> {
         let index = self.index_map.remove(&from).ok_or_else(|| {
             AtlasError::NotFoundErr(format!("Index with id {from} not found"))

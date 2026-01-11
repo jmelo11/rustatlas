@@ -272,6 +272,7 @@ impl MakeDoubleRateInstrument {
     ///
     /// # Errors
     /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<DoubleRateInstrument> {
         // vector to store cashflows
         let mut cashflows = Vec::new();
@@ -319,26 +320,23 @@ impl MakeDoubleRateInstrument {
             .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
 
         // end_date is required, if not set, it will be calculated using tenor
-        let end_date = match self.end_date {
-            Some(date) => date,
-            None => {
-                let tenor = self.tenor.ok_or(AtlasError::ValueNotSetErr(
-                    "Tenor or end date is required".into(),
-                ))?;
-                start_date + tenor
-            }
+        let end_date = if let Some(date) = self.end_date {
+            date
+        } else {
+            let tenor = self.tenor.ok_or(AtlasError::ValueNotSetErr(
+                "Tenor or end date is required".into(),
+            ))?;
+            start_date + tenor
         };
 
         // change_rate_date is required, if not set, it will be calculated using tenor_change_rate
-        let change_rate_date = match self.change_rate_date {
-            Some(date) => date,
-            None => {
-                let tenor_change_rate =
-                    self.tenor_change_rate.ok_or(AtlasError::ValueNotSetErr(
-                        "Tenor change rate or change rate date is required".into(),
-                    ))?;
-                start_date + tenor_change_rate
-            }
+        let change_rate_date = if let Some(date) = self.change_rate_date {
+            date
+        } else {
+            let tenor_change_rate = self.tenor_change_rate.ok_or(AtlasError::ValueNotSetErr(
+                "Tenor change rate or change rate date is required".into(),
+            ))?;
+            start_date + tenor_change_rate
         };
 
         // schedule builder for period between start date and change rate date
@@ -421,7 +419,7 @@ impl MakeDoubleRateInstrument {
             .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
 
         let redemptions_raw: Vec<f64> =
-            calculate_equal_payment_redemptions(dates.clone(), rate, notional)?;
+            calculate_equal_payment_redemptions(&dates, rate, notional)?;
 
         let mut notionals =
             redemptions_raw
@@ -439,12 +437,12 @@ impl MakeDoubleRateInstrument {
         let first_part_notionals: Vec<f64> = notionals
             .iter()
             .take(dates_first_part.len() - 1)
-            .cloned()
+            .copied()
             .collect();
         let second_part_notionals: Vec<f64> = notionals
             .iter()
             .skip(dates_first_part.len() - 1)
-            .cloned()
+            .copied()
             .collect();
 
         let notional_at_change_rate = second_part_notionals
@@ -503,7 +501,7 @@ impl MakeDoubleRateInstrument {
         let mut redemptions = vec![];
         let mut disbursements = vec![];
 
-        let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
+        let aux_dates: Vec<Date> = dates.iter().skip(1).copied().collect();
         aux_dates
             .iter()
             .zip(redemptions_raw.iter())
@@ -540,13 +538,13 @@ impl MakeDoubleRateInstrument {
         if let Some(id) = self.discount_curve_id {
             cashflows
                 .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id))
+                .for_each(|cf| cf.set_discount_curve_id(id));
         }
 
         if let Some(id) = self.forecast_curve_id {
             cashflows
                 .iter_mut()
-                .for_each(|cf| cf.set_forecast_curve_id(id))
+                .for_each(|cf| cf.set_forecast_curve_id(id));
         }
 
         Ok(DoubleRateInstrument::new(
@@ -687,18 +685,21 @@ impl CostFunction for EqualPaymentCost {
 
 //  function to calculate equal payment redemptions, always returns a vector of positive values
 fn calculate_equal_payment_redemptions(
-    dates: Vec<Date>,
+    dates: &[Date],
     rate: InterestRate,
     notional: f64,
 ) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
-        dates: dates.clone(),
+        dates: dates.to_vec(),
         rate,
     };
     let (min, max) = (-0.2, 1.5);
     let solver = BrentRoot::new(min, max, 1e-6);
 
-    let init_param = 1.0 / (dates.len() as f64);
+    let len = u32::try_from(dates.len()).map_err(|_| {
+        AtlasError::InvalidValueErr("Dates length should fit in u32".to_string())
+    })?;
+    let init_param = 1.0 / f64::from(len);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
         .run()?;

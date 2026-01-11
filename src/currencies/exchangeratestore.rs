@@ -165,7 +165,8 @@ mod tests {
     fn test_same_currency() -> Result<()> {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore::new(ref_date);
-        assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
+        let rate = manager.get_exchange_rate(USD, USD)?;
+        assert!((rate - 1.0).abs() < 1e-12);
         Ok(())
     }
 
@@ -182,7 +183,8 @@ mod tests {
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
         };
 
-        assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+        let rate = manager.get_exchange_rate(USD, EUR)?;
+        assert!((rate - 0.85).abs() < 1e-12);
         assert_eq!(
             manager
                 .exchange_rate_cache
@@ -199,7 +201,7 @@ mod tests {
     }
 
     #[test]
-    fn test_nonexistent_rate() -> Result<()> {
+    fn test_nonexistent_rate() {
         let ref_date = Date::new(2021, 1, 1);
         let manager = ExchangeRateStore {
             reference_date: ref_date,
@@ -209,7 +211,6 @@ mod tests {
 
         let result = manager.get_exchange_rate(USD, EUR);
         assert!(result.is_err());
-        Ok(())
     }
 
     #[test]
@@ -226,8 +227,10 @@ mod tests {
             exchange_rate_cache: Arc::new(Mutex::new(HashMap::new())),
         };
 
-        assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
-        assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+        let eur_usd = manager.get_exchange_rate(EUR, USD)?;
+        assert!((eur_usd - (1.0 / 0.85)).abs() < 1e-12);
+        let usd_eur = manager.get_exchange_rate(USD, EUR)?;
+        assert!((usd_eur - 0.85).abs() < 1e-12);
         Ok(())
     }
 
@@ -238,11 +241,10 @@ mod tests {
         manager.add_exchange_rate(CLP, USD, 800.0);
         manager.add_exchange_rate(USD, EUR, 1.1);
 
-        assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
-        assert_eq!(
-            manager.get_exchange_rate(EUR, CLP)?,
-            1.0 / (1.1 * 800.0)
-        );
+        let clp_eur = manager.get_exchange_rate(CLP, EUR)?;
+        assert!((clp_eur - (1.1 * 800.0)).abs() < 1e-12);
+        let eur_clp = manager.get_exchange_rate(EUR, CLP)?;
+        assert!((eur_clp - (1.0 / (1.1 * 800.0))).abs() < 1e-12);
         Ok(())
     }
 }

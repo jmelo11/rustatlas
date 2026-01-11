@@ -48,7 +48,7 @@ pub struct FloatingRateCoupon {
 impl FloatingRateCoupon {
     /// Creates a new floating rate coupon with the specified parameters.
     #[must_use]
-    pub fn new(
+    pub const fn new(
         notional: f64,
         spread: f64,
         accrual_start_date: Date,
@@ -87,7 +87,7 @@ impl FloatingRateCoupon {
     }
 
     /// Sets the discount curve ID.
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 

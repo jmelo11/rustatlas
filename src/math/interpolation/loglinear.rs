@@ -11,18 +11,17 @@ impl Interpolate for LogLinearInterpolator {
     fn interpolate(x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Less)) {
-                Ok(index) => index,
-                Err(index) => index,
+                Ok(index) | Err(index) => index,
             };
 
-        let (first_x, last_x) = match (x_.first(), x_.last()) {
-            (Some(first), Some(last)) => (first, last),
-            _ => panic!("Interpolation data must contain at least one x value."),
+        let (Some(first_x), Some(last_x)) = (x_.first(), x_.last()) else {
+            panic!("Interpolation data must contain at least one x value.");
         };
 
-        if !enable_extrapolation && (x < *first_x || x > *last_x) {
-            panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-        }
+        assert!(
+            enable_extrapolation || (x >= *first_x && x <= *last_x),
+            "Extrapolation is not enabled, and the provided value is outside the range."
+        );
 
         match index {
             0 => y_[0] * (y_[1] / y_[0]).powf((x - x_[0]) / (x_[1] - x_[0])),

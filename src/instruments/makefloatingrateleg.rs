@@ -291,6 +291,7 @@ impl MakeFloatingRateLeg {
     ///
     /// # Errors
     /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self

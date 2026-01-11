@@ -345,6 +345,7 @@ impl MakeSchedule {
     /// Returns an error if the configuration is inconsistent, such as an invalid tenor,
     /// incompatible first or next-to-last dates, or an end-of-month convention that
     /// conflicts with the selected date generation rule.
+    #[allow(clippy::too_many_lines)]
     pub fn build(&mut self) -> Result<Schedule> {
         if self.tenor.length() < 0 {
             return Err(AtlasError::MakeScheduleErr(format!(
@@ -448,10 +449,10 @@ impl MakeSchedule {
                     seed = self.next_to_last_date;
                 }
 
-                let exit_date = if self.first_date != Date::empty() {
-                    self.first_date
-                } else {
+                let exit_date = if self.first_date == Date::empty() {
                     self.effective_date
+                } else {
+                    self.first_date
                 };
 
                 loop {
@@ -538,10 +539,10 @@ impl MakeSchedule {
                         Some(self.convention),
                         self.end_of_month,
                     );
-                    if temp != self.first_date {
-                        self.is_regular.push(false);
-                    } else {
+                    if temp == self.first_date {
                         self.is_regular.push(true);
+                    } else {
+                        self.is_regular.push(false);
                     }
                     seed = self.first_date;
                 } else if self.rule == DateGenerationRule::Twentieth
@@ -569,10 +570,10 @@ impl MakeSchedule {
                     }
                 }
 
-                let exit_date = if self.next_to_last_date != Date::empty() {
-                    self.next_to_last_date
-                } else {
+                let exit_date = if self.next_to_last_date == Date::empty() {
                     self.termination_date
+                } else {
+                    self.next_to_last_date
                 };
 
                 loop {

@@ -25,6 +25,8 @@ impl DayCountProvider for Actual365 {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Self::day_count(start, end) as f64 / 365.0
+        let days = i32::try_from(Self::day_count(start, end))
+            .unwrap_or_else(|_| panic!("day count should fit in i32"));
+        f64::from(days) / 365.0
     }
 }

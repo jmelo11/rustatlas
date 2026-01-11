@@ -68,13 +68,13 @@ impl FixedRateCoupon {
 
     /// Sets the discount curve ID and returns self for method chaining.
     #[must_use]
-    pub fn with_discount_curve_id(mut self, id: usize) -> Self {
+    pub const fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow.set_discount_curve_id(id);
         self
     }
 
     /// Sets the discount curve ID.
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
@@ -263,10 +263,8 @@ mod tests {
 
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
-        assert_eq!(
-            coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
-            expected_amount
-        );
+        let accrued = coupon.accrued_amount(accrual_start_date, accrual_end_date)?;
+        assert!((accrued - expected_amount).abs() < 1e-12);
         Ok(())
     }
 

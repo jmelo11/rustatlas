@@ -181,6 +181,31 @@ mod tests {
 
     #[test]
     fn generator_tests() {
+        fn duration(instruments: &mut [FixedRateInstrument]) -> f64 {
+            let store = create_store()
+                .unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
+            let mut duration = 0.0;
+            let indexer = IndexingVisitor::new();
+            for inst in instruments.iter_mut() {
+                indexer
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
+            }
+
+            let model = SimpleModel::new(&store);
+            let data = model
+                .gen_market_data(&indexer.request())
+                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
+
+            let duration_visitor = DurationConstVisitor::new(&data);
+            for inst in instruments.iter() {
+                duration += duration_visitor
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("duration visit should succeed: {e}"));
+            }
+            duration
+        }
+
         let market_store =
             create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
@@ -213,31 +238,6 @@ mod tests {
                     .unwrap_or_else(|e| panic!("instrument build should succeed: {e}"))
             })
             .collect(); // Collect the results into a Vec<_>
-
-        fn duration(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store()
-                .unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
-            let mut duration = 0.0;
-            let indexer = IndexingVisitor::new();
-            for inst in instruments.iter_mut() {
-                indexer
-                    .visit(inst)
-                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
-            }
-
-            let model = SimpleModel::new(&store);
-            let data = model
-                .gen_market_data(&indexer.request())
-                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
-
-            let duration_visitor = DurationConstVisitor::new(&data);
-            for inst in instruments.iter() {
-                duration += duration_visitor
-                    .visit(inst)
-                    .unwrap_or_else(|e| panic!("duration visit should succeed: {e}"));
-            }
-            duration
-        }
 
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
             duration(chunk);

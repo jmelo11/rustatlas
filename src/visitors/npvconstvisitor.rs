@@ -353,7 +353,32 @@ mod tests {
     }
 
     #[test]
-    fn generator_tests() -> Result<()> {
+    fn generator_tests() {
+        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
+            let store =
+                create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
+            let mut npv = 0.0;
+            let indexer = IndexingVisitor::new();
+            for inst in instruments.iter_mut() {
+                indexer
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
+            }
+
+            let model = SimpleModel::new(&store);
+            let data = model
+                .gen_market_data(&indexer.request())
+                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
+
+            let npv_visitor = NPVConstVisitor::new(&data, true);
+            for inst in instruments.iter() {
+                npv += npv_visitor
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("npv visit should succeed: {e}"));
+            }
+            npv
+        }
+
         let market_store =
             create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
@@ -387,35 +412,8 @@ mod tests {
             })
             .collect(); // Collect the results into a Vec<_>
 
-        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store =
-                create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
-            let mut npv = 0.0;
-            let indexer = IndexingVisitor::new();
-            for inst in instruments.iter_mut() {
-                indexer
-                    .visit(inst)
-                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
-            }
-
-            let model = SimpleModel::new(&store);
-            let data = model
-                .gen_market_data(&indexer.request())
-                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
-
-            let npv_visitor = NPVConstVisitor::new(&data, true);
-            for inst in instruments.iter() {
-                npv += npv_visitor
-                    .visit(inst)
-                    .unwrap_or_else(|e| panic!("npv visit should succeed: {e}"));
-            }
-            npv
-        }
-
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
             npv(chunk);
         });
-
-        Ok(())
     }
 }
