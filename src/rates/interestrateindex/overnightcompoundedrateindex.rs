@@ -99,8 +99,8 @@ pub fn compose_fixing_rate(
 impl OvernightCompoundedRateIndex {
     /// Creates a new `OvernightCompoundedRateIndex` with the given reference date.
     #[must_use]
-    pub fn new(reference_date: Date) -> Self {
-        Self {
+    pub fn new(reference_date: Date) -> OvernightCompoundedRateIndex {
+        OvernightCompoundedRateIndex {
             fixings_rates: HashMap::new(),
             overnight_index: OvernightIndex::new(reference_date),
         }

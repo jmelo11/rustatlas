@@ -59,7 +59,7 @@ impl TenorBasedZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<Self> {
+    ) -> Result<TenorBasedZeroRateTermStructure> {
         let year_fractions = tenors
             .iter()
             .map(|x| {
@@ -70,7 +70,7 @@ impl TenorBasedZeroRateTermStructure {
             })
             .collect();
 
-        Ok(Self {
+        Ok(TenorBasedZeroRateTermStructure {
             reference_date,
             tenors,
             spreads,
@@ -146,7 +146,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
 impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self.reference_date + period;
-        Ok(Arc::new(Self::new(
+        Ok(Arc::new(TenorBasedZeroRateTermStructure::new(
             new_reference_date,
             self.tenors.clone(),
             self.spreads.clone(),

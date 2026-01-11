@@ -29,7 +29,7 @@ impl Brazil {
     /// Creates a new Brazil calendar with the specified market type.
     #[must_use]
     pub fn new(market: Market) -> Self {
-        Self {
+        Brazil {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),

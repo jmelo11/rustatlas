@@ -41,8 +41,8 @@ impl Period {
     /// assert_eq!(p.units(), TimeUnit::Days);
     /// ```
     #[must_use]
-    pub const fn new(length: i32, units: TimeUnit) -> Self {
-        Self { length, units }
+    pub const fn new(length: i32, units: TimeUnit) -> Period {
+        Period { length, units }
     }
 
     /// Creates a Period from a Frequency.
@@ -62,7 +62,7 @@ impl Period {
     /// assert_eq!(p.units(), TimeUnit::Years);
     /// ```
     #[must_use]
-    pub const fn from_frequency(freq: Frequency) -> Option<Self> {
+    pub const fn from_frequency(freq: Frequency) -> Option<Period> {
         match freq {
             Frequency::NoFrequency => Some(Self {
                 units: TimeUnit::Days,
@@ -254,7 +254,7 @@ impl Period {
     ///
     /// # Errors
     /// Returns an error if the tenor string cannot be parsed into a valid `Period`.
-    pub fn from_str(tenor: &str) -> Result<Self> {
+    pub fn from_str(tenor: &str) -> Result<Period> {
         // parse multiple periods and add them
         let chars = tenor.chars();
         let mut periods = Vec::new();
@@ -268,14 +268,14 @@ impl Period {
                 current_period = String::new();
             }
         }
-        let mut result = Self::empty();
+        let mut result = Period::empty();
         for period in periods {
-            result = (result + Self::parse_single_period(&period)?)?;
+            result = (result + Period::parse_single_period(&period)?)?;
         }
         Ok(result)
     }
 
-    fn parse_single_period(tenor: &str) -> Result<Self> {
+    fn parse_single_period(tenor: &str) -> Result<Period> {
         let chars = tenor.chars();
         let mut length = String::new();
         let mut units = String::new();
@@ -302,7 +302,7 @@ impl Period {
                 ))
             }
         };
-        Ok(Self::new(length, units))
+        Ok(Period::new(length, units))
     }
 
     /// Returns the fraction of a year represented by this Period.
@@ -329,7 +329,7 @@ impl TryFrom<String> for Period {
     type Error = AtlasError;
 
     fn try_from(s: String) -> Result<Self> {
-        Self::from_str(&s)
+        Period::from_str(&s)
     }
 }
 
@@ -346,7 +346,7 @@ impl From<Period> for String {
 
 /// Deserializes a string in the format like 1Y or 1Y6M to a Period.
 impl<'de> serde::Deserialize<'de> for Period {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Period, D::Error>
     where
         D: Deserializer<'de>,
     {

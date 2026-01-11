@@ -66,7 +66,7 @@ impl FloatingRateInstrument {
         id: Option<String>,
         issue_date: Option<Date>,
     ) -> Self {
-        Self {
+        FloatingRateInstrument {
             start_date,
             end_date,
             notional,

@@ -180,6 +180,6 @@ impl IsCalendar for UnitedStates {}
 
 impl Default for UnitedStates {
     fn default() -> Self {
-        Self::new(Market::Sofr)
+        UnitedStates::new(Market::Sofr)
     }
 }

@@ -31,11 +31,11 @@ impl TryFrom<String> for Structure {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Bullet" => Ok(Self::Bullet),
-            "EqualRedemptions" => Ok(Self::EqualRedemptions),
-            "Zero" => Ok(Self::Zero),
-            "EqualPayments" => Ok(Self::EqualPayments),
-            "Other" => Ok(Self::Other),
+            "Bullet" => Ok(Structure::Bullet),
+            "EqualRedemptions" => Ok(Structure::EqualRedemptions),
+            "Zero" => Ok(Structure::Zero),
+            "EqualPayments" => Ok(Structure::EqualPayments),
+            "Other" => Ok(Structure::Other),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid structure: {}",
                 s
@@ -61,10 +61,10 @@ impl TryFrom<String> for CashflowType {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Redemption" => Ok(Self::Redemption),
-            "Disbursement" => Ok(Self::Disbursement),
-            "FixedRateCoupon" => Ok(Self::FixedRateCoupon),
-            "FloatingRateCoupon" => Ok(Self::FloatingRateCoupon),
+            "Redemption" => Ok(CashflowType::Redemption),
+            "Disbursement" => Ok(CashflowType::Disbursement),
+            "FixedRateCoupon" => Ok(CashflowType::FixedRateCoupon),
+            "FloatingRateCoupon" => Ok(CashflowType::FloatingRateCoupon),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid cashflow type: {}",
                 s

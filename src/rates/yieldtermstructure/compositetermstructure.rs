@@ -50,8 +50,8 @@ impl CompositeTermStructure {
     pub fn new(
         spread_curve: Arc<dyn YieldTermStructureTrait>,
         base_curve: Arc<dyn YieldTermStructureTrait>,
-    ) -> Self {
-        Self {
+    ) -> CompositeTermStructure {
+        CompositeTermStructure {
             date_reference: base_curve.reference_date(),
             spread_curve,
             base_curve,
@@ -107,13 +107,13 @@ impl AdvanceTermStructureInTime for CompositeTermStructure {
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
-        Ok(Arc::new(Self::new(spread, base)))
+        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
     }
 
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
-        Ok(Arc::new(Self::new(spread, base)))
+        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
     }
 }
 
