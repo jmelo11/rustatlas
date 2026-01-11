@@ -50,7 +50,7 @@ impl NaiveDateExt for NaiveDate {
                     28
                 }
             }
-            _ => panic!("Invalid month: {}", month),
+            _ => panic!("Invalid month: {month}"),
         }
     }
 
@@ -198,7 +198,7 @@ impl Date {
         let base_date = NaiveDate::from_ymd_opt(year, month, day);
         match base_date {
             Some(base_date) => Self::from(base_date),
-            None => panic!("Invalid date: {}-{}-{}", year, month, day),
+            None => panic!("Invalid date: {year}-{month}-{day}"),
         }
     }
 

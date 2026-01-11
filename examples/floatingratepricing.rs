@@ -47,7 +47,7 @@ fn starting_today_pricing() {
     let result = indexer.visit(&mut instrument);
     match result {
         Ok(_) => (),
-        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
+        Err(e) => panic!("IndexingVisitor failed with error: {e}"),
     }
 
     let model = SimpleModel::new(&market_store);

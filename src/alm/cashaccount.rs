@@ -190,7 +190,7 @@ mod tests {
         let cash_account = cash_account.cash_account_evolution(evals_dates)?;
 
         cash_account.iter().for_each(|(date, amount)| {
-            println!("{}: {}", date, amount);
+            println!("{date}: {amount}");
         });
         Ok(())
     }
