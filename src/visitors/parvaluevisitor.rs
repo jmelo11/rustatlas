@@ -264,7 +264,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -305,7 +305,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -344,7 +344,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -384,7 +384,7 @@ mod test {
 
     #[test]
     fn test_par_value_floating_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
