@@ -107,65 +107,6 @@ help: make the function `const`
 90 |     pub const fn set_discount_curve_id(&mut self, id: usize) {
    |         +++++
 
-error: use Option::map_or_else instead of an if let/else
-   --> src/core/marketstore.rs:181:27
-    |
-181 |               indice_name = match indice.read_index() {
-    |  ___________________________^
-182 | |                 Ok(indice) => indice.name().unwrap_or_default(),
-183 | |                 Err(_) => String::new(),
-184 | |             };
-    | |_____________^ help: try: `indice.read_index().map_or_else(|_| String::new(), |indice| indice.name().unwrap_or_default())`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#option_if_let_else
-    = note: `-D clippy::option-if-let-else` implied by `-D clippy::nursery`
-    = help: to override `-D clippy::nursery` add `#[allow(clippy::option_if_let_else)]`
-
-error: redundant closure
-   --> src/core/marketstore.rs:198:47
-    |
-198 |                     .map_or_else(String::new, |idx| idx.to_string());
-    |                                               ^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `std::string::ToString::to_string`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure_for_method_calls
-    = note: `-D clippy::redundant-closure-for-method-calls` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::redundant_closure_for_method_calls)]`
-
-error: temporary with significant `Drop` can be early dropped
-   --> src/currencies/exchangeratestore.rs:91:17
-    |
- 69 |       pub fn get_exchange_rate(&self, first_ccy: Currency, second_ccy: Currency) -> Result<f64> {
-    |  _______________________________________________________________________________________________-
- 70 | |         if first_ccy == second_ccy {
- 71 | |             return Ok(1.0);
-...   |
- 91 | |         let mut mutable_cache = self
-    | |                 ^^^^^^^^^^^^^
-...   |
-120 | |         )))
-121 | |     }
-    | |_____- temporary `mutable_cache` is currently being dropped at the end of its contained scope
-    |
-    = note: this might lead to unnecessary resource contention
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#significant_drop_tightening
-    = note: `-D clippy::significant-drop-tightening` implied by `-D clippy::nursery`
-    = help: to override `-D clippy::nursery` add `#[allow(clippy::significant_drop_tightening)]`
-help: drop the temporary after the end of its last usage
-    |
-110 ~                         mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
-111 +                         drop(mutable_cache);
-    |
-
-error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/currencies/exchangeratestore.rs:142:35
-    |
-142 |         for ((ccy1, ccy2), fx) in self.exchange_rate_map.iter() {
-    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&self.exchange_rate_map`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
-    = note: `-D clippy::explicit-iter-loop` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::explicit_iter_loop)]`
-
 error: this function has too many arguments (18/7)
   --> src/instruments/doublerateinstrument.rs:47:5
    |
@@ -304,6 +245,16 @@ help: try
 76 ~             cashflows,
    |
 
+error: it is more concise to loop over references to containers instead of using explicit iteration methods
+   --> src/alm/cashaccount.rs:192:31
+    |
+192 |         for (date, amount) in cash_account.iter() {
+    |                               ^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&cash_account`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
+    = note: `-D clippy::explicit-iter-loop` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::explicit_iter_loop)]`
+
 error: use Option::map_or_else instead of an if let/else
    --> src/instruments/hybridrateinstrument.rs:187:9
     |
@@ -314,6 +265,16 @@ error: use Option::map_or_else instead of an if let/else
     | |_________^ help: try: `self.currency.map_or_else(|| Err(AtlasError::NotFoundErr("Currency not found".to_string())), |currency| Ok(currency))`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#option_if_let_else
+    = note: `-D clippy::option-if-let-else` implied by `-D clippy::nursery`
+    = help: to override `-D clippy::nursery` add `#[allow(clippy::option_if_let_else)]`
+
+error: it is more concise to loop over references to containers instead of using explicit iteration methods
+   --> src/alm/cashaccount.rs:251:31
+    |
+251 |         for (date, amount) in cash_account.iter() {
+    |                               ^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&cash_account`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
 error: wildcard matches only a single variant and will also match any future added variants
    --> src/instruments/instrument.rs:154:13
@@ -347,50 +308,6 @@ error: this function has too many arguments (9/7)
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
-error: needless use of `for_each`
-   --> src/alm/cashaccount.rs:192:9
-    |
-192 | /         cash_account.iter().for_each(|(date, amount)| {
-193 | |             println!("{date}: {amount}");
-194 | |         });
-    | |___________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-    = note: `-D clippy::needless-for-each` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_for_each)]`
-help: try
-    |
-192 ~         for (date, amount) in cash_account.iter() {
-193 +             println!("{date}: {amount}");
-194 +         }
-    |
-
-error: needless use of `for_each`
-   --> src/alm/cashaccount.rs:251:9
-    |
-251 | /         cash_account.iter().for_each(|(date, amount)| {
-252 | |             println!("{date}: {amount}");
-253 | |         });
-    | |___________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-help: try
-    |
-251 ~         for (date, amount) in cash_account.iter() {
-252 +             println!("{date}: {amount}");
-253 +         }
-    |
-
-error: this function has too many lines (220/100)
-   --> src/instruments/loandepo.rs:151:5
-    |
-151 |     fn try_from(value: LoanDepo) -> Result<Self> {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
-    = note: `-D clippy::too-many-lines` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::too_many_lines)]`
-
 error: strict comparison of `f32` or `f64`
    --> src/alm/rolloversimulationengine.rs:387:9
     |
@@ -401,21 +318,6 @@ error: strict comparison of `f32` or `f64`
     = note: `-D clippy::float-cmp` implied by `-D clippy::pedantic`
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::float_cmp)]`
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: item in documentation is missing backticks
-  --> src/instruments/makedoublerateinstrument.rs:63:35
-   |
-63 |     /// Creates a new instance of MakeDoubleRateInstrument with default values.
-   |                                   ^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#doc_markdown
-   = note: `-D clippy::doc-markdown` implied by `-D clippy::pedantic`
-   = help: to override `-D clippy::pedantic` add `#[allow(clippy::doc_markdown)]`
-help: try
-   |
-63 -     /// Creates a new instance of MakeDoubleRateInstrument with default values.
-63 +     /// Creates a new instance of `MakeDoubleRateInstrument` with default values.
-   |
 
 error: strict comparison of `f32` or `f64`
    --> src/alm/rolloversimulationengine.rs:391:9
@@ -452,6 +354,82 @@ error: strict comparison of `f32` or `f64`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:574:17
+    |
+574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+    = note: `-D clippy::suboptimal-flops` implied by `-D clippy::nursery`
+    = help: to override `-D clippy::nursery` add `#[allow(clippy::suboptimal_flops)]`
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:574:41
+    |
+574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:579:17
+    |
+579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:579:41
+    |
+579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:640:17
+    |
+640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:640:41
+    |
+640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:645:17
+    |
+645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:645:41
+    |
+645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: this function has too many lines (220/100)
+   --> src/instruments/loandepo.rs:151:5
+    |
+151 |     fn try_from(value: LoanDepo) -> Result<Self> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
+    = note: `-D clippy::too-many-lines` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::too_many_lines)]`
 
 error: this function has too many lines (255/100)
    --> src/instruments/makedoublerateinstrument.rs:275:5
@@ -510,40 +488,6 @@ help: try
 339 ~         };
     |
 
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:574:17
-    |
-574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-    = note: `-D clippy::suboptimal-flops` implied by `-D clippy::nursery`
-    = help: to override `-D clippy::nursery` add `#[allow(clippy::suboptimal_flops)]`
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:574:41
-    |
-574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:579:17
-    |
-579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:579:41
-    |
-579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
 error: used `cloned` where `copied` could be used instead
    --> src/instruments/makedoublerateinstrument.rs:442:14
     |
@@ -562,14 +506,6 @@ error: used `cloned` where `copied` could be used instead
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:640:17
-    |
-640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
 error: used `cloned` where `copied` could be used instead
    --> src/instruments/makedoublerateinstrument.rs:506:57
     |
@@ -577,30 +513,6 @@ error: used `cloned` where `copied` could be used instead
     |                                                         ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:640:41
-    |
-640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:645:17
-    |
-645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:645:41
-    |
-645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
 error: consider adding a `;` to the last statement for consistent formatting
    --> src/instruments/makedoublerateinstrument.rs:541:13
@@ -687,11 +599,25 @@ error: item in documentation is missing backticks
    |                       ^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#doc_markdown
+   = note: `-D clippy::doc-markdown` implied by `-D clippy::pedantic`
+   = help: to override `-D clippy::pedantic` add `#[allow(clippy::doc_markdown)]`
 help: try
    |
 66 -     /// Creates a new MakeFixedRateInstrument builder with default values.
 66 +     /// Creates a new `MakeFixedRateInstrument` builder with default values.
    |
+
+error: strict comparison of `f32` or `f64`
+   --> src/cashflows/fixedratecoupon.rs:266:9
+    |
+266 | /         assert_eq!(
+267 | |             coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
+268 | |             expected_amount
+269 | |         );
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: item in documentation is missing backticks
    --> src/instruments/makefixedrateinstrument.rs:344:30
@@ -760,6 +686,8 @@ error: it is more concise to loop over references to containers instead of using
     |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
+    = note: `-D clippy::explicit-iter-loop` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::explicit_iter_loop)]`
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
    --> src/instruments/makefixedrateinstrument.rs:509:39
@@ -978,18 +906,6 @@ help: try
 816 +                     start_date + tenor
 817 ~                 };
     |
-
-error: strict comparison of `f32` or `f64`
-   --> src/cashflows/fixedratecoupon.rs:266:9
-    |
-266 | /         assert_eq!(
-267 | |             coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
-268 | |             expected_amount
-269 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
    --> src/instruments/makefixedrateinstrument.rs:861:51
@@ -1660,6 +1576,15 @@ help: add a `;` here
 401 ~                     });
     |
 
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:168:9
+    |
+168 |         assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: consider adding a `;` to the last statement for consistent formatting
    --> src/instruments/makefloatingrateleg.rs:405:21
     |
@@ -1699,6 +1624,15 @@ help: try
 432 ~                 };
     |
 
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:185:9
+    |
+185 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: consider adding a `;` to the last statement for consistent formatting
    --> src/instruments/makefloatingrateleg.rs:495:21
     |
@@ -1731,6 +1665,21 @@ help: add a `;` here
 503 ~                     });
     |
 
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:186:9
+    |
+186 | /         assert_eq!(
+187 | |             manager
+188 | |                 .exchange_rate_cache
+189 | |                 .lock()
+...   |
+196 | |             0.85
+197 | |         );
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
    --> src/instruments/makefloatingrateleg.rs:523:32
     |
@@ -1761,6 +1710,25 @@ error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up
     |                                                   ^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
+
+error: this function's return value is unnecessary
+   --> src/currencies/exchangeratestore.rs:202:5
+    |
+202 |     fn test_nonexistent_rate() -> Result<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_wraps
+    = note: `-D clippy::unnecessary-wraps` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::unnecessary_wraps)]`
+help: remove the return type...
+    |
+202 -     fn test_nonexistent_rate() -> Result<()> {
+202 +     fn test_nonexistent_rate() -> () {
+    |
+help: ...and then remove returned values
+    |
+212 -         Ok(())
+    |
 
 error: used `cloned` where `copied` could be used instead
    --> src/instruments/makefloatingrateleg.rs:594:53
@@ -1802,6 +1770,15 @@ help: add a `;` here
 611 ~                     });
     |
 
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:229:9
+    |
+229 |         assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
    --> src/instruments/makefloatingrateleg.rs:646:39
     |
@@ -1809,6 +1786,15 @@ error: it is more concise to loop over references to containers instead of using
     |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:230:9
+    |
+230 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
    --> src/instruments/makefloatingrateleg.rs:668:39
@@ -1849,6 +1835,27 @@ help: add a `;` here
 683 |                         cf.set_forecast_curve_id(id);
 684 ~                     });
     |
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:241:9
+    |
+241 |         assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:242:9
+    |
+242 | /         assert_eq!(
+243 | |             manager.get_exchange_rate(EUR, CLP)?,
+244 | |             1.0 / (1.1 * 800.0)
+245 | |         );
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: item in documentation is missing backticks
   --> src/instruments/makeswap.rs:66:23
@@ -1916,15 +1923,6 @@ help: try
 488 +                 }
     |
 
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:165:9
-    |
-165 |         assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: you seem to be trying to use `match` for an equality check. Consider using `if`
    --> src/instruments/makeswap.rs:544:17
     |
@@ -1968,49 +1966,6 @@ help: try
 570 +                             ))?;
 571 +                     builder.with_payment_frequency(payment_frequency).build()?
 572 +                 }
-    |
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:182:9
-    |
-182 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:183:9
-    |
-183 | /         assert_eq!(
-184 | |             manager
-185 | |                 .exchange_rate_cache
-186 | |                 .lock()
-...   |
-193 | |             0.85
-194 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: this function's return value is unnecessary
-   --> src/currencies/exchangeratestore.rs:199:5
-    |
-199 |     fn test_nonexistent_rate() -> Result<()> {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_wraps
-    = note: `-D clippy::unnecessary-wraps` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::unnecessary_wraps)]`
-help: remove the return type...
-    |
-199 -     fn test_nonexistent_rate() -> Result<()> {
-199 +     fn test_nonexistent_rate() -> () {
-    |
-help: ...and then remove returned values
-    |
-209 -         Ok(())
     |
 
 error: you seem to be trying to use `match` for an equality check. Consider using `if`
@@ -2057,45 +2012,6 @@ help: try
 667 +                     builder.with_payment_frequency(payment_frequency).build()?
 668 +                 }
     |
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:226:9
-    |
-226 |         assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:227:9
-    |
-227 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:238:9
-    |
-238 |         assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:239:9
-    |
-239 | /         assert_eq!(
-240 | |             manager.get_exchange_rate(EUR, CLP)?,
-241 | |             1.0 / (1.1 * 800.0)
-242 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: you seem to be trying to use `match` for an equality check. Consider using `if`
    --> src/instruments/makeswap.rs:727:17
@@ -2518,6 +2434,33 @@ error: docs for function returning `Result` missing `# Errors` section
     = note: `-D clippy::missing-errors-doc` implied by `-D clippy::pedantic`
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::missing_errors_doc)]`
 
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:270:9
+    |
+270 |         assert_eq!(instrument.notional(), 5_000_000.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:271:9
+    |
+271 |         assert_eq!(instrument.spread(), spread);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:312:17
+    |
+312 |                 assert_eq!(coupon.spread(), spread);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: docs for function returning `Result` missing `# Errors` section
    --> src/rates/interestrate.rs:144:5
     |
@@ -2531,6 +2474,15 @@ error: docs for function returning `Result` missing `# Errors` section
     | |_____________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_errors_doc
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:322:17
+    |
+322 |                 assert_eq!(coupon.spread(), new_spread);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: consider adding a `;` to the last statement for consistent formatting
    --> src/rates/interestrate.rs:177:25
@@ -2709,24 +2661,6 @@ error: missing `#[must_use]` attribute on a method returning `Self`
     = help: consider adding the `#[must_use]` attribute to the method or directly to the `Self` type
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#return_self_not_must_use
 
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:270:9
-    |
-270 |         assert_eq!(instrument.notional(), 5_000_000.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:271:9
-    |
-271 |         assert_eq!(instrument.spread(), spread);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: used `cloned` where `copied` could be used instead
    --> src/rates/interestrateindex/overnightcompoundedrateindex.rs:164:14
     |
@@ -2757,15 +2691,6 @@ help: ... or use `try_from` and handle the error accordingly
 221 +         let days = i32::try_from(date - self.reference_date());
     |
 
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:312:17
-    |
-312 |                 assert_eq!(coupon.spread(), spread);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: missing `#[must_use]` attribute on a method returning `Self`
   --> src/rates/interestrateindex/overnightindex.rs:81:5
    |
@@ -2777,15 +2702,6 @@ error: missing `#[must_use]` attribute on a method returning `Self`
    |
    = help: consider adding the `#[must_use]` attribute to the method or directly to the `Self` type
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#return_self_not_must_use
-
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:322:17
-    |
-322 |                 assert_eq!(coupon.spread(), new_spread);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: used `cloned` where `copied` could be used instead
    --> src/rates/interestrateindex/overnightindex.rs:111:14
@@ -3469,6 +3385,14 @@ error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wi
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
+error: it is more concise to loop over references to containers instead of using explicit iteration methods
+   --> src/instruments/makefixedrateinstrument.rs:491:39
+    |
+491 |                 for (date, amount) in disbursements.iter() {
+    |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
+
 error: `if` chain can be rewritten with `match`
   --> src/time/daycounters/actualactual.rs:42:9
    |
@@ -3828,6 +3752,8 @@ error: needless use of `for_each`
      |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `for x in payments.values() { assert_eq!(first, x); }`
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+     = note: `-D clippy::needless-for-each` implied by `-D clippy::pedantic`
+     = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_for_each)]`
 
 error: strict comparison of `f32` or `f64`
     --> src/instruments/makefixedrateinstrument.rs:1178:40
@@ -3883,14 +3809,6 @@ error: strict comparison of `f32` or `f64`
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
      = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: unnecessary structure name repetition
-   --> src/time/enums.rs:445:19
-    |
-445 |     type Output = i32;
-    |                   ^^^ help: use the applicable keyword: `Self`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
-
 error: strict comparison of `f32` or `f64`
     --> src/instruments/makefixedrateinstrument.rs:1369:9
      |
@@ -3899,6 +3817,41 @@ error: strict comparison of `f32` or `f64`
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
      = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1400:9
+     |
+1400 |         assert_eq!(instrument2.notional(), instrument.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1437:9
+     |
+1437 |         assert_eq!(instrument2.notional(), instrument1.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1468:9
+     |
+1468 |         assert_eq!(instrument2.notional(), instrument.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: unnecessary structure name repetition
+   --> src/time/enums.rs:445:19
+    |
+445 |     type Output = i32;
+    |                   ^^^ help: use the applicable keyword: `Self`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
    --> src/time/enums.rs:453:19
@@ -3932,15 +3885,6 @@ error: this argument is passed by value, but not consumed in the function body
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_pass_by_value
 
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1400:9
-     |
-1400 |         assert_eq!(instrument2.notional(), instrument.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: only a `panic!` in `if`-then statement
   --> src/time/imm.rs:60:9
    |
@@ -3957,24 +3901,6 @@ help: replace `if`-then-`panic!` with `assert!`
 62 -         }
 60 +         assert!(Self::is_imm_date(imm_date, false), "{imm_date} is not an IMM date");
    |
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1437:9
-     |
-1437 |         assert_eq!(instrument2.notional(), instrument1.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1468:9
-     |
-1468 |         assert_eq!(instrument2.notional(), instrument.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: this argument is passed by value, but not consumed in the function body
   --> src/time/imm.rs:90:27
@@ -4016,6 +3942,21 @@ help: replace `if`-then-`panic!` with `assert!`
 140 -             panic!("No reference date provided");
 141 -         }
 139 +         assert!(reference_date != Date::empty(), "No reference date provided");
+    |
+
+error: needless use of `for_each`
+   --> src/instruments/makefixedrateleg.rs:449:21
+    |
+449 | /                     cashflows
+450 | |                         .iter_mut()
+451 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
+    |
+449 ~                     for cf in cashflows
+450 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: method `from_str` can be confused for the standard trait method `std::str::FromStr::from_str`
@@ -4182,21 +4123,6 @@ error: this function has too many arguments (10/7)
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
-error: needless use of `for_each`
-   --> src/instruments/makefixedrateleg.rs:449:21
-    |
-449 | /                     cashflows
-450 | |                         .iter_mut()
-451 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
-    | |_____________________________________________________________________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-help: try
-    |
-449 ~                     for cf in cashflows
-450 +                         .iter_mut() { cf.set_discount_curve_id(id); }
-    |
-
 error: this function has too many lines (348/100)
    --> src/time/schedule.rs:348:5
     |
@@ -4344,6 +4270,8 @@ error: redundant closure
    |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace the closure with the method itself: `std::sync::PoisonError::into_inner`
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_closure_for_method_calls
+   = note: `-D clippy::redundant-closure-for-method-calls` implied by `-D clippy::pedantic`
+   = help: to override `-D clippy::pedantic` add `#[allow(clippy::redundant_closure_for_method_calls)]`
 
 error: unused "map closure" when calling `Result::map_or_else` value
   --> src/visitors/cashflowaggregationvisitor.rs:54:9
@@ -4509,7 +4437,7 @@ help: elide the lifetimes
 121 + impl<T> ConstVisit<T> for ZSpreadConstVisitor<'_>
     |
 
-error: could not compile `rustatlas` (lib) due to 325 previous errors
+error: could not compile `rustatlas` (lib) due to 320 previous errors
 warning: build failed, waiting for other jobs to finish...
 error: multiply and add expressions can be calculated more efficiently and accurately
    --> src/rates/interestrate.rs:209:36
@@ -4628,4 +4556,4 @@ error: adding items after statements is confusing, since items exist from the st
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#items_after_statements
 
-error: could not compile `rustatlas` (lib test) due to 370 previous errors
+error: could not compile `rustatlas` (lib test) due to 365 previous errors
