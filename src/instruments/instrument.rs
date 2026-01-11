@@ -45,8 +45,7 @@ impl TryFrom<String> for RateType {
             "FixedThenFixed" => Ok(Self::FixedThenFixed),
             "Suffled" => Ok(Self::Suffled),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid rate type: {}",
-                s
+                "Invalid rate type: {s}"
             ))),
         }
     }

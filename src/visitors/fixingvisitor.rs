@@ -40,8 +40,7 @@ impl<T: HasCashflows> Visit<T> for FixingVisitor<'_> {
                         self.market_data
                             .get(id)
                             .ok_or(AtlasError::NotFoundErr(format!(
-                                "Market data for cashflow with id {}",
-                                id
+                                "Market data for cashflow with id {id}"
                             )))?;
                     let fixing_rate = cf_market_data.fwd()?;
                     frcf.set_fixing_rate(fixing_rate);

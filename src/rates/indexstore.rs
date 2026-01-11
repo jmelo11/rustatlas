@@ -73,8 +73,7 @@ impl IndexStore {
             .get(&currency)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "Currency curve for currency {:?}",
-                currency
+                "Currency curve for currency {currency:?}"
             )))
     }
 
@@ -90,8 +89,7 @@ impl IndexStore {
         self.index_map
             .get(&id)
             .ok_or(AtlasError::NotFoundErr(format!(
-                "Index with id {} not found",
-                id
+                "Index with id {id} not found"
             )))?
             .write()
             .map_err(|_| AtlasError::InvalidValueErr("Could not write index".to_string()))?
@@ -111,10 +109,10 @@ impl IndexStore {
         if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 format!(
-                    "Index ({:?}) reference date ({}) does not match index store reference date ({})",
-                    index.read_index()?.name(),
-                    index.read_index()?.reference_date(),
-                    self.reference_date
+                    "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
+                    name = index.read_index()?.name(),
+                    reference_date = index.read_index()?.reference_date(),
+                    store_reference_date = self.reference_date
                 )
                 .to_string(),
             ));
@@ -122,8 +120,7 @@ impl IndexStore {
         // check if name already exists
         if self.index_map.contains_key(&id) {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Index with id {} already exists",
-                id
+                "Index with id {id} already exists"
             )));
         }
 
@@ -144,10 +141,10 @@ impl IndexStore {
         if self.reference_date != index.read_index()?.reference_date() {
             return Err(AtlasError::InvalidValueErr(
                 format!(
-                    "Index ({:?}) reference date ({}) does not match index store reference date ({})",
-                    index.read_index()?.name(),
-                    index.read_index()?.reference_date(),
-                    self.reference_date
+                    "Index ({name:?}) reference date ({reference_date}) does not match index store reference date ({store_reference_date})",
+                    name = index.read_index()?.name(),
+                    reference_date = index.read_index()?.reference_date(),
+                    store_reference_date = self.reference_date
                 )
                 .to_string(),
             ));
@@ -155,8 +152,7 @@ impl IndexStore {
         // check if name already exists
         if !self.index_map.contains_key(&id) {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Index with id {} does not exist",
-                id
+                "Index with id {id} does not exist"
             )));
         }
 
@@ -174,8 +170,7 @@ impl IndexStore {
             .get(&id)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "Index with id {} not found",
-                id
+                "Index with id {id} not found"
             )))
     }
 
@@ -193,8 +188,7 @@ impl IndexStore {
             }
         }
         Err(AtlasError::NotFoundErr(format!(
-            "Index with name {} not found",
-            name
+            "Index with name {name} not found"
         )))
     }
 

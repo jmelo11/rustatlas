@@ -110,8 +110,8 @@ impl FixingProvider for OvernightIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date, self.name
+                "No fixing for date {date} for index {name:?}",
+                name = self.name
             )))
     }
 
@@ -188,8 +188,7 @@ impl YieldProvider for OvernightIndex {
                 .forward_rate(start_date, end_date, comp, freq)
         } else {
             Err(AtlasError::InvalidValueErr(format!(
-                "Invalid dates: start_date: {:?}, end_date: {:?}",
-                start_date, end_date
+                "Invalid dates: start_date: {start_date:?}, end_date: {end_date:?}"
             )))
         }
     }
@@ -218,8 +217,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
                 let last_fixing = fixings.get(&seed).ok_or(AtlasError::NotFoundErr(format!(
-                    "No fixing for {} and date {}",
-                    name, seed
+                    "No fixing for {name} and date {seed}"
                 )))?;
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;

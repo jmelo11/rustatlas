@@ -134,14 +134,14 @@ impl MarketStore {
     pub fn advance_to_date(&self, date: Date) -> Result<Self> {
         if date < self.reference_date {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {date} is before reference date {}",
-                self.reference_date
+                "Date {date} is before reference date {reference_date}",
+                reference_date = self.reference_date
             )));
         }
         let days = i32::try_from(date - self.reference_date).map_err(|_| {
             AtlasError::InvalidValueErr(format!(
-                "Date {date} is too far from reference date {} to convert to days",
-                self.reference_date
+                "Date {date} is too far from reference date {reference_date} to convert to days",
+                reference_date = self.reference_date
             ))
         })?;
         let period = Period::new(days, TimeUnit::Days);

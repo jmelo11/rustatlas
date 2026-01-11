@@ -196,9 +196,9 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                 // validate that the cashflow currency is the same as the instrument currency
                 if cf.currency()? != self.currency {
                     return Err(AtlasError::InvalidValueErr(format!(
-                        "Cashflow currency {} does not match instrument currency {}",
-                        String::from(cf.currency()?),
-                        String::from(self.currency)
+                        "Cashflow currency {cashflow_currency} does not match instrument currency {instrument_currency}",
+                        cashflow_currency = String::from(cf.currency()?),
+                        instrument_currency = String::from(self.currency)
                     )));
                 }
 

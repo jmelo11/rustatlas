@@ -116,8 +116,8 @@ impl FixingProvider for IborIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date, self.name
+                "No fixing for date {date} for index {name:?}",
+                name = self.name
             )))
     }
 
@@ -167,8 +167,7 @@ impl YieldProvider for IborIndex {
     ) -> Result<f64> {
         if end_date < start_date {
             return Err(AtlasError::InvalidValueErr(format!(
-                "End date {:?} is before start date {:?}",
-                end_date, start_date
+                "End date {end_date:?} is before start date {start_date:?}"
             )));
         }
         if start_date < self.reference_date() {
@@ -231,9 +230,8 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
         let days = (date - self.reference_date()) as i32;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {} is before reference date {}",
-                date,
-                self.reference_date()
+                "Date {date} is before reference date {reference_date}",
+                reference_date = self.reference_date()
             )));
         }
         let period = Period::new(days, TimeUnit::Days);

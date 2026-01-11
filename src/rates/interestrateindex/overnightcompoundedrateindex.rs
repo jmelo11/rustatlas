@@ -163,9 +163,8 @@ impl FixingProvider for OvernightCompoundedRateIndex {
             .get(&date)
             .cloned()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date,
-                self.overnight_index.name()
+                "No fixing for date {date} for index {name:?}",
+                name = self.overnight_index.name()
             )))
     }
 

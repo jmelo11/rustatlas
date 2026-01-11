@@ -288,7 +288,7 @@ impl Period {
         }
         let length = length.parse::<i32>().map_err(|_| {
             AtlasError::PeriodOperationErr(
-                format!("Invalid period length ({})", length).to_string(),
+                format!("Invalid period length ({length})").to_string(),
             )
         })?;
         let units = match units.as_str() {
@@ -298,7 +298,7 @@ impl Period {
             "D" => TimeUnit::Days,
             _ => {
                 return Err(AtlasError::PeriodOperationErr(
-                    format!("Invalid time unit ({})", units).to_string(),
+                    format!("Invalid time unit ({units})").to_string(),
                 ))
             }
         };
@@ -496,7 +496,7 @@ impl Add for Period {
                     }
                     TimeUnit::Weeks | TimeUnit::Days => {
                         return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
+                            format!("impossible addition between {result:?} and {other:?}")
                                 .to_string(),
                         ));
                     }
@@ -514,7 +514,7 @@ impl Add for Period {
                     }
                     TimeUnit::Weeks | TimeUnit::Days => {
                         return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
+                            format!("impossible addition between {result:?} and {other:?}")
                                 .to_string(),
                         ));
                     }
@@ -533,7 +533,7 @@ impl Add for Period {
                     }
                     TimeUnit::Years | TimeUnit::Months => {
                         return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
+                            format!("impossible addition between {result:?} and {other:?}")
                                 .to_string(),
                         ));
                     }
@@ -551,7 +551,7 @@ impl Add for Period {
                     }
                     TimeUnit::Years | TimeUnit::Months => {
                         return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
+                            format!("impossible addition between {result:?} and {other:?}")
                                 .to_string(),
                         ));
                     }

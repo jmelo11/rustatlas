@@ -575,8 +575,7 @@ impl MakeSwap {
                 }
             }
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "RateType: {:?}",
-                first_rate_type
+                "RateType: {first_rate_type:?}"
             )))?,
         };
 
@@ -759,8 +758,7 @@ impl MakeSwap {
                 }
             }
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "RateType: {:?}",
-                second_rate_type
+                "RateType: {second_rate_type:?}"
             )))?,
         };
 
