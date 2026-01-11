@@ -20,7 +20,7 @@ use crate::time::date::Date;
 /// ```
 pub struct ActualActual;
 
-fn days_in_year(year: i32) -> i32 {
+const fn days_in_year(year: i32) -> i32 {
     if Date::is_leap_year(year) {
         366
     } else {
