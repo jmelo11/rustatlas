@@ -29,8 +29,11 @@ pub trait FixingProvider {
     /// Fill missing fixings using interpolation.
     fn fill_missing_fixings(&mut self, interpolator: Interpolator) {
         if !self.fixings().is_empty() {
-            let first_date = *self.fixings().keys().min().unwrap();
-            let last_date = *self.fixings().keys().max().unwrap();
+            let (first_date, last_date) =
+                match (self.fixings().keys().min(), self.fixings().keys().max()) {
+                    (Some(first), Some(last)) => (*first, *last),
+                    _ => return,
+                };
 
             let aux_btreemap = self
                 .fixings()

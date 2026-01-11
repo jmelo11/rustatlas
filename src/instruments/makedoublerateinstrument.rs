@@ -423,10 +423,16 @@ impl MakeDoubleRateInstrument {
         let redemptions_raw: Vec<f64> =
             calculate_equal_payment_redemptions(dates.clone(), rate, notional)?;
 
-        let mut notionals = redemptions_raw.iter().fold(vec![notional], |mut acc, x| {
-            acc.push(acc.last().unwrap() - x);
-            acc
-        });
+        let mut notionals =
+            redemptions_raw
+                .iter()
+                .try_fold(vec![notional], |mut acc, x| {
+                    let last = *acc.last().ok_or(AtlasError::InvalidValueErr(
+                        "Notional schedule cannot be empty".into(),
+                    ))?;
+                    acc.push(last - x);
+                    Ok::<_, AtlasError>(acc)
+                })?;
 
         notionals.pop();
 
@@ -480,7 +486,9 @@ impl MakeDoubleRateInstrument {
             currency,
         )?;
 
-        let first_date = vec![*dates.first().unwrap()];
+        let first_date = vec![*dates
+            .first()
+            .ok_or(AtlasError::ValueNotSetErr("Dates".into()))?];
         add_cashflows_to_vec(
             &mut cashflows,
             &first_date,

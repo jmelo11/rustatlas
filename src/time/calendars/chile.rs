@@ -39,7 +39,9 @@ impl Chile {
     }
 
     fn is_new_years_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .expect("valid date for New Year's Day rules")
+            .weekday();
         (day == 1 && month == 1) || (day == 2 && month == 1 && w == Weekday::Mon && year >= 2016)
     }
 
@@ -68,7 +70,9 @@ impl Chile {
     }
 
     fn is_saint_peter_and_saint_paul_day(day: u32, month: u32) -> bool {
-        let w = NaiveDate::from_ymd_opt(2001, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(2001, month, day)
+            .expect("valid date for Saint Peter and Saint Paul day rules")
+            .weekday();
         (26..=29).contains(&day) && month == 6 && w == Weekday::Mon
             || day == 2 && month == 7 && w == Weekday::Mon
     }
@@ -82,7 +86,9 @@ impl Chile {
     }
 
     fn is_independence_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1810, month, day)
+            .expect("valid date for Independence Day rules")
+            .weekday();
         (day == 17
             && month == 9
             && ((w == Weekday::Mon && year >= 2007) || (w == Weekday::Fri && year >= 2016)))
@@ -90,17 +96,23 @@ impl Chile {
     }
 
     fn is_army_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1810, month, day)
+            .expect("valid date for Army Day rules")
+            .weekday();
         (day == 19 && month == 9) || (day == 20 && month == 9 && w == Weekday::Fri && year >= 2007)
     }
 
     fn is_discovery_of_two_worlds(day: u32, month: u32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1492, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1492, month, day)
+            .expect("valid date for Discovery of Two Worlds rules")
+            .weekday();
         !(month != 10 || w != Weekday::Mon || !(9..=12).contains(&day) && day != 15)
     }
 
     fn is_reformation_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .expect("valid date for Reformation Day rules")
+            .weekday();
         ((day == 27 && month == 10 && w == Weekday::Fri)
             || (day == 31 && month == 10 && w != Weekday::Tue && w != Weekday::Wed)
             || (day == 2 && month == 11 && w == Weekday::Fri))

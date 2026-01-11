@@ -360,8 +360,14 @@ impl MakeFloatingRateLeg {
                 // end common
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -450,8 +456,14 @@ impl MakeFloatingRateLeg {
 
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Zero);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -556,7 +568,10 @@ impl MakeFloatingRateLeg {
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
                 let redemptions = vec![notional / n as f64; n];
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,

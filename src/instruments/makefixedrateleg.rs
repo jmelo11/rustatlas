@@ -409,8 +409,14 @@ impl MakeFixedRateLeg {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
@@ -577,10 +583,16 @@ impl MakeFixedRateLeg {
                     side,
                 )?;
 
-                let mut notionals = redemptions.iter().fold(vec![notional], |mut acc, x| {
-                    acc.push(acc.last().unwrap() - x);
-                    acc
-                });
+                let mut notionals =
+                    redemptions
+                        .iter()
+                        .try_fold(vec![notional], |mut acc, x| {
+                            let last = *acc.last().ok_or(AtlasError::InvalidValueErr(
+                                "Notional schedule cannot be empty".into(),
+                            ))?;
+                            acc.push(last - x);
+                            Ok::<_, AtlasError>(acc)
+                        })?;
 
                 notionals.pop();
 
@@ -594,7 +606,10 @@ impl MakeFixedRateLeg {
                     currency,
                 )?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
@@ -673,8 +688,14 @@ impl MakeFixedRateLeg {
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -766,7 +787,10 @@ impl MakeFixedRateLeg {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);

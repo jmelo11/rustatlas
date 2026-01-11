@@ -410,8 +410,14 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
@@ -606,10 +612,16 @@ impl MakeFixedRateInstrument {
                 let redemptions_raw: Vec<f64> =
                     calculate_equal_payment_redemptions(dates.clone(), rate, notional)?;
 
-                let mut notionals = redemptions_raw.iter().fold(vec![notional], |mut acc, x| {
-                    acc.push(acc.last().unwrap() - x);
-                    acc
-                });
+                let mut notionals =
+                    redemptions_raw
+                        .iter()
+                        .try_fold(vec![notional], |mut acc, x| {
+                            let last = *acc.last().ok_or(AtlasError::InvalidValueErr(
+                                "Notional schedule cannot be empty".into(),
+                            ))?;
+                            acc.push(last - x);
+                            Ok::<_, AtlasError>(acc)
+                        })?;
 
                 notionals.pop();
 
@@ -624,7 +636,9 @@ impl MakeFixedRateInstrument {
                     currency,
                 )?;
 
-                let first_date = vec![*dates.first().unwrap()];
+                let first_date = vec![*dates
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Dates".into()))?];
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
@@ -735,8 +749,14 @@ impl MakeFixedRateInstrument {
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -831,7 +851,10 @@ impl MakeFixedRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
@@ -1051,7 +1074,7 @@ mod tests {
             enums::{Frequency, TimeUnit},
             period::Period,
         },
-        utils::errors::Result,
+        utils::errors::{AtlasError, Result},
         visitors::traits::HasCashflows,
     };
     use std::collections::{HashMap, HashSet};
@@ -1149,7 +1172,9 @@ mod tests {
         }
 
         //check if all equal
-        let first = payments.values().next().unwrap();
+        let first = payments.values().next().ok_or(AtlasError::InvalidValueErr(
+            "Payments cannot be empty".into(),
+        ))?;
         payments.values().for_each(|x| assert_eq!(first, x));
 
         Ok(())

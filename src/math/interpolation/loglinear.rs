@@ -15,7 +15,12 @@ impl Interpolate for LogLinearInterpolator {
                 Err(index) => index,
             };
 
-        if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
+        let (first_x, last_x) = match (x_.first(), x_.last()) {
+            (Some(first), Some(last)) => (first, last),
+            _ => panic!("Interpolation data must contain at least one x value."),
+        };
+
+        if !enable_extrapolation && (x < *first_x || x > *last_x) {
             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
         }
 
