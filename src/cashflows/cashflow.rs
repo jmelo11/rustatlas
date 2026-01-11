@@ -91,8 +91,8 @@ impl Cashflow {
             Self::Redemption(cashflow) | Self::Disbursement(cashflow) => {
                 cashflow.set_discount_curve_id(id);
             }
-            Self::FixedRateCoupon(coupon) => coupon.set_discount_curve_id(id),
-            Self::FloatingRateCoupon(coupon) => coupon.set_discount_curve_id(id),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.set_discount_curve_id(id),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.set_discount_curve_id(id),
         }
     }
 
@@ -108,24 +108,24 @@ impl Payable for Cashflow {
     fn amount(&self) -> Result<f64> {
         match self {
             Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.amount(),
-            Self::FixedRateCoupon(coupon) => coupon.amount(),
-            Self::FloatingRateCoupon(coupon) => coupon.amount(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.amount(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.amount(),
         }
     }
 
     fn side(&self) -> Side {
         match self {
             Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.side(),
-            Self::FixedRateCoupon(coupon) => coupon.side(),
-            Self::FloatingRateCoupon(coupon) => coupon.side(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.side(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.side(),
         }
     }
 
     fn payment_date(&self) -> Date {
         match self {
             Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.payment_date(),
-            Self::FixedRateCoupon(coupon) => coupon.payment_date(),
-            Self::FloatingRateCoupon(coupon) => coupon.payment_date(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.payment_date(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.payment_date(),
         }
     }
 }
@@ -133,10 +133,9 @@ impl Payable for Cashflow {
 impl HasCurrency for Cashflow {
     fn currency(&self) -> Result<Currency> {
         match self {
-            Self::Redemption(cashflow) => cashflow.currency(),
-            Self::Disbursement(cashflow) => cashflow.currency(),
-            Self::FixedRateCoupon(coupon) => coupon.currency(),
-            Self::FloatingRateCoupon(coupon) => coupon.currency(),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.currency(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.currency(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.currency(),
         }
     }
 }
@@ -144,10 +143,11 @@ impl HasCurrency for Cashflow {
 impl HasDiscountCurveId for Cashflow {
     fn discount_curve_id(&self) -> Result<usize> {
         match self {
-            Self::Redemption(cashflow) => cashflow.discount_curve_id(),
-            Self::Disbursement(cashflow) => cashflow.discount_curve_id(),
-            Self::FixedRateCoupon(coupon) => coupon.discount_curve_id(),
-            Self::FloatingRateCoupon(coupon) => coupon.discount_curve_id(),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => {
+                cashflow.discount_curve_id()
+            }
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.discount_curve_id(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.discount_curve_id(),
         }
     }
 }
@@ -155,10 +155,11 @@ impl HasDiscountCurveId for Cashflow {
 impl HasForecastCurveId for Cashflow {
     fn forecast_curve_id(&self) -> Result<usize> {
         match self {
-            Self::Redemption(cashflow) => cashflow.forecast_curve_id(),
-            Self::Disbursement(cashflow) => cashflow.forecast_curve_id(),
-            Self::FixedRateCoupon(coupon) => coupon.forecast_curve_id(),
-            Self::FloatingRateCoupon(coupon) => coupon.forecast_curve_id(),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => {
+                cashflow.forecast_curve_id()
+            }
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.forecast_curve_id(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.forecast_curve_id(),
         }
     }
 }
@@ -166,28 +167,25 @@ impl HasForecastCurveId for Cashflow {
 impl Registrable for Cashflow {
     fn set_id(&mut self, id: usize) {
         match self {
-            Self::Redemption(cashflow) => cashflow.set_id(id),
-            Self::Disbursement(cashflow) => cashflow.set_id(id),
-            Self::FixedRateCoupon(coupon) => coupon.set_id(id),
-            Self::FloatingRateCoupon(coupon) => coupon.set_id(id),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.set_id(id),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.set_id(id),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.set_id(id),
         }
     }
 
     fn id(&self) -> Result<usize> {
         match self {
-            Self::Redemption(cashflow) => cashflow.id(),
-            Self::Disbursement(cashflow) => cashflow.id(),
-            Self::FixedRateCoupon(coupon) => coupon.id(),
-            Self::FloatingRateCoupon(coupon) => coupon.id(),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.id(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.id(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.id(),
         }
     }
 
     fn market_request(&self) -> Result<MarketRequest> {
         match self {
-            Self::Redemption(cashflow) => cashflow.market_request(),
-            Self::Disbursement(cashflow) => cashflow.market_request(),
-            Self::FixedRateCoupon(coupon) => coupon.market_request(),
-            Self::FloatingRateCoupon(coupon) => coupon.market_request(),
+            Self::Redemption(cashflow) | Self::Disbursement(cashflow) => cashflow.market_request(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.market_request(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.market_request(),
         }
     }
 }
@@ -195,8 +193,8 @@ impl Registrable for Cashflow {
 impl InterestAccrual for Cashflow {
     fn accrual_end_date(&self) -> Result<Date> {
         match self {
-            Self::FixedRateCoupon(coupon) => coupon.accrual_end_date(),
-            Self::FloatingRateCoupon(coupon) => coupon.accrual_end_date(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.accrual_end_date(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.accrual_end_date(),
             Self::Disbursement(_) | Self::Redemption(_) => Err(AtlasError::InvalidValueErr(
                 "Disbursement and Redemption cashflows do not have an accrual end date".to_string(),
             )),
@@ -205,8 +203,8 @@ impl InterestAccrual for Cashflow {
 
     fn accrual_start_date(&self) -> Result<Date> {
         match self {
-            Self::FixedRateCoupon(coupon) => coupon.accrual_start_date(),
-            Self::FloatingRateCoupon(coupon) => coupon.accrual_start_date(),
+            Self::FixedRateCoupon(fixed_coupon) => fixed_coupon.accrual_start_date(),
+            Self::FloatingRateCoupon(floating_coupon) => floating_coupon.accrual_start_date(),
             Self::Disbursement(_) | Self::Redemption(_) => Err(AtlasError::InvalidValueErr(
                 "Disbursement and Redemption cashflows do not have an accrual start date"
                     .to_string(),
@@ -216,8 +214,12 @@ impl InterestAccrual for Cashflow {
 
     fn accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         match self {
-            Self::FixedRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
-            Self::FloatingRateCoupon(coupon) => coupon.accrued_amount(start_date, end_date),
+            Self::FixedRateCoupon(fixed_coupon) => {
+                fixed_coupon.accrued_amount(start_date, end_date)
+            }
+            Self::FloatingRateCoupon(floating_coupon) => {
+                floating_coupon.accrued_amount(start_date, end_date)
+            }
             _ => Ok(0.0),
         }
     }
@@ -226,7 +228,7 @@ impl InterestAccrual for Cashflow {
 impl RequiresFixingRate for Cashflow {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         if let Self::FloatingRateCoupon(coupon) = self {
-            coupon.set_fixing_rate(fixing_rate)
+            coupon.set_fixing_rate(fixing_rate);
         }
     }
 }

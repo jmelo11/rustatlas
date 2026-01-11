@@ -37,7 +37,7 @@ pub struct SimpleCashflow {
 impl SimpleCashflow {
     /// Creates a new `SimpleCashflow` with the given payment date, currency, and side.
     #[must_use]
-    pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
+    pub fn new(payment_date: Date, currency: Currency, side: Side) -> Self {
         Self {
             payment_date,
             currency,

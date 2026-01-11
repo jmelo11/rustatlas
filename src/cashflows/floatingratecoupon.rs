@@ -74,7 +74,7 @@ impl FloatingRateCoupon {
 
     /// Sets the discount curve ID and returns the modified coupon.
     #[must_use]
-    pub fn with_discount_curve_id(mut self, id: usize) -> Self {
+    pub const fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow = self.cashflow.with_discount_curve_id(id);
         self
     }
