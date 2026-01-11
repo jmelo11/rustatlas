@@ -111,7 +111,7 @@ impl IMM {
         };
         let mut y = match code[1..2].parse::<i32>() {
             Ok(n) => n,
-            Err(e) => panic!("Invalid IMM year number: {}", e),
+            Err(e) => panic!("Invalid IMM year number: {e}"),
         };
         if y == 0 && reference_date.year() <= 1909 {
             y += 10;

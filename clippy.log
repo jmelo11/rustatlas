@@ -256,40 +256,6 @@ error: this function has too many arguments (14/7)
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
-error: needless use of `for_each`
-   --> src/alm/cashaccount.rs:192:9
-    |
-192 | /         cash_account.iter().for_each(|(date, amount)| {
-193 | |             println!("{date}: {amount}");
-194 | |         });
-    | |___________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-    = note: `-D clippy::needless-for-each` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_for_each)]`
-help: try
-    |
-192 ~         for (date, amount) in cash_account.iter() {
-193 +             println!("{date}: {amount}");
-194 +         }
-    |
-
-error: needless use of `for_each`
-   --> src/alm/cashaccount.rs:251:9
-    |
-251 | /         cash_account.iter().for_each(|(date, amount)| {
-252 | |             println!("{date}: {amount}");
-253 | |         });
-    | |___________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-help: try
-    |
-251 ~         for (date, amount) in cash_account.iter() {
-252 +             println!("{date}: {amount}");
-253 +         }
-    |
-
 error: this function has too many arguments (17/7)
   --> src/instruments/hybridrateinstrument.rs:40:5
    |
@@ -381,118 +347,39 @@ error: this function has too many arguments (9/7)
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
-error: strict comparison of `f32` or `f64`
-   --> src/alm/rolloversimulationengine.rs:387:9
+error: needless use of `for_each`
+   --> src/alm/cashaccount.rs:192:9
     |
-387 |         assert_eq!(outstanding, -1800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+192 | /         cash_account.iter().for_each(|(date, amount)| {
+193 | |             println!("{date}: {amount}");
+194 | |         });
+    | |___________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: `-D clippy::float-cmp` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::float_cmp)]`
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+    = note: `-D clippy::needless-for-each` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_for_each)]`
+help: try
+    |
+192 ~         for (date, amount) in cash_account.iter() {
+193 +             println!("{date}: {amount}");
+194 +         }
+    |
 
-error: strict comparison of `f32` or `f64`
-   --> src/alm/rolloversimulationengine.rs:391:9
+error: needless use of `for_each`
+   --> src/alm/cashaccount.rs:251:9
     |
-391 |         assert_eq!(outstanding, -1800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+251 | /         cash_account.iter().for_each(|(date, amount)| {
+252 | |             println!("{date}: {amount}");
+253 | |         });
+    | |___________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/alm/rolloversimulationengine.rs:449:9
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
     |
-449 |         assert_eq!(outstanding, -1980.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+251 ~         for (date, amount) in cash_account.iter() {
+252 +             println!("{date}: {amount}");
+253 +         }
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/alm/rolloversimulationengine.rs:508:9
-    |
-508 |         assert_eq!(outstanding, -1800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/alm/rolloversimulationengine.rs:513:9
-    |
-513 |         assert_eq!(outstanding, -1800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:574:17
-    |
-574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-    = note: `-D clippy::suboptimal-flops` implied by `-D clippy::nursery`
-    = help: to override `-D clippy::nursery` add `#[allow(clippy::suboptimal_flops)]`
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:574:41
-    |
-574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:579:17
-    |
-579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:579:41
-    |
-579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:640:17
-    |
-640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:640:41
-    |
-640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:645:17
-    |
-645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
-
-error: multiply and add expressions can be calculated more efficiently and accurately
-   --> src/alm/rolloversimulationengine.rs:645:41
-    |
-645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
-    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
 error: this function has too many lines (220/100)
    --> src/instruments/loandepo.rs:151:5
@@ -503,18 +390,6 @@ error: this function has too many lines (220/100)
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
     = note: `-D clippy::too-many-lines` implied by `-D clippy::pedantic`
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::too_many_lines)]`
-
-error: strict comparison of `f32` or `f64`
-   --> src/cashflows/fixedratecoupon.rs:266:9
-    |
-266 | /         assert_eq!(
-267 | |             coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
-268 | |             expected_amount
-269 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: item in documentation is missing backticks
   --> src/instruments/makedoublerateinstrument.rs:63:35
@@ -531,7 +406,7 @@ help: try
 63 +     /// Creates a new instance of `MakeDoubleRateInstrument` with default values.
    |
 
-error: this function has too many lines (247/100)
+error: this function has too many lines (255/100)
    --> src/instruments/makedoublerateinstrument.rs:275:5
     |
 275 |     pub fn build(self) -> Result<DoubleRateInstrument> {
@@ -588,20 +463,10 @@ help: try
 339 ~         };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makedoublerateinstrument.rs:427:22
-    |
-427 |             acc.push(acc.last().unwrap() - x);
-    |                      ^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-    = note: requested on the command line with `-D clippy::unwrap-used`
-
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makedoublerateinstrument.rs:436:14
+   --> src/instruments/makedoublerateinstrument.rs:442:14
     |
-436 |             .cloned()
+442 |             .cloned()
     |              ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
@@ -609,36 +474,27 @@ error: used `cloned` where `copied` could be used instead
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::cloned_instead_of_copied)]`
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makedoublerateinstrument.rs:441:14
+   --> src/instruments/makedoublerateinstrument.rs:447:14
     |
-441 |             .cloned()
+447 |             .cloned()
     |              ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makedoublerateinstrument.rs:483:32
-    |
-483 |         let first_date = vec![*dates.first().unwrap()];
-    |                                ^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makedoublerateinstrument.rs:498:57
+   --> src/instruments/makedoublerateinstrument.rs:506:57
     |
-498 |         let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
+506 |         let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
     |                                                         ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makedoublerateinstrument.rs:533:13
+   --> src/instruments/makedoublerateinstrument.rs:541:13
     |
-533 | /             cashflows
-534 | |                 .iter_mut()
-535 | |                 .for_each(|cf| cf.set_discount_curve_id(id))
+541 | /             cashflows
+542 | |                 .iter_mut()
+543 | |                 .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
@@ -646,45 +502,45 @@ error: consider adding a `;` to the last statement for consistent formatting
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::semicolon_if_nothing_returned)]`
 help: add a `;` here
     |
-533 |             cashflows
-534 |                 .iter_mut()
-535 ~                 .for_each(|cf| cf.set_discount_curve_id(id));
+541 |             cashflows
+542 |                 .iter_mut()
+543 ~                 .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makedoublerateinstrument.rs:539:13
+   --> src/instruments/makedoublerateinstrument.rs:547:13
     |
-539 | /             cashflows
-540 | |                 .iter_mut()
-541 | |                 .for_each(|cf| cf.set_forecast_curve_id(id))
+547 | /             cashflows
+548 | |                 .iter_mut()
+549 | |                 .for_each(|cf| cf.set_forecast_curve_id(id))
     | |____________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-539 |             cashflows
-540 |                 .iter_mut()
-541 ~                 .for_each(|cf| cf.set_forecast_curve_id(id));
+547 |             cashflows
+548 |                 .iter_mut()
+549 ~                 .for_each(|cf| cf.set_forecast_curve_id(id));
     |
 
 error: this function has too many arguments (12/7)
-   --> src/instruments/makedoublerateinstrument.rs:567:1
+   --> src/instruments/makedoublerateinstrument.rs:575:1
     |
-567 | / fn build_coupons_from_notionals(
-568 | |     cashflows: &mut Vec<Cashflow>,
-569 | |     rate_type: RateType,
-570 | |     dates_first_part: &[Date],
+575 | / fn build_coupons_from_notionals(
+576 | |     cashflows: &mut Vec<Cashflow>,
+577 | |     rate_type: RateType,
+578 | |     dates_first_part: &[Date],
 ...   |
-579 | |     currency: Currency,
-580 | | ) -> Result<()> {
+587 | |     currency: Currency,
+588 | | ) -> Result<()> {
     | |_______________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
 error: this argument is passed by value, but not consumed in the function body
-   --> src/instruments/makedoublerateinstrument.rs:682:12
+   --> src/instruments/makedoublerateinstrument.rs:690:12
     |
-682 |     dates: Vec<Date>,
+690 |     dates: Vec<Date>,
     |            ^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_pass_by_value
@@ -692,19 +548,19 @@ error: this argument is passed by value, but not consumed in the function body
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_pass_by_value)]`
 help: consider changing the type to
     |
-682 -     dates: Vec<Date>,
-682 +     dates: &[Date],
+690 -     dates: Vec<Date>,
+690 +     dates: &[Date],
     |
 help: change `dates.clone()` to
     |
-687 -         dates: dates.clone(),
-687 +         dates: dates.to_owned(),
+695 -         dates: dates.clone(),
+695 +         dates: dates.to_owned(),
     |
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makedoublerateinstrument.rs:693:28
+   --> src/instruments/makedoublerateinstrument.rs:701:28
     |
-693 |     let init_param = 1.0 / (dates.len() as f64);
+701 |     let init_param = 1.0 / (dates.len() as f64);
     |                            ^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
@@ -737,7 +593,27 @@ help: try
 344 +     /// Builds and returns a `FixedRateInstrument` from the configured builder.
     |
 
-error: this function has too many lines (492/100)
+error: strict comparison of `f32` or `f64`
+   --> src/alm/rolloversimulationengine.rs:387:9
+    |
+387 |         assert_eq!(outstanding, -1800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: `-D clippy::float-cmp` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::float_cmp)]`
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/alm/rolloversimulationengine.rs:391:9
+    |
+391 |         assert_eq!(outstanding, -1800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many lines (515/100)
    --> src/instruments/makefixedrateinstrument.rs:348:5
     |
 348 |     pub fn build(self) -> Result<FixedRateInstrument> {
@@ -768,381 +644,411 @@ help: try
 373 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:413:40
+error: strict comparison of `f32` or `f64`
+   --> src/alm/rolloversimulationengine.rs:449:9
     |
-413 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+449 |         assert_eq!(outstanding, -1980.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:414:39
-    |
-414 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateinstrument.rs:444:21
+   --> src/instruments/makefixedrateinstrument.rs:450:21
     |
-444 | /                     cashflows
-445 | |                         .iter_mut()
-446 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
+450 | /                     cashflows
+451 | |                         .iter_mut()
+452 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-444 |                     cashflows
-445 |                         .iter_mut()
-446 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+450 |                     cashflows
+451 |                         .iter_mut()
+452 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefixedrateinstrument.rs:485:39
+   --> src/instruments/makefixedrateinstrument.rs:491:39
     |
-485 |                 for (date, amount) in disbursements.iter() {
+491 |                 for (date, amount) in disbursements.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
-error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefixedrateinstrument.rs:503:39
+error: strict comparison of `f32` or `f64`
+   --> src/alm/rolloversimulationengine.rs:508:9
     |
-503 |                 for (date, amount) in redemptions.iter() {
+508 |         assert_eq!(outstanding, -1800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: it is more concise to loop over references to containers instead of using explicit iteration methods
+   --> src/instruments/makefixedrateinstrument.rs:509:39
+    |
+509 |                 for (date, amount) in redemptions.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&redemptions`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateinstrument.rs:519:21
+error: strict comparison of `f32` or `f64`
+   --> src/alm/rolloversimulationengine.rs:513:9
     |
-519 | /                     cashflows
-520 | |                         .iter_mut()
-521 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
+513 |         assert_eq!(outstanding, -1800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: consider adding a `;` to the last statement for consistent formatting
+   --> src/instruments/makefixedrateinstrument.rs:525:21
+    |
+525 | /                     cashflows
+526 | |                         .iter_mut()
+527 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-519 |                     cashflows
-520 |                         .iter_mut()
-521 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+525 |                     cashflows
+526 |                         .iter_mut()
+527 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateinstrument.rs:544:32
+   --> src/instruments/makefixedrateinstrument.rs:550:32
     |
-544 |                   let end_date = match self.end_date {
+550 |                   let end_date = match self.end_date {
     |  ________________________________^
-545 | |                     Some(date) => date,
-546 | |                     None => {
-547 | |                         let tenor = self
+551 | |                     Some(date) => date,
+552 | |                     None => {
+553 | |                         let tenor = self
 ...   |
-552 | |                 };
+558 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-544 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-545 +                     let tenor = self
-546 +                         .tenor
-547 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-548 +                     start_date + tenor
-549 ~                 };
+550 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+551 +                     let tenor = self
+552 +                         .tenor
+553 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+554 +                     start_date + tenor
+555 ~                 };
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateinstrument.rs:555:17
+   --> src/instruments/makefixedrateinstrument.rs:561:17
     |
-555 | /                 match self.redemptions {
-556 | |                     Some(redemption) => {
-557 | |                         // disbursements should have only one element
-558 | |                         let disbursements_dates = self
+561 | /                 match self.redemptions {
+562 | |                     Some(redemption) => {
+563 | |                         // disbursements should have only one element
+564 | |                         let disbursements_dates = self
 ...   |
-600 | |                 }
+606 | |                 }
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-555 ~                 if let Some(redemption) = self.redemptions {
-556 +                     // disbursements should have only one element
-557 +                     let disbursements_dates = self
-558 +                         .disbursements
-559 +                         .ok_or(AtlasError::ValueNotSetErr("Disbursements".into()))?
-560 +                         .keys()
-561 +                         .cloned()
-562 +                         .collect::<Vec<Date>>();
-563 + 
-564 +                     let redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
-565 +                     // dates equal to disbursements dates an them redemption dates
-566 +                     dates.extend(disbursements_dates);
-567 +                     dates.extend(redemption_dates);
-568 +                     dates.sort();
-569 +                 } else {
-570 +                     let mut schedule_builder = MakeSchedule::new(start_date, end_date)
-571 +                         .with_frequency(payment_frequency)
-572 +                         .with_calendar(
-573 +                             self.calendar
-574 +                                 .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
-575 +                         )
-576 +                         .with_convention(
-577 +                             self.business_day_convention
-578 +                                 .unwrap_or(BusinessDayConvention::Unadjusted),
-579 +                         )
-580 +                         .with_rule(
-581 +                             self.date_generation_rule
-582 +                                 .unwrap_or(DateGenerationRule::Backward),
-583 +                         );
-584 +                     let schedule = match self.first_coupon_date {
-585 +                         Some(date) => {
-586 +                             if date > start_date {
-587 +                                 schedule_builder.with_first_date(date).build()?
-588 +                             } else {
-589 +                                 Err(AtlasError::InvalidValueErr(
-590 +                                     "First coupon date must be after start date".into(),
-591 +                                 ))?
-592 +                             }
-593 +                         }
-594 +                         None => schedule_builder.build()?,
-595 +                     };
-596 +                     dates = schedule.dates().clone();
-597 +                 }
+561 ~                 if let Some(redemption) = self.redemptions {
+562 +                     // disbursements should have only one element
+563 +                     let disbursements_dates = self
+564 +                         .disbursements
+565 +                         .ok_or(AtlasError::ValueNotSetErr("Disbursements".into()))?
+566 +                         .keys()
+567 +                         .cloned()
+568 +                         .collect::<Vec<Date>>();
+569 + 
+570 +                     let redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
+571 +                     // dates equal to disbursements dates an them redemption dates
+572 +                     dates.extend(disbursements_dates);
+573 +                     dates.extend(redemption_dates);
+574 +                     dates.sort();
+575 +                 } else {
+576 +                     let mut schedule_builder = MakeSchedule::new(start_date, end_date)
+577 +                         .with_frequency(payment_frequency)
+578 +                         .with_calendar(
+579 +                             self.calendar
+580 +                                 .unwrap_or(Calendar::NullCalendar(NullCalendar::new())),
+581 +                         )
+582 +                         .with_convention(
+583 +                             self.business_day_convention
+584 +                                 .unwrap_or(BusinessDayConvention::Unadjusted),
+585 +                         )
+586 +                         .with_rule(
+587 +                             self.date_generation_rule
+588 +                                 .unwrap_or(DateGenerationRule::Backward),
+589 +                         );
+590 +                     let schedule = match self.first_coupon_date {
+591 +                         Some(date) => {
+592 +                             if date > start_date {
+593 +                                 schedule_builder.with_first_date(date).build()?
+594 +                             } else {
+595 +                                 Err(AtlasError::InvalidValueErr(
+596 +                                     "First coupon date must be after start date".into(),
+597 +                                 ))?
+598 +                             }
+599 +                         }
+600 +                         None => schedule_builder.build()?,
+601 +                     };
+602 +                     dates = schedule.dates().clone();
+603 +                 }
     |
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateinstrument.rs:562:30
+   --> src/instruments/makefixedrateinstrument.rs:568:30
     |
-562 | ...                   .cloned()
+568 | ...                   .cloned()
     |                        ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateinstrument.rs:565:66
+   --> src/instruments/makefixedrateinstrument.rs:571:66
     |
-565 |                         let redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
+571 |                         let redemption_dates = redemption.keys().cloned().collect::<Vec<Date>>();
     |                                                                  ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: assigning the result of `Clone::clone()` may be inefficient
-   --> src/instruments/makefixedrateinstrument.rs:598:25
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:574:17
     |
-598 |                         dates = schedule.dates().clone();
+574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+    = note: `-D clippy::suboptimal-flops` implied by `-D clippy::nursery`
+    = help: to override `-D clippy::nursery` add `#[allow(clippy::suboptimal_flops)]`
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:574:41
+    |
+574 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: assigning the result of `Clone::clone()` may be inefficient
+   --> src/instruments/makefixedrateinstrument.rs:604:25
+    |
+604 |                         dates = schedule.dates().clone();
     |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use `clone_from()`: `dates.clone_from(schedule.dates())`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#assigning_clones
     = note: `-D clippy::assigning-clones` implied by `-D clippy::pedantic`
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::assigning_clones)]`
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:610:30
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:579:17
     |
-610 |                     acc.push(acc.last().unwrap() - x);
-    |                              ^^^^^^^^^^^^^^^^^^^
+579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:627:40
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:579:41
     |
-627 |                 let first_date = vec![*dates.first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^
+579 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateinstrument.rs:642:65
+   --> src/instruments/makefixedrateinstrument.rs:656:65
     |
-642 |                 let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
+656 |                 let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
     |                                                                 ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateinstrument.rs:680:21
+   --> src/instruments/makefixedrateinstrument.rs:694:21
     |
-680 | /                     cashflows
-681 | |                         .iter_mut()
-682 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
+694 | /                     cashflows
+695 | |                         .iter_mut()
+696 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-680 |                     cashflows
-681 |                         .iter_mut()
-682 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+694 |                     cashflows
+695 |                         .iter_mut()
+696 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
-error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateinstrument.rs:705:32
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:640:17
     |
-705 |                   let end_date = match self.end_date {
+640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:640:41
+    |
+640 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
+
+error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+   --> src/instruments/makefixedrateinstrument.rs:719:32
+    |
+719 |                   let end_date = match self.end_date {
     |  ________________________________^
-706 | |                     Some(date) => date,
-707 | |                     None => {
-708 | |                         let tenor = self
+720 | |                     Some(date) => date,
+721 | |                     None => {
+722 | |                         let tenor = self
 ...   |
-713 | |                 };
+727 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-705 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-706 +                     let tenor = self
-707 +                         .tenor
-708 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-709 +                     start_date + tenor
-710 ~                 };
+719 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+720 +                     let tenor = self
+721 +                         .tenor
+722 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+723 +                     start_date + tenor
+724 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:738:40
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:645:17
     |
-738 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `1800.0f64.mul_add(1.0 + 0.1 * delta_date, outstanding)`
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:739:39
+error: multiply and add expressions can be calculated more efficiently and accurately
+   --> src/alm/rolloversimulationengine.rs:645:41
     |
-739 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+645 |         assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ help: consider using: `0.1f64.mul_add(delta_date, 1.0)`
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#suboptimal_flops
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateinstrument.rs:767:21
+   --> src/instruments/makefixedrateinstrument.rs:787:21
     |
-767 | /                     cashflows
-768 | |                         .iter_mut()
-769 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
+787 | /                     cashflows
+788 | |                         .iter_mut()
+789 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-767 |                     cashflows
-768 |                         .iter_mut()
-769 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+787 |                     cashflows
+788 |                         .iter_mut()
+789 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateinstrument.rs:792:32
+   --> src/instruments/makefixedrateinstrument.rs:812:32
     |
-792 |                   let end_date = match self.end_date {
+812 |                   let end_date = match self.end_date {
     |  ________________________________^
-793 | |                     Some(date) => date,
-794 | |                     None => {
-795 | |                         let tenor = self
+813 | |                     Some(date) => date,
+814 | |                     None => {
+815 | |                         let tenor = self
 ...   |
-800 | |                 };
+820 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-792 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-793 +                     let tenor = self
-794 +                         .tenor
-795 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-796 +                     start_date + tenor
-797 ~                 };
+812 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+813 +                     let tenor = self
+814 +                         .tenor
+815 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+816 +                     start_date + tenor
+817 ~                 };
     |
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateinstrument.rs:834:40
-    |
-834 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefixedrateinstrument.rs:838:51
+   --> src/instruments/makefixedrateinstrument.rs:861:51
     |
-838 |                 let redemptions = vec![notional / n as f64; n];
+861 |                 let redemptions = vec![notional / n as f64; n];
     |                                                   ^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateinstrument.rs:859:53
+   --> src/instruments/makefixedrateinstrument.rs:882:53
     |
-859 |                     schedule.dates().iter().skip(1).cloned().collect();
+882 |                     schedule.dates().iter().skip(1).cloned().collect();
     |                                                     ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateinstrument.rs:871:21
+   --> src/instruments/makefixedrateinstrument.rs:894:21
     |
-871 | /                     cashflows
-872 | |                         .iter_mut()
-873 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
+894 | /                     cashflows
+895 | |                         .iter_mut()
+896 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
     | |____________________________________________________________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-871 |                     cashflows
-872 |                         .iter_mut()
-873 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+894 |                     cashflows
+895 |                         .iter_mut()
+896 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
     |
 
 error: this argument is passed by value, but not consumed in the function body
-   --> src/instruments/makefixedrateinstrument.rs:945:12
+   --> src/instruments/makefixedrateinstrument.rs:968:12
     |
-945 |     dates: Vec<Date>,
+968 |     dates: Vec<Date>,
     |            ^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_pass_by_value
 help: consider changing the type to
     |
-945 -     dates: Vec<Date>,
-945 +     dates: &[Date],
+968 -     dates: Vec<Date>,
+968 +     dates: &[Date],
     |
 help: change `dates.clone()` to
     |
-950 -         dates: dates.clone(),
-950 +         dates: dates.to_owned(),
+973 -         dates: dates.clone(),
+973 +         dates: dates.to_owned(),
     |
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefixedrateinstrument.rs:956:28
+   --> src/instruments/makefixedrateinstrument.rs:979:28
     |
-956 |     let init_param = 1.0 / (dates.len() as f64);
+979 |     let init_param = 1.0 / (dates.len() as f64);
     |                            ^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
 error: wildcard matches only a single variant and will also match any future added variants
-    --> src/instruments/makefixedrateinstrument.rs:1008:17
+    --> src/instruments/makefixedrateinstrument.rs:1031:17
      |
-1008 |                 _ => (),
+1031 |                 _ => (),
      |                 ^ help: try: `Cashflow::FloatingRateCoupon(_)`
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
 
 error: unnecessary structure name repetition
-    --> src/instruments/makefixedrateinstrument.rs:1012:23
+    --> src/instruments/makefixedrateinstrument.rs:1035:23
      |
-1012 |         let builder = MakeFixedRateInstrument::new()
+1035 |         let builder = MakeFixedRateInstrument::new()
      |                       ^^^^^^^^^^^^^^^^^^^^^^^ help: use the applicable keyword: `Self`
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
@@ -1150,9 +1056,9 @@ error: unnecessary structure name repetition
      = help: to override `-D clippy::nursery` add `#[allow(clippy::use_self)]`
 
 error: unnecessary structure name repetition
-    --> src/instruments/makefixedrateinstrument.rs:1034:9
+    --> src/instruments/makefixedrateinstrument.rs:1057:9
      |
-1034 |         MakeFixedRateInstrument::from(val.clone())
+1057 |         MakeFixedRateInstrument::from(val.clone())
      |         ^^^^^^^^^^^^^^^^^^^^^^^ help: use the applicable keyword: `Self`
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
@@ -1171,81 +1077,64 @@ help: try
    |
 
 error: item in documentation is missing backticks
-   --> src/instruments/makefixedrateleg.rs:348:44
+   --> src/instruments/makefixedrateleg.rs:342:44
     |
-348 |     /// Builds the Leg from the configured MakeFixedRateLeg builder.
+342 |     /// Builds the Leg from the configured MakeFixedRateLeg builder.
     |                                            ^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#doc_markdown
 help: try
     |
-348 -     /// Builds the Leg from the configured MakeFixedRateLeg builder.
-348 +     /// Builds the Leg from the configured `MakeFixedRateLeg` builder.
+342 -     /// Builds the Leg from the configured MakeFixedRateLeg builder.
+342 +     /// Builds the Leg from the configured `MakeFixedRateLeg` builder.
     |
 
-error: this function has too many lines (429/100)
-   --> src/instruments/makefixedrateleg.rs:352:5
+error: this function has too many lines (453/100)
+   --> src/instruments/makefixedrateleg.rs:346:5
     |
-352 |     pub fn build(self) -> Result<Leg> {
+346 |     pub fn build(self) -> Result<Leg> {
     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateleg.rs:372:32
+   --> src/instruments/makefixedrateleg.rs:366:32
     |
-372 |                   let end_date = match self.end_date {
+366 |                   let end_date = match self.end_date {
     |  ________________________________^
-373 | |                     Some(date) => date,
-374 | |                     None => {
-375 | |                         let tenor = self
+367 | |                     Some(date) => date,
+368 | |                     None => {
+369 | |                         let tenor = self
 ...   |
-380 | |                 };
+374 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-372 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-373 +                     let tenor = self
-374 +                         .tenor
-375 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-376 +                     start_date + tenor
-377 ~                 };
+366 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+367 +                     let tenor = self
+368 +                         .tenor
+369 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+370 +                     start_date + tenor
+371 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:418:40
-    |
-418 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:419:39
-    |
-419 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: consider adding a `;` to the last statement for consistent formatting
+error: needless use of `for_each`
    --> src/instruments/makefixedrateleg.rs:449:21
     |
 449 | /                     cashflows
 450 | |                         .iter_mut()
-451 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
-    | |____________________________________________________________________^
+451 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+    = note: `-D clippy::needless-for-each` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::needless_for_each)]`
+help: try
     |
-449 |                     cashflows
-450 |                         .iter_mut()
-451 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+449 ~                     for cf in cashflows
+450 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
@@ -1264,20 +1153,19 @@ error: it is more concise to loop over references to containers instead of using
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
-error: consider adding a `;` to the last statement for consistent formatting
+error: needless use of `for_each`
    --> src/instruments/makefixedrateleg.rs:514:21
     |
 514 | /                     cashflows
 515 | |                         .iter_mut()
-516 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
-    | |____________________________________________________________________^
+516 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
     |
-514 |                     cashflows
-515 |                         .iter_mut()
-516 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+514 ~                     for cf in cashflows
+515 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
@@ -1303,214 +1191,160 @@ help: try
 540 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:587:30
-    |
-587 |                     acc.push(acc.last().unwrap() - x);
-    |                              ^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:603:40
-    |
-603 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateleg.rs:614:53
+   --> src/instruments/makefixedrateleg.rs:623:53
     |
-614 |                     schedule.dates().iter().skip(1).cloned().collect();
+623 |                     schedule.dates().iter().skip(1).cloned().collect();
     |                                                     ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateleg.rs:628:21
+error: needless use of `for_each`
+   --> src/instruments/makefixedrateleg.rs:637:21
     |
-628 | /                     cashflows
-629 | |                         .iter_mut()
-630 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
-    | |____________________________________________________________________^
+637 | /                     cashflows
+638 | |                         .iter_mut()
+639 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
     |
-628 |                     cashflows
-629 |                         .iter_mut()
-630 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+637 ~                     for cf in cashflows
+638 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateleg.rs:649:32
+   --> src/instruments/makefixedrateleg.rs:658:32
     |
-649 |                   let end_date = match self.end_date {
+658 |                   let end_date = match self.end_date {
     |  ________________________________^
-650 | |                     Some(date) => date,
-651 | |                     None => {
-652 | |                         let tenor = self
+659 | |                     Some(date) => date,
+660 | |                     None => {
+661 | |                         let tenor = self
 ...   |
-657 | |                 };
+666 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-649 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-650 +                     let tenor = self
-651 +                         .tenor
-652 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-653 +                     start_date + tenor
-654 ~                 };
+658 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+659 +                     let tenor = self
+660 +                         .tenor
+661 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+662 +                     start_date + tenor
+663 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:682:40
+error: needless use of `for_each`
+   --> src/instruments/makefixedrateleg.rs:726:21
     |
-682 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+726 | /                     cashflows
+727 | |                         .iter_mut()
+728 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
     |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:683:39
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
     |
-683 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateleg.rs:711:21
-    |
-711 | /                     cashflows
-712 | |                         .iter_mut()
-713 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
-    | |____________________________________________________________________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
-    |
-711 |                     cashflows
-712 |                         .iter_mut()
-713 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+726 ~                     for cf in cashflows
+727 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefixedrateleg.rs:732:32
+   --> src/instruments/makefixedrateleg.rs:747:32
     |
-732 |                   let end_date = match self.end_date {
+747 |                   let end_date = match self.end_date {
     |  ________________________________^
-733 | |                     Some(date) => date,
-734 | |                     None => {
-735 | |                         let tenor = self
+748 | |                     Some(date) => date,
+749 | |                     None => {
+750 | |                         let tenor = self
 ...   |
-740 | |                 };
+755 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-732 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-733 +                     let tenor = self
-734 +                         .tenor
-735 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-736 +                     start_date + tenor
-737 ~                 };
+747 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+748 +                     let tenor = self
+749 +                         .tenor
+750 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+751 +                     start_date + tenor
+752 ~                 };
     |
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefixedrateleg.rs:775:40
-    |
-775 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefixedrateleg.rs:779:51
+   --> src/instruments/makefixedrateleg.rs:797:51
     |
-779 |                 let redemptions = vec![notional / n as f64; n];
+797 |                 let redemptions = vec![notional / n as f64; n];
     |                                                   ^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefixedrateleg.rs:800:53
+   --> src/instruments/makefixedrateleg.rs:818:53
     |
-800 |                     schedule.dates().iter().skip(1).cloned().collect();
+818 |                     schedule.dates().iter().skip(1).cloned().collect();
     |                                                     ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefixedrateleg.rs:812:21
+error: needless use of `for_each`
+   --> src/instruments/makefixedrateleg.rs:830:21
     |
-812 | /                     cashflows
-813 | |                         .iter_mut()
-814 | |                         .for_each(|cf| cf.set_discount_curve_id(id))
-    | |____________________________________________________________________^
+830 | /                     cashflows
+831 | |                         .iter_mut()
+832 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
     |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
     |
-812 |                     cashflows
-813 |                         .iter_mut()
-814 ~                         .for_each(|cf| cf.set_discount_curve_id(id));
+830 ~                     for cf in cashflows
+831 +                         .iter_mut() { cf.set_discount_curve_id(id); }
     |
 
 error: this argument is passed by value, but not consumed in the function body
-   --> src/instruments/makefixedrateleg.rs:881:12
+   --> src/instruments/makefixedrateleg.rs:899:12
     |
-881 |     dates: Vec<Date>,
+899 |     dates: Vec<Date>,
     |            ^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_pass_by_value
 help: consider changing the type to
     |
-881 -     dates: Vec<Date>,
-881 +     dates: &[Date],
+899 -     dates: Vec<Date>,
+899 +     dates: &[Date],
     |
 help: change `dates.clone()` to
     |
-887 -         dates: dates.clone(),
-887 +         dates: dates.to_owned(),
+905 -         dates: dates.clone(),
+905 +         dates: dates.to_owned(),
     |
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefixedrateleg.rs:893:28
+   --> src/instruments/makefixedrateleg.rs:911:28
     |
-893 |     let init_param = 1.0 / (dates.len() as f64);
+911 |     let init_param = 1.0 / (dates.len() as f64);
     |                            ^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
 error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:165:9
+   --> src/cashflows/fixedratecoupon.rs:266:9
     |
-165 |         assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:182:9
-    |
-182 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+266 | /         assert_eq!(
+267 | |             coupon.accrued_amount(accrual_start_date, accrual_end_date)?,
+268 | |             expected_amount
+269 | |         );
+    | |_________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error: this function has too many lines (388/100)
+error: this function has too many lines (403/100)
    --> src/instruments/makefloatingrateinstrument.rs:305:5
     |
 305 |     pub fn build(self) -> Result<FloatingRateInstrument> {
@@ -1518,44 +1352,10 @@ error: this function has too many lines (388/100)
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
 
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:183:9
-    |
-183 | /         assert_eq!(
-184 | |             manager
-185 | |                 .exchange_rate_cache
-186 | |                 .lock()
-...   |
-193 | |             0.85
-194 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: this function's return value is unnecessary
-   --> src/currencies/exchangeratestore.rs:199:5
-    |
-199 |     fn test_nonexistent_rate() -> Result<()> {
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_wraps
-    = note: `-D clippy::unnecessary-wraps` implied by `-D clippy::pedantic`
-    = help: to override `-D clippy::pedantic` add `#[allow(clippy::unnecessary_wraps)]`
-help: remove the return type...
-    |
-199 -     fn test_nonexistent_rate() -> Result<()> {
-199 +     fn test_nonexistent_rate() -> () {
-    |
-help: ...and then remove returned values
-    |
-209 -         Ok(())
-    |
-
 error: wildcard matches only a single variant and will also match any future added variants
-   --> src/instruments/makefloatingrateinstrument.rs:722:13
+   --> src/instruments/makefloatingrateinstrument.rs:737:13
     |
-722 |             _ => Err(AtlasError::InvalidValueErr(
+737 |             _ => Err(AtlasError::InvalidValueErr(
     |             ^ help: try: `Structure::EqualPayments`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
@@ -1583,313 +1383,229 @@ help: try
 334 ~                 };
     |
 
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:226:9
-    |
-226 |         assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateinstrument.rs:373:40
-    |
-373 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateinstrument.rs:374:39
-    |
-374 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:227:9
-    |
-227 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:403:21
+   --> src/instruments/makefloatingrateinstrument.rs:409:21
     |
-403 | /                     cashflows.iter_mut().for_each(|cf| {
-404 | |                         cf.set_discount_curve_id(id);
-405 | |                     })
+409 | /                     cashflows.iter_mut().for_each(|cf| {
+410 | |                         cf.set_discount_curve_id(id);
+411 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-403 |                     cashflows.iter_mut().for_each(|cf| {
-404 |                         cf.set_discount_curve_id(id);
-405 ~                     });
+409 |                     cashflows.iter_mut().for_each(|cf| {
+410 |                         cf.set_discount_curve_id(id);
+411 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:408:21
+   --> src/instruments/makefloatingrateinstrument.rs:414:21
     |
-408 | /                     cashflows.iter_mut().for_each(|cf| {
-409 | |                         cf.set_forecast_curve_id(id);
-410 | |                     })
+414 | /                     cashflows.iter_mut().for_each(|cf| {
+415 | |                         cf.set_forecast_curve_id(id);
+416 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-408 |                     cashflows.iter_mut().for_each(|cf| {
-409 |                         cf.set_forecast_curve_id(id);
-410 ~                     });
+414 |                     cashflows.iter_mut().for_each(|cf| {
+415 |                         cf.set_forecast_curve_id(id);
+416 ~                     });
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefloatingrateinstrument.rs:435:32
+   --> src/instruments/makefloatingrateinstrument.rs:441:32
     |
-435 |                   let end_date = match self.end_date {
+441 |                   let end_date = match self.end_date {
     |  ________________________________^
-436 | |                     Some(date) => date,
-437 | |                     None => {
-438 | |                         let tenor = self
+442 | |                     Some(date) => date,
+443 | |                     None => {
+444 | |                         let tenor = self
 ...   |
-443 | |                 };
+449 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-435 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-436 +                     let tenor = self
-437 +                         .tenor
-438 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-439 +                     start_date + tenor
-440 ~                 };
+441 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+442 +                     let tenor = self
+443 +                         .tenor
+444 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+445 +                     start_date + tenor
+446 ~                 };
     |
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:238:9
-    |
-238 |         assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/currencies/exchangeratestore.rs:239:9
-    |
-239 | /         assert_eq!(
-240 | |             manager.get_exchange_rate(EUR, CLP)?,
-241 | |             1.0 / (1.1 * 800.0)
-242 | |         );
-    | |_________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateinstrument.rs:467:40
-    |
-467 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateinstrument.rs:468:39
-    |
-468 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:497:21
+   --> src/instruments/makefloatingrateinstrument.rs:509:21
     |
-497 | /                     cashflows.iter_mut().for_each(|cf| {
-498 | |                         cf.set_discount_curve_id(id);
-499 | |                     })
+509 | /                     cashflows.iter_mut().for_each(|cf| {
+510 | |                         cf.set_discount_curve_id(id);
+511 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-497 |                     cashflows.iter_mut().for_each(|cf| {
-498 |                         cf.set_discount_curve_id(id);
-499 ~                     });
+509 |                     cashflows.iter_mut().for_each(|cf| {
+510 |                         cf.set_discount_curve_id(id);
+511 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:502:21
+   --> src/instruments/makefloatingrateinstrument.rs:514:21
     |
-502 | /                     cashflows.iter_mut().for_each(|cf| {
-503 | |                         cf.set_forecast_curve_id(id);
-504 | |                     })
+514 | /                     cashflows.iter_mut().for_each(|cf| {
+515 | |                         cf.set_forecast_curve_id(id);
+516 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-502 |                     cashflows.iter_mut().for_each(|cf| {
-503 |                         cf.set_forecast_curve_id(id);
-504 ~                     });
+514 |                     cashflows.iter_mut().for_each(|cf| {
+515 |                         cf.set_forecast_curve_id(id);
+516 ~                     });
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefloatingrateinstrument.rs:529:32
+   --> src/instruments/makefloatingrateinstrument.rs:541:32
     |
-529 |                   let end_date = match self.end_date {
+541 |                   let end_date = match self.end_date {
     |  ________________________________^
-530 | |                     Some(date) => date,
-531 | |                     None => {
-532 | |                         let tenor = self
+542 | |                     Some(date) => date,
+543 | |                     None => {
+544 | |                         let tenor = self
 ...   |
-537 | |                 };
+549 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-529 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-530 +                     let tenor = self
-531 +                         .tenor
-532 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-533 +                     start_date + tenor
-534 ~                 };
+541 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+542 +                     let tenor = self
+543 +                         .tenor
+544 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+545 +                     start_date + tenor
+546 ~                 };
     |
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefloatingrateinstrument.rs:574:51
+   --> src/instruments/makefloatingrateinstrument.rs:586:51
     |
-574 |                 let redemptions = vec![notional / n as f64; n];
+586 |                 let redemptions = vec![notional / n as f64; n];
     |                                                   ^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateinstrument.rs:576:40
-    |
-576 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefloatingrateinstrument.rs:596:53
+   --> src/instruments/makefloatingrateinstrument.rs:611:53
     |
-596 |                     schedule.dates().iter().skip(1).cloned().collect();
+611 |                     schedule.dates().iter().skip(1).cloned().collect();
     |                                                     ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:606:21
+   --> src/instruments/makefloatingrateinstrument.rs:621:21
     |
-606 | /                     cashflows.iter_mut().for_each(|cf| {
-607 | |                         cf.set_discount_curve_id(id);
-608 | |                     })
+621 | /                     cashflows.iter_mut().for_each(|cf| {
+622 | |                         cf.set_discount_curve_id(id);
+623 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-606 |                     cashflows.iter_mut().for_each(|cf| {
-607 |                         cf.set_discount_curve_id(id);
-608 ~                     });
+621 |                     cashflows.iter_mut().for_each(|cf| {
+622 |                         cf.set_discount_curve_id(id);
+623 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:611:21
+   --> src/instruments/makefloatingrateinstrument.rs:626:21
     |
-611 | /                     cashflows.iter_mut().for_each(|cf| {
-612 | |                         cf.set_forecast_curve_id(id);
-613 | |                     })
+626 | /                     cashflows.iter_mut().for_each(|cf| {
+627 | |                         cf.set_forecast_curve_id(id);
+628 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-611 |                     cashflows.iter_mut().for_each(|cf| {
-612 |                         cf.set_forecast_curve_id(id);
-613 ~                     });
+626 |                     cashflows.iter_mut().for_each(|cf| {
+627 |                         cf.set_forecast_curve_id(id);
+628 ~                     });
     |
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefloatingrateinstrument.rs:653:39
+   --> src/instruments/makefloatingrateinstrument.rs:668:39
     |
-653 |                 for (date, amount) in disbursements.iter() {
+668 |                 for (date, amount) in disbursements.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefloatingrateinstrument.rs:675:39
+   --> src/instruments/makefloatingrateinstrument.rs:690:39
     |
-675 |                 for (date, amount) in redemptions.iter() {
+690 |                 for (date, amount) in redemptions.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&redemptions`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:696:21
+   --> src/instruments/makefloatingrateinstrument.rs:711:21
     |
-696 | /                     cashflows.iter_mut().for_each(|cf| {
-697 | |                         cf.set_discount_curve_id(id);
-698 | |                     })
+711 | /                     cashflows.iter_mut().for_each(|cf| {
+712 | |                         cf.set_discount_curve_id(id);
+713 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-696 |                     cashflows.iter_mut().for_each(|cf| {
-697 |                         cf.set_discount_curve_id(id);
-698 ~                     });
+711 |                     cashflows.iter_mut().for_each(|cf| {
+712 |                         cf.set_discount_curve_id(id);
+713 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateinstrument.rs:701:21
+   --> src/instruments/makefloatingrateinstrument.rs:716:21
     |
-701 | /                     cashflows.iter_mut().for_each(|cf| {
-702 | |                         cf.set_forecast_curve_id(id);
-703 | |                     })
+716 | /                     cashflows.iter_mut().for_each(|cf| {
+717 | |                         cf.set_forecast_curve_id(id);
+718 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-701 |                     cashflows.iter_mut().for_each(|cf| {
-702 |                         cf.set_forecast_curve_id(id);
-703 ~                     });
+716 |                     cashflows.iter_mut().for_each(|cf| {
+717 |                         cf.set_forecast_curve_id(id);
+718 ~                     });
     |
 
 error: wildcard matches only a single variant and will also match any future added variants
-   --> src/instruments/makefloatingrateinstrument.rs:782:17
+   --> src/instruments/makefloatingrateinstrument.rs:797:17
     |
-782 |                 _ => (),
+797 |                 _ => (),
     |                 ^ help: try: `Cashflow::FixedRateCoupon(_)`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
 
 error: unnecessary structure name repetition
-   --> src/instruments/makefloatingrateinstrument.rs:786:9
+   --> src/instruments/makefloatingrateinstrument.rs:801:9
     |
-786 |         MakeFloatingRateInstrument::new()
+801 |         MakeFloatingRateInstrument::new()
     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: this function has too many lines (359/100)
+error: this function has too many lines (374/100)
    --> src/instruments/makefloatingrateleg.rs:294:5
     |
 294 |     pub fn build(self) -> Result<Leg> {
@@ -1898,9 +1614,9 @@ error: this function has too many lines (359/100)
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_lines
 
 error: wildcard matches only a single variant and will also match any future added variants
-   --> src/instruments/makefloatingrateleg.rs:683:13
+   --> src/instruments/makefloatingrateleg.rs:698:13
     |
-683 |             _ => Err(AtlasError::InvalidValueErr(
+698 |             _ => Err(AtlasError::InvalidValueErr(
     |             ^ help: try: `Structure::EqualPayments`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
@@ -1928,45 +1644,11 @@ help: try
 323 ~                 };
     |
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateleg.rs:363:40
-    |
-363 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateleg.rs:364:39
-    |
-364 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:393:21
-    |
-393 | /                     cashflows.iter_mut().for_each(|cf| {
-394 | |                         cf.set_discount_curve_id(id);
-395 | |                     })
-    | |______________________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
-    |
-393 |                     cashflows.iter_mut().for_each(|cf| {
-394 |                         cf.set_discount_curve_id(id);
-395 ~                     });
-    |
-
 error: consider adding a `;` to the last statement for consistent formatting
    --> src/instruments/makefloatingrateleg.rs:399:21
     |
 399 | /                     cashflows.iter_mut().for_each(|cf| {
-400 | |                         cf.set_forecast_curve_id(id);
+400 | |                         cf.set_discount_curve_id(id);
 401 | |                     })
     | |______________________^
     |
@@ -1974,209 +1656,198 @@ error: consider adding a `;` to the last statement for consistent formatting
 help: add a `;` here
     |
 399 |                     cashflows.iter_mut().for_each(|cf| {
-400 |                         cf.set_forecast_curve_id(id);
+400 |                         cf.set_discount_curve_id(id);
 401 ~                     });
     |
 
-error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefloatingrateleg.rs:421:32
-    |
-421 |                   let end_date = match self.end_date {
-    |  ________________________________^
-422 | |                     Some(date) => date,
-423 | |                     None => {
-424 | |                         let tenor = self
-...   |
-429 | |                 };
-    | |_________________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
-help: try
-    |
-421 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-422 +                     let tenor = self
-423 +                         .tenor
-424 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-425 +                     start_date + tenor
-426 ~                 };
-    |
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateleg.rs:453:40
-    |
-453 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateleg.rs:454:39
-    |
-454 |                 let last_date = vec![*schedule.dates().last().unwrap()];
-    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:483:21
+   --> src/instruments/makefloatingrateleg.rs:405:21
     |
-483 | /                     cashflows.iter_mut().for_each(|cf| {
-484 | |                         cf.set_discount_curve_id(id);
-485 | |                     })
+405 | /                     cashflows.iter_mut().for_each(|cf| {
+406 | |                         cf.set_forecast_curve_id(id);
+407 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-483 |                     cashflows.iter_mut().for_each(|cf| {
-484 |                         cf.set_discount_curve_id(id);
-485 ~                     });
-    |
-
-error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:489:21
-    |
-489 | /                     cashflows.iter_mut().for_each(|cf| {
-490 | |                         cf.set_forecast_curve_id(id);
-491 | |                     })
-    | |______________________^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
-help: add a `;` here
-    |
-489 |                     cashflows.iter_mut().for_each(|cf| {
-490 |                         cf.set_forecast_curve_id(id);
-491 ~                     });
+405 |                     cashflows.iter_mut().for_each(|cf| {
+406 |                         cf.set_forecast_curve_id(id);
+407 ~                     });
     |
 
 error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
-   --> src/instruments/makefloatingrateleg.rs:511:32
+   --> src/instruments/makefloatingrateleg.rs:427:32
     |
-511 |                   let end_date = match self.end_date {
+427 |                   let end_date = match self.end_date {
     |  ________________________________^
-512 | |                     Some(date) => date,
-513 | |                     None => {
-514 | |                         let tenor = self
+428 | |                     Some(date) => date,
+429 | |                     None => {
+430 | |                         let tenor = self
 ...   |
-519 | |                 };
+435 | |                 };
     | |_________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
 help: try
     |
-511 ~                 let end_date = if let Some(date) = self.end_date { date } else {
-512 +                     let tenor = self
-513 +                         .tenor
-514 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-515 +                     start_date + tenor
-516 ~                 };
+427 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+428 +                     let tenor = self
+429 +                         .tenor
+430 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+431 +                     start_date + tenor
+432 ~                 };
+    |
+
+error: consider adding a `;` to the last statement for consistent formatting
+   --> src/instruments/makefloatingrateleg.rs:495:21
+    |
+495 | /                     cashflows.iter_mut().for_each(|cf| {
+496 | |                         cf.set_discount_curve_id(id);
+497 | |                     })
+    | |______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
+help: add a `;` here
+    |
+495 |                     cashflows.iter_mut().for_each(|cf| {
+496 |                         cf.set_discount_curve_id(id);
+497 ~                     });
+    |
+
+error: consider adding a `;` to the last statement for consistent formatting
+   --> src/instruments/makefloatingrateleg.rs:501:21
+    |
+501 | /                     cashflows.iter_mut().for_each(|cf| {
+502 | |                         cf.set_forecast_curve_id(id);
+503 | |                     })
+    | |______________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
+help: add a `;` here
+    |
+501 |                     cashflows.iter_mut().for_each(|cf| {
+502 |                         cf.set_forecast_curve_id(id);
+503 ~                     });
+    |
+
+error: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+   --> src/instruments/makefloatingrateleg.rs:523:32
+    |
+523 |                   let end_date = match self.end_date {
+    |  ________________________________^
+524 | |                     Some(date) => date,
+525 | |                     None => {
+526 | |                         let tenor = self
+...   |
+531 | |                 };
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match_else
+help: try
+    |
+523 ~                 let end_date = if let Some(date) = self.end_date { date } else {
+524 +                     let tenor = self
+525 +                         .tenor
+526 +                         .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+527 +                     start_date + tenor
+528 ~                 };
     |
 
 error: casting `usize` to `f64` may cause a loss of precision (`usize` can be up to 64 bits wide depending on the target architecture, but `f64`'s mantissa is only 52 bits wide)
-   --> src/instruments/makefloatingrateleg.rs:557:51
+   --> src/instruments/makefloatingrateleg.rs:569:51
     |
-557 |                 let redemptions = vec![notional / n as f64; n];
+569 |                 let redemptions = vec![notional / n as f64; n];
     |                                                   ^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
-error: used `unwrap()` on an `Option` value
-   --> src/instruments/makefloatingrateleg.rs:559:40
-    |
-559 |                 let first_date = vec![*schedule.dates().first().unwrap()];
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: used `cloned` where `copied` could be used instead
-   --> src/instruments/makefloatingrateleg.rs:579:53
+   --> src/instruments/makefloatingrateleg.rs:594:53
     |
-579 |                     schedule.dates().iter().skip(1).cloned().collect();
+594 |                     schedule.dates().iter().skip(1).cloned().collect();
     |                                                     ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:589:21
+   --> src/instruments/makefloatingrateleg.rs:604:21
     |
-589 | /                     cashflows.iter_mut().for_each(|cf| {
-590 | |                         cf.set_discount_curve_id(id);
-591 | |                     })
+604 | /                     cashflows.iter_mut().for_each(|cf| {
+605 | |                         cf.set_discount_curve_id(id);
+606 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-589 |                     cashflows.iter_mut().for_each(|cf| {
-590 |                         cf.set_discount_curve_id(id);
-591 ~                     });
+604 |                     cashflows.iter_mut().for_each(|cf| {
+605 |                         cf.set_discount_curve_id(id);
+606 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:594:21
+   --> src/instruments/makefloatingrateleg.rs:609:21
     |
-594 | /                     cashflows.iter_mut().for_each(|cf| {
-595 | |                         cf.set_forecast_curve_id(id);
-596 | |                     })
+609 | /                     cashflows.iter_mut().for_each(|cf| {
+610 | |                         cf.set_forecast_curve_id(id);
+611 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-594 |                     cashflows.iter_mut().for_each(|cf| {
-595 |                         cf.set_forecast_curve_id(id);
-596 ~                     });
+609 |                     cashflows.iter_mut().for_each(|cf| {
+610 |                         cf.set_forecast_curve_id(id);
+611 ~                     });
     |
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefloatingrateleg.rs:631:39
+   --> src/instruments/makefloatingrateleg.rs:646:39
     |
-631 |                 for (date, amount) in disbursements.iter() {
+646 |                 for (date, amount) in disbursements.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&disbursements`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/instruments/makefloatingrateleg.rs:653:39
+   --> src/instruments/makefloatingrateleg.rs:668:39
     |
-653 |                 for (date, amount) in redemptions.iter() {
+668 |                 for (date, amount) in redemptions.iter() {
     |                                       ^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&redemptions`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:661:21
+   --> src/instruments/makefloatingrateleg.rs:676:21
     |
-661 | /                     cashflows.iter_mut().for_each(|cf| {
-662 | |                         cf.set_discount_curve_id(id);
-663 | |                     })
+676 | /                     cashflows.iter_mut().for_each(|cf| {
+677 | |                         cf.set_discount_curve_id(id);
+678 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-661 |                     cashflows.iter_mut().for_each(|cf| {
-662 |                         cf.set_discount_curve_id(id);
-663 ~                     });
+676 |                     cashflows.iter_mut().for_each(|cf| {
+677 |                         cf.set_discount_curve_id(id);
+678 ~                     });
     |
 
 error: consider adding a `;` to the last statement for consistent formatting
-   --> src/instruments/makefloatingrateleg.rs:667:21
+   --> src/instruments/makefloatingrateleg.rs:682:21
     |
-667 | /                     cashflows.iter_mut().for_each(|cf| {
-668 | |                         cf.set_forecast_curve_id(id);
-669 | |                     })
+682 | /                     cashflows.iter_mut().for_each(|cf| {
+683 | |                         cf.set_forecast_curve_id(id);
+684 | |                     })
     | |______________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#semicolon_if_nothing_returned
 help: add a `;` here
     |
-667 |                     cashflows.iter_mut().for_each(|cf| {
-668 |                         cf.set_forecast_curve_id(id);
-669 ~                     });
+682 |                     cashflows.iter_mut().for_each(|cf| {
+683 |                         cf.set_forecast_curve_id(id);
+684 ~                     });
     |
 
 error: item in documentation is missing backticks
@@ -2496,12 +2167,25 @@ error: it is more concise to loop over references to containers instead of using
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
 
-error: only a `panic!` in `if`-then statement
+error: this could be rewritten as `let...else`
   --> src/math/interpolation/linear.rs:17:9
    |
-17 | /         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-18 | |             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-19 | |         }
+17 | /         let (first_x, last_x) = match (x_.first(), x_.last()) {
+18 | |             (Some(first), Some(last)) => (first, last),
+19 | |             _ => panic!("Interpolation data must contain at least one x value."),
+20 | |         };
+   | |__________^ help: consider writing: `let (Some(first_x), Some(last_x)) = (x_.first(), x_.last()) else { panic!("Interpolation data must contain at least one x value.") };`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_let_else
+   = note: `-D clippy::manual-let-else` implied by `-D clippy::pedantic`
+   = help: to override `-D clippy::pedantic` add `#[allow(clippy::manual_let_else)]`
+
+error: only a `panic!` in `if`-then statement
+  --> src/math/interpolation/linear.rs:22:9
+   |
+22 | /         if !enable_extrapolation && (x < *first_x || x > *last_x) {
+23 | |             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
+24 | |         }
    | |_________^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_assert
@@ -2509,29 +2193,11 @@ error: only a `panic!` in `if`-then statement
    = help: to override `-D clippy::pedantic` add `#[allow(clippy::manual_assert)]`
 help: replace `if`-then-`panic!` with `assert!`
    |
-17 -         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-18 -             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-19 -         }
-17 +         assert!(!(!enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap())), "Extrapolation is not enabled, and the provided value is outside the range.");
+22 -         if !enable_extrapolation && (x < *first_x || x > *last_x) {
+23 -             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
+24 -         }
+22 +         assert!(!(!enable_extrapolation && (x < *first_x || x > *last_x)), "Extrapolation is not enabled, and the provided value is outside the range.");
    |
-
-error: used `unwrap()` on an `Option` value
-  --> src/math/interpolation/linear.rs:17:43
-   |
-17 |         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-   |                                           ^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-  --> src/math/interpolation/linear.rs:17:71
-   |
-17 |         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-   |                                                                       ^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: these match arms have identical bodies
   --> src/math/interpolation/loglinear.rs:14:17
@@ -2552,40 +2218,42 @@ help: otherwise merge the patterns into a single arm
 14 +                 Ok(index) | Err(index) => index,
    |
 
-error: only a `panic!` in `if`-then statement
+error: this could be rewritten as `let...else`
   --> src/math/interpolation/loglinear.rs:18:9
    |
-18 | /         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-19 | |             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-20 | |         }
+18 | /         let (first_x, last_x) = match (x_.first(), x_.last()) {
+19 | |             (Some(first), Some(last)) => (first, last),
+20 | |             _ => panic!("Interpolation data must contain at least one x value."),
+21 | |         };
+   | |__________^ help: consider writing: `let (Some(first_x), Some(last_x)) = (x_.first(), x_.last()) else { panic!("Interpolation data must contain at least one x value.") };`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_let_else
+
+error: only a `panic!` in `if`-then statement
+  --> src/math/interpolation/loglinear.rs:23:9
+   |
+23 | /         if !enable_extrapolation && (x < *first_x || x > *last_x) {
+24 | |             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
+25 | |         }
    | |_________^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_assert
 help: replace `if`-then-`panic!` with `assert!`
    |
-18 -         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-19 -             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-20 -         }
-18 +         assert!(!(!enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap())), "Extrapolation is not enabled, and the provided value is outside the range.");
+23 -         if !enable_extrapolation && (x < *first_x || x > *last_x) {
+24 -             panic!("Extrapolation is not enabled, and the provided value is outside the range.");
+25 -         }
+23 +         assert!(!(!enable_extrapolation && (x < *first_x || x > *last_x)), "Extrapolation is not enabled, and the provided value is outside the range.");
    |
 
-error: used `unwrap()` on an `Option` value
-  --> src/math/interpolation/loglinear.rs:18:43
-   |
-18 |         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-   |                                           ^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-  --> src/math/interpolation/loglinear.rs:18:71
-   |
-18 |         if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-   |                                                                       ^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:165:9
+    |
+165 |         assert_eq!(manager.get_exchange_rate(USD, USD)?, 1.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: the following explicit lifetimes could be elided: 'a
   --> src/models/simplemodel.rs:58:6
@@ -2601,6 +2269,49 @@ help: elide the lifetimes
 58 - impl<'a> Model for SimpleModel<'a> {
 58 + impl Model for SimpleModel<'_> {
    |
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:182:9
+    |
+182 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:183:9
+    |
+183 | /         assert_eq!(
+184 | |             manager
+185 | |                 .exchange_rate_cache
+186 | |                 .lock()
+...   |
+193 | |             0.85
+194 | |         );
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function's return value is unnecessary
+   --> src/currencies/exchangeratestore.rs:199:5
+    |
+199 |     fn test_nonexistent_rate() -> Result<()> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_wraps
+    = note: `-D clippy::unnecessary-wraps` implied by `-D clippy::pedantic`
+    = help: to override `-D clippy::pedantic` add `#[allow(clippy::unnecessary_wraps)]`
+help: remove the return type...
+    |
+199 -     fn test_nonexistent_rate() -> Result<()> {
+199 +     fn test_nonexistent_rate() -> () {
+    |
+help: ...and then remove returned values
+    |
+209 -         Ok(())
+    |
 
 error: use Option::map_or_else instead of an if let/else
    --> src/models/simplemodel.rs:100:31
@@ -2635,37 +2346,40 @@ error: usage of wildcard import
   = help: to override `-D clippy::pedantic` add `#[allow(clippy::wildcard_imports)]`
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:270:9
+   --> src/currencies/exchangeratestore.rs:226:9
     |
-270 |         assert_eq!(instrument.notional(), 5_000_000.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:271:9
-    |
-271 |         assert_eq!(instrument.spread(), spread);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+226 |         assert_eq!(manager.get_exchange_rate(EUR, USD)?, 1.0 / 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:312:17
+   --> src/currencies/exchangeratestore.rs:227:9
     |
-312 |                 assert_eq!(coupon.spread(), spread);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+227 |         assert_eq!(manager.get_exchange_rate(USD, EUR)?, 0.85);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/floatingrateinstrument.rs:322:17
+   --> src/currencies/exchangeratestore.rs:238:9
     |
-322 |                 assert_eq!(coupon.spread(), new_spread);
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+238 |         assert_eq!(manager.get_exchange_rate(CLP, EUR)?, 1.1 * 800.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/currencies/exchangeratestore.rs:239:9
+    |
+239 | /         assert_eq!(
+240 | |             manager.get_exchange_rate(EUR, CLP)?,
+241 | |             1.0 / (1.1 * 800.0)
+242 | |         );
+    | |_________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -3055,84 +2769,48 @@ error: used `cloned` where `copied` could be used instead
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: used `unwrap()` on an `Option` value
-   --> src/rates/interestrateindex/overnightindex.rs:206:40
-    |
-206 |             let mut last_fixing_date = fixings.keys().max().cloned().unwrap();
-    |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: used `cloned` where `copied` could be used instead
-   --> src/rates/interestrateindex/overnightindex.rs:206:61
+   --> src/rates/interestrateindex/overnightindex.rs:210:22
     |
-206 |             let mut last_fixing_date = fixings.keys().max().cloned().unwrap();
-    |                                                             ^^^^^^ help: try: `copied`
+210 |                     .cloned()
+    |                      ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
 
-error: used `unwrap()` on an `Option` value
-   --> src/rates/interestrateindex/overnightindex.rs:208:36
-    |
-208 |                 let last_fixing = *fixings.get(&last_fixing_date).unwrap();
-    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: unnecessary structure name repetition
-   --> src/rates/interestrateindex/overnightindex.rs:232:13
+   --> src/rates/interestrateindex/overnightindex.rs:242:13
     |
-232 |             OvernightIndex::new(new_curve.reference_date())
+242 |             OvernightIndex::new(new_curve.reference_date())
     |             ^^^^^^^^^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: casting `i64` to `i32` may truncate the value
-   --> src/rates/interestrateindex/overnightindex.rs:241:20
+   --> src/rates/interestrateindex/overnightindex.rs:251:20
     |
-241 |         let days = (date - self.reference_date()) as i32;
+251 |         let days = (date - self.reference_date()) as i32;
     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = help: if this is intentional allow the lint with `#[allow(clippy::cast_possible_truncation)]` ...
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_possible_truncation
 help: ... or use `try_from` and handle the error accordingly
     |
-241 -         let days = (date - self.reference_date()) as i32;
-241 +         let days = i32::try_from(date - self.reference_date());
+251 -         let days = (date - self.reference_date()) as i32;
+251 +         let days = i32::try_from(date - self.reference_date());
     |
 
-error: used `unwrap()` on an `Option` value
-  --> src/rates/interestrateindex/traits.rs:32:31
-   |
-32 |             let first_date = *self.fixings().keys().min().unwrap();
-   |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-  --> src/rates/interestrateindex/traits.rs:33:30
-   |
-33 |             let last_date = *self.fixings().keys().max().unwrap();
-   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wide, but `f64`'s mantissa is only 52 bits wide)
-  --> src/rates/interestrateindex/traits.rs:43:27
+  --> src/rates/interestrateindex/traits.rs:46:27
    |
-43 |                 .map(|&d| (d - first_date) as f64)
+46 |                 .map(|&d| (d - first_date) as f64)
    |                           ^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
 error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wide, but `f64`'s mantissa is only 52 bits wide)
-  --> src/rates/interestrateindex/traits.rs:52:32
+  --> src/rates/interestrateindex/traits.rs:55:32
    |
-52 |                     let days = (current_date - first_date) as f64;
+55 |                     let days = (current_date - first_date) as f64;
    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
@@ -3181,6 +2859,42 @@ help: ... or use `try_from` and handle the error accordingly
 160 +         let days = i32::try_from(date - self.reference_date);
     |
 
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:270:9
+    |
+270 |         assert_eq!(instrument.notional(), 5_000_000.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:271:9
+    |
+271 |         assert_eq!(instrument.spread(), spread);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:312:17
+    |
+312 |                 assert_eq!(coupon.spread(), spread);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/floatingrateinstrument.rs:322:17
+    |
+322 |                 assert_eq!(coupon.spread(), new_spread);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: casting `i64` to `i32` may truncate the value
    --> src/rates/yieldtermstructure/zeroratetermstructure.rs:229:20
     |
@@ -3203,81 +2917,96 @@ error: unnecessary structure name repetition
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
+error: used `expect()` on an `Option` value
    --> src/time/calendars/brazil.rs:113:17
     |
-113 |         let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+113 |           let w = NaiveDate::from_ymd_opt(year, month, day)
+    |  _________________^
+114 | |             .expect("valid date for last business day calculation")
+    | |___________________________________________________________________^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
+    = note: requested on the command line with `-D clippy::expect-used`
 
 error: unnecessary structure name repetition
-   --> src/time/calendars/brazil.rs:233:9
+   --> src/time/calendars/brazil.rs:235:9
     |
-233 |         Brazil::new(Market::Settlement)
+235 |         Brazil::new(Market::Settlement)
     |         ^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
+error: used `expect()` on an `Option` value
   --> src/time/calendars/chile.rs:42:17
    |
-42 |         let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+42 |           let w = NaiveDate::from_ymd_opt(year, month, day)
+   |  _________________^
+43 | |             .expect("valid date for New Year's Day rules")
+   | |__________________________________________________________^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
-error: used `unwrap()` on an `Option` value
-  --> src/time/calendars/chile.rs:71:17
+error: used `expect()` on an `Option` value
+  --> src/time/calendars/chile.rs:73:17
    |
-71 |         let w = NaiveDate::from_ymd_opt(2001, month, day).unwrap().weekday();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+73 |           let w = NaiveDate::from_ymd_opt(2001, month, day)
+   |  _________________^
+74 | |             .expect("valid date for Saint Peter and Saint Paul day rules")
+   | |__________________________________________________________________________^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
-error: used `unwrap()` on an `Option` value
-  --> src/time/calendars/chile.rs:85:17
+error: used `expect()` on an `Option` value
+  --> src/time/calendars/chile.rs:89:17
    |
-85 |         let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+89 |           let w = NaiveDate::from_ymd_opt(1810, month, day)
+   |  _________________^
+90 | |             .expect("valid date for Independence Day rules")
+   | |____________________________________________________________^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
-error: used `unwrap()` on an `Option` value
-  --> src/time/calendars/chile.rs:93:17
-   |
-93 |         let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-  --> src/time/calendars/chile.rs:98:17
-   |
-98 |         let w = NaiveDate::from_ymd_opt(1492, month, day).unwrap().weekday();
-   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/calendars/chile.rs:103:17
+error: used `expect()` on an `Option` value
+   --> src/time/calendars/chile.rs:99:17
     |
-103 |         let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
-    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ 99 |           let w = NaiveDate::from_ymd_opt(1810, month, day)
+    |  _________________^
+100 | |             .expect("valid date for Army Day rules")
+    | |____________________________________________________^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
+
+error: used `expect()` on an `Option` value
+   --> src/time/calendars/chile.rs:106:17
+    |
+106 |           let w = NaiveDate::from_ymd_opt(1492, month, day)
+    |  _________________^
+107 | |             .expect("valid date for Discovery of Two Worlds rules")
+    | |___________________________________________________________________^
+    |
+    = note: if this value is `None`, it will panic
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
+
+error: used `expect()` on an `Option` value
+   --> src/time/calendars/chile.rs:113:17
+    |
+113 |           let w = NaiveDate::from_ymd_opt(year, month, day)
+    |  _________________^
+114 | |             .expect("valid date for Reformation Day rules")
+    | |___________________________________________________________^
+    |
+    = note: if this value is `None`, it will panic
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/calendars/chile.rs:226:9
+   --> src/time/calendars/chile.rs:238:9
     |
-226 |         Chile::new(Market::SSE)
+238 |         Chile::new(Market::SSE)
     |         ^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
@@ -3360,16 +3089,16 @@ error: usage of wildcard import
   |
   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#wildcard_imports
 
-error: used `unwrap()` on an `Option` value
+error: used `expect()` on an `Option` value
   --> src/time/date.rs:68:20
    |
 68 |               day += NaiveDate::from_ymd_opt(self.year(), m, 1)
    |  ____________________^
-69 | |                 .unwrap()
-   | |_________________________^
+69 | |                 .expect("valid date for month start")
+   | |_____________________________________________________^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
   --> src/time/date.rs:68:20
@@ -3389,228 +3118,221 @@ error: casting `u32` to `i32` may wrap around the value
    = note: `-D clippy::cast-possible-wrap` implied by `-D clippy::pedantic`
    = help: to override `-D clippy::pedantic` add `#[allow(clippy::cast_possible_wrap)]`
 
-error: used `unwrap()` on an `Option` value
+error: used `expect()` on an `Option` value
   --> src/time/date.rs:84:38
    |
-84 |             TimeUnit::Days => date + Duration::try_days(i64::from(n)).unwrap(),
-   |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+84 |             TimeUnit::Days => date + Duration::try_days(i64::from(n)).expect("valid day count"),
+   |                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
-error: used `unwrap()` on an `Option` value
-  --> src/time/date.rs:85:39
+error: used `expect()` on an `Option` value
+  --> src/time/date.rs:86:24
    |
-85 |             TimeUnit::Weeks => date + Duration::try_days(i64::from(7 * n)).unwrap(),
-   |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+86 |                 date + Duration::try_days(i64::from(7 * n)).expect("valid day count")
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = note: if this value is `None`, it will panic
-   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: casting `i32` to `u32` may lose the sign of the value
-  --> src/time/date.rs:88:40
+  --> src/time/date.rs:90:40
    |
-88 |                     date + Months::new(n as u32)
+90 |                     date + Months::new(n as u32)
    |                                        ^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `n.cast_unsigned()`
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_sign_loss
 
 error: casting `i32` to `u32` may lose the sign of the value
-  --> src/time/date.rs:90:40
+  --> src/time/date.rs:92:40
    |
-90 |                     date - Months::new((-n) as u32)
+92 |                     date - Months::new((-n) as u32)
    |                                        ^^^^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `(-n).cast_unsigned()`
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_sign_loss
 
 error: casting `i32` to `u32` may lose the sign of the value
-  --> src/time/date.rs:95:45
+  --> src/time/date.rs:97:45
    |
-95 |                     date + Months::new(12 * n as u32)
+97 |                     date + Months::new(12 * n as u32)
    |                                             ^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `n.cast_unsigned()`
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_sign_loss
 
 error: casting `i32` to `u32` may lose the sign of the value
-  --> src/time/date.rs:97:40
+  --> src/time/date.rs:99:40
    |
-97 |                     date - Months::new((-12 * n) as u32)
+99 |                     date - Months::new((-12 * n) as u32)
    |                                        ^^^^^^^^^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `(-12 * n).cast_unsigned()`
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_sign_loss
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:106:32
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:109:13
     |
-106 |         let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+109 |             NaiveDate::from_ymd_opt(year, month, 1).expect("valid date for month start");
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:106:32
+   --> src/time/date.rs:109:13
     |
-106 |         let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-    |                                ^^^^^^^^^ help: use the applicable keyword: `Self`
+109 |             NaiveDate::from_ymd_opt(year, month, 1).expect("valid date for month start");
+    |             ^^^^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:108:25
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:111:25
     |
-108 |         end_of_month -= Duration::try_days(1).unwrap();
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+111 |         end_of_month -= Duration::try_days(1).expect("valid day count");
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:125:19
+   --> src/time/date.rs:128:19
     |
-125 |     type Output = NaiveDate;
+128 |     type Output = NaiveDate;
     |                   ^^^^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:145:19
+   --> src/time/date.rs:148:19
     |
-145 |     type Output = NaiveDate;
+148 |     type Output = NaiveDate;
     |                   ^^^^^^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:185:63
+   --> src/time/date.rs:188:63
     |
-185 |     fn deserialize<D>(deserializer: D) -> std::result::Result<Date, D::Error>
+188 |     fn deserialize<D>(deserializer: D) -> std::result::Result<Date, D::Error>
     |                                                               ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:197:52
+   --> src/time/date.rs:200:52
     |
-197 |     pub fn new(year: i32, month: u32, day: u32) -> Date {
+200 |     pub fn new(year: i32, month: u32, day: u32) -> Date {
     |                                                    ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: use Option::map_or_else instead of an if let/else
-   --> src/time/date.rs:199:9
+   --> src/time/date.rs:202:9
     |
-199 | /         match base_date {
-200 | |             Some(base_date) => Self::from(base_date),
-201 | |             None => panic!("Invalid date: {year}-{month}-{day}"),
-202 | |         }
+202 | /         match base_date {
+203 | |             Some(base_date) => Self::from(base_date),
+204 | |             None => panic!("Invalid date: {year}-{month}-{day}"),
+205 | |         }
     | |_________^ help: try: `base_date.map_or_else(|| panic!("Invalid date: {year}-{month}-{day}"), |base_date| Self::from(base_date))`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#option_if_let_else
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:210:54
+   --> src/time/date.rs:213:54
     |
-210 |     pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
+213 |     pub fn from_str(date: &str, fmt: &str) -> Result<Date> {
     |                                                      ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:271:55
+   --> src/time/date.rs:274:55
     |
-271 |     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
+274 |     pub fn advance(&self, n: i32, units: TimeUnit) -> Date {
     |                                                       ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:278:49
+   --> src/time/date.rs:281:49
     |
-278 |     pub fn add_period(&self, period: Period) -> Date {
+281 |     pub fn add_period(&self, period: Period) -> Date {
     |                                                 ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:285:31
+   --> src/time/date.rs:288:31
     |
-285 |     pub fn end_of_month(date: Date) -> Date {
+288 |     pub fn end_of_month(date: Date) -> Date {
     |                               ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:285:40
+   --> src/time/date.rs:288:40
     |
-285 |     pub fn end_of_month(date: Date) -> Date {
+288 |     pub fn end_of_month(date: Date) -> Date {
     |                                        ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1080:9
-     |
-1080 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: unnecessary structure name repetition
-   --> src/time/date.rs:292:80
+   --> src/time/date.rs:295:80
     |
-292 |     pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
+295 |     pub fn nth_weekday(n: i32, day_of_week: Weekday, month: u32, year: i32) -> Date {
     |                                                                                ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: boolean to int conversion using if
-   --> src/time/date.rs:295:24
+   --> src/time/date.rs:298:24
     |
-295 |         let skip = n - if day_of_week >= first { 1 } else { 0 };
+298 |         let skip = n - if day_of_week >= first { 1 } else { 0 };
     |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with from: `i32::from(day_of_week >= first)`
     |
     = note: `(day_of_week >= first) as i32` or `(day_of_week >= first).into()` can also be valid options
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#bool_to_int_with_if
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:297:25
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:300:25
     |
-297 |         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+300 |           let base_date = NaiveDate::from_ymd_opt(year, month, day as u32)
+    |  _________________________^
+301 | |             .expect("valid date for nth weekday");
+    | |_________________________________________________^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: casting `i32` to `u32` may lose the sign of the value
-   --> src/time/date.rs:297:62
+   --> src/time/date.rs:300:62
     |
-297 |         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
+300 |         let base_date = NaiveDate::from_ymd_opt(year, month, day as u32)
     |                                                              ^^^^^^^^^^ help: if this is intentional, use `cast_unsigned()` instead: `day.cast_unsigned()`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_sign_loss
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:303:31
+   --> src/time/date.rs:307:31
     |
-303 |     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
+307 |     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
     |                               ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:303:58
+   --> src/time/date.rs:307:58
     |
-303 |     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
+307 |     pub fn next_weekday(date: Date, weekday: Weekday) -> Date {
     |                                                          ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: casts from `i32` to `i64` can be expressed infallibly using `From`
-   --> src/time/date.rs:305:16
+   --> src/time/date.rs:309:16
     |
-305 |         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
+309 |         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = help: an `as` cast can become silently lossy if the types change in the future
@@ -3619,152 +3341,117 @@ error: casts from `i32` to `i64` can be expressed infallibly using `From`
     = help: to override `-D clippy::pedantic` add `#[allow(clippy::cast_lossless)]`
 help: use `i64::from` instead
     |
-305 -         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
-305 +         date + i64::from((if wd > weekday { 7 } else { 0 }) - wd + weekday)
+309 -         date + ((if wd > weekday { 7 } else { 0 }) - wd + weekday) as i64
+309 +         date + i64::from((if wd > weekday { 7 } else { 0 }) - wd + weekday)
     |
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1111:9
-     |
-1111 |         assert_eq!(instrument.notional(), notional);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:324:23
+   --> src/time/date.rs:328:23
     |
-324 |     pub fn empty() -> Date {
+328 |     pub fn empty() -> Date {
     |                       ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:359:19
+   --> src/time/date.rs:363:19
     |
-359 |     type Output = Date;
+363 |     type Output = Date;
     |                   ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:363:9
+   --> src/time/date.rs:367:9
     |
-363 |         Date::from(base_date)
+367 |         Date::from(base_date)
     |         ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:377:19
+   --> src/time/date.rs:381:19
     |
-377 |     type Output = Date;
+381 |     type Output = Date;
     |                   ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:381:9
+   --> src/time/date.rs:385:9
     |
-381 |         Date::from(base_date)
+385 |         Date::from(base_date)
     |         ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:394:19
+   --> src/time/date.rs:398:19
     |
-394 |     type Output = Date;
+398 |     type Output = Date;
     |                   ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:397:53
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:402:30
     |
-397 |         let base_date: NaiveDate = self.base_date + Duration::try_days(rhs).unwrap();
-    |                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+402 |             self.base_date + Duration::try_days(rhs).expect("valid day count");
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:398:9
+   --> src/time/date.rs:403:9
     |
-398 |         Date::from(base_date)
+403 |         Date::from(base_date)
     |         ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:413:43
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:420:15
     |
-413 |         self.base_date = self.base_date + Duration::try_days(rhs).unwrap();
-    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+420 |             + Duration::try_days(rhs).expect("valid day count");
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-    --> src/instruments/makefixedrateinstrument.rs:1152:21
-     |
-1152 |         let first = payments.values().next().unwrap();
-     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = note: if this value is `None`, it will panic
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:426:19
+   --> src/time/date.rs:433:19
     |
-426 |     type Output = Date;
+433 |     type Output = Date;
     |                   ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: needless use of `for_each`
-    --> src/instruments/makefixedrateinstrument.rs:1153:9
-     |
-1153 |         payments.values().for_each(|x| assert_eq!(first, x));
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `for x in payments.values() { assert_eq!(first, x); }`
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:429:53
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:437:30
     |
-429 |         let base_date: NaiveDate = self.base_date - Duration::try_days(rhs).unwrap();
-    |                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+437 |             self.base_date - Duration::try_days(rhs).expect("valid day count");
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: unnecessary structure name repetition
-   --> src/time/date.rs:430:9
+   --> src/time/date.rs:438:9
     |
-430 |         Date::from(base_date)
+438 |         Date::from(base_date)
     |         ^^^^ help: use the applicable keyword: `Self`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/date.rs:445:43
+error: used `expect()` on an `Option` value
+   --> src/time/date.rs:455:15
     |
-445 |         self.base_date = self.base_date - Duration::try_days(rhs).unwrap();
-    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+455 |             - Duration::try_days(rhs).expect("valid day count");
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     |
     = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1153:40
-     |
-1153 |         payments.values().for_each(|x| assert_eq!(first, x));
-     |                                        ^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#expect_used
 
 error: usage of wildcard import
  --> src/time/daycounter.rs:5:31
@@ -3773,33 +3460,6 @@ error: usage of wildcard import
   |                               ^^^^^^^^^^^^ help: try: `thirty360::{Thirty360, Thirty360US}`
   |
   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#wildcard_imports
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1184:9
-     |
-1184 |         assert_eq!(instrument.notional(), notional);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1214:9
-     |
-1214 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1244:9
-     |
-1244 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wide, but `f64`'s mantissa is only 52 bits wide)
   --> src/time/daycounters/actual360.rs:28:9
@@ -3816,15 +3476,6 @@ error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wi
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1273:9
-     |
-1273 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: `if` chain can be rewritten with `match`
   --> src/time/daycounters/actualactual.rs:42:9
@@ -3916,15 +3567,6 @@ error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wi
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
 
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1302:9
-     |
-1302 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: casts from `i32` to `f64` can be expressed infallibly using `From`
   --> src/time/daycounters/actualactual.rs:55:61
    |
@@ -4012,15 +3654,6 @@ help: use `i64::from` instead
 23 -         let d2 = end.day() as i64;
 23 +         let d2 = i64::from(end.day());
    |
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1344:9
-     |
-1344 |         assert_eq!(instrument.notional(), 100.0);
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: casts from `u32` to `i64` can be expressed infallibly using `From`
   --> src/time/daycounters/thirty360.rs:24:18
@@ -4142,15 +3775,6 @@ help: use `i64::from` instead
 72 +         let m2 = i64::from(end.month());
    |
 
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1375:9
-     |
-1375 |         assert_eq!(instrument2.notional(), instrument.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
 error: casts from `i32` to `i64` can be expressed infallibly using `From`
   --> src/time/daycounters/thirty360.rs:90:16
    |
@@ -4186,24 +3810,6 @@ error: casting `i64` to `f64` may cause a loss of precision (`i64` is 64 bits wi
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cast_precision_loss
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1412:9
-     |
-1412 |         assert_eq!(instrument2.notional(), instrument1.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefixedrateinstrument.rs:1443:9
-     |
-1443 |         assert_eq!(instrument2.notional(), instrument.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: unnecessary structure name repetition
    --> src/time/enums.rs:445:19
@@ -4337,13 +3943,13 @@ error: method `from_str` can be confused for the standard trait method `std::str
     = help: to override `-D warnings` add `#[allow(clippy::should_implement_trait)]`
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/makefloatingrateinstrument.rs:856:9
-    |
-856 |         assert_eq!(instrument.notional(), 100.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    --> src/instruments/makefixedrateinstrument.rs:1103:9
+     |
+1103 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: all if blocks contain the same code at the start
    --> src/time/period.rs:263:13
@@ -4388,13 +3994,13 @@ note: this value is dropped without further use
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_clone
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/makefloatingrateinstrument.rs:888:9
-    |
-888 |         assert_eq!(instrument.notional(), 100.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    --> src/instruments/makefixedrateinstrument.rs:1134:9
+     |
+1134 |         assert_eq!(instrument.notional(), notional);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: casts from `i32` to `f64` can be expressed infallibly using `From`
    --> src/time/period.rs:318:32
@@ -4452,14 +4058,13 @@ help: use `f64::from` instead
 321 +             TimeUnit::Days => f64::from(self.length) / 365.0,
     |
 
-error: strict comparison of `f32` or `f64`
-   --> src/instruments/makefloatingrateinstrument.rs:921:9
-    |
-921 |         assert_eq!(instrument.notional(), 100.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+error: needless use of `for_each`
+    --> src/instruments/makefixedrateinstrument.rs:1178:9
+     |
+1178 |         payments.values().for_each(|x| assert_eq!(first, x));
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `for x in payments.values() { assert_eq!(first, x); }`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
 
 error: the following explicit lifetimes could be elided: 'de
    --> src/time/period.rs:353:14
@@ -4475,13 +4080,22 @@ help: elide the lifetimes
     |
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/makefloatingrateinstrument.rs:953:9
-    |
-953 |         assert_eq!(instrument.notional(), 100.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    --> src/instruments/makefixedrateinstrument.rs:1178:40
+     |
+1178 |         payments.values().for_each(|x| assert_eq!(first, x));
+     |                                        ^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1209:9
+     |
+1209 |         assert_eq!(instrument.notional(), notional);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: unnecessary structure name repetition
    --> src/time/period.rs:461:9
@@ -4492,13 +4106,13 @@ error: unnecessary structure name repetition
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
 error: strict comparison of `f32` or `f64`
-   --> src/instruments/makefloatingrateinstrument.rs:999:9
-    |
-999 |         assert_eq!(instrument.notional(), 100.0);
-    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+    --> src/instruments/makefixedrateinstrument.rs:1239:9
+     |
+1239 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: redundant clone
    --> src/time/period.rs:498:33
@@ -4625,10 +4239,10 @@ error: wildcard matches only a single variant and will also match any future add
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
 
 error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefloatingrateinstrument.rs:1031:9
+    --> src/instruments/makefixedrateinstrument.rs:1269:9
      |
-1031 |         assert_eq!(instrument2.notional(), instrument.notional());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1269 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
      |
      = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
      = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -4640,15 +4254,6 @@ error: wildcard matches only a single variant and will also match any future add
     |                     ^ help: try: `TimeUnit::Weeks`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#match_wildcard_for_single_variants
-
-error: strict comparison of `f32` or `f64`
-    --> src/instruments/makefloatingrateinstrument.rs:1039:9
-     |
-1039 |         assert_eq!(instrument2.spread(), instrument.spread());
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-     |
-     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
-     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: wildcard matches only a single variant and will also match any future added variants
    --> src/time/period.rs:557:21
@@ -4666,6 +4271,24 @@ error: unnecessary structure name repetition
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#use_self
 
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1298:9
+     |
+1298 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1327:9
+     |
+1327 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: this function has too many arguments (10/7)
    --> src/time/schedule.rs:92:5
     |
@@ -4680,7 +4303,43 @@ error: this function has too many arguments (10/7)
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#too_many_arguments
 
-error: this function has too many lines (336/100)
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1369:9
+     |
+1369 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1400:9
+     |
+1400 |         assert_eq!(instrument2.notional(), instrument.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1437:9
+     |
+1437 |         assert_eq!(instrument2.notional(), instrument1.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefixedrateinstrument.rs:1468:9
+     |
+1468 |         assert_eq!(instrument2.notional(), instrument.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: this function has too many lines (348/100)
    --> src/time/schedule.rs:348:5
     |
 348 |     pub fn build(&mut self) -> Result<Schedule> {
@@ -4741,108 +4400,45 @@ help: try
     |
 
 error: `if _ { .. } else { .. }` is an expression
-   --> src/time/schedule.rs:576:17
+   --> src/time/schedule.rs:578:17
     |
-576 | /                 let mut exit_date = self.termination_date;
-577 | |
-578 | |                 if self.next_to_last_date != Date::empty() {
-579 | |                     exit_date = self.next_to_last_date;
-580 | |                 }
+578 | /                 let mut exit_date = self.termination_date;
+579 | |
+580 | |                 if self.next_to_last_date != Date::empty() {
+581 | |                     exit_date = self.next_to_last_date;
+582 | |                 }
     | |_________________^ help: it is more idiomatic to write: `let <mut> exit_date = if self.next_to_last_date != Date::empty() { self.next_to_last_date } else { self.termination_date };`
     |
     = note: you might not need `mut` at all
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#useless_let_if_seq
 
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:535:25
-    |
-535 |                 seed = *self.dates.last().unwrap();
-    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
 error: unnecessary `!=` operation
-   --> src/time/schedule.rs:545:21
+   --> src/time/schedule.rs:547:21
     |
-545 | /                     if temp != self.first_date {
-546 | |                         self.is_regular.push(false);
-547 | |                     } else {
-548 | |                         self.is_regular.push(true);
-549 | |                     }
+547 | /                     if temp != self.first_date {
+548 | |                         self.is_regular.push(false);
+549 | |                     } else {
+550 | |                         self.is_regular.push(true);
+551 | |                     }
     | |_____________________^
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#if_not_else
 help: try
     |
-545 ~                     if temp == self.first_date {
-546 +                         self.is_regular.push(true);
-547 +                     } else {
-548 +                         self.is_regular.push(false);
-549 +                     }
+547 ~                     if temp == self.first_date {
+548 +                         self.is_regular.push(true);
+549 +                     } else {
+550 +                         self.is_regular.push(false);
+551 +                     }
     |
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:593:42
-    |
-593 | ...                   .adjust(*self.dates.last().unwrap(), Some(self.convention))
-    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:607:34
-    |
-607 |                         .adjust(*self.dates.last().unwrap(), Some(self.convention))
-    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:617:22
-    |
-617 |                     *self.dates.last().unwrap(),
-    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: it is more concise to loop over references to containers instead of using explicit iteration methods
-   --> src/time/schedule.rs:650:25
+   --> src/time/schedule.rs:662:25
     |
-650 |             for date in self.dates.iter_mut() {
+662 |             for date in self.dates.iter_mut() {
     |                         ^^^^^^^^^^^^^^^^^^^^^ help: to write this more concisely, try: `&mut self.dates`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#explicit_iter_loop
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:687:74
-    |
-687 |         if self.dates.len() >= 2 && self.dates[self.dates.len() - 2] >= *self.dates.last().unwrap()
-    |                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:693:51
-    |
-693 |                     self.dates[dates_len - 2] == *self.dates.last().unwrap();
-    |                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
-
-error: used `unwrap()` on an `Option` value
-   --> src/time/schedule.rs:695:42
-    |
-695 |             self.dates[dates_len - 2] = *self.dates.last().unwrap();
-    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |
-    = note: if this value is `None`, it will panic
-    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unwrap_used
 
 error: docs for function returning `Result` missing `# Errors` section
   --> src/visitors/accruedamountconstvisitor.rs:29:5
@@ -4882,6 +4478,21 @@ error: docs for function returning `Result` missing `# Errors` section
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_errors_doc
+
+error: needless use of `for_each`
+   --> src/instruments/makefixedrateleg.rs:449:21
+    |
+449 | /                     cashflows
+450 | |                         .iter_mut()
+451 | |                         .for_each(|cf| cf.set_discount_curve_id(id));
+    | |_____________________________________________________________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_for_each
+help: try
+    |
+449 ~                     for cf in cashflows
+450 +                         .iter_mut() { cf.set_discount_curve_id(id); }
+    |
 
 error: redundant closure
   --> src/visitors/cashflowaggregationvisitor.rs:56:26
@@ -4988,6 +4599,42 @@ help: elide the lifetimes
 37 + impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'_> {
    |
 
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/makefloatingrateinstrument.rs:871:9
+    |
+871 |         assert_eq!(instrument.notional(), 100.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/makefloatingrateinstrument.rs:903:9
+    |
+903 |         assert_eq!(instrument.notional(), 100.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/makefloatingrateinstrument.rs:936:9
+    |
+936 |         assert_eq!(instrument.notional(), 100.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+   --> src/instruments/makefloatingrateinstrument.rs:968:9
+    |
+968 |         assert_eq!(instrument.notional(), 100.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
 error: used `cloned` where `copied` could be used instead
    --> src/visitors/parvaluevisitordoublerateinstrument.rs:123:18
     |
@@ -4995,6 +4642,33 @@ error: used `cloned` where `copied` could be used instead
     |                  ^^^^^^ help: try: `copied`
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#cloned_instead_of_copied
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefloatingrateinstrument.rs:1014:9
+     |
+1014 |         assert_eq!(instrument.notional(), 100.0);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefloatingrateinstrument.rs:1046:9
+     |
+1046 |         assert_eq!(instrument2.notional(), instrument.notional());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: strict comparison of `f32` or `f64`
+    --> src/instruments/makefloatingrateinstrument.rs:1054:9
+     |
+1054 |         assert_eq!(instrument2.spread(), instrument.spread());
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#float_cmp
+     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: the following explicit lifetimes could be elided: 'a
   --> src/visitors/zspreadconstvisitor.rs:52:6
@@ -5055,6 +4729,8 @@ help: elide the lifetimes
 121 + impl<T> ConstVisit<T> for ZSpreadConstVisitor<'_>
     |
 
+error: could not compile `rustatlas` (lib) due to 337 previous errors
+warning: build failed, waiting for other jobs to finish...
 error: strict comparison of `f32` or `f64`
    --> src/rates/interestrate.rs:158:12
     |
@@ -5143,8 +4819,6 @@ note: this value is dropped without further use
     |             ^^^^^^^^^^^^^^^^^^^^^
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_clone
 
-error: could not compile `rustatlas` (lib) due to 376 previous errors
-warning: build failed, waiting for other jobs to finish...
 error: strict comparison of `f32` or `f64`
    --> src/time/daycounter.rs:195:9
     |
@@ -5255,4 +4929,4 @@ error: adding items after statements is confusing, since items exist from the st
     |
     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#items_after_statements
 
-error: could not compile `rustatlas` (lib test) due to 438 previous errors
+error: could not compile `rustatlas` (lib test) due to 398 previous errors
