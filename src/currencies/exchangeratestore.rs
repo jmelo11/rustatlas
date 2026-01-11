@@ -99,6 +99,7 @@ impl ExchangeRateStore {
                     if dest == second_ccy {
                         mutable_cache.insert((first_ccy, second_ccy), new_rate);
                         mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
+                        drop(mutable_cache);
                         return Ok(new_rate);
                     }
                     visited.insert(dest);
@@ -108,6 +109,7 @@ impl ExchangeRateStore {
                     if source == second_ccy {
                         mutable_cache.insert((first_ccy, second_ccy), new_rate);
                         mutable_cache.insert((second_ccy, first_ccy), 1.0 / new_rate);
+                        drop(mutable_cache);
                         return Ok(new_rate);
                     }
                     visited.insert(source);
@@ -115,6 +117,7 @@ impl ExchangeRateStore {
                 }
             }
         }
+        drop(mutable_cache);
         Err(AtlasError::NotFoundErr(format!(
             "No exchange rate found between {first_ccy:?} and {second_ccy:?}"
         )))
@@ -139,7 +142,7 @@ impl AdvanceExchangeRateStoreInTime for ExchangeRateStore {
         }
 
         let mut new_store = Self::new(date);
-        for ((ccy1, ccy2), fx) in self.exchange_rate_map.iter() {
+        for ((ccy1, ccy2), fx) in &self.exchange_rate_map {
             let compound_factor = index_store.currency_forescast_factor(*ccy1, *ccy2, date);
             match compound_factor {
                 Ok(cf) => new_store.add_exchange_rate(*ccy1, *ccy2, fx * cf),

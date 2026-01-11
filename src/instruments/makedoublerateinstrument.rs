@@ -60,7 +60,7 @@ pub struct MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
-    /// Creates a new instance of MakeDoubleRateInstrument with default values.
+    /// Creates a new instance of `MakeDoubleRateInstrument` with default values.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {

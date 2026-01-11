@@ -178,10 +178,9 @@ impl fmt::Display for MarketStore {
         let mut indice_name: String;
 
         for indice in all_indices {
-            indice_name = match indice.read_index() {
-                Ok(indice) => indice.name().unwrap_or_default(),
-                Err(_) => String::new(),
-            };
+            indice_name = indice
+                .read_index()
+                .map_or_else(|_| String::new(), |indice| indice.name().unwrap_or_default());
             if !indice_name.is_empty() {
                 indices_names.push(indice_name);
             }
@@ -195,7 +194,7 @@ impl fmt::Display for MarketStore {
             for indice_name in indices_names {
                 let indice_idx = indices_map
                     .get(&indice_name)
-                    .map_or_else(String::new, |idx| idx.to_string());
+                    .map_or_else(String::new, std::string::ToString::to_string);
 
                 msg.push_str(">> ");
                 msg.push_str(&indice_idx);

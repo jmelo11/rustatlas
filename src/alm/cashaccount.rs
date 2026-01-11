@@ -189,9 +189,9 @@ mod tests {
         ];
         let cash_account = cash_account.cash_account_evolution(evals_dates)?;
 
-        cash_account.iter().for_each(|(date, amount)| {
+        for (date, amount) in cash_account.iter() {
             println!("{date}: {amount}");
-        });
+        }
         Ok(())
     }
 
@@ -248,9 +248,9 @@ mod tests {
         ];
         let cash_account = cash_account.cash_account_evolution(evals_dates)?;
 
-        cash_account.iter().for_each(|(date, amount)| {
+        for (date, amount) in cash_account.iter() {
             println!("{date}: {amount}");
-        });
+        }
         Ok(())
     }
 }
