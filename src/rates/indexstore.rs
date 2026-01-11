@@ -45,8 +45,8 @@ impl ReadIndex for Arc<RwLock<dyn InterestRateIndexTrait>> {
 impl IndexStore {
     /// Creates a new `IndexStore` with the given reference date.
     #[must_use]
-    pub fn new(reference_date: Date) -> Self {
-        Self {
+    pub fn new(reference_date: Date) -> IndexStore {
+        IndexStore {
             reference_date,
             index_map: HashMap::new(),
             currency_curve: HashMap::new(),

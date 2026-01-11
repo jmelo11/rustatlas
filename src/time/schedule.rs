@@ -100,8 +100,8 @@ impl Schedule {
         next_to_last_date: Date,
         dates: Vec<Date>,
         is_regular: Vec<bool>,
-    ) -> Self {
-        Self {
+    ) -> Schedule {
+        Schedule {
             tenor,
             calendar,
             convention,
@@ -117,8 +117,8 @@ impl Schedule {
 
     /// Creates an empty `Schedule` with default values.
     #[must_use]
-    pub fn empty() -> Self {
-        Self {
+    pub fn empty() -> Schedule {
+        Schedule {
             tenor: Period::empty(),
             calendar: Calendar::NullCalendar(NullCalendar::new()),
             convention: BusinessDayConvention::Unadjusted,
@@ -218,7 +218,7 @@ impl Schedule {
 ///
 /// assert_eq!(schedule.dates(), &dates);
 /// ```
-pub struct Self {
+pub struct MakeSchedule {
     effective_date: Date,
     termination_date: Date,
     tenor: Period,
@@ -234,12 +234,12 @@ pub struct Self {
 }
 
 /// Constructor, setters and getters
-impl Self {
+impl MakeSchedule {
     /// Returns a new instance of `MakeSchedule`.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn new(from: Date, to: Date) -> Self {
-        Self {
+    pub fn new(from: Date, to: Date) -> MakeSchedule {
+        MakeSchedule {
             effective_date: from,
             termination_date: to,
             tenor: Period::empty(),
@@ -257,14 +257,14 @@ impl Self {
 
     /// Sets the tenor.
     #[must_use]
-    pub const fn with_tenor(mut self, tenor: Period) -> Self {
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeSchedule {
         self.tenor = tenor;
         self
     }
 
     /// Sets the frequency.
     #[must_use]
-    pub fn with_frequency(mut self, frequency: Frequency) -> Self {
+    pub fn with_frequency(mut self, frequency: Frequency) -> MakeSchedule {
         self.tenor =
             Period::from_frequency(frequency).unwrap_or_else(|| panic!("Invalid frequency"));
         self
@@ -272,14 +272,14 @@ impl Self {
 
     /// Sets the calendar.
     #[must_use]
-    pub fn with_calendar(mut self, calendar: Calendar) -> Self {
+    pub fn with_calendar(mut self, calendar: Calendar) -> MakeSchedule {
         self.calendar = calendar;
         self
     }
 
     /// Sets the convention. weekday correccions are applied.
     #[must_use]
-    pub const fn with_convention(mut self, convention: BusinessDayConvention) -> Self {
+    pub const fn with_convention(mut self, convention: BusinessDayConvention) -> MakeSchedule {
         self.convention = convention;
         self
     }
@@ -289,56 +289,56 @@ impl Self {
     pub const fn with_termination_date_convention(
         mut self,
         termination_date_convention: BusinessDayConvention,
-    ) -> Self {
+    ) -> MakeSchedule {
         self.termination_date_convention = termination_date_convention;
         self
     }
 
     /// Sets the rule.
     #[must_use]
-    pub const fn with_rule(mut self, rule: DateGenerationRule) -> Self {
+    pub const fn with_rule(mut self, rule: DateGenerationRule) -> MakeSchedule {
         self.rule = rule;
         self
     }
 
     /// Sets the end of month flag.
     #[must_use]
-    pub const fn forwards(mut self) -> Self {
+    pub const fn forwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Forward;
         self
     }
 
     /// Sets the date generation rule to backward.
     #[must_use]
-    pub const fn backwards(mut self) -> Self {
+    pub const fn backwards(mut self) -> MakeSchedule {
         self.rule = DateGenerationRule::Backward;
         self
     }
 
     /// Sets the end of month flag.
     #[must_use]
-    pub const fn end_of_month(mut self, flag: bool) -> Self {
+    pub const fn end_of_month(mut self, flag: bool) -> MakeSchedule {
         self.end_of_month = flag;
         self
     }
 
     /// Sets the first date.
     #[must_use]
-    pub const fn with_first_date(mut self, first_date: Date) -> Self {
+    pub const fn with_first_date(mut self, first_date: Date) -> MakeSchedule {
         self.first_date = first_date;
         self
     }
 
     /// Sets the next to last date.
     #[must_use]
-    pub const fn with_next_to_last_date(mut self, next_to_last_date: Date) -> Self {
+    pub const fn with_next_to_last_date(mut self, next_to_last_date: Date) -> MakeSchedule {
         self.next_to_last_date = next_to_last_date;
         self
     }
 }
 
 /// `MakeSchedule` build method
-impl Self {
+impl MakeSchedule {
     /// Builds and returns a `Schedule` from the current configuration.
     ///
     /// # Errors

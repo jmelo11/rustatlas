@@ -130,7 +130,7 @@ impl Chile {
         let day = date.day();
         let month = date.month();
         let year = date.year();
-        if Self::is_weekend(weekday) {
+        if Chile::is_weekend(weekday) {
             return false;
         }
 

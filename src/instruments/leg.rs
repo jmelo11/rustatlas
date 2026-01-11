@@ -36,7 +36,7 @@ impl Leg {
         forecast_curve_id: Option<usize>,
         cashflows: Vec<Cashflow>,
     ) -> Self {
-        Self {
+        Leg {
             structure,
             rate_type,
             rate_value,

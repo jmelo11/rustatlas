@@ -34,7 +34,7 @@ use super::{
 /// `MakeFixedRateLeg` is a builder for a fixed rate leg. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
-pub struct Self {
+pub struct MakeFixedRateLeg {
     start_date: Option<Date>,
     end_date: Option<Date>,
     first_coupon_date: Option<Date>,
@@ -60,12 +60,12 @@ pub struct Self {
 }
 
 /// New, setters and getters
-impl Self {
+impl MakeFixedRateLeg {
     /// Creates a new MakeFixedRateLeg builder with default values.
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> MakeFixedRateLeg {
+        MakeFixedRateLeg {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -93,35 +93,35 @@ impl Self {
 
     /// Sets the end of month flag.
     #[must_use]
-    pub const fn with_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
+    pub const fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFixedRateLeg {
         self.end_of_month = end_of_month;
         self
     }
 
     /// Sets the issue date.
     #[must_use]
-    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
+    pub const fn with_issue_date(mut self, issue_date: Date) -> MakeFixedRateLeg {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
     #[must_use]
-    pub const fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> Self {
+    pub const fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> MakeFixedRateLeg {
         self.first_coupon_date = first_coupon_date;
         self
     }
 
     /// Sets the currency.
     #[must_use]
-    pub const fn with_currency(mut self, currency: Currency) -> Self {
+    pub const fn with_currency(mut self, currency: Currency) -> MakeFixedRateLeg {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
     #[must_use]
-    pub const fn with_side(mut self, side: Side) -> Self {
+    pub const fn with_side(mut self, side: Side) -> MakeFixedRateLeg {
         self.side = Some(side);
         self
     }
@@ -131,21 +131,21 @@ impl Self {
     /// ### Details
     /// Currently does not handle negative amounts.
     #[must_use]
-    pub const fn with_notional(mut self, notional: f64) -> Self {
+    pub const fn with_notional(mut self, notional: f64) -> MakeFixedRateLeg {
         self.notional = Some(notional);
         self
     }
 
     /// Sets the yield rate.
     #[must_use]
-    pub const fn with_yield_rate(mut self, yield_rate: InterestRate) -> Self {
+    pub const fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateLeg {
         self.yield_rate = Some(yield_rate);
         self
     }
 
     /// Sets the calendar.
     #[must_use]
-    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateLeg {
         self.calendar = calendar;
         self
     }
@@ -155,7 +155,7 @@ impl Self {
     pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
-    ) -> Self {
+    ) -> MakeFixedRateLeg {
         self.business_day_convention = business_day_convention;
         self
     }
@@ -165,7 +165,7 @@ impl Self {
     pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
-    ) -> Self {
+    ) -> MakeFixedRateLeg {
         self.date_generation_rule = date_generation_rule;
         self
     }
@@ -175,7 +175,7 @@ impl Self {
     pub const fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
-    ) -> Self {
+    ) -> MakeFixedRateLeg {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -202,7 +202,7 @@ impl Self {
 
     /// Sets the rate value.
     #[must_use]
-    pub const fn with_rate_value(mut self, rate_value: f64) -> Self {
+    pub const fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateLeg {
         self.rate_value = Some(rate_value);
         match self.rate {
             Some(rate) => {
@@ -229,28 +229,28 @@ impl Self {
 
     /// Sets the start date.
     #[must_use]
-    pub const fn with_start_date(mut self, start_date: Date) -> Self {
+    pub const fn with_start_date(mut self, start_date: Date) -> MakeFixedRateLeg {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
     #[must_use]
-    pub const fn with_end_date(mut self, end_date: Date) -> Self {
+    pub const fn with_end_date(mut self, end_date: Date) -> MakeFixedRateLeg {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the disbursements.
     #[must_use]
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
+    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFixedRateLeg {
         self.disbursements = Some(disbursements);
         self
     }
 
     /// Sets the redemptions.
     #[must_use]
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> Self {
+    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFixedRateLeg {
         self.redemptions = Some(redemptions);
         self
     }
@@ -260,56 +260,56 @@ impl Self {
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> Self {
+    ) -> MakeFixedRateLeg {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
     /// Sets the rate.
     #[must_use]
-    pub const fn with_rate(mut self, rate: InterestRate) -> Self {
+    pub const fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateLeg {
         self.rate = Some(rate);
         self
     }
 
     /// Sets the discount curve id.
     #[must_use]
-    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> Self {
+    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateLeg {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the tenor.
     #[must_use]
-    pub const fn with_tenor(mut self, tenor: Period) -> Self {
+    pub const fn with_tenor(mut self, tenor: Period) -> MakeFixedRateLeg {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the payment frequency.
     #[must_use]
-    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateLeg {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure to bullet.
     #[must_use]
-    pub const fn bullet(mut self) -> Self {
+    pub const fn bullet(mut self) -> MakeFixedRateLeg {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the structure to equal redemptions.
     #[must_use]
-    pub const fn equal_redemptions(mut self) -> Self {
+    pub const fn equal_redemptions(mut self) -> MakeFixedRateLeg {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the structure to zero.
     #[must_use]
-    pub const fn zero(mut self) -> Self {
+    pub const fn zero(mut self) -> MakeFixedRateLeg {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
@@ -317,14 +317,14 @@ impl Self {
 
     /// Sets the structure to equal payments.
     #[must_use]
-    pub const fn equal_payments(mut self) -> Self {
+    pub const fn equal_payments(mut self) -> MakeFixedRateLeg {
         self.structure = Some(Structure::EqualPayments);
         self
     }
 
     /// Sets the structure to other.
     #[must_use]
-    pub const fn other(mut self) -> Self {
+    pub const fn other(mut self) -> MakeFixedRateLeg {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
@@ -332,19 +332,19 @@ impl Self {
 
     /// Sets the structure.
     #[must_use]
-    pub const fn with_structure(mut self, structure: Structure) -> Self {
+    pub const fn with_structure(mut self, structure: Structure) -> MakeFixedRateLeg {
         self.structure = Some(structure);
         self
     }
 }
 
-impl Default for Self {
+impl Default for MakeFixedRateLeg {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Self {
+impl MakeFixedRateLeg {
     /// Builds the Leg from the configured MakeFixedRateLeg builder.
     ///
     /// # Errors

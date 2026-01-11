@@ -67,7 +67,7 @@ impl MakeSwap {
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
     pub fn new() -> Self {
-        Self {
+        MakeSwap {
             first_leg_rate_type: None,
             first_leg_rate_value: None,
             first_leg_rate_definition: None,

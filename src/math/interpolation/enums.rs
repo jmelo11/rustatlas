@@ -28,10 +28,10 @@ impl Interpolator {
     #[must_use]
     pub fn interpolate(&self, x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         match self {
-            Self::Linear => {
+            Interpolator::Linear => {
                 LinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)
             }
-            Self::LogLinear => {
+            Interpolator::LogLinear => {
                 LogLinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)
             }
         }

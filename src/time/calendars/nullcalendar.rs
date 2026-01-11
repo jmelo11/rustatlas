@@ -16,7 +16,7 @@ impl NullCalendar {
     /// Creates a new instance of `NullCalendar`.
     #[must_use]
     pub fn new() -> Self {
-        Self {
+        NullCalendar {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         }

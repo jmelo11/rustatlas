@@ -23,11 +23,11 @@ impl TryFrom<String> for Compounding {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Simple" => Ok(Self::Simple),
-            "Compounded" => Ok(Self::Compounded),
-            "Continuous" => Ok(Self::Continuous),
-            "SimpleThenCompounded" => Ok(Self::SimpleThenCompounded),
-            "CompoundedThenSimple" => Ok(Self::CompoundedThenSimple),
+            "Simple" => Ok(Compounding::Simple),
+            "Compounded" => Ok(Compounding::Compounded),
+            "Continuous" => Ok(Compounding::Continuous),
+            "SimpleThenCompounded" => Ok(Compounding::SimpleThenCompounded),
+            "CompoundedThenSimple" => Ok(Compounding::CompoundedThenSimple),
             _ => Err(AtlasError::InvalidValueErr(format!(
                 "Invalid compounding: {}",
                 s

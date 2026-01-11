@@ -64,7 +64,7 @@ impl DoubleRateInstrument {
         discount_curve_id: Option<usize>,
         cashflows: Vec<Cashflow>,
     ) -> Self {
-        Self {
+        DoubleRateInstrument {
             start_date,
             end_date,
             notional,

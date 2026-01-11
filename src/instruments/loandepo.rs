@@ -148,7 +148,7 @@ pub struct LoanDepo {
 impl TryFrom<LoanDepo> for Instrument {
     type Error = AtlasError;
 
-    fn try_from(value: LoanDepo) -> Result<Self> {
+    fn try_from(value: LoanDepo) -> Result<Instrument> {
         let mut cashflows = value.cashflows.clone();
         cashflows.iter_mut().try_for_each(|cf| -> Result<()> {
             match cf {
@@ -313,7 +313,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     ),
                     None => return Err(AtlasError::ValueNotSetErr("Evaluation Mode".to_string())),
                 };
-                let instrument = FixedRateSelf::new(
+                let instrument = FixedRateInstrument::new(
                     value.start_date,
                     value.end_date,
                     value.notional,
@@ -329,7 +329,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     None,
                 );
 
-                Ok(Self::FixedRateInstrument(instrument))
+                Ok(Instrument::FixedRateInstrument(instrument))
             }
             RateType::Floating => {
                 let (rate, rate_definition) = match value.evaluation_mode {
@@ -351,7 +351,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     ),
                     None => return Err(AtlasError::ValueNotSetErr("Evaluation Mode".to_string())),
                 };
-                let instrument = FloatingRateSelf::new(
+                let instrument = FloatingRateInstrument::new(
                     value.start_date,
                     value.end_date,
                     value.notional,
@@ -367,7 +367,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     Some(value.mis_id),
                     value.issue_date,
                 );
-                Ok(Self::FloatingRateInstrument(instrument))
+                Ok(Instrument::FloatingRateInstrument(instrument))
             }
             _ => Err(AtlasError::NotImplementedErr("RateType".to_string())),
         }
