@@ -66,7 +66,7 @@ impl NaiveDateExt for NaiveDate {
         let mut day = 0;
         for m in 1..self.month() {
             day += NaiveDate::from_ymd_opt(self.year(), m, 1)
-                .unwrap()
+                .expect("valid date for month start")
                 .days_in_month();
         }
         day + self.day() as i32
@@ -81,8 +81,10 @@ impl NaiveDateExt for NaiveDate {
         let date = *self;
         let flag = n >= 0;
         match units {
-            TimeUnit::Days => date + Duration::try_days(i64::from(n)).unwrap(),
-            TimeUnit::Weeks => date + Duration::try_days(i64::from(7 * n)).unwrap(),
+            TimeUnit::Days => date + Duration::try_days(i64::from(n)).expect("valid day count"),
+            TimeUnit::Weeks => {
+                date + Duration::try_days(i64::from(7 * n)).expect("valid day count")
+            }
             TimeUnit::Months => {
                 if flag {
                     date + Months::new(n as u32)
@@ -103,9 +105,10 @@ impl NaiveDateExt for NaiveDate {
     fn end_of_month(date: NaiveDate) -> NaiveDate {
         let month = date.month();
         let year = date.year();
-        let mut end_of_month = NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+        let mut end_of_month =
+            NaiveDate::from_ymd_opt(year, month, 1).expect("valid date for month start");
         end_of_month = end_of_month + Months::new(1);
-        end_of_month -= Duration::try_days(1).unwrap();
+        end_of_month -= Duration::try_days(1).expect("valid day count");
         end_of_month
     }
 }
@@ -294,7 +297,8 @@ impl Date {
         let first = base_date.weekday();
         let skip = n - if day_of_week >= first { 1 } else { 0 };
         let day = 1 + day_of_week + skip * 7 - first;
-        let base_date = NaiveDate::from_ymd_opt(year, month, day as u32).unwrap();
+        let base_date = NaiveDate::from_ymd_opt(year, month, day as u32)
+            .expect("valid date for nth weekday");
         Self::from(base_date)
     }
 
@@ -394,7 +398,8 @@ impl Add<i64> for Date {
     type Output = Date;
 
     fn add(self, rhs: i64) -> Self::Output {
-        let base_date: NaiveDate = self.base_date + Duration::try_days(rhs).unwrap();
+        let base_date: NaiveDate =
+            self.base_date + Duration::try_days(rhs).expect("valid day count");
         Date::from(base_date)
     }
 }
@@ -410,7 +415,9 @@ impl Add<i64> for Date {
 /// ```
 impl AddAssign<i64> for Date {
     fn add_assign(&mut self, rhs: i64) {
-        self.base_date = self.base_date + Duration::try_days(rhs).unwrap();
+        self.base_date = self
+            .base_date
+            + Duration::try_days(rhs).expect("valid day count");
     }
 }
 
@@ -426,7 +433,8 @@ impl Sub<i64> for Date {
     type Output = Date;
 
     fn sub(self, rhs: i64) -> Self::Output {
-        let base_date: NaiveDate = self.base_date - Duration::try_days(rhs).unwrap();
+        let base_date: NaiveDate =
+            self.base_date - Duration::try_days(rhs).expect("valid day count");
         Date::from(base_date)
     }
 }
@@ -442,7 +450,9 @@ impl Sub<i64> for Date {
 /// ```
 impl SubAssign<i64> for Date {
     fn sub_assign(&mut self, rhs: i64) {
-        self.base_date = self.base_date - Duration::try_days(rhs).unwrap();
+        self.base_date = self
+            .base_date
+            - Duration::try_days(rhs).expect("valid day count");
     }
 }
 

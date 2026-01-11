@@ -203,9 +203,19 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let name = self.name()?;
 
         if !fixings.is_empty() {
-            let mut last_fixing_date = fixings.keys().max().cloned().unwrap();
+            let mut last_fixing_date =
+                fixings
+                    .keys()
+                    .max()
+                    .cloned()
+                    .ok_or(AtlasError::NotFoundErr(
+                        "Fixings must include at least one entry".into(),
+                    ))?;
             if seed > last_fixing_date {
-                let last_fixing = *fixings.get(&last_fixing_date).unwrap();
+                let last_fixing =
+                    *fixings.get(&last_fixing_date).ok_or(AtlasError::NotFoundErr(format!(
+                        "No fixing for {name} and date {last_fixing_date}"
+                    )))?;
                 let first_df = curve.discount_factor(seed)?;
                 let second_df = curve.discount_factor(seed.advance(1, TimeUnit::Days))?;
                 while seed > last_fixing_date {

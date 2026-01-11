@@ -532,7 +532,9 @@ impl MakeSchedule {
                     self.dates.push(self.effective_date);
                 }
 
-                seed = *self.dates.last().unwrap();
+                seed = *self.dates.last().ok_or(AtlasError::MakeScheduleErr(
+                    "Schedule dates are empty".to_string(),
+                ))?;
 
                 if self.first_date != Date::empty() {
                     self.dates.push(self.first_date);
@@ -587,10 +589,14 @@ impl MakeSchedule {
                         self.end_of_month,
                     );
                     if temp > exit_date {
+                        let last_date =
+                            *self.dates.last().ok_or(AtlasError::MakeScheduleErr(
+                                "Schedule dates are empty".to_string(),
+                            ))?;
                         if self.next_to_last_date != Date::empty()
                             && (self
                                 .calendar
-                                .adjust(*self.dates.last().unwrap(), Some(self.convention))
+                                .adjust(last_date, Some(self.convention))
                                 != self
                                     .calendar
                                     .adjust(self.next_to_last_date, Some(self.convention)))
@@ -602,9 +608,13 @@ impl MakeSchedule {
                     }
                     // skip dates that would result in duplicates
                     // after adjustment
+                    let last_date =
+                        *self.dates.last().ok_or(AtlasError::MakeScheduleErr(
+                            "Schedule dates are empty".to_string(),
+                        ))?;
                     if self
                         .calendar
-                        .adjust(*self.dates.last().unwrap(), Some(self.convention))
+                        .adjust(last_date, Some(self.convention))
                         != self.calendar.adjust(temp, Some(self.convention))
                     {
                         self.dates.push(temp);
@@ -613,13 +623,15 @@ impl MakeSchedule {
                     periods += 1;
                 }
 
-                if self.calendar.adjust(
-                    *self.dates.last().unwrap(),
-                    Some(self.termination_date_convention),
-                ) != self.calendar.adjust(
-                    self.termination_date,
-                    Some(self.termination_date_convention),
-                ) {
+                let last_date = *self.dates.last().ok_or(AtlasError::MakeScheduleErr(
+                    "Schedule dates are empty".to_string(),
+                ))?;
+                if self.calendar.adjust(last_date, Some(self.termination_date_convention))
+                    != self.calendar.adjust(
+                        self.termination_date,
+                        Some(self.termination_date_convention),
+                    )
+                {
                     if self.rule == DateGenerationRule::Twentieth
                         || self.rule == DateGenerationRule::TwentiethIMM
                         || self.rule == DateGenerationRule::OldCDS
@@ -684,17 +696,17 @@ impl MakeSchedule {
             }
         }
 
-        if self.dates.len() >= 2 && self.dates[self.dates.len() - 2] >= *self.dates.last().unwrap()
-        {
-            let is_regular_len = self.is_regular.len();
+        if let Some(&last_date) = self.dates.last() {
             let dates_len = self.dates.len();
-            if self.is_regular.len() >= 2 {
-                self.is_regular[is_regular_len - 2] =
-                    self.dates[dates_len - 2] == *self.dates.last().unwrap();
+            if dates_len >= 2 && self.dates[dates_len - 2] >= last_date {
+                let is_regular_len = self.is_regular.len();
+                if self.is_regular.len() >= 2 {
+                    self.is_regular[is_regular_len - 2] = self.dates[dates_len - 2] == last_date;
+                }
+                self.dates[dates_len - 2] = last_date;
+                self.dates.pop();
+                self.is_regular.pop();
             }
-            self.dates[dates_len - 2] = *self.dates.last().unwrap();
-            self.dates.pop();
-            self.is_regular.pop();
         }
 
         if self.dates.len() >= 2 && self.dates[1] <= self.dates[0] {

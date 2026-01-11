@@ -110,7 +110,9 @@ impl Brazil {
     }
 
     fn is_last_business_day_of_year(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .expect("valid date for last business day calculation")
+            .weekday();
         month == 12 && (day == 31 || (day >= 29 && w == Weekday::Fri))
     }
 
