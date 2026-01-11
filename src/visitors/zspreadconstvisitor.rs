@@ -136,7 +136,10 @@ where
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
-        Ok(*res.state().get_best_param().unwrap())
+        let best_param = res.state().get_best_param().ok_or_else(|| {
+            AtlasError::EvaluationErr("ZSpread solver did not return best parameter".to_string())
+        })?;
+        Ok(*best_param)
     }
 }
 
