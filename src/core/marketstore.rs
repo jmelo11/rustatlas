@@ -175,33 +175,31 @@ impl fmt::Display for MarketStore {
         let all_indices = index_store.get_all_indices();
 
         let mut indices_names: Vec<String> = vec![];
-        let mut indice_name: String;
-
         for indice in all_indices {
-            indice_name = indice
-                .read_index()
-                .map_or_else(|_| String::new(), |indice| indice.name().unwrap_or_default());
-            if !indice_name.is_empty() {
-                indices_names.push(indice_name);
+            if let Ok(indice) = indice.read_index() {
+                if let Ok(name) = indice.name() {
+                    indices_names.push(name);
+                }
             }
         }
-        if let Ok(indices_map) = index_store.get_index_map() {
-            indices_names = tools::sort_strings_alphabetically(&indices_names);
+        let indices_map = index_store.get_index_map().unwrap_or_default();
 
-            msg.push_str("> Indices (");
-            msg.push_str(&indices_names.len().to_string());
-            msg.push_str("):\n");
-            for indice_name in indices_names {
-                let indice_idx = indices_map
-                    .get(&indice_name)
-                    .map_or_else(String::new, std::string::ToString::to_string);
+        indices_names = tools::sort_strings_alphabetically(&indices_names);
 
-                msg.push_str(">> ");
-                msg.push_str(&indice_idx);
-                msg.push_str(" -> ");
-                msg.push_str(&indice_name);
-                msg.push('\n');
-            }
+        msg.push_str("> Indices (");
+        msg.push_str(&indices_names.len().to_string());
+        msg.push_str("):\n");
+        for indice_name in indices_names {
+            let indice_idx = match indices_map.get(&indice_name) {
+                Some(idx) => idx.to_string(),
+                None => "".to_string(),
+            };
+
+            msg.push_str(">> ");
+            msg.push_str(&indice_idx);
+            msg.push_str(" -> ");
+            msg.push_str(&indice_name);
+            msg.push('\n');
         }
 
         let exchange_rate_store = self.exchange_rate_store();
@@ -223,5 +221,22 @@ impl fmt::Display for MarketStore {
         msg.push_str("=====================================\n");
 
         write!(f, "{msg}")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_does_not_panic() {
+        let reference_date = Date::new(2024, 1, 1);
+        let market_store = MarketStore::new(reference_date, Currency::USD);
+
+        let result = std::panic::catch_unwind(|| {
+            let _ = format!("{}", market_store);
+        });
+
+        assert!(result.is_ok());
     }
 }
