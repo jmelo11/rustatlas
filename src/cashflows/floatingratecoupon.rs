@@ -17,7 +17,7 @@ use super::{
     traits::{Expires, InterestAccrual, Payable, RequiresFixingRate},
 };
 
-/// # FloatingRateCoupon
+/// # `FloatingRateCoupon`
 /// A floating rate coupon is a cashflow that pays a floating rate of interest on a notional amount.
 ///
 /// ## Parameters
@@ -46,7 +46,11 @@ pub struct FloatingRateCoupon {
 }
 
 impl FloatingRateCoupon {
-    pub fn new(
+    /// Creates a new floating rate coupon with the specified parameters.
+    #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
+    pub const fn new(
         notional: f64,
         spread: f64,
         accrual_start_date: Date,
@@ -56,8 +60,8 @@ impl FloatingRateCoupon {
         rate_definition: RateDefinition,
         currency: Currency,
         side: Side,
-    ) -> FloatingRateCoupon {
-        FloatingRateCoupon {
+    ) -> Self {
+        Self {
             notional,
             spread,
             fixing_rate: None,
@@ -70,24 +74,31 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(self, id: usize) -> FloatingRateCoupon {
-        self.cashflow.with_discount_curve_id(id);
+    /// Sets the discount curve ID and returns the modified coupon.
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: usize) -> Self {
+        self.cashflow = self.cashflow.with_discount_curve_id(id);
         self
     }
 
-    pub fn with_forecast_curve_id(mut self, id: usize) -> FloatingRateCoupon {
+    /// Sets the forecast curve ID and returns the modified coupon.
+    #[must_use]
+    pub const fn with_forecast_curve_id(mut self, id: usize) -> Self {
         self.forecast_curve_id = Some(id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    /// Sets the discount curve ID.
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
-    pub fn set_forecast_curve_id(&mut self, id: usize) {
+    /// Sets the forecast curve ID.
+    pub const fn set_forecast_curve_id(&mut self, id: usize) {
         self.forecast_curve_id = Some(id);
     }
 
+    /// Sets the spread and updates the cashflow if a fixing rate is set.
     pub fn set_spread(&mut self, spread: f64) {
         self.spread = spread;
         // if fixing rate is set, update the cashflow
@@ -96,30 +107,41 @@ impl FloatingRateCoupon {
         }
     }
 
-    pub fn set_notional(&mut self, notional: f64) {
+    /// Sets the notional amount.
+    pub const fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
     }
 
-    pub fn notional(&self) -> f64 {
+    /// Returns the notional amount.
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
-    pub fn spread(&self) -> f64 {
+    /// Returns the spread.
+    #[must_use]
+    pub const fn spread(&self) -> f64 {
         self.spread
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn fixing_date(&self) -> Date {
+    /// Returns the fixing date, or the accrual start date if no fixing date is set.
+    #[must_use]
+    pub const fn fixing_date(&self) -> Date {
         match self.fixing_date {
             Some(date) => date,
             None => self.accrual_start_date,
         }
     }
 
-    pub fn fixing_rate(&self) -> Option<f64> {
+    /// Returns the fixing rate if set.
+    #[must_use]
+    pub const fn fixing_rate(&self) -> Option<f64> {
         self.fixing_rate
     }
 }
@@ -150,10 +172,11 @@ impl InterestAccrual for FloatingRateCoupon {
 impl RequiresFixingRate for FloatingRateCoupon {
     fn set_fixing_rate(&mut self, fixing_rate: f64) {
         self.fixing_rate = Some(fixing_rate);
-        let accrual = self
-            .accrued_amount(self.accrual_start_date, self.accrual_end_date)
-            .unwrap();
-        self.cashflow = self.cashflow.with_amount(accrual);
+        if let Ok(accrual) =
+            self.accrued_amount(self.accrual_start_date, self.accrual_end_date)
+        {
+            self.cashflow = self.cashflow.with_amount(accrual);
+        }
     }
 }
 

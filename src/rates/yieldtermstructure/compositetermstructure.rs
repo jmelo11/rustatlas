@@ -11,7 +11,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # CompositeTermStructure
+/// # `CompositeTermStructure`
 /// Struct that defines a term structure made with a combination of two curves. It's defined as:
 /// $$
 ///    df_{spreaded}(t) = df_{spread}(t) * df_{base}(t)
@@ -46,21 +46,26 @@ pub struct CompositeTermStructure {
 }
 
 impl CompositeTermStructure {
+    /// Creates a new `CompositeTermStructure` by combining a spread curve and a base curve.
     pub fn new(
         spread_curve: Arc<dyn YieldTermStructureTrait>,
         base_curve: Arc<dyn YieldTermStructureTrait>,
-    ) -> CompositeTermStructure {
-        CompositeTermStructure {
+    ) -> Self {
+        Self {
             date_reference: base_curve.reference_date(),
             spread_curve,
             base_curve,
         }
     }
 
+    /// Returns a reference to the spread curve.
+    #[must_use]
     pub fn spread_curve(&self) -> &dyn YieldTermStructureTrait {
         self.spread_curve.as_ref()
     }
 
+    /// Returns a reference to the base curve.
+    #[must_use]
     pub fn base_curve(&self) -> &dyn YieldTermStructureTrait {
         self.base_curve.as_ref()
     }
@@ -97,18 +102,18 @@ impl YieldProvider for CompositeTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for CompositeTermStructure
+/// # `AdvanceTermStructureInTime` for `CompositeTermStructure`
 impl AdvanceTermStructureInTime for CompositeTermStructure {
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_date(date)?;
         let spread = self.spread_curve().advance_to_date(date)?;
-        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
+        Ok(Arc::new(Self::new(spread, base)))
     }
 
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let base = self.base_curve().advance_to_period(period)?;
         let spread = self.spread_curve().advance_to_period(period)?;
-        Ok(Arc::new(CompositeTermStructure::new(spread, base)))
+        Ok(Arc::new(Self::new(spread, base)))
     }
 }
 
@@ -185,7 +190,9 @@ mod test {
             Compounding::Compounded,
             Frequency::Annual,
         );
-        assert!((fr.unwrap() - 0.03) < 0.0001);
+        let fr =
+            fr.unwrap_or_else(|e| panic!("forward_rate should succeed in test_forward_rate: {e}"));
+        assert!((fr - 0.03).abs() < 0.0001);
     }
 
     #[test]
@@ -212,9 +219,23 @@ mod test {
 
         let spreaded_curve = CompositeTermStructure::new(spread_curve, base_curve);
 
-        let df = spreaded_curve.discount_factor(Date::new(2021, 1, 1));
-        println!("df: {:?}", df);
+        let target_date = Date::new(2021, 1, 1);
 
-        assert!(df.unwrap() - 0.9702040771633191 < 0.00001);
+        let df = spreaded_curve
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+
+        let df_spread = spreaded_curve
+            .spread_curve()
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+        let df_base = spreaded_curve
+            .base_curve()
+            .discount_factor(target_date)
+            .unwrap_or_else(|e| panic!("discount_factor failed: {e}"));
+
+        let expected_df = df_spread * df_base;
+
+        assert!((df - expected_df).abs() < 1e-10);
     }
 }

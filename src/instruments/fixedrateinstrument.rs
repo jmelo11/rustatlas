@@ -14,7 +14,7 @@ use crate::{
     visitors::traits::HasCashflows,
 };
 
-/// # FixedRateInstrument
+/// # `FixedRateInstrument`
 /// A fixed rate instrument.
 ///
 /// ## Parameters
@@ -42,6 +42,11 @@ pub struct FixedRateInstrument {
 }
 
 impl FixedRateInstrument {
+    /// Creates a new `FixedRateInstrument` with the specified parameters.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         start_date: Date,
         end_date: Date,
@@ -57,7 +62,7 @@ impl FixedRateInstrument {
         issue_date: Option<Date>,
         yield_rate: Option<InterestRate>,
     ) -> Self {
-        FixedRateInstrument {
+        Self {
             start_date,
             end_date,
             notional,
@@ -74,46 +79,68 @@ impl FixedRateInstrument {
         }
     }
 
+    /// Returns the identifier of this instrument.
+    #[must_use]
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
-    pub fn start_date(&self) -> Date {
+    /// Returns the start date of this instrument.
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
-    pub fn end_date(&self) -> Date {
+    /// Returns the end date (maturity) of this instrument.
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
-    pub fn notional(&self) -> f64 {
+    /// Returns the notional amount of this instrument.
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
-    pub fn rate(&self) -> InterestRate {
+    /// Returns the fixed interest rate of this instrument.
+    #[must_use]
+    pub const fn rate(&self) -> InterestRate {
         self.rate
     }
 
-    pub fn structure(&self) -> Structure {
+    /// Returns the structure of this instrument.
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
-    pub fn payment_frequency(&self) -> Frequency {
+    /// Returns the payment frequency of this instrument.
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    /// Returns the identifier of the discount curve used for valuation.
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
-    pub fn side(&self) -> Side {
+    /// Returns the side (pay or receive) of this instrument.
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
-    pub fn issue_date(&self) -> Option<Date> {
+    /// Returns the issue date of this instrument.
+    #[must_use]
+    pub const fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
+    /// Sets the discount curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self.mut_cashflows()
@@ -123,6 +150,8 @@ impl FixedRateInstrument {
         self
     }
 
+    /// Sets the interest rate and updates all fixed rate coupons.
+    #[must_use]
     pub fn set_rate(mut self, rate: InterestRate) -> Self {
         self.rate = rate;
         self.mut_cashflows().iter_mut().for_each(|cf| {
@@ -140,13 +169,18 @@ impl HasCurrency for FixedRateInstrument {
     }
 }
 
-/// # BondAccrual
-/// Implements fixed rate bond accrual using a yield rate.  
+/// # `BondAccrual`
+/// Implements fixed rate bond accrual using a yield rate.
 /// The yield rate is used to discount the cashflows to between the start and
 /// end dates and calculate the accrued amount.
 pub trait BondAccrual: HasCashflows {
+    /// Returns the yield rate used for bond accrual calculations.
     fn yield_rate(&self) -> Option<InterestRate>;
 
+    /// Calculates the accrued amount for a bond between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required rate data is missing to discount cashflows.
     fn bond_accrued_amount(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let ini_pv = self.discounted_cashflows(start_date)?;
         let end_pv = self.discounted_cashflows(end_date)?;
@@ -161,6 +195,9 @@ pub trait BondAccrual: HasCashflows {
     }
 
     /// Calculates the accrual of cash paid between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if underlying cashflow data is unavailable.
     fn matured_amount_accrual(&self, from: Date, to: Date) -> Result<f64> {
         // let rate = self
         //     .yield_rate()
@@ -172,29 +209,31 @@ pub trait BondAccrual: HasCashflows {
             .filter(|cf| cf.payment_date() >= from && cf.payment_date() < to)
             .collect::<Vec<&Cashflow>>();
 
-        let mut amount = 0.0;
-        cashflows.iter().for_each(|cf| {
+        cashflows.iter().try_fold(0.0, |acc, cf| {
             //amount += cf.amount().unwrap() / rate.discount_factor(cf.payment_date(), to);
-            amount += cf.amount().unwrap();
-        });
-        Ok(amount)
+            Ok(acc + cf.amount()?)
+        })
     }
 
+    /// Calculates the present value of cashflows from the evaluation date forward using the yield rate.
+    ///
+    /// # Errors
+    /// Returns an error if a yield rate is not available to discount cashflows.
     fn discounted_cashflows(&self, evaluation_date: Date) -> Result<f64> {
         let rate = self
             .yield_rate()
             .ok_or(AtlasError::NotFoundErr("Yield rate".to_string()))?;
 
-        Ok(self
+        self
             .cashflows()
             .iter()
             .filter(|cf| cf.payment_date() >= evaluation_date)
-            .fold(0.0, |acc, cf| {
-                let npv = cf.amount().unwrap()
+            .try_fold(0.0, |acc, cf| {
+                let npv = cf.amount()?
                     * rate.discount_factor(evaluation_date, cf.payment_date())
                     * cf.side().sign();
-                acc + npv
-            }))
+                Ok(acc + npv)
+            })
     }
 }
 
@@ -311,12 +350,12 @@ mod tests {
             .bullet()
             .build()?;
 
-        instrument.cashflows().iter().for_each(|cf| {
+        for cf in instrument.cashflows() {
             if let Cashflow::FixedRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 150000.0).abs() < 1e-6);
                 assert_eq!(coupon.rate(), rate);
             }
-        });
+        }
 
         let new_rate = InterestRate::new(
             0.03,
@@ -327,12 +366,12 @@ mod tests {
 
         let new_instrument = instrument.set_rate(new_rate);
 
-        new_instrument.cashflows().iter().for_each(|cf| {
+        for cf in new_instrument.cashflows() {
             if let Cashflow::FixedRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
+                assert!((coupon.amount()? - 75000.0).abs() < 1e-6);
                 assert_eq!(coupon.rate(), new_rate);
             }
-        });
+        }
 
         Ok(())
     }

@@ -10,16 +10,23 @@ use super::traits::{ImplCalendar, IsCalendar};
 /// Defines the relevant market for the United States calendar.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Market {
+    /// Settlement market.
     Settlement,
+    /// Libor Impact market.
     LiborImpact,
+    /// New York Stock Exchange market.
     Nyse,
+    /// Government Bond market.
     GovernmentBond,
+    /// North American Electric Reliability Corporation market.
     Nerc,
+    /// Federal Reserve market.
     FederalReserve,
+    /// Secured Overnight Financing Rate market.
     Sofr,
 }
 
-/// # UnitedStates
+/// # `UnitedStates`
 /// A calendar for the United States.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnitedStates {
@@ -29,8 +36,10 @@ pub struct UnitedStates {
 }
 
 impl UnitedStates {
+    /// Creates a new `UnitedStates` calendar for the specified market.
+    #[must_use]
     pub fn new(market: Market) -> Self {
-        UnitedStates {
+        Self {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
@@ -81,13 +90,15 @@ impl UnitedStates {
             && month == 12
     }
 
+    /// Determines if the given date is a business day for this calendar's market.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();
         let month = date.month();
         let year = date.year();
 
-        if UnitedStates::is_weekend(weekday) {
+        if Self::is_weekend(weekday) {
             return false;
         }
 
@@ -99,11 +110,11 @@ impl UnitedStates {
             | Market::Nerc
             | Market::FederalReserve
             | Market::Sofr => {
-                UnitedStates::is_washington_birthday(day, month, year, weekday)
-                    || UnitedStates::is_memorial_day(day, month, year, weekday)
-                    || UnitedStates::is_independence_day(day, month, weekday)
-                    || UnitedStates::is_thanksgiving(day, month, weekday)
-                    || UnitedStates::is_christmas(day, month, weekday)
+                Self::is_washington_birthday(day, month, year, weekday)
+                    || Self::is_memorial_day(day, month, year, weekday)
+                    || Self::is_independence_day(day, month, weekday)
+                    || Self::is_thanksgiving(day, month, weekday)
+                    || Self::is_christmas(day, month, weekday)
             }
         }
     }
@@ -169,6 +180,6 @@ impl IsCalendar for UnitedStates {}
 
 impl Default for UnitedStates {
     fn default() -> Self {
-        UnitedStates::new(Market::Sofr)
+        Self::new(Market::Sofr)
     }
 }

@@ -15,7 +15,7 @@ use crate::{
 use super::traits::Structure;
 use crate::utils::errors::Result;
 
-/// # FloatingRateInstrument
+/// # `FloatingRateInstrument`
 /// A floating rate instrument.
 ///
 /// ## Parameters
@@ -47,6 +47,11 @@ pub struct FloatingRateInstrument {
 }
 
 impl FloatingRateInstrument {
+    /// Creates a new `FloatingRateInstrument`.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         start_date: Date,
         end_date: Date,
@@ -63,7 +68,7 @@ impl FloatingRateInstrument {
         id: Option<String>,
         issue_date: Option<Date>,
     ) -> Self {
-        FloatingRateInstrument {
+        Self {
             start_date,
             end_date,
             notional,
@@ -81,54 +86,80 @@ impl FloatingRateInstrument {
         }
     }
 
-    pub fn issue_date(&self) -> Option<Date> {
+    /// Returns the issue date.
+    #[must_use]
+    pub const fn issue_date(&self) -> Option<Date> {
         self.issue_date
     }
 
+    /// Returns the identifier.
+    #[must_use]
     pub fn id(&self) -> Option<String> {
         self.id.clone()
     }
 
-    pub fn start_date(&self) -> Date {
+    /// Returns the start date.
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
-    pub fn end_date(&self) -> Date {
+    /// Returns the end date.
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
-    pub fn notional(&self) -> f64 {
+    /// Returns the notional.
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
-    pub fn spread(&self) -> f64 {
+    /// Returns the spread.
+    #[must_use]
+    pub const fn spread(&self) -> f64 {
         self.spread
     }
 
-    pub fn side(&self) -> Side {
+    /// Returns the side.
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
-    pub fn payment_frequency(&self) -> Frequency {
+    /// Returns the payment frequency.
+    #[must_use]
+    pub const fn payment_frequency(&self) -> Frequency {
         self.payment_frequency
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn structure(&self) -> Structure {
+    /// Returns the structure.
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    /// Returns the discount curve identifier.
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
-    pub fn forecast_curve_id(&self) -> Option<usize> {
+    /// Returns the forecast curve identifier.
+    #[must_use]
+    pub const fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
 
+    /// Sets the discount curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self.mut_cashflows()
@@ -137,6 +168,8 @@ impl FloatingRateInstrument {
         self
     }
 
+    /// Sets the forecast curve identifier and updates all cashflows.
+    #[must_use]
     pub fn set_forecast_curve_id(mut self, forecast_curve_id: usize) -> Self {
         self.forecast_curve_id = Some(forecast_curve_id);
         self.mut_cashflows()
@@ -145,6 +178,8 @@ impl FloatingRateInstrument {
         self
     }
 
+    /// Sets the spread and updates all floating rate coupons.
+    #[must_use]
     pub fn set_spread(mut self, spread: f64) -> Self {
         self.spread = spread;
         self.mut_cashflows().iter_mut().for_each(|cf| {
@@ -234,12 +269,12 @@ mod test {
 
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
-        assert_eq!(instrument.notional(), 5_000_000.0);
-        assert_eq!(instrument.spread(), spread);
+        assert!((instrument.notional() - 5_000_000.0).abs() < 1e-12);
+        assert!((instrument.spread() - spread).abs() < 1e-12);
         assert_eq!(instrument.side(), Side::Receive);
         assert_eq!(instrument.payment_frequency(), Frequency::Semiannual);
         assert_eq!(instrument.rate_definition(), rate_definition);
-        assert_eq!(instrument.currency().unwrap(), Currency::USD);
+        assert_eq!(instrument.currency()?, Currency::USD);
 
         Ok(())
     }
@@ -273,22 +308,22 @@ mod test {
             .iter_mut()
             .for_each(|cf| cf.set_fixing_rate(0.02));
 
-        instrument.cashflows().iter().for_each(|cf| {
+        for cf in instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 150000.0).abs() < 1e-6);
-                assert_eq!(coupon.spread(), spread);
+                assert!((coupon.amount()? - 150000.0).abs() < 1e-6);
+                assert!((coupon.spread() - spread).abs() < 1e-12);
             }
-        });
+        }
 
         let new_spread = 0.01;
         let new_instrument = instrument.set_spread(new_spread);
 
-        new_instrument.cashflows().iter().for_each(|cf| {
+        for cf in new_instrument.cashflows() {
             if let Cashflow::FloatingRateCoupon(coupon) = cf {
-                assert!((coupon.amount().unwrap() - 75000.0).abs() < 1e-6);
-                assert_eq!(coupon.spread(), new_spread);
+                assert!((coupon.amount()? - 75000.0).abs() < 1e-6);
+                assert!((coupon.spread() - new_spread).abs() < 1e-12);
             }
-        });
+        }
 
         Ok(())
     }

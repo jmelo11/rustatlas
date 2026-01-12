@@ -11,10 +11,13 @@ use crate::time::date::Date;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Market {
+    /// Settlement market type.
     Settlement,
+    /// Exchange market type.
     Exchange,
 }
 
+/// Brazil calendar for business day calculations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Brazil {
     market: Market,
@@ -23,8 +26,10 @@ pub struct Brazil {
 }
 
 impl Brazil {
+    /// Creates a new Brazil calendar with the specified market type.
+    #[must_use]
     pub fn new(market: Market) -> Self {
-        Brazil {
+        Self {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
@@ -35,51 +40,51 @@ impl Brazil {
         day == Weekday::Sat || day == Weekday::Sun
     }
 
-    fn is_new_years_day(day: u32, month: u32) -> bool {
+    const fn is_new_years_day(day: u32, month: u32) -> bool {
         day == 1 && month == 1
     }
 
-    fn is_sao_paulo_city_day(day: u32, month: u32) -> bool {
+    const fn is_sao_paulo_city_day(day: u32, month: u32) -> bool {
         day == 25 && month == 1
     }
 
-    fn is_tiradentes_day(day: u32, month: u32) -> bool {
+    const fn is_tiradentes_day(day: u32, month: u32) -> bool {
         day == 21 && month == 4
     }
 
-    fn is_labor_day(day: u32, month: u32) -> bool {
+    const fn is_labor_day(day: u32, month: u32) -> bool {
         day == 1 && month == 5
     }
 
-    fn is_revolution_day(day: u32, month: u32) -> bool {
+    const fn is_revolution_day(day: u32, month: u32) -> bool {
         day == 9 && month == 7
     }
 
-    fn is_independence_day(day: u32, month: u32) -> bool {
+    const fn is_independence_day(day: u32, month: u32) -> bool {
         day == 7 && month == 9
     }
 
-    fn is_nossa_senhora_aparecida_day(day: u32, month: u32) -> bool {
+    const fn is_nossa_senhora_aparecida_day(day: u32, month: u32) -> bool {
         day == 12 && month == 10
     }
 
-    fn is_all_souls_day(day: u32, month: u32) -> bool {
+    const fn is_all_souls_day(day: u32, month: u32) -> bool {
         day == 2 && month == 11
     }
 
-    fn is_republic_day(day: u32, month: u32) -> bool {
+    const fn is_republic_day(day: u32, month: u32) -> bool {
         day == 15 && month == 11
     }
 
-    fn is_black_consciousness_day(day: u32, month: u32, year: i32) -> bool {
+    const fn is_black_consciousness_day(day: u32, month: u32, year: i32) -> bool {
         day == 20 && month == 11 && year >= 2007
     }
 
-    fn is_christmas_eve(day: u32, month: u32) -> bool {
+    const fn is_christmas_eve(day: u32, month: u32) -> bool {
         day == 24 && month == 12
     }
 
-    fn is_christmas(day: u32, month: u32) -> bool {
+    const fn is_christmas(day: u32, month: u32) -> bool {
         day == 25 && month == 12
     }
 
@@ -105,54 +110,58 @@ impl Brazil {
     }
 
     fn is_last_business_day_of_year(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .unwrap_or_else(|| panic!("valid date for last business day calculation"))
+            .weekday();
         month == 12 && (day == 31 || (day >= 29 && w == Weekday::Fri))
     }
 
+    /// Checks if the given date is a business day according to the calendar rules.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();
         let month = date.month();
         let year = date.year();
-        if Brazil::is_weekend(weekday) {
+        if Self::is_weekend(weekday) {
             return false;
         }
 
         match self.market {
             Market::Settlement => {
-                if Brazil::is_new_years_day(day, month)
-                    || Brazil::is_tiradentes_day(day, month)
-                    || Brazil::is_labor_day(day, month)
-                    || Brazil::is_independence_day(day, month)
-                    || Brazil::is_nossa_senhora_aparecida_day(day, month)
-                    || Brazil::is_all_souls_day(day, month)
-                    || Brazil::is_republic_day(day, month)
-                    || Brazil::is_christmas(day, month)
-                    || Brazil::is_passion_of_christ(day, month, year)
-                    || Brazil::is_carnival(day, month, year)
-                    || Brazil::is_corpus_christi(day, month, year)
+                if Self::is_new_years_day(day, month)
+                    || Self::is_tiradentes_day(day, month)
+                    || Self::is_labor_day(day, month)
+                    || Self::is_independence_day(day, month)
+                    || Self::is_nossa_senhora_aparecida_day(day, month)
+                    || Self::is_all_souls_day(day, month)
+                    || Self::is_republic_day(day, month)
+                    || Self::is_christmas(day, month)
+                    || Self::is_passion_of_christ(day, month, year)
+                    || Self::is_carnival(day, month, year)
+                    || Self::is_corpus_christi(day, month, year)
                 {
                     return false;
                 }
                 true
             }
             Market::Exchange => {
-                if Brazil::is_new_years_day(day, month)
-                    || Brazil::is_sao_paulo_city_day(day, month)
-                    || Brazil::is_tiradentes_day(day, month)
-                    || Brazil::is_labor_day(day, month)
-                    || Brazil::is_revolution_day(day, month)
-                    || Brazil::is_independence_day(day, month)
-                    || Brazil::is_nossa_senhora_aparecida_day(day, month)
-                    || Brazil::is_all_souls_day(day, month)
-                    || Brazil::is_republic_day(day, month)
-                    || Brazil::is_black_consciousness_day(day, month, year)
-                    || Brazil::is_christmas_eve(day, month)
-                    || Brazil::is_christmas(day, month)
-                    || Brazil::is_passion_of_christ(day, month, year)
-                    || Brazil::is_carnival(day, month, year)
-                    || Brazil::is_corpus_christi(day, month, year)
-                    || Brazil::is_last_business_day_of_year(day, month, year)
+                if Self::is_new_years_day(day, month)
+                    || Self::is_sao_paulo_city_day(day, month)
+                    || Self::is_tiradentes_day(day, month)
+                    || Self::is_labor_day(day, month)
+                    || Self::is_revolution_day(day, month)
+                    || Self::is_independence_day(day, month)
+                    || Self::is_nossa_senhora_aparecida_day(day, month)
+                    || Self::is_all_souls_day(day, month)
+                    || Self::is_republic_day(day, month)
+                    || Self::is_black_consciousness_day(day, month, year)
+                    || Self::is_christmas_eve(day, month)
+                    || Self::is_christmas(day, month)
+                    || Self::is_passion_of_christ(day, month, year)
+                    || Self::is_carnival(day, month, year)
+                    || Self::is_corpus_christi(day, month, year)
+                    || Self::is_last_business_day_of_year(day, month, year)
                 {
                     return false;
                 }
@@ -223,7 +232,7 @@ impl IsCalendar for Brazil {}
 
 impl Default for Brazil {
     fn default() -> Self {
-        Brazil::new(Market::Settlement)
+        Self::new(Market::Settlement)
     }
 }
 

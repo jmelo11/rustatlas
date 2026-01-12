@@ -17,7 +17,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # ZeroRateTermStructure
+/// # `ZeroRateTermStructure`
 /// Struct that defines a zero rate term structure.
 ///
 /// # Example
@@ -52,6 +52,20 @@ pub struct ZeroRateTermStructure {
 }
 
 impl ZeroRateTermStructure {
+    /// Creates a new `ZeroRateTermStructure`.
+    ///
+    /// # Arguments
+    ///
+    /// * `reference_date` - The reference date for the term structure
+    /// * `dates` - Vector of dates for the rates
+    /// * `rates` - Vector of zero rates corresponding to each date
+    /// * `rate_definition` - The rate definition (day counter, compounding, frequency)
+    /// * `interpolator` - The interpolation method to use
+    /// * `enable_extrapolation` - Whether to allow extrapolation beyond the last date
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if dates and rates have different lengths or if the first date is not the reference date.
     pub fn new(
         reference_date: Date,
         dates: Vec<Date>,
@@ -59,7 +73,7 @@ impl ZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<ZeroRateTermStructure> {
+    ) -> Result<Self> {
         // check if dates and rates have the same size
         if dates.len() != rates.len() {
             return Err(AtlasError::InvalidValueErr(
@@ -83,7 +97,7 @@ impl ZeroRateTermStructure {
             })
             .collect();
 
-        Ok(ZeroRateTermStructure {
+        Ok(Self {
             reference_date,
             dates,
             year_fractions,
@@ -94,23 +108,33 @@ impl ZeroRateTermStructure {
         })
     }
 
-    pub fn dates(&self) -> &Vec<Date> {
+    /// Returns a reference to the vector of dates.
+    #[must_use]
+    pub const fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
-    pub fn rates(&self) -> &Vec<f64> {
+    /// Returns a reference to the vector of zero rates.
+    #[must_use]
+    pub const fn rates(&self) -> &Vec<f64> {
         &self.rates
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition used by this term structure.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn enable_extrapolation(&self) -> bool {
+    /// Returns whether extrapolation is enabled for this term structure.
+    #[must_use]
+    pub const fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
-    pub fn interpolator(&self) -> Interpolator {
+    /// Returns the interpolator used by this term structure.
+    #[must_use]
+    pub const fn interpolator(&self) -> Interpolator {
         self.interpolator
     }
 }
@@ -169,7 +193,7 @@ impl YieldProvider for ZeroRateTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for ZeroRateTermStructure
+/// # `AdvanceTermStructureInTime` for `ZeroRateTermStructure`
 impl AdvanceTermStructureInTime for ZeroRateTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
@@ -191,7 +215,7 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
             })
             .collect();
 
-        Ok(Arc::new(ZeroRateTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_reference_date,
             new_dates,
             shifted_dfs?,
@@ -202,12 +226,13 @@ impl AdvanceTermStructureInTime for ZeroRateTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {:?} is before reference date {:?}",
-                date,
-                self.reference_date()
+                "Date {date:?} is before reference date {reference_date:?}",
+                reference_date = self.reference_date()
             )));
         }
         let period = Period::new(days, TimeUnit::Days);
@@ -243,7 +268,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "ZeroRateTermStructure::new should succeed in test_reference_date: {e}"
+        ));
 
         assert_eq!(zero_rate_curve.reference_date(), reference_date);
         assert_eq!(
@@ -284,7 +311,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "ZeroRateTermStructure::new should succeed in test_forward_rate: {e}"
+        ));
 
         let fr = zero_rate_curve.forward_rate(
             Date::new(2021, 1, 1),
@@ -293,7 +322,10 @@ mod tests {
             rate_definition.frequency(),
         );
 
-        println!("fr: {:?}", fr);
-        assert!(fr.unwrap() - 0.02972519115024655 < 0.000000001);
+        let fr = fr.unwrap_or_else(|e| panic!(
+            "forward_rate should succeed in test_forward_rate: {e}"
+        ));
+        println!("fr: {fr:?}");
+        assert!((fr - 0.02972519115024655).abs() < 0.000000001);
     }
 }

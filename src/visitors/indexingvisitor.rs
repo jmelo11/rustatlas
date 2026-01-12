@@ -6,20 +6,25 @@ use crate::{
     utils::errors::Result,
 };
 
-/// # IndexingVisitor
-/// IndexingVisitor is a visitor that registers the cashflows of an instrument
+/// # `IndexingVisitor`
+/// `IndexingVisitor` is a visitor that registers the cashflows of an instrument
 /// and generates a vector of market requests.
 pub struct IndexingVisitor {
     request: RefCell<Vec<MarketRequest>>,
 }
 
 impl IndexingVisitor {
+    /// Creates a new `IndexingVisitor` instance.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new() -> Self {
-        IndexingVisitor {
+        Self {
             request: RefCell::new(Vec::new()),
         }
     }
 
+    /// Returns a clone of the collected market requests.
+    #[must_use]
     pub fn request(&self) -> Vec<MarketRequest> {
         self.request.borrow().clone()
     }

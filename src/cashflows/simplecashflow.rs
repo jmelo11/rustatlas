@@ -13,7 +13,7 @@ use crate::{
 use super::cashflow::Side;
 use super::traits::{Expires, Payable};
 
-/// # SimpleCashflow
+/// # `SimpleCashflow`
 /// A simple cashflow that is payable at a given date.
 ///
 /// ## Example
@@ -35,8 +35,10 @@ pub struct SimpleCashflow {
 }
 
 impl SimpleCashflow {
-    pub fn new(payment_date: Date, currency: Currency, side: Side) -> SimpleCashflow {
-        SimpleCashflow {
+    /// Creates a new `SimpleCashflow` with the given payment date, currency, and side.
+    #[must_use]
+    pub const fn new(payment_date: Date, currency: Currency, side: Side) -> Self {
+        Self {
             payment_date,
             currency,
             side,
@@ -46,26 +48,34 @@ impl SimpleCashflow {
         }
     }
 
-    pub fn with_amount(mut self, amount: f64) -> SimpleCashflow {
+    /// Sets the amount for this cashflow and returns self for method chaining.
+    #[must_use]
+    pub const fn with_amount(mut self, amount: f64) -> Self {
         self.amount = Some(amount);
         self
     }
 
-    pub fn with_discount_curve_id(mut self, discount_curve_id: usize) -> SimpleCashflow {
+    #[must_use]
+    /// Sets the discount curve ID for this cashflow and returns self for method chaining.
+    pub const fn with_discount_curve_id(mut self, discount_curve_id: usize) -> Self {
         self.discount_curve_id = Some(discount_curve_id);
         self
     }
 
-    pub fn with_id(mut self, registry_id: usize) -> SimpleCashflow {
+    /// Sets the registry ID for this cashflow and returns self for method chaining.
+    #[must_use]
+    pub const fn with_id(mut self, registry_id: usize) -> Self {
         self.id = Some(registry_id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    /// Sets the discount curve ID for this cashflow.
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         self.discount_curve_id = Some(id);
     }
 
-    pub fn set_amount(&mut self, amount: f64) {
+    /// Sets the amount for this cashflow.
+    pub const fn set_amount(&mut self, amount: f64) {
         self.amount = Some(amount);
     }
 }

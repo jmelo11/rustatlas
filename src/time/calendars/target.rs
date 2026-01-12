@@ -14,8 +14,10 @@ pub struct TARGET {
 }
 
 impl TARGET {
-    pub fn new() -> TARGET {
-        TARGET {
+    /// Creates a new TARGET calendar instance.
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         }

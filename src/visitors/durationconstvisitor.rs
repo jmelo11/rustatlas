@@ -7,8 +7,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # DurationConstVisitor
-/// DurationConstVisitor is a visitor that calculates the Duration of an instrument.
+/// # `DurationConstVisitor`
+/// `DurationConstVisitor` is a visitor that calculates the Duration of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 ///
 /// ## Parameters
@@ -19,12 +19,18 @@ pub struct DurationConstVisitor<'a> {
 }
 
 impl<'a> DurationConstVisitor<'a> {
+    /// Creates a new `DurationConstVisitor` with the given market data.
+    ///
+    /// # Arguments
+    /// * `market_data` - A slice of market data to use for duration calculations
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(market_data: &'a [MarketData]) -> Self {
         DurationConstVisitor { market_data }
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'_> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let duration = visitable
@@ -37,8 +43,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for DurationConstVisitor<'a> {
                     self.market_data
                         .get(id)
                         .ok_or(AtlasError::NotFoundErr(format!(
-                            "Market data for cashflow with id {}",
-                            id
+                            "Market data for cashflow with id {id}"
                         )))?;
 
                 if cf_market_data.reference_date() <= cf.payment_date() {
@@ -169,14 +174,40 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
-    fn generator_tests() -> Result<()> {
-        let market_store = create_store().unwrap();
+    fn generator_tests() {
+        fn duration(instruments: &mut [FixedRateInstrument]) -> f64 {
+            let store = create_store()
+                .unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
+            let mut duration = 0.0;
+            let indexer = IndexingVisitor::new();
+            for inst in instruments.iter_mut() {
+                indexer
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
+            }
+
+            let model = SimpleModel::new(&store);
+            let data = model
+                .gen_market_data(&indexer.request())
+                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
+
+            let duration_visitor = DurationConstVisitor::new(&data);
+            for inst in instruments.iter() {
+                duration += duration_visitor
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("duration visit should succeed: {e}"));
+            }
+            duration
+        }
+
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -194,8 +225,8 @@ mod tests {
             .into_par_iter() // Create a parallel iterator
             .map(|_| {
                 MakeFixedRateInstrument::new()
-                    .with_start_date(start_date) // clone data if needed
-                    .with_end_date(end_date) // clone data if needed
+                    .with_start_date(start_date)
+                    .with_end_date(end_date)
                     .with_rate(rate)
                     .with_payment_frequency(Frequency::Semiannual)
                     .with_side(Side::Receive)
@@ -204,32 +235,12 @@ mod tests {
                     .with_discount_curve_id(Some(2))
                     .with_notional(notional)
                     .build()
-                    .unwrap()
+                    .unwrap_or_else(|e| panic!("instrument build should succeed: {e}"))
             })
             .collect(); // Collect the results into a Vec<_>
-
-        fn duration(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store().unwrap();
-            let mut duration = 0.0;
-            let indexer = IndexingVisitor::new();
-            instruments
-                .iter_mut()
-                .for_each(|inst| indexer.visit(inst).unwrap());
-
-            let model = SimpleModel::new(&store);
-            let data = model.gen_market_data(&indexer.request()).unwrap();
-
-            let duration_visitor = DurationConstVisitor::new(&data);
-            instruments
-                .iter()
-                .for_each(|inst| duration += duration_visitor.visit(inst).unwrap());
-            duration
-        }
 
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
             duration(chunk);
         });
-
-        Ok(())
     }
 }

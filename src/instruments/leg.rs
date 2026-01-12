@@ -22,6 +22,11 @@ pub struct Leg {
 }
 
 impl Leg {
+    /// Creates a new `Leg` with the specified parameters.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    // allowed: high-arity API; refactor deferred
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         structure: Structure,
         rate_type: RateType,
@@ -33,7 +38,7 @@ impl Leg {
         forecast_curve_id: Option<usize>,
         cashflows: Vec<Cashflow>,
     ) -> Self {
-        Leg {
+        Self {
             structure,
             rate_type,
             rate_value,
@@ -46,42 +51,61 @@ impl Leg {
         }
     }
 
+    /// Returns a slice of the cashflows in this leg.
+    #[must_use]
     pub fn cashflows(&self) -> &[Cashflow] {
         &self.cashflows
     }
 
-    pub fn structure(&self) -> Structure {
+    /// Returns the structure of this leg.
+    #[must_use]
+    pub const fn structure(&self) -> Structure {
         self.structure
     }
 
-    pub fn rate_type(&self) -> RateType {
+    /// Returns the rate type of this leg.
+    #[must_use]
+    pub const fn rate_type(&self) -> RateType {
         self.rate_type
     }
 
-    pub fn rate_value(&self) -> f64 {
+    /// Returns the rate value of this leg.
+    #[must_use]
+    pub const fn rate_value(&self) -> f64 {
         self.rate_value
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition of this leg.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn currency(&self) -> Currency {
+    /// Returns the currency of this leg.
+    #[must_use]
+    pub const fn currency(&self) -> Currency {
         self.currency
     }
 
-    pub fn side(&self) -> Side {
+    /// Returns the side of this leg.
+    #[must_use]
+    pub const fn side(&self) -> Side {
         self.side
     }
 
-    pub fn discount_curve_id(&self) -> Option<usize> {
+    /// Returns the discount curve ID of this leg, if set.
+    #[must_use]
+    pub const fn discount_curve_id(&self) -> Option<usize> {
         self.discount_curve_id
     }
 
-    pub fn forecast_curve_id(&self) -> Option<usize> {
+    /// Returns the forecast curve ID of this leg, if set.
+    #[must_use]
+    pub const fn forecast_curve_id(&self) -> Option<usize> {
         self.forecast_curve_id
     }
 
+    /// Clears all cashflows from this leg.
     pub fn clear(&mut self) {
         self.cashflows.clear();
     }

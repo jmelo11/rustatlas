@@ -1,4 +1,10 @@
+//! Interpolation module containing various interpolation methods and traits.
+
+/// Enumeration types for interpolation.
 pub mod enums;
+/// Linear interpolation implementation.
 pub mod linear;
+/// Log-linear interpolation implementation.
 pub mod loglinear;
+/// Traits for interpolation.
 pub mod traits;

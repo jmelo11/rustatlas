@@ -2,45 +2,55 @@ use serde::{Deserialize, Serialize};
 
 use super::daycounters::{
     actual360::Actual360, actual365::Actual365, actualactual::ActualActual,
-    business252::Business252, thirty360::*, traits::DayCountProvider,
+    business252::Business252, thirty360::{Thirty360, Thirty360US}, traits::DayCountProvider,
 };
 use crate::{
     time::date::Date,
     utils::errors::{AtlasError, Result},
 };
 
-/// # DayCounter
+/// # `DayCounter`
 /// Day count convention enum.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DayCounter {
+    /// Actual/360 day count convention
     Actual360,
+    /// Actual/365 day count convention
     Actual365,
+    /// 30/360 day count convention
     Thirty360,
+    /// 30/360 US day count convention
     Thirty360US,
+    /// Actual/Actual day count convention
     ActualActual,
+    /// Business/252 day count convention
     Business252,
 }
 
 impl DayCounter {
+    /// Calculates the day count between two dates using the selected day count convention.
+    #[must_use]
     pub fn day_count(&self, start: Date, end: Date) -> i64 {
         match self {
-            DayCounter::Actual360 => Actual360::day_count(start, end),
-            DayCounter::Actual365 => Actual365::day_count(start, end),
-            DayCounter::Thirty360 => Thirty360::day_count(start, end),
-            DayCounter::Thirty360US => Thirty360US::day_count(start, end),
-            DayCounter::ActualActual => ActualActual::day_count(start, end),
-            DayCounter::Business252 => Business252::day_count(start, end),
+            Self::Actual360 => Actual360::day_count(start, end),
+            Self::Actual365 => Actual365::day_count(start, end),
+            Self::Thirty360 => Thirty360::day_count(start, end),
+            Self::Thirty360US => Thirty360US::day_count(start, end),
+            Self::ActualActual => ActualActual::day_count(start, end),
+            Self::Business252 => Business252::day_count(start, end),
         }
     }
 
+    /// Calculates the year fraction between two dates using the selected day count convention.
+    #[must_use]
     pub fn year_fraction(&self, start: Date, end: Date) -> f64 {
         match self {
-            DayCounter::Actual360 => Actual360::year_fraction(start, end),
-            DayCounter::Actual365 => Actual365::year_fraction(start, end),
-            DayCounter::Thirty360 => Thirty360::year_fraction(start, end),
-            DayCounter::Thirty360US => Thirty360US::year_fraction(start, end),
-            DayCounter::ActualActual => ActualActual::year_fraction(start, end),
-            DayCounter::Business252 => Business252::year_fraction(start, end),
+            Self::Actual360 => Actual360::year_fraction(start, end),
+            Self::Actual365 => Actual365::year_fraction(start, end),
+            Self::Thirty360 => Thirty360::year_fraction(start, end),
+            Self::Thirty360US => Thirty360US::year_fraction(start, end),
+            Self::ActualActual => ActualActual::year_fraction(start, end),
+            Self::Business252 => Business252::year_fraction(start, end),
         }
     }
 }
@@ -50,15 +60,14 @@ impl TryFrom<String> for DayCounter {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Actual360" => Ok(DayCounter::Actual360),
-            "Actual365" => Ok(DayCounter::Actual365),
-            "Thirty360" => Ok(DayCounter::Thirty360), // to match curveengine
-            "Thirty360US" => Ok(DayCounter::Thirty360US),
-            "ActualActual" => Ok(DayCounter::ActualActual),
-            "Business252" => Ok(DayCounter::Business252),
+            "Actual360" => Ok(Self::Actual360),
+            "Actual365" => Ok(Self::Actual365),
+            "Thirty360" => Ok(Self::Thirty360), // to match curveengine
+            "Thirty360US" => Ok(Self::Thirty360US),
+            "ActualActual" => Ok(Self::ActualActual),
+            "Business252" => Ok(Self::Business252),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid day counter: {}",
-                s
+                "Invalid day counter: {s}"
             ))),
         }
     }
@@ -115,21 +124,25 @@ mod tests {
         assert_eq!(day_count, -1);
     }
 
+    fn almost_eq(a: f64, b: f64, eps: f64) -> bool {
+        (a - b).abs() < eps
+    }
+
     #[test]
     fn test_year_fraction() {
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2020, 1, 2);
 
         let year_fraction = DayCounter::Actual360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Actual365.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 365.0);
+        assert!(almost_eq(year_fraction, 1.0 / 365.0, 1e-12));
         let year_fraction = DayCounter::Thirty360.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Thirty360US.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 360.0);
+        assert!(almost_eq(year_fraction, 1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::ActualActual.year_fraction(start, end);
-        assert_eq!(year_fraction, 1.0 / 366.0);
+        assert!(almost_eq(year_fraction, 1.0 / 366.0, 1e-12));
     }
 
     #[test]
@@ -138,15 +151,15 @@ mod tests {
         let end = Date::new(2020, 1, 2);
 
         let year_fraction = DayCounter::Actual360.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Actual365.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 365.0);
+        assert!(almost_eq(year_fraction, -1.0 / 365.0, 1e-12));
         let year_fraction = DayCounter::Thirty360.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::Thirty360US.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 360.0);
+        assert!(almost_eq(year_fraction, -1.0 / 360.0, 1e-12));
         let year_fraction = DayCounter::ActualActual.year_fraction(end, start);
-        assert_eq!(year_fraction, -1.0 / 366.0);
+        assert!(almost_eq(year_fraction, -1.0 / 366.0, 1e-12));
     }
 
     #[test]
@@ -157,7 +170,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -168,7 +181,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_eq!(yf_1, yf_2);
+        assert!(almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -179,7 +192,7 @@ mod tests {
 
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
-        assert_ne!(yf_1, yf_2);
+        assert!((yf_1 - yf_2).abs() > 1e-12);
     }
 
     #[test]
@@ -191,7 +204,7 @@ mod tests {
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
 
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 
     #[test]
@@ -203,6 +216,6 @@ mod tests {
         let yf_1 = DayCounter::Thirty360.year_fraction(start, end_1);
         let yf_2 = DayCounter::Thirty360.year_fraction(start, end_2);
 
-        assert_ne!(yf_1, yf_2);
+        assert!(!almost_eq(yf_1, yf_2, 1e-12));
     }
 }

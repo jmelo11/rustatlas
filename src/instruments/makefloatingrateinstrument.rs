@@ -27,7 +27,7 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFloatingRateInstrument
+/// # `MakeFloatingRateInstrument`
 /// Builder for a floating rate loan.
 #[derive(Debug, Clone)]
 pub struct MakeFloatingRateInstrument {
@@ -56,8 +56,11 @@ pub struct MakeFloatingRateInstrument {
 
 /// Constructor, setters and getters.
 impl MakeFloatingRateInstrument {
-    pub fn new() -> MakeFloatingRateInstrument {
-        MakeFloatingRateInstrument {
+    /// Creates a new `MakeFloatingRateInstrument` with all fields initialized to `None`.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -82,156 +85,206 @@ impl MakeFloatingRateInstrument {
         }
     }
 
-    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateInstrument {
+    /// Sets the calendar for the instrument.
+    #[must_use]
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.calendar = calendar;
         self
     }
 
-    pub fn with_business_day_convention(
+    /// Sets the business day convention for the instrument.
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.business_day_convention = business_day_convention;
         self
     }
 
-    pub fn with_date_generation_rule(
+    /// Sets the date generation rule for the instrument.
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.date_generation_rule = date_generation_rule;
         self
     }
 
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateInstrument {
+    /// Sets the issue date for the instrument.
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
         self.issue_date = Some(issue_date);
         self
     }
 
-    pub fn with_id(mut self, id: Option<String>) -> MakeFloatingRateInstrument {
+    /// Sets the identifier for the instrument.
+    #[must_use]
+    pub fn with_id(mut self, id: Option<String>) -> Self {
         self.id = id;
         self
     }
 
-    pub fn with_first_coupon_date(
+    /// Sets the first coupon date for the instrument.
+    #[must_use]
+    pub const fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.first_coupon_date = first_coupon_date;
         self
     }
 
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateInstrument {
+    /// Sets the start date for the instrument.
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateInstrument {
+    /// Sets the end date for the instrument.
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateInstrument {
+    /// Sets the tenor for the instrument.
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = Some(tenor);
         self
     }
 
+    /// Sets the disbursements schedule for the instrument.
+    #[must_use]
     pub fn with_disbursements(
         mut self,
         disbursements: HashMap<Date, f64>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.disbursements = Some(disbursements);
         self
     }
 
+    /// Sets the redemptions schedule for the instrument.
+    #[must_use]
     pub fn with_redemptions(
         mut self,
         redemptions: HashMap<Date, f64>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.redemptions = Some(redemptions);
         self
     }
 
+    /// Sets the additional coupon dates for the instrument.
+    #[must_use]
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
-    pub fn with_forecast_curve_id(
+    /// Sets the forecast curve identifier for the instrument.
+    #[must_use]
+    pub const fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.forecast_curve_id = forecast_curve_id;
         self
     }
 
-    pub fn with_discount_curve_id(
+    /// Sets the discount curve identifier for the instrument.
+    #[must_use]
+    pub const fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.discount_curve_id = discount_curve_id;
         self
     }
 
-    pub fn with_rate_definition(
+    /// Sets the rate definition for the instrument.
+    #[must_use]
+    pub const fn with_rate_definition(
         mut self,
         rate_definition: RateDefinition,
-    ) -> MakeFloatingRateInstrument {
+    ) -> Self {
         self.rate_definition = Some(rate_definition);
         self
     }
 
-    pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateInstrument {
+    /// Sets the notional amount for the instrument.
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateInstrument {
+    /// Sets the currency for the instrument.
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
-    pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateInstrument {
+    /// Sets the spread for the floating rate instrument.
+    #[must_use]
+    pub const fn with_spread(mut self, spread: f64) -> Self {
         self.spread = Some(spread);
         self
     }
 
-    pub fn bullet(mut self) -> MakeFloatingRateInstrument {
+    /// Sets the instrument structure to bullet.
+    #[must_use]
+    pub const fn bullet(mut self) -> Self {
         self.structure = Some(Structure::Bullet);
         self
     }
 
-    pub fn equal_redemptions(mut self) -> MakeFloatingRateInstrument {
+    /// Sets the instrument structure to equal redemptions.
+    #[must_use]
+    pub const fn equal_redemptions(mut self) -> Self {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
-    pub fn zero(mut self) -> MakeFloatingRateInstrument {
+    /// Sets the instrument structure to zero with single payment frequency.
+    #[must_use]
+    pub const fn zero(mut self) -> Self {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
-    pub fn other(mut self) -> MakeFloatingRateInstrument {
+    /// Sets the instrument structure to other with custom frequency.
+    #[must_use]
+    pub const fn other(mut self) -> Self {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
-    pub fn with_side(mut self, side: Side) -> MakeFloatingRateInstrument {
+    /// Sets the side (Receive or Pay) for the instrument.
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> Self {
         self.side = Some(side);
         self
     }
 
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateInstrument {
+    /// Sets the payment frequency for the instrument.
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.payment_frequency = Some(frequency);
         self
     }
 
-    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateInstrument {
+    /// Sets the structure for the instrument.
+    #[must_use]
+    pub const fn with_structure(mut self, structure: Structure) -> Self {
         self.structure = Some(structure);
         self
     }
@@ -245,6 +298,11 @@ impl Default for MakeFloatingRateInstrument {
 
 /// Build
 impl MakeFloatingRateInstrument {
+    /// Builds and returns a `FloatingRateInstrument` from the configured builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<FloatingRateInstrument> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -269,14 +327,13 @@ impl MakeFloatingRateInstrument {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -313,8 +370,14 @@ impl MakeFloatingRateInstrument {
                 // end common
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -343,14 +406,14 @@ impl MakeFloatingRateInstrument {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -375,14 +438,13 @@ impl MakeFloatingRateInstrument {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -407,8 +469,14 @@ impl MakeFloatingRateInstrument {
 
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Zero);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -437,14 +505,14 @@ impl MakeFloatingRateInstrument {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -469,14 +537,13 @@ impl MakeFloatingRateInstrument {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -514,9 +581,15 @@ impl MakeFloatingRateInstrument {
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -536,7 +609,7 @@ impl MakeFloatingRateInstrument {
                     currency,
                 );
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
@@ -546,14 +619,14 @@ impl MakeFloatingRateInstrument {
                     CashflowType::Redemption,
                 );
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(FloatingRateInstrument::new(
@@ -593,7 +666,7 @@ impl MakeFloatingRateInstrument {
                 let timeline =
                     calculate_outstanding(&disbursements, &redemptions, &additional_dates);
 
-                for (date, amount) in disbursements.iter() {
+                for (date, amount) in &disbursements {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
@@ -615,7 +688,7 @@ impl MakeFloatingRateInstrument {
                     cashflows.push(Cashflow::FloatingRateCoupon(coupon));
                 }
 
-                for (date, amount) in redemptions.iter() {
+                for (date, amount) in &redemptions {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side).with_amount(*amount),
                     );
@@ -631,17 +704,19 @@ impl MakeFloatingRateInstrument {
                     .ok_or(AtlasError::ValueNotSetErr("End date".into()))?
                     .1;
 
-                let payment_frequency = self.payment_frequency.expect("Payment frequency not set");
+                let payment_frequency = self
+                    .payment_frequency
+                    .unwrap_or_else(|| panic!("Payment frequency not set"));
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
                 Ok(FloatingRateInstrument::new(
                     *start_date,
@@ -660,7 +735,7 @@ impl MakeFloatingRateInstrument {
                     self.issue_date,
                 ))
             }
-            _ => Err(AtlasError::InvalidValueErr(
+            Structure::EqualPayments => Err(AtlasError::InvalidValueErr(
                 "Invalid structure for floating rate loan".into(),
             ))?,
         }
@@ -703,20 +778,28 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
         for cashflow in val.cashflows() {
             match cashflow {
                 Cashflow::Disbursement(c) => {
-                    disbursements.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        disbursements.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::Redemption(c) => {
-                    redemptions.insert(c.payment_date(), c.amount().unwrap());
+                    if let Ok(amount) = c.amount() {
+                        redemptions.insert(c.payment_date(), amount);
+                    }
                 }
                 Cashflow::FloatingRateCoupon(c) => {
-                    additional_coupon_dates.insert(c.accrual_start_date().unwrap());
-                    additional_coupon_dates.insert(c.accrual_end_date().unwrap());
+                    if let Ok(start_date) = c.accrual_start_date() {
+                        additional_coupon_dates.insert(start_date);
+                    }
+                    if let Ok(end_date) = c.accrual_end_date() {
+                        additional_coupon_dates.insert(end_date);
+                    }
                 }
-                _ => (),
+                Cashflow::FixedRateCoupon(_) => (),
             }
         }
 
-        MakeFloatingRateInstrument::new()
+        Self::new()
             .with_start_date(val.start_date())
             .with_end_date(val.end_date())
             .with_notional(val.notional())
@@ -726,7 +809,7 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
             .with_forecast_curve_id(val.forecast_curve_id())
             .with_discount_curve_id(val.discount_curve_id())
             .with_payment_frequency(val.payment_frequency())
-            .with_currency(val.currency().unwrap())
+            .with_currency(val.currency().unwrap_or(Currency::USD))
             .with_disbursements(disbursements)
             .with_redemptions(redemptions)
             .with_additional_coupon_dates(additional_coupon_dates)
@@ -735,7 +818,7 @@ impl From<FloatingRateInstrument> for MakeFloatingRateInstrument {
 }
 
 impl From<&FloatingRateInstrument> for MakeFloatingRateInstrument {
-    fn from(instrument: &FloatingRateInstrument) -> MakeFloatingRateInstrument {
+    fn from(instrument: &FloatingRateInstrument) -> Self {
         instrument.clone().into()
     }
 }
@@ -782,11 +865,10 @@ mod tests {
             .bullet()
             .build()?;
 
-        instrument
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        for cf in instrument.mut_cashflows() {
+            cf.set_fixing_rate(0.002);
+        }
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -814,11 +896,10 @@ mod tests {
             .zero()
             .build()?;
 
-        instrument
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        for cf in instrument.mut_cashflows() {
+            cf.set_fixing_rate(0.002);
+        }
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -847,11 +928,10 @@ mod tests {
             .equal_redemptions()
             .build()?;
 
-        instrument
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        for cf in instrument.mut_cashflows() {
+            cf.set_fixing_rate(0.002);
+        }
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
 
@@ -879,11 +959,10 @@ mod tests {
             .equal_redemptions()
             .build()?;
 
-        instrument
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        for cf in instrument.mut_cashflows() {
+            cf.set_fixing_rate(0.002);
+        }
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         Ok(())
@@ -925,11 +1004,10 @@ mod tests {
             .other()
             .build()?;
 
-        instrument
-            .mut_cashflows()
-            .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.002));
-        assert_eq!(instrument.notional(), 100.0);
+        for cf in instrument.mut_cashflows() {
+            cf.set_fixing_rate(0.002);
+        }
+        assert!((instrument.notional() - 100.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         Ok(())
@@ -961,7 +1039,7 @@ mod tests {
         let builder = MakeFloatingRateInstrument::from(&instrument);
         let instrument2 = builder.build()?;
 
-        assert_eq!(instrument2.notional(), instrument.notional());
+        assert!((instrument2.notional() - instrument.notional()).abs() < 1e-12);
         assert_eq!(instrument2.start_date(), instrument.start_date());
         assert_eq!(instrument2.end_date(), instrument.end_date());
         assert_eq!(instrument2.rate_definition(), instrument.rate_definition());
@@ -969,12 +1047,9 @@ mod tests {
             instrument2.payment_frequency(),
             instrument.payment_frequency()
         );
-        assert_eq!(instrument2.spread(), instrument.spread());
+        assert!((instrument2.spread() - instrument.spread()).abs() < 1e-12);
         assert_eq!(instrument2.side(), instrument.side());
-        assert_eq!(
-            instrument2.currency().unwrap(),
-            instrument.currency().unwrap()
-        );
+        assert_eq!(instrument2.currency()?, instrument.currency()?);
         assert_eq!(
             instrument2.discount_curve_id(),
             instrument.discount_curve_id()

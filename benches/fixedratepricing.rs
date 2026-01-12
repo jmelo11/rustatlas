@@ -1,3 +1,4 @@
+//! Benchmark for fixed rate pricing calculations.
 extern crate rustatlas;
 
 use std::sync::Arc;
@@ -27,12 +28,40 @@ use rustatlas::{
 };
 
 mod common;
-use crate::common::common::*;
+use crate::common::common::create_store;
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::Criterion;
 
+fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
+    let store = Arc::new(
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}")),
+    );
+    let mut npv = 0.0;
+    let indexer = IndexingVisitor::new();
+    for inst in instruments.iter_mut() {
+        indexer
+            .visit(inst)
+            .unwrap_or_else(|err| panic!("Failed to index instrument: {err}"));
+    }
+
+    let model = SimpleModel::new(&store);
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
+
+    let npv_visitor = NPVConstVisitor::new(&data, true);
+    for inst in instruments.iter() {
+        npv += npv_visitor
+            .visit(inst)
+            .unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"));
+    }
+    npv
+}
+
+/// Benchmark function that creates and processes 150,000 fixed rate instruments in parallel.
 fn multiple() {
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -50,8 +79,8 @@ fn multiple() {
         .into_par_iter() // Create a parallel iterator
         .map(|_| {
             MakeFixedRateInstrument::new()
-                .with_start_date(start_date.clone()) // clone data if needed
-                .with_end_date(end_date.clone()) // clone data if needed
+                .with_start_date(start_date)
+                .with_end_date(end_date)
                 .with_rate(rate)
                 .with_payment_frequency(Frequency::Semiannual)
                 .with_side(Side::Receive)
@@ -60,27 +89,10 @@ fn multiple() {
                 .with_discount_curve_id(Some(2))
                 .with_notional(notional)
                 .build()
-                .unwrap()
+                .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"))
         })
         .collect(); // Collect the results into a Vec<_>
 
-    fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-        let store = Arc::new(create_store().unwrap());
-        let mut npv = 0.0;
-        let indexer = IndexingVisitor::new();
-        instruments
-            .iter_mut()
-            .for_each(|inst| indexer.visit(inst).unwrap());
-
-        let model = SimpleModel::new(&store);
-        let data = model.gen_market_data(&indexer.request()).unwrap();
-
-        let npv_visitor = NPVConstVisitor::new(&data, true);
-        instruments
-            .iter()
-            .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
-        npv
-    }
     // let n_threads = rayon::current_num_threads();
     // let chunk_size = instruments.len() / n_threads;
     instruments.par_rchunks_mut(1000).for_each(|chunk| {
@@ -88,9 +100,12 @@ fn multiple() {
     });
 }
 
+/// Benchmark criterion for fixed rate pricing calculations.
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("multiple", |b| b.iter(|| multiple()));
+    c.bench_function("multiple", |b| b.iter(multiple));
 }
 
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);
+fn main() {
+    let mut c = Criterion::default().configure_from_args();
+    criterion_benchmark(&mut c);
+}

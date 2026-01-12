@@ -23,8 +23,9 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # OvernightIndex
-/// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
+/// # `OvernightIndex`
+/// Overnight index, used for overnight rates. Uses a price index (such as `ICP`) to calculate the
+/// overnight rates.
 #[derive(Clone)]
 pub struct OvernightIndex {
     name: Option<String>,
@@ -36,8 +37,10 @@ pub struct OvernightIndex {
 }
 
 impl OvernightIndex {
-    pub fn new(reference_date: Date) -> OvernightIndex {
-        OvernightIndex {
+    /// Creates a new `OvernightIndex` with the given reference date.
+    #[must_use]
+    pub fn new(reference_date: Date) -> Self {
+        Self {
             name: None,
             fixings: HashMap::new(),
             term_structure: None,
@@ -47,30 +50,44 @@ impl OvernightIndex {
         }
     }
 
+    /// Sets the name of this overnight index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.name = name;
         self
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition of this overnight index.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    /// Sets the rate definition for this overnight index.
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
     }
 
+    /// Sets the fixings for this overnight index.
+    #[must_use]
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
         self
     }
 
+    /// Sets the term structure for this overnight index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
     }
 
+    /// Calculates the average overnight rate between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required fixings or rate data are unavailable.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         let start_index = self.fixing(start_date)?;
         let end_index = self.fixing(end_date)?;
@@ -92,10 +109,10 @@ impl FixingProvider for OvernightIndex {
     fn fixing(&self, date: Date) -> Result<f64> {
         self.fixings
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date, self.name
+                "No fixing for date {date} for index {name:?}",
+                name = self.name
             )))
     }
 
@@ -172,8 +189,7 @@ impl YieldProvider for OvernightIndex {
                 .forward_rate(start_date, end_date, comp, freq)
         } else {
             Err(AtlasError::InvalidValueErr(format!(
-                "Invalid dates: start_date: {:?}, end_date: {:?}",
-                start_date, end_date
+                "Invalid dates: start_date: {start_date:?}, end_date: {end_date:?}"
             )))
         }
     }
@@ -188,9 +204,19 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let name = self.name()?;
 
         if !fixings.is_empty() {
-            let mut last_fixing_date = fixings.keys().max().cloned().unwrap();
+            let mut last_fixing_date =
+                fixings
+                    .keys()
+                    .max()
+                    .copied()
+                    .ok_or(AtlasError::NotFoundErr(
+                        "Fixings must include at least one entry".into(),
+                    ))?;
             if seed > last_fixing_date {
-                let last_fixing = *fixings.get(&last_fixing_date).unwrap();
+                let last_fixing =
+                    *fixings.get(&last_fixing_date).ok_or(AtlasError::NotFoundErr(format!(
+                        "No fixing for {name} and date {last_fixing_date}"
+                    )))?;
                 let first_df = curve.discount_factor(seed)?;
                 let second_df = curve.discount_factor(seed.advance(1, TimeUnit::Days))?;
                 while seed > last_fixing_date {
@@ -202,8 +228,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
             while seed < end_date {
                 let first_df = curve.discount_factor(seed)?;
                 let last_fixing = fixings.get(&seed).ok_or(AtlasError::NotFoundErr(format!(
-                    "No fixing for {} and date {}",
-                    name, seed
+                    "No fixing for {name} and date {seed}"
                 )))?;
                 seed = seed.advance(1, TimeUnit::Days);
                 let second_df = curve.discount_factor(seed)?;
@@ -215,7 +240,7 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
         let new_curve = curve.advance_to_period(period)?;
 
         Ok(Arc::new(RwLock::new(
-            OvernightIndex::new(new_curve.reference_date())
+            Self::new(new_curve.reference_date())
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
                 .with_term_structure(new_curve)
@@ -224,7 +249,9 @@ impl AdvanceInterestRateIndexInTime for OvernightIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -296,21 +323,24 @@ mod tests {
             .with_fixings(fixings)
             .with_rate_definition(RateDefinition::default());
 
-        let average_rate = overnight_index.average_rate(start_date, end_date).unwrap();
+        let average_rate = overnight_index
+            .average_rate(start_date, end_date)
+            .unwrap_or_else(|e| panic!("average_rate should succeed in test_average_rate: {e}"));
 
-        // Add your assertions here based on how average_rate is calculated
         assert!(average_rate > 0.0);
     }
 
     #[test]
-    fn test_fixing() -> Result<()> {
+    fn test_fixing() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         let overnight_index = OvernightIndex::new(date).with_fixings(fixings);
 
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 0.02);
-        Ok(())
+        let fixing = overnight_index
+            .fixing(Date::new(2021, 1, 1))
+            .unwrap_or_else(|e| panic!("fixing should succeed in test_fixing: {e}"));
+        assert!((fixing - 0.02).abs() < 1e-10);
     }
 
     #[test]
@@ -344,13 +374,13 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_provider_overnight() -> Result<()> {
+    fn test_fixing_provider_overnight() {
         let fixing: HashMap<Date, f64> = [
             (Date::new(2023, 6, 2), 21945.57),
             (Date::new(2023, 6, 5), 21966.14),
         ]
         .iter()
-        .cloned()
+        .copied()
         .collect();
 
         let mut overnight_index = OvernightIndex::new(Date::new(2023, 6, 5)).with_fixings(fixing);
@@ -361,22 +391,21 @@ mod tests {
             overnight_index
                 .fixings()
                 .get(&Date::new(2023, 6, 3))
-                .unwrap()
+                .unwrap_or_else(|| panic!(
+                    "fixings map should contain interpolated fixing for 2023-06-03"
+                ))
                 - 21952.4266666
                 < 0.001
         );
-        Ok(())
     }
 
     #[test]
-    fn test_advance_to_period() -> Result<()> {
+    fn test_advance_to_period() {
         let mut fixing: HashMap<Date, f64> = HashMap::new();
         fixing.insert(Date::new(2023, 6, 2), 21945.57);
         fixing.insert(Date::new(2023, 6, 5), 21966.14);
 
         let mut overnight_index = OvernightIndex::new(Date::new(2023, 7, 6)).with_fixings(fixing);
         overnight_index.fill_missing_fixings(Interpolator::Linear);
-
-        Ok(())
     }
 }

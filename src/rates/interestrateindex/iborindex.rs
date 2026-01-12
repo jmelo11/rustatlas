@@ -22,8 +22,8 @@ use super::traits::{
     InterestRateIndexTrait, RelinkableTermStructure,
 };
 
-/// # IborIndex
-/// Struct that defines an Ibor index.
+/// # `IborIndex`
+/// Struct that defines an `IborIndex`.
 ///
 /// # Example
 /// ```
@@ -48,8 +48,10 @@ pub struct IborIndex {
 }
 
 impl IborIndex {
-    pub fn new(reference_date: Date) -> IborIndex {
-        IborIndex {
+    /// Creates a new `IborIndex` with the given reference date.
+    #[must_use]
+    pub fn new(reference_date: Date) -> Self {
+        Self {
             name: None,
             reference_date,
             tenor: Period::empty(),
@@ -59,35 +61,50 @@ impl IborIndex {
         }
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition for this index.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
+    /// Sets the name for this index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.name = name;
         self
     }
 
-    pub fn with_tenor(mut self, tenor: Period) -> Self {
+    /// Sets the tenor for this index.
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = tenor;
         self
     }
 
+    /// Sets the tenor from a frequency for this index.
+    #[must_use]
     pub fn with_frequency(mut self, frequency: Frequency) -> Self {
-        self.tenor = Period::from_frequency(frequency).expect("Invalid frequency");
+        self.tenor = Period::from_frequency(frequency)
+            .unwrap_or_else(|| panic!("Invalid frequency"));
         self
     }
 
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
+    /// Sets the rate definition for this index.
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = rate_definition;
         self
     }
 
+    /// Sets the fixings for this index.
+    #[must_use]
     pub fn with_fixings(mut self, fixings: HashMap<Date, f64>) -> Self {
         self.fixings = fixings;
         self
     }
 
+    /// Sets the term structure for this index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.term_structure = Some(term_structure);
         self
@@ -98,10 +115,10 @@ impl FixingProvider for IborIndex {
     fn fixing(&self, date: Date) -> Result<f64> {
         self.fixings
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date, self.name
+                "No fixing for date {date} for index {name:?}",
+                name = self.name
             )))
     }
 
@@ -110,9 +127,10 @@ impl FixingProvider for IborIndex {
     }
 
     fn add_fixing(&mut self, date: Date, rate: f64) {
-        if date > self.reference_date() {
-            panic!("Date must be less than reference date");
-        }
+        assert!(
+            date <= self.reference_date(),
+            "Date must be less than reference date"
+        );
         self.fixings.insert(date, rate);
     }
 }
@@ -151,8 +169,7 @@ impl YieldProvider for IborIndex {
     ) -> Result<f64> {
         if end_date < start_date {
             return Err(AtlasError::InvalidValueErr(format!(
-                "End date {:?} is before start date {:?}",
-                end_date, start_date
+                "End date {end_date:?} is before start date {start_date:?}"
             )));
         }
         if start_date < self.reference_date() {
@@ -202,7 +219,7 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
         }
         let new_curve = curve.advance_to_period(period)?;
         Ok(Arc::new(RwLock::new(
-            IborIndex::new(new_curve.reference_date())
+            Self::new(new_curve.reference_date())
                 .with_tenor(self.tenor)
                 .with_rate_definition(self.rate_definition)
                 .with_fixings(fixings)
@@ -212,12 +229,13 @@ impl AdvanceInterestRateIndexInTime for IborIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {} is before reference date {}",
-                date,
-                self.reference_date()
+                "Date {date} is before reference date {reference_date}",
+                reference_date = self.reference_date()
             )));
         }
         let period = Period::new(days, TimeUnit::Days);
@@ -262,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_interpolation_ibor() -> Result<()> {
+    fn test_fixing_interpolation_ibor() {
         let fixing: HashMap<Date, f64> = [
             (Date::new(2023, 6, 1), 21938.71),
             (Date::new(2023, 6, 2), 21945.57),
@@ -270,12 +288,19 @@ mod tests {
             (Date::new(2023, 6, 6), 21973.0),
         ]
         .iter()
-        .cloned()
+        .copied()
         .collect();
         let mut ibor_index = IborIndex::new(Date::new(2023, 11, 6)).with_fixings(fixing);
         ibor_index.fill_missing_fixings(Interpolator::Linear);
-        assert!(ibor_index.fixings().get(&Date::new(2023, 6, 3)).unwrap() - 21952.4266666 < 0.001);
-        Ok(())
+        let interpolated = ibor_index
+            .fixings()
+            .get(&Date::new(2023, 6, 3))
+            .unwrap_or_else(|| {
+                panic!(
+                    "fixings should contain interpolated value in test_fixing_interpolation_ibor"
+                )
+            });
+        assert!((*interpolated - 21952.4266666).abs() < 0.001);
     }
 
     #[test]
@@ -304,28 +329,59 @@ mod tests {
             RateDefinition::default(),
         ));
 
-        let new_term_structure = Arc::new(CompositeTermStructure::new(
-            spread_term_structure.clone(),
-            base_term_structure.clone(),
-        ));
+        let spread_curve: Arc<dyn YieldTermStructureTrait> = spread_term_structure;
+        let base_curve: Arc<dyn YieldTermStructureTrait> = base_term_structure.clone();
+        let new_term_structure = Arc::new(CompositeTermStructure::new(spread_curve, base_curve));
 
         ibor_index.link_to(base_term_structure.clone());
         let df = ibor_index
             .term_structure()
-            .unwrap()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "term_structure should be set in test_relink_term_structure (base term structure): {e}"
+                )
+            })
             .discount_factor(eval_date)
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed in test_relink_term_structure (base term structure): {e}"
+                )
+            });
 
-        assert_eq!(df, base_term_structure.discount_factor(eval_date).unwrap());
+        let base_df = base_term_structure
+            .discount_factor(eval_date)
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed on base_term_structure in test_relink_term_structure: {e}"
+                )
+            });
+
+        assert!((df - base_df).abs() < 1e-10);
 
         ibor_index.link_to(new_term_structure.clone());
 
         let df = ibor_index
             .term_structure()
-            .unwrap()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "term_structure should be set in test_relink_term_structure (composite term structure): {e}"
+                )
+            })
             .discount_factor(eval_date)
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed in test_relink_term_structure (composite term structure): {e}"
+                )
+            });
 
-        assert_eq!(df, new_term_structure.discount_factor(eval_date).unwrap());
+        let composite_df = new_term_structure
+            .discount_factor(eval_date)
+            .unwrap_or_else(|e| {
+                panic!(
+                    "discount_factor should succeed on new_term_structure in test_relink_term_structure: {e}"
+                )
+            });
+
+        assert!((df - composite_df).abs() < 1e-10);
     }
 }

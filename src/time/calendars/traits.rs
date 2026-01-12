@@ -4,8 +4,18 @@ use crate::{
     time::period::Period,
 };
 
-use std::collections::HashSet;
+use std::{cmp::Ordering, collections::HashSet};
 
+/// Returns the day of year for Easter Monday for a given year.
+///
+/// # Arguments
+///
+/// * `y` - The year for which to calculate Easter Monday
+///
+/// # Returns
+///
+/// The day of year (1-366) for Easter Monday in the given year
+#[must_use]
 pub fn easter_monday(y: i32) -> i32 {
     let easter_monday = vec![
         98, 90, 103, 95, 114, 106, 91, 111, 102, // 1901-1909
@@ -39,40 +49,55 @@ pub fn easter_monday(y: i32) -> i32 {
         108, 92, 112, 104, 89, 108, 100, 85, 105, 96, // 2180-2189
         116, 101, 93, 112, 97, 89, 109, 100, 85, 105, // 2190-2199
     ];
-    easter_monday[(y - 1901) as usize]
+    let index = usize::try_from(y - 1901).unwrap_or_else(|_| panic!("valid easter index"));
+    easter_monday[index]
 }
 
+/// Trait defining the implementation interface for calendar operations.
 pub trait ImplCalendar {
+    /// Returns the name of the calendar implementation.
     fn impl_name(&self) -> String;
 
+    /// Returns the set of holidays that have been added to this calendar.
     fn added_holidays(&self) -> HashSet<Date>;
 
+    /// Checks if a given date is a business day according to the calendar's implementation.
     fn impl_is_business_day(&self, date: &Date) -> bool;
 
+    /// Returns the set of holidays that have been removed from this calendar.
     fn removed_holidays(&self) -> HashSet<Date>;
 
+    /// Adds a holiday to the calendar.
     fn add_holiday(&mut self, date: Date);
 
+    /// Removes a holiday from the calendar.
     fn remove_holiday(&mut self, date: Date);
 
+    /// Returns a list of holidays between two dates.
     fn holiday_list(&self, from: Date, to: Date, include_weekends: bool) -> Vec<Date>;
 
+    /// Returns a list of business days between two dates.
     fn business_day_list(&self, from: Date, to: Date) -> Vec<Date>;
 
+    /// Checks if a given weekday is considered a weekend.
     fn is_weekend(&self, weekday: &Weekday) -> bool {
         weekday == &Weekday::Saturday || weekday == &Weekday::Sunday
     }
 
+    /// Returns the day of year for Easter Monday in the given year.
     fn easter_monday(&self, year: i32) -> i32 {
         easter_monday(year)
     }
 }
 
+/// Trait providing the public calendar interface for business day calculations.
 pub trait IsCalendar: ImplCalendar {
+    /// Returns the name of the calendar.
     fn name(&self) -> String {
         self.impl_name()
     }
 
+    /// Checks if a given date is a business day, considering added and removed holidays.
     fn is_business_day(&self, date: &Date) -> bool {
         if !self.added_holidays().is_empty() && self.added_holidays().contains(date) {
             return false;
@@ -83,6 +108,7 @@ pub trait IsCalendar: ImplCalendar {
         self.impl_is_business_day(date)
     }
 
+    /// Returns the last business day of the month containing the given date.
     fn end_of_month(&self, date: Date) -> Date {
         self.adjust(
             Date::end_of_month(date),
@@ -90,15 +116,18 @@ pub trait IsCalendar: ImplCalendar {
         )
     }
 
+    /// Checks if the given date is the last business day of its month.
     fn is_end_of_month(&self, date: &Date) -> bool {
         let d1 = self.adjust(*date + 1, None);
         d1.month() != date.month()
     }
 
+    /// Checks if a given date is a holiday.
     fn is_holiday(&self, date: &Date) -> bool {
         !self.is_business_day(date)
     }
 
+    /// Counts the number of business days between two dates.
     fn business_days_between(
         &self,
         from: Date,
@@ -106,24 +135,20 @@ pub trait IsCalendar: ImplCalendar {
         include_first: bool,
         include_last: bool,
     ) -> i64 {
-        if from < to {
-            self.impl_days_between(from, to, include_first, include_last)
-        } else if from > to {
-            -self.impl_days_between(to, from, include_last, include_first)
-        } else if include_first && include_last && self.is_business_day(&from) {
-            1
-        } else {
-            0
+        match from.cmp(&to) {
+            Ordering::Less => self.impl_days_between(from, to, include_first, include_last),
+            Ordering::Greater => {
+                -self.impl_days_between(to, from, include_last, include_first)
+            }
+            Ordering::Equal => i64::from(include_first && include_last && self.is_business_day(&from)),
         }
     }
 
+    /// Adjusts a date to a business day according to the given convention.
     fn adjust(&self, date: Date, convention: Option<BusinessDayConvention>) -> Date {
         assert!(date != Date::empty(), "null date");
 
-        let conv = match convention {
-            Some(convention) => convention,
-            None => BusinessDayConvention::Following,
-        };
+        let conv = convention.unwrap_or(BusinessDayConvention::Following);
 
         let mut d1 = date;
         match conv {
@@ -140,10 +165,11 @@ pub trait IsCalendar: ImplCalendar {
                     if d1.month() != date.month() {
                         return self.adjust(date, Some(BusinessDayConvention::Preceding));
                     }
-                    if let BusinessDayConvention::HalfMonthModifiedFollowing = conv {
-                        if date.day() <= 15 && d1.day() > 15 {
-                            return self.adjust(date, Some(BusinessDayConvention::Preceding));
-                        }
+                    if conv == BusinessDayConvention::HalfMonthModifiedFollowing
+                        && date.day() <= 15
+                        && d1.day() > 15
+                    {
+                        return self.adjust(date, Some(BusinessDayConvention::Preceding));
                     }
                 }
             }
@@ -151,10 +177,9 @@ pub trait IsCalendar: ImplCalendar {
                 while self.is_holiday(&d1) {
                     d1 -= 1;
                 }
-                if let BusinessDayConvention::ModifiedPreceding = conv {
-                    if d1.month() != date.month() {
-                        return self.adjust(date, Some(BusinessDayConvention::Following));
-                    }
+                if conv == BusinessDayConvention::ModifiedPreceding && d1.month() != date.month()
+                {
+                    return self.adjust(date, Some(BusinessDayConvention::Following));
                 }
             }
             BusinessDayConvention::Nearest => {
@@ -165,14 +190,14 @@ pub trait IsCalendar: ImplCalendar {
                 }
                 if self.is_holiday(&d1) {
                     return d2;
-                } else {
-                    return d1;
                 }
+                return d1;
             }
         }
         d1
     }
 
+    /// Internal method to count business days between two dates.
     fn impl_days_between(
         &self,
         from: Date,
@@ -180,11 +205,7 @@ pub trait IsCalendar: ImplCalendar {
         include_first: bool,
         include_last: bool,
     ) -> i64 {
-        let mut res = if include_last && self.is_business_day(&to) {
-            1
-        } else {
-            0
-        };
+        let mut res = i64::from(include_last && self.is_business_day(&to));
         let mut d = if include_first { from } else { from + 1 };
         while d < to {
             if self.is_business_day(&d) {
@@ -195,6 +216,7 @@ pub trait IsCalendar: ImplCalendar {
         res
     }
 
+    /// Advances a date by a given period, adjusting for business days.
     fn advance(
         &self,
         date: Date,

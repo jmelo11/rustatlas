@@ -12,7 +12,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # FlatForwardTermStructure
+/// # `FlatForwardTermStructure`
 /// Struct that defines a flat forward term structure.
 /// # Example
 /// ```
@@ -29,27 +29,35 @@ pub struct FlatForwardTermStructure {
 }
 
 impl FlatForwardTermStructure {
-    pub fn new(
+    /// Creates a new `FlatForwardTermStructure` with the specified reference date, rate, and rate definition.
+    #[must_use]
+    pub const fn new(
         reference_date: Date,
         rate: f64,
         rate_definition: RateDefinition,
-    ) -> FlatForwardTermStructure {
+    ) -> Self {
         let rate = InterestRate::from_rate_definition(rate, rate_definition);
-        FlatForwardTermStructure {
+        Self {
             reference_date,
             rate,
         }
     }
 
-    pub fn rate(&self) -> InterestRate {
+    /// Returns the underlying interest rate.
+    #[must_use]
+    pub const fn rate(&self) -> InterestRate {
         self.rate
     }
 
-    pub fn value(&self) -> f64 {
+    /// Returns the rate value.
+    #[must_use]
+    pub const fn value(&self) -> f64 {
         self.rate.rate()
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate.rate_definition()
     }
 }
@@ -64,9 +72,8 @@ impl YieldProvider for FlatForwardTermStructure {
     fn discount_factor(&self, date: Date) -> Result<f64> {
         if date < self.reference_date() {
             return Err(AtlasError::InvalidValueErr(format!(
-                "Date {:?} is before reference date {:?}",
-                date,
-                self.reference_date()
+                "Date {date:?} is before reference date {reference_date:?}",
+                reference_date = self.reference_date()
             )));
         }
         Ok(self.rate.discount_factor(self.reference_date(), date))
@@ -84,13 +91,13 @@ impl YieldProvider for FlatForwardTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for FlatForwardTermStructure
+/// # `AdvanceTermStructureInTime` for `FlatForwardTermStructure`
 impl AdvanceTermStructureInTime for FlatForwardTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self
             .reference_date()
             .advance(period.length(), period.units());
-        Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_reference_date,
             self.value(),
             self.rate_definition(),
@@ -98,7 +105,7 @@ impl AdvanceTermStructureInTime for FlatForwardTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        Ok(Arc::new(FlatForwardTermStructure::new(
+        Ok(Arc::new(Self::new(
             date,
             self.value(),
             self.rate_definition(),
@@ -135,7 +142,7 @@ mod tests {
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
 
-        assert_eq!(actual_discount, expected_discount);
+        assert!((actual_discount - expected_discount).abs() < 1e-10);
         Ok(())
     }
 
@@ -154,7 +161,7 @@ mod tests {
         let expected_discount = interest_rate.discount_factor(reference_date, target_date);
         let actual_discount = term_structure.discount_factor(target_date)?;
 
-        assert_eq!(actual_discount, expected_discount);
+        assert!((actual_discount - expected_discount).abs() < 1e-10);
         Ok(())
     }
 
@@ -186,7 +193,7 @@ mod tests {
                 .rate();
         let actual_forward_rate = term_structure.forward_rate(start_date, end_date, comp, freq)?;
 
-        assert_eq!(actual_forward_rate, expected_forward_rate);
+        assert!((actual_forward_rate - expected_forward_rate).abs() < 1e-10);
 
         Ok(())
     }

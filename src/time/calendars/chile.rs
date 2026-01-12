@@ -11,9 +11,11 @@ use crate::time::date::Date;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Market {
-    SSE, // Santiago Stock Exchange
+    /// Santiago Stock Exchange
+    SSE,
 }
 
+/// Chile calendar for business day calculations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Chile {
     market: Market,
@@ -22,8 +24,10 @@ pub struct Chile {
 }
 
 impl Chile {
+    /// Creates a new Chile calendar instance for the specified market.
+    #[must_use]
     pub fn new(market: Market) -> Self {
-        Chile {
+        Self {
             market,
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
@@ -35,7 +39,9 @@ impl Chile {
     }
 
     fn is_new_years_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .unwrap_or_else(|| panic!("valid date for New Year's Day rules"))
+            .weekday();
         (day == 1 && month == 1) || (day == 2 && month == 1 && w == Weekday::Mon && year >= 2016)
     }
 
@@ -51,34 +57,38 @@ impl Chile {
         dd == easter_saturday
     }
 
-    fn is_labour_day(day: u32, month: u32) -> bool {
+    const fn is_labour_day(day: u32, month: u32) -> bool {
         day == 1 && month == 5
     }
 
-    fn is_navy_day(day: u32, month: u32) -> bool {
+    const fn is_navy_day(day: u32, month: u32) -> bool {
         day == 21 && month == 5
     }
 
-    fn is_aboriginal_peoples_day(day: u32, month: u32, year: i32) -> bool {
+    const fn is_aboriginal_peoples_day(day: u32, month: u32, year: i32) -> bool {
         day == 21 && month == 6 && year >= 2021
     }
 
     fn is_saint_peter_and_saint_paul_day(day: u32, month: u32) -> bool {
-        let w = NaiveDate::from_ymd_opt(2001, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(2001, month, day)
+            .unwrap_or_else(|| panic!("valid date for Saint Peter and Saint Paul day rules"))
+            .weekday();
         (26..=29).contains(&day) && month == 6 && w == Weekday::Mon
             || day == 2 && month == 7 && w == Weekday::Mon
     }
 
-    fn is_our_lady_of_mount_carmel_day(day: u32, month: u32) -> bool {
+    const fn is_our_lady_of_mount_carmel_day(day: u32, month: u32) -> bool {
         day == 16 && month == 7
     }
 
-    fn is_assumption_day(day: u32, month: u32) -> bool {
+    const fn is_assumption_day(day: u32, month: u32) -> bool {
         day == 15 && month == 8
     }
 
     fn is_independence_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1810, month, day)
+            .unwrap_or_else(|| panic!("valid date for Independence Day rules"))
+            .weekday();
         (day == 17
             && month == 9
             && ((w == Weekday::Mon && year >= 2007) || (w == Weekday::Fri && year >= 2016)))
@@ -86,67 +96,75 @@ impl Chile {
     }
 
     fn is_army_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1810, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1810, month, day)
+            .unwrap_or_else(|| panic!("valid date for Army Day rules"))
+            .weekday();
         (day == 19 && month == 9) || (day == 20 && month == 9 && w == Weekday::Fri && year >= 2007)
     }
 
     fn is_discovery_of_two_worlds(day: u32, month: u32) -> bool {
-        let w = NaiveDate::from_ymd_opt(1492, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(1492, month, day)
+            .unwrap_or_else(|| panic!("valid date for Discovery of Two Worlds rules"))
+            .weekday();
         !(month != 10 || w != Weekday::Mon || !(9..=12).contains(&day) && day != 15)
     }
 
     fn is_reformation_day(day: u32, month: u32, year: i32) -> bool {
-        let w = NaiveDate::from_ymd_opt(year, month, day).unwrap().weekday();
+        let w = NaiveDate::from_ymd_opt(year, month, day)
+            .unwrap_or_else(|| panic!("valid date for Reformation Day rules"))
+            .weekday();
         ((day == 27 && month == 10 && w == Weekday::Fri)
             || (day == 31 && month == 10 && w != Weekday::Tue && w != Weekday::Wed)
             || (day == 2 && month == 11 && w == Weekday::Fri))
             && year >= 2008
     }
 
-    fn is_all_saints_day(day: u32, month: u32) -> bool {
+    const fn is_all_saints_day(day: u32, month: u32) -> bool {
         day == 1 && month == 11
     }
 
-    fn is_immaculate_conception(day: u32, month: u32) -> bool {
+    const fn is_immaculate_conception(day: u32, month: u32) -> bool {
         day == 8 && month == 12
     }
 
-    fn is_christmas_day(day: u32, month: u32) -> bool {
+    const fn is_christmas_day(day: u32, month: u32) -> bool {
         day == 25 && month == 12
     }
 
-    fn is_bank_holiday(day: u32, month: u32) -> bool {
+    const fn is_bank_holiday(day: u32, month: u32) -> bool {
         day == 31 && month == 12
     }
 
+    /// Determines if a given date is a business day in the Chilean market.
+    #[must_use]
     pub fn is_business_day(&self, date: NaiveDate) -> bool {
         let weekday = date.weekday();
         let day = date.day();
         let month = date.month();
         let year = date.year();
-        if Chile::is_weekend(weekday) {
+        if Self::is_weekend(weekday) {
             return false;
         }
 
         match self.market {
             Market::SSE => {
-                if Chile::is_new_years_day(day, month, year)
-                    || Chile::is_good_friday(day, month, year)
-                    || Chile::is_easter_saturday(day, month, year)
-                    || Chile::is_labour_day(day, month)
-                    || Chile::is_navy_day(day, month)
-                    || Chile::is_aboriginal_peoples_day(day, month, year)
-                    || Chile::is_saint_peter_and_saint_paul_day(day, month)
-                    || Chile::is_our_lady_of_mount_carmel_day(day, month)
-                    || Chile::is_assumption_day(day, month)
-                    || Chile::is_independence_day(day, month, year)
-                    || Chile::is_army_day(day, month, year)
-                    || Chile::is_discovery_of_two_worlds(day, month)
-                    || Chile::is_reformation_day(day, month, year)
-                    || Chile::is_all_saints_day(day, month)
-                    || Chile::is_immaculate_conception(day, month)
-                    || Chile::is_christmas_day(day, month)
-                    || Chile::is_bank_holiday(day, month)
+                if Self::is_new_years_day(day, month, year)
+                    || Self::is_good_friday(day, month, year)
+                    || Self::is_easter_saturday(day, month, year)
+                    || Self::is_labour_day(day, month)
+                    || Self::is_navy_day(day, month)
+                    || Self::is_aboriginal_peoples_day(day, month, year)
+                    || Self::is_saint_peter_and_saint_paul_day(day, month)
+                    || Self::is_our_lady_of_mount_carmel_day(day, month)
+                    || Self::is_assumption_day(day, month)
+                    || Self::is_independence_day(day, month, year)
+                    || Self::is_army_day(day, month, year)
+                    || Self::is_discovery_of_two_worlds(day, month)
+                    || Self::is_reformation_day(day, month, year)
+                    || Self::is_all_saints_day(day, month)
+                    || Self::is_immaculate_conception(day, month)
+                    || Self::is_christmas_day(day, month)
+                    || Self::is_bank_holiday(day, month)
                 {
                     return false;
                 }
@@ -217,7 +235,7 @@ impl IsCalendar for Chile {}
 
 impl Default for Chile {
     fn default() -> Self {
-        Chile::new(Market::SSE)
+        Self::new(Market::SSE)
     }
 }
 

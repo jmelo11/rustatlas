@@ -15,7 +15,7 @@ use crate::{
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # DiscountTermStructure
+/// # `DiscountTermStructure`
 /// A discount factors term structure.
 ///
 /// ## Parameters
@@ -70,13 +70,26 @@ pub struct DiscountTermStructure {
 }
 
 impl DiscountTermStructure {
+    /// Creates a new `DiscountTermStructure` with the given dates, discount factors, day counter, interpolator, and extrapolation setting.
+    ///
+    /// # Arguments
+    ///
+    /// * `dates` - Vector of dates for the discount factors
+    /// * `discount_factors` - Vector of discount factors corresponding to the dates
+    /// * `day_counter` - Day counter convention to use for year fraction calculations
+    /// * `interpolator` - Interpolation method to use
+    /// * `enable_extrapolation` - Whether to allow extrapolation beyond the given dates
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if dates and discount factors have different lengths or if the first discount factor is not 1.0.
     pub fn new(
         dates: Vec<Date>,
         discount_factors: Vec<f64>,
         day_counter: DayCounter,
         interpolator: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<DiscountTermStructure> {
+    ) -> Result<Self> {
         // check if year_fractions and discount_factors have the same size
         if dates.len() != discount_factors.len() {
             return Err(AtlasError::InvalidValueErr(
@@ -90,7 +103,7 @@ impl DiscountTermStructure {
         let (dates, discount_factors): (Vec<Date>, Vec<f64>) = zipped.into_iter().unzip();
 
         // discount_factors[0] needs to be 1.0
-        if discount_factors[0] != 1.0 {
+        if (discount_factors[0] - 1.0).abs() > 1e-12 {
             return Err(AtlasError::InvalidValueErr(
                 "First discount factor needs to be 1.0".to_string(),
             ));
@@ -101,7 +114,7 @@ impl DiscountTermStructure {
             .map(|x| day_counter.year_fraction(reference_date, *x))
             .collect();
 
-        Ok(DiscountTermStructure {
+        Ok(Self {
             reference_date,
             dates,
             year_fractions,
@@ -112,23 +125,33 @@ impl DiscountTermStructure {
         })
     }
 
-    pub fn dates(&self) -> &Vec<Date> {
+    /// Returns a reference to the vector of dates.
+    #[must_use]
+    pub const fn dates(&self) -> &Vec<Date> {
         &self.dates
     }
 
-    pub fn discount_factors(&self) -> &Vec<f64> {
+    /// Returns a reference to the vector of discount factors.
+    #[must_use]
+    pub const fn discount_factors(&self) -> &Vec<f64> {
         &self.discount_factors
     }
 
-    pub fn day_counter(&self) -> DayCounter {
+    /// Returns the day counter convention used.
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.day_counter
     }
 
-    pub fn enable_extrapolation(&self) -> bool {
+    /// Returns whether extrapolation is enabled.
+    #[must_use]
+    pub const fn enable_extrapolation(&self) -> bool {
         self.enable_extrapolation
     }
 
-    pub fn interpolator(&self) -> Interpolator {
+    /// Returns the interpolator used.
+    #[must_use]
+    pub const fn interpolator(&self) -> Interpolator {
         self.interpolator
     }
 }
@@ -180,7 +203,7 @@ impl YieldProvider for DiscountTermStructure {
     }
 }
 
-/// # AdvanceTermStructureInTime for DiscountTermStructure
+/// # `AdvanceTermStructureInTime` for `DiscountTermStructure`
 impl AdvanceTermStructureInTime for DiscountTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_dates: Vec<Date> = self
@@ -198,7 +221,7 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
             })
             .collect();
 
-        Ok(Arc::new(DiscountTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_dates,
             shifted_dfs?,
             self.day_counter(),
@@ -208,7 +231,10 @@ impl AdvanceTermStructureInTime for DiscountTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date()) as i32;
+        let days =
+            i32::try_from(date - self.reference_date()).map_err(|_| {
+                AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+            })?;
         if days < 0 {
             return Err(AtlasError::InvalidValueErr(
                 "Date needs to be greater than reference date".to_string(),
@@ -244,7 +270,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_year_fractions: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.dates(),
@@ -277,7 +305,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_discount_dactors: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.discount_factors(),
@@ -304,7 +334,9 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_reference_date: {e}"
+        ));
 
         assert_eq!(
             discount_term_structure.reference_date(),
@@ -331,17 +363,14 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_interpolation: {e}"
+        ));
 
-        assert!(
-            (discount_term_structure
-                .discount_factor(Date::new(2020, 6, 1))
-                .unwrap()
-                - 0.9832967032967033)
-                .abs()
-                < 1e-8
-        );
-        //println!("discount_factor: {}", discount_term_structure.discount_factor(Date::new(2020, 6, 1)).unwrap());
+        let df = discount_term_structure
+            .discount_factor(Date::new(2020, 6, 1))
+            .unwrap_or_else(|e| panic!("discount_factor failed in test_interpolation: {e}"));
+        assert!((df - 0.9832967032967033).abs() < 1e-8);
     }
 
     #[test]
@@ -364,25 +393,18 @@ mod tests {
             Interpolator::Linear,
             true,
         )
-        .unwrap();
+        .unwrap_or_else(|e| panic!(
+            "DiscountTermStructure::new should succeed in test_forward_rate: {e}"
+        ));
 
         let comp = Compounding::Simple;
         let freq = Frequency::Annual;
 
-        assert!(
-            (discount_term_structure
-                .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
-                .unwrap()
-                - 0.04097957689796514)
-                .abs()
-                < 1e-8
-        );
-        println!(
-            "forward_rate: {}",
-            discount_term_structure
-                .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
-                .unwrap()
-        );
+        let fwd = discount_term_structure
+            .forward_rate(Date::new(2020, 1, 1), Date::new(2020, 12, 31), comp, freq)
+            .unwrap_or_else(|e| panic!("forward_rate failed in test_forward_rate: {e}"));
+        assert!((fwd - 0.04097957689796514).abs() < 1e-8);
+        println!("forward_rate: {fwd}");
     }
 
     #[test]

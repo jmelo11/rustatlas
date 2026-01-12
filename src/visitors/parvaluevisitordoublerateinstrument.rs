@@ -19,8 +19,8 @@ use super::{
     traits::{ConstVisit, HasCashflows, Visit},
 };
 
-/// # ParValue
-/// ParValue is a cost function that calculates the NPV of a generic instrument.
+/// # `ParValue`
+/// `ParValue` is a cost function that calculates the NPV of a generic instrument.
 ///
 /// ## Parameters
 /// * `eval` - The instrument to evaluate
@@ -32,8 +32,10 @@ struct TmpInstrument {
 }
 
 impl TmpInstrument {
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(cashflows: Vec<Cashflow>) -> Self {
-        TmpInstrument { cashflows }
+        Self { cashflows }
     }
     pub fn set_rate_value(mut self, rate: f64) -> Self {
         self.mut_cashflows().iter_mut().for_each(|cf| match cf {
@@ -61,6 +63,8 @@ struct ParValue<'a, T> {
 }
 
 impl<'a, T> ParValue<'a, T> {
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data, true);
         let fixing_visitor = FixingVisitor::new(market_data);
@@ -73,7 +77,7 @@ impl<'a, T> ParValue<'a, T> {
 }
 
 // cost function for TmpInstrument
-impl<'a> CostFunction for ParValue<'a, TmpInstrument> {
+impl CostFunction for ParValue<'_, TmpInstrument> {
     type Param = f64;
     type Output = f64;
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
@@ -87,19 +91,22 @@ impl<'a> CostFunction for ParValue<'a, TmpInstrument> {
     }
 }
 
-/// # ParValueConstVisitor
-/// ParValueConstVisitor is a visitor that calculates the par rate/spread of.
+/// # `ParValueConstVisitor`
+/// `ParValueConstVisitor` is a visitor that calculates the par rate or spread of a double-rate instrument.
 pub struct ParValueConstVisitor<'a> {
     market_data: &'a [MarketData],
 }
 
 impl<'a> ParValueConstVisitor<'a> {
+    /// Creates a new `ParValueConstVisitor` with the given market data.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(market_data: &'a [MarketData]) -> Self {
-        ParValueConstVisitor { market_data }
+        Self { market_data }
     }
 }
 
-impl<'a> ConstVisit<DoubleRateInstrument> for ParValueConstVisitor<'a> {
+impl ConstVisit<DoubleRateInstrument> for ParValueConstVisitor<'_> {
     type Output = Result<(f64, f64)>;
     // visit double rate instrument
     // use BrentRoot solver to find the par rate for the first and second rate
@@ -113,14 +120,22 @@ impl<'a> ConstVisit<DoubleRateInstrument> for ParValueConstVisitor<'a> {
             instrument
                 .cashflows()
                 .iter()
-                .cloned()
+                .copied()
                 .partition(|cf| cf.payment_date() <= change_rate_date);
         // buscar id de cashflow con fecha de pago igual a change rate date
         let id = first_part_cashflows
             .iter()
             .filter(|cf| cf.payment_date() == change_rate_date)
-            .map(|cf| cf.id())
-            .collect::<Result<Vec<usize>>>()?[0];
+            .map(Cashflow::id)
+            .collect::<Result<Vec<usize>>>()?
+            .into_iter()
+            .next()
+            .ok_or_else(|| {
+                crate::utils::errors::AtlasError::InvalidValueErr(
+                    "No cashflow found at change_rate_date in ParValueConstVisitor for DoubleRateInstrument"
+                        .to_string(),
+                )
+            })?;
 
         let sc = SimpleCashflow::new(change_rate_date, currency, side)
             .with_amount(notional_at_change_rate)
@@ -132,24 +147,42 @@ impl<'a> ConstVisit<DoubleRateInstrument> for ParValueConstVisitor<'a> {
             .with_id(id);
         second_part_cashflows.push(Cashflow::Disbursement(sc));
 
-        let tmp_inst_fp = TmpInstrument::new(first_part_cashflows);
-        let tmp_inst_sp = TmpInstrument::new(second_part_cashflows);
+        let first_part_instrument = TmpInstrument::new(first_part_cashflows);
+        let second_part_instrument = TmpInstrument::new(second_part_cashflows);
 
         let (min, max) = (-1.0, 1.0);
 
-        let cost = ParValue::new(&tmp_inst_fp, self.market_data);
+        let cost = ParValue::new(&first_part_instrument, self.market_data);
         let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
-        let first_rate_par_value = *res.state().get_best_param().unwrap();
+        let first_rate_par_value = res
+            .state()
+            .get_best_param()
+            .copied()
+            .ok_or_else(|| {
+                crate::utils::errors::AtlasError::EvaluationErr(
+                    "No optimal parameter found for first rate in ParValueConstVisitor for DoubleRateInstrument"
+                        .to_string(),
+                )
+            })?;
 
-        let cost = ParValue::new(&tmp_inst_sp, self.market_data);
+        let cost = ParValue::new(&second_part_instrument, self.market_data);
         let solver = BrentRoot::new(min, max, 1e-6);
         let res = Executor::new(cost, solver)
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
-        let second_rate_par_value = *res.state().get_best_param().unwrap();
+        let second_rate_par_value = res
+            .state()
+            .get_best_param()
+            .copied()
+            .ok_or_else(|| {
+                crate::utils::errors::AtlasError::EvaluationErr(
+                    "No optimal parameter found for second rate in ParValueConstVisitor for DoubleRateInstrument"
+                        .to_string(),
+                )
+            })?;
 
         Ok((first_rate_par_value, second_rate_par_value))
     }
@@ -258,14 +291,15 @@ mod test {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_par_value_floating_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -313,8 +347,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value:?}, second_rate_par_value: {second_rate_par_value:?}"
         );
 
         assert!((first_rate_par_value - 0.02).abs() < 1e-6);
@@ -325,7 +358,8 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_floating_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -373,8 +407,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value:?}, second_rate_par_value: {second_rate_par_value:?}"
         );
 
         assert!((first_rate_par_value - 0.05).abs() < 1e-6);
@@ -385,7 +418,8 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_then_fixed_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
         let start_date = ref_date;
 
@@ -433,8 +467,7 @@ mod test {
         let (first_rate_par_value, second_rate_par_value) = parvaluevisitor.visit(&instrument)?;
 
         print!(
-            "first_rate_par_value: {:?}, second_rate_par_value: {:?}",
-            first_rate_par_value, second_rate_par_value
+            "first_rate_par_value: {first_rate_par_value:?}, second_rate_par_value: {second_rate_par_value:?}"
         );
 
         assert!((first_rate_par_value - 0.05).abs() < 1e-6);

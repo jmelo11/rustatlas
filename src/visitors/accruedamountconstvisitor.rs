@@ -10,8 +10,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # AccruedAmountConstVisitor
-/// Visitor for calculating accrued amounts.
+/// # `AccruedAmountConstVisitor`
+/// `AccruedAmountConstVisitor` is a visitor for calculating accrued amounts.
 ///
 /// ## Parameters
 /// * `evaluation_date` - The evaluation date
@@ -24,26 +24,38 @@ pub struct AccruedAmountConstVisitor {
 }
 
 impl AccruedAmountConstVisitor {
-    pub fn new(evaluation_date: Date, horizon: Period) -> Self {
+    /// Creates a new `AccruedAmountConstVisitor` with the specified evaluation date and horizon.
+    ///
+    /// # Errors
+    /// Returns an error if the evaluation date schedule cannot be built.
+    pub fn new(evaluation_date: Date, horizon: Period) -> Result<Self> {
         let schedule = MakeSchedule::new(evaluation_date, evaluation_date + horizon)
             .with_tenor(Period::new(1, TimeUnit::Days))
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self {
+        Ok(Self {
             accrued_amounts: Mutex::new(BTreeMap::new()),
             validation_currency: None,
             evaluation_dates: schedule.dates().clone(),
-        }
+        })
     }
 
-    pub fn with_validate_currency(mut self, currency: Currency) -> Self {
+    /// Sets the currency to validate against the instrument's currency.
+    #[must_use]
+    pub const fn with_validate_currency(mut self, currency: Currency) -> Self {
         self.validation_currency = Some(currency);
         self
     }
 
-    pub fn accrued_amounts(&self) -> BTreeMap<Date, f64> {
-        self.accrued_amounts.lock().unwrap().clone()
+    /// Returns a clone of the accrued amounts map.
+    ///
+    /// # Errors
+    /// Returns an error if the accrued amounts lock is poisoned.
+    pub fn accrued_amounts(&self) -> Result<BTreeMap<Date, f64>> {
+        self.accrued_amounts
+            .lock()
+            .map(|map| map.clone())
+            .map_err(|_| AtlasError::EvaluationErr("Accrued amounts lock poisoned".to_string()))
     }
 }
 
@@ -64,19 +76,26 @@ impl<T: HasCurrency + HasCashflows> ConstVisit<T> for AccruedAmountConstVisitor 
                 let accrued_amount = inst
                     .cashflows()
                     .iter()
-                    .filter(|cf| match cf {
-                        Cashflow::FixedRateCoupon(_) | Cashflow::FloatingRateCoupon(_) => {
-                            cf.accrual_start_date().unwrap() <= end_date
-                                && cf.accrual_end_date().unwrap() >= start_date
+                    .try_fold(0.0, |acc, cf| -> Result<f64> {
+                        match cf {
+                            Cashflow::FixedRateCoupon(_) | Cashflow::FloatingRateCoupon(_) => {
+                                let accrual_start = cf.accrual_start_date()?;
+                                let accrual_end = cf.accrual_end_date()?;
+                                if accrual_start <= end_date && accrual_end >= start_date {
+                                    Ok(acc + cf.accrued_amount(start_date, end_date)?)
+                                } else {
+                                    Ok(acc)
+                                }
+                            }
+                            _ => Ok(acc),
                         }
-                        _ => false,
-                    })
-                    .map(|cf| cf.accrued_amount(start_date, end_date).unwrap())
-                    .sum();
+                    })?;
 
                 self.accrued_amounts
                     .lock()
-                    .unwrap()
+                    .map_err(|_| {
+                        AtlasError::EvaluationErr("Accrued amounts lock poisoned".to_string())
+                    })?
                     .entry(end_date)
                     .and_modify(|e| *e += accrued_amount)
                     .or_insert(accrued_amount);
@@ -128,13 +147,15 @@ mod tests {
             .bullet()
             .build()?;
 
-        let visitor = AccruedAmountConstVisitor::new(start_date, Period::new(5, TimeUnit::Years))
+        let visitor = AccruedAmountConstVisitor::new(start_date, Period::new(5, TimeUnit::Years))?
             .with_validate_currency(Currency::USD);
 
         visitor.visit(&instrument)?;
-        let accrued_amounts = visitor.accrued_amounts();
-        let size = start_date + Period::new(5, TimeUnit::Years) - start_date;
-        assert_eq!(accrued_amounts.len(), size as usize);
+        let accrued_amounts = visitor.accrued_amounts()?;
+        let horizon_days = start_date + Period::new(5, TimeUnit::Years) - start_date;
+        let expected_size = usize::try_from(horizon_days)
+            .unwrap_or_else(|_| panic!("horizon_days does not fit into usize: {horizon_days}"));
+        assert_eq!(accrued_amounts.len(), expected_size);
 
         Ok(())
     }

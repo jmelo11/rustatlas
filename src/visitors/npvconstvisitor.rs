@@ -6,8 +6,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # NPVConstVisitor
-/// NPVConstVisitor is a visitor that calculates the NPV of an instrument.
+/// # `NPVConstVisitor`
+/// `NPVConstVisitor` is a visitor that calculates the NPV of an instrument.
 /// It assumes that the cashflows of the instrument have already been indexed and fixed.
 ///
 /// ## Parameters
@@ -19,18 +19,22 @@ pub struct NPVConstVisitor<'a> {
 }
 
 impl<'a> NPVConstVisitor<'a> {
+    /// Creates a new `NPVConstVisitor` with the given market data and flag.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(market_data: &'a [MarketData], include_today_cashflows: bool) -> Self {
         NPVConstVisitor {
             market_data,
             include_today_cashflows,
         }
     }
-    pub fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
+    /// Sets whether to include cashflows with payment date equal to the reference date.
+    pub const fn set_include_today_cashflows(&mut self, include_today_cashflows: bool) {
         self.include_today_cashflows = include_today_cashflows;
     }
 }
 
-impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
+impl<T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'_> {
     type Output = Result<f64>;
     fn visit(&self, visitable: &T) -> Self::Output {
         let npv = visitable.cashflows().iter().try_fold(0.0, |acc, cf| {
@@ -40,8 +44,7 @@ impl<'a, T: HasCashflows> ConstVisit<T> for NPVConstVisitor<'a> {
                 self.market_data
                     .get(id)
                     .ok_or(AtlasError::NotFoundErr(format!(
-                        "Market data for cashflow with id {}",
-                        id
+                        "Market data for cashflow with id {id}"
                     )))?;
 
             if cf_market_data.reference_date() == cf.payment_date() && !self.include_today_cashflows
@@ -168,14 +171,15 @@ mod tests {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_npv_fixed_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -216,7 +220,8 @@ mod tests {
 
     #[test]
     fn test_npv_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -256,7 +261,8 @@ mod tests {
 
     #[test]
     fn test_npv_floating_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -294,13 +300,14 @@ mod tests {
         let npv_visitor = NPVConstVisitor::new(&data, true);
         let npv = npv_visitor.visit(&instrument)?;
 
-        assert_ne!(npv, 0.0);
+        assert!(npv.abs() > 1e-12);
         Ok(())
     }
 
     #[test]
     fn test_npv_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -346,8 +353,34 @@ mod tests {
     }
 
     #[test]
-    fn generator_tests() -> Result<()> {
-        let market_store = create_store().unwrap();
+    fn generator_tests() {
+        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
+            let store =
+                create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
+            let mut npv = 0.0;
+            let indexer = IndexingVisitor::new();
+            for inst in instruments.iter_mut() {
+                indexer
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("indexing visit should succeed: {e}"));
+            }
+
+            let model = SimpleModel::new(&store);
+            let data = model
+                .gen_market_data(&indexer.request())
+                .unwrap_or_else(|e| panic!("market data generation should succeed: {e}"));
+
+            let npv_visitor = NPVConstVisitor::new(&data, true);
+            for inst in instruments.iter() {
+                npv += npv_visitor
+                    .visit(inst)
+                    .unwrap_or_else(|e| panic!("npv visit should succeed: {e}"));
+            }
+            npv
+        }
+
+        let market_store =
+            create_store().unwrap_or_else(|e| panic!("market store creation should succeed: {e}"));
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -375,32 +408,12 @@ mod tests {
                     .with_discount_curve_id(Some(2))
                     .with_notional(notional)
                     .build()
-                    .unwrap()
+                    .unwrap_or_else(|e| panic!("instrument build should succeed: {e}"))
             })
             .collect(); // Collect the results into a Vec<_>
-
-        fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-            let store = create_store().unwrap();
-            let mut npv = 0.0;
-            let indexer = IndexingVisitor::new();
-            instruments
-                .iter_mut()
-                .for_each(|inst| indexer.visit(inst).unwrap());
-
-            let model = SimpleModel::new(&store);
-            let data = model.gen_market_data(&indexer.request()).unwrap();
-
-            let npv_visitor = NPVConstVisitor::new(&data, true);
-            instruments
-                .iter()
-                .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
-            npv
-        }
 
         instruments.par_rchunks_mut(1000).for_each(|chunk| {
             npv(chunk);
         });
-
-        Ok(())
     }
 }

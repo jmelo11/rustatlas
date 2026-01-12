@@ -30,8 +30,8 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFixedRateLeg
-/// MakeFixedRateLeg is a builder for fixed rate leg. Uses the builder pattern.
+/// # `MakeFixedRateLeg`
+/// `MakeFixedRateLeg` is a builder for a fixed rate leg. Uses the builder pattern.
 // TODO: Handle negative amounts (redemptions, notionals and disbursements)
 #[derive(Debug, Clone)]
 pub struct MakeFixedRateLeg {
@@ -61,8 +61,11 @@ pub struct MakeFixedRateLeg {
 
 /// New, setters and getters
 impl MakeFixedRateLeg {
-    pub fn new() -> MakeFixedRateLeg {
-        MakeFixedRateLeg {
+    /// Creates a new `MakeFixedRateLeg` builder with default values.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -88,31 +91,37 @@ impl MakeFixedRateLeg {
         }
     }
 
-    pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFixedRateLeg {
+    /// Sets the end of month flag.
+    #[must_use]
+    pub const fn with_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
         self.end_of_month = end_of_month;
         self
     }
 
     /// Sets the issue date.
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_first_coupon_date(mut self, first_coupon_date: Option<Date>) -> Self {
         self.first_coupon_date = first_coupon_date;
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
-    pub fn with_side(mut self, side: Side) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> Self {
         self.side = Some(side);
         self
     }
@@ -121,39 +130,49 @@ impl MakeFixedRateLeg {
     ///
     /// ### Details
     /// Currently does not handle negative amounts.
-    pub fn with_notional(mut self, notional: f64) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_yield_rate(mut self, yield_rate: InterestRate) -> MakeFixedRateLeg {
+    /// Sets the yield rate.
+    #[must_use]
+    pub const fn with_yield_rate(mut self, yield_rate: InterestRate) -> Self {
         self.yield_rate = Some(yield_rate);
         self
     }
 
-    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFixedRateLeg {
+    /// Sets the calendar.
+    #[must_use]
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.calendar = calendar;
         self
     }
 
-    pub fn with_business_day_convention(
+    /// Sets the business day convention.
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
-    ) -> MakeFixedRateLeg {
+    ) -> Self {
         self.business_day_convention = business_day_convention;
         self
     }
 
-    pub fn with_date_generation_rule(
+    /// Sets the date generation rule.
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
-    ) -> MakeFixedRateLeg {
+    ) -> Self {
         self.date_generation_rule = date_generation_rule;
         self
     }
 
     /// Sets the rate definition.
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = Some(rate_definition);
         match self.rate_value {
             Some(rate_value) => {
@@ -179,7 +198,8 @@ impl MakeFixedRateLeg {
     }
 
     /// Sets the rate value.
-    pub fn with_rate_value(mut self, rate_value: f64) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_rate_value(mut self, rate_value: f64) -> Self {
         self.rate_value = Some(rate_value);
         match self.rate {
             Some(rate) => {
@@ -205,96 +225,108 @@ impl MakeFixedRateLeg {
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the disbursements.
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFixedRateLeg {
+    #[must_use]
+    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
         self.disbursements = Some(disbursements);
         self
     }
 
     /// Sets the redemptions.
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFixedRateLeg {
+    #[must_use]
+    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> Self {
         self.redemptions = Some(redemptions);
         self
     }
 
     /// Sets the additional coupon dates.
-    pub fn with_additional_coupon_dates(
-        mut self,
-        additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFixedRateLeg {
+    #[must_use]
+    pub fn with_additional_coupon_dates(mut self, additional_coupon_dates: HashSet<Date>) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
     /// Sets the rate.
-    pub fn with_rate(mut self, rate: InterestRate) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_rate(mut self, rate: InterestRate) -> Self {
         self.rate = Some(rate);
         self
     }
 
     /// Sets the discount curve id.
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> Self {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the structure to bullet.
-    pub fn bullet(mut self) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn bullet(mut self) -> Self {
         self.structure = Some(Structure::Bullet);
         self
     }
 
     /// Sets the structure to equal redemptions.
-    pub fn equal_redemptions(mut self) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn equal_redemptions(mut self) -> Self {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
     /// Sets the structure to zero.
-    pub fn zero(mut self) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn zero(mut self) -> Self {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
     /// Sets the structure to equal payments.
-    pub fn equal_payments(mut self) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn equal_payments(mut self) -> Self {
         self.structure = Some(Structure::EqualPayments);
         self
     }
 
     /// Sets the structure to other.
-    pub fn other(mut self) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn other(mut self) -> Self {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
     /// Sets the structure.
-    pub fn with_structure(mut self, structure: Structure) -> MakeFixedRateLeg {
+    #[must_use]
+    pub const fn with_structure(mut self, structure: Structure) -> Self {
         self.structure = Some(structure);
         self
     }
@@ -307,6 +339,11 @@ impl Default for MakeFixedRateLeg {
 }
 
 impl MakeFixedRateLeg {
+    /// Builds the leg from the configured `MakeFixedRateLeg` builder.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -327,14 +364,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
 
                 // this logic should go into a separate function/ Schedule should have accessing methods
@@ -355,17 +391,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -373,8 +408,14 @@ impl MakeFixedRateLeg {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
@@ -404,9 +445,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 let leg = Leg::new(
@@ -443,7 +484,7 @@ impl MakeFixedRateLeg {
                 let timeline =
                     calculate_outstanding(&disbursements, &redemptions, &additional_dates);
 
-                for (date, amount) in disbursements.iter() {
+                for (date, amount) in &disbursements {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
@@ -461,7 +502,7 @@ impl MakeFixedRateLeg {
                     );
                     cashflows.push(Cashflow::FixedRateCoupon(coupon));
                 }
-                for (date, amount) in redemptions.iter() {
+                for (date, amount) in &redemptions {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side).with_amount(*amount),
                     );
@@ -469,9 +510,9 @@ impl MakeFixedRateLeg {
                 }
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -490,14 +531,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -515,17 +555,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -535,16 +574,22 @@ impl MakeFixedRateLeg {
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
                 let redemptions = calculate_equal_payment_redemptions(
-                    schedule.dates().clone(),
+                    schedule.dates(),
                     rate,
                     notional,
                     side,
                 )?;
 
-                let mut notionals = redemptions.iter().fold(vec![notional], |mut acc, x| {
-                    acc.push(acc.last().unwrap() - x);
-                    acc
-                });
+                let mut notionals =
+                    redemptions
+                        .iter()
+                        .try_fold(vec![notional], |mut acc, x| {
+                            let last = *acc.last().ok_or(AtlasError::InvalidValueErr(
+                                "Notional schedule cannot be empty".into(),
+                            ))?;
+                            acc.push(last - x);
+                            Ok::<_, AtlasError>(acc)
+                        })?;
 
                 notionals.pop();
 
@@ -558,7 +603,10 @@ impl MakeFixedRateLeg {
                     currency,
                 )?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &first_date,
@@ -569,7 +617,7 @@ impl MakeFixedRateLeg {
                 );
 
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
@@ -583,9 +631,9 @@ impl MakeFixedRateLeg {
                 //cashflows.extend(infered_cashflows);
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -604,14 +652,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -637,8 +684,14 @@ impl MakeFixedRateLeg {
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -666,9 +719,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -687,14 +740,13 @@ impl MakeFixedRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -712,17 +764,16 @@ impl MakeFixedRateLeg {
                             .unwrap_or(DateGenerationRule::Backward),
                     );
 
-                let schedule = match self.first_coupon_date {
-                    Some(date) => {
-                        if date > start_date {
-                            schedule_builder.with_first_date(date).build()?
-                        } else {
-                            Err(AtlasError::InvalidValueErr(
-                                "First coupon date must be after start date".into(),
-                            ))?
-                        }
+                let schedule = if let Some(date) = self.first_coupon_date {
+                    if date > start_date {
+                        schedule_builder.with_first_date(date).build()?
+                    } else {
+                        Err(AtlasError::InvalidValueErr(
+                            "First coupon date must be after start date".into(),
+                        ))?
                     }
-                    None => schedule_builder.build()?,
+                } else {
+                    schedule_builder.build()?
                 };
 
                 let notional = self
@@ -730,11 +781,17 @@ impl MakeFixedRateLeg {
                     .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
                 let side = self.side.ok_or(AtlasError::ValueNotSetErr("Side".into()))?;
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -755,7 +812,7 @@ impl MakeFixedRateLeg {
                 )?;
 
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -767,9 +824,9 @@ impl MakeFixedRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows
-                        .iter_mut()
-                        .for_each(|cf| cf.set_discount_curve_id(id))
+                    for cf in &mut cashflows {
+                        cf.set_discount_curve_id(id);
+                    }
                 }
 
                 Ok(Leg::new(
@@ -836,19 +893,22 @@ impl CostFunction for EqualPaymentCost {
 }
 
 fn calculate_equal_payment_redemptions(
-    dates: Vec<Date>,
+    dates: &[Date],
     rate: InterestRate,
     notional: f64,
     side: Side,
 ) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
-        dates: dates.clone(),
+        dates: dates.to_vec(),
         rate,
     };
     let (min, max) = (-0.1, 1.5);
     let solver = BrentRoot::new(min, max, 1e-6);
 
-    let init_param = 1.0 / (dates.len() as f64);
+    let len = u32::try_from(dates.len()).map_err(|_| {
+        AtlasError::InvalidValueErr("Dates length should fit in u32".to_string())
+    })?;
+    let init_param = 1.0 / f64::from(len);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
         .run()?;

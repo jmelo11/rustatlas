@@ -26,11 +26,43 @@ pub struct Period {
 }
 
 impl Period {
-    pub fn new(length: i32, units: TimeUnit) -> Period {
-        Period { length, units }
+    /// Creates a new Period with the given length and time unit.
+    ///
+    /// # Arguments
+    /// * `length` - The length of the period as an integer
+    /// * `units` - The time unit of the period
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.length(), 5);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
+    #[must_use]
+    pub const fn new(length: i32, units: TimeUnit) -> Self {
+        Self { length, units }
     }
 
-    pub fn from_frequency(freq: Frequency) -> Option<Period> {
+    /// Creates a Period from a Frequency.
+    ///
+    /// # Arguments
+    /// * `freq` - The frequency to convert to a Period
+    ///
+    /// # Returns
+    /// `Some(Period)` if the frequency can be converted, `None` for `OtherFrequency`.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::from_frequency(Frequency::Annual).unwrap();
+    /// assert_eq!(p.length(), 1);
+    /// assert_eq!(p.units(), TimeUnit::Years);
+    /// ```
+    #[must_use]
+    pub const fn from_frequency(freq: Frequency) -> Option<Self> {
         match freq {
             Frequency::NoFrequency => Some(Self {
                 units: TimeUnit::Days,
@@ -64,7 +96,17 @@ impl Period {
         }
     }
 
-    pub fn frequency(&self) -> Frequency {
+    /// Returns the Frequency equivalent of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(1, TimeUnit::Years);
+    /// assert_eq!(p.frequency(), Frequency::Annual);
+    /// ```
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         let length = self.length.abs(); // assuming `length` is i32 or some integer type
 
         if length == 0 {
@@ -114,7 +156,20 @@ impl Period {
         }
     }
 
-    pub fn normalize(&mut self) {
+    /// Normalizes the Period by converting to higher time units when possible.
+    ///
+    /// For example, 7 Days becomes 1 Week, and 12 Months becomes 1 Year.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let mut p = Period::new(12, TimeUnit::Months);
+    /// p.normalize();
+    /// assert_eq!(p.length(), 1);
+    /// assert_eq!(p.units(), TimeUnit::Years);
+    /// ```
+    pub const fn normalize(&mut self) {
         if self.length == 0 {
             self.units = TimeUnit::Days;
         }
@@ -136,43 +191,94 @@ impl Period {
         }
     }
 
-    pub fn length(&self) -> i32 {
+    /// Returns the length of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.length(), 5);
+    /// ```
+    #[must_use]
+    pub const fn length(&self) -> i32 {
         self.length
     }
 
-    pub fn units(&self) -> TimeUnit {
+    /// Returns the time unit of this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(5, TimeUnit::Days);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
+    #[must_use]
+    pub const fn units(&self) -> TimeUnit {
         self.units
     }
 
-    pub fn empty() -> Self {
+    /// Creates an empty Period with zero length in Days.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::empty();
+    /// assert_eq!(p.length(), 0);
+    /// assert_eq!(p.units(), TimeUnit::Days);
+    /// ```
+    #[must_use]
+    pub const fn empty() -> Self {
         Self {
             length: 0,
             units: TimeUnit::Days,
         }
     }
 
-    pub fn from_str(tenor: &str) -> Result<Period> {
+    /// Parses a tenor string (e.g., "1Y", "6M", "1Y6M") into a Period.
+    ///
+    /// # Arguments
+    /// * `tenor` - A string in the format like "1Y" or "1Y6M"
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::from_str("1Y6M").unwrap();
+    /// assert_eq!(p.length(), 18);
+    /// assert_eq!(p.units(), TimeUnit::Months);
+    /// ```
+    /// Parses a tenor string into a `Period`.
+    ///
+    /// # Errors
+    /// Returns an error if the tenor string cannot be parsed into a valid `Period`.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(tenor: &str) -> Result<Self> {
+        Self::parse_impl(tenor)
+    }
+
+    fn parse_impl(tenor: &str) -> Result<Self> {
         // parse multiple periods and add them
         let chars = tenor.chars();
         let mut periods = Vec::new();
         let mut current_period = String::new();
         for c in chars {
-            if c.is_numeric() {
-                current_period.push(c);
-            } else {
-                current_period.push(c);
+            current_period.push(c);
+            if !c.is_numeric() {
                 periods.push(current_period);
                 current_period = String::new();
             }
         }
-        let mut result = Period::empty();
+        let mut result = Self::empty();
         for period in periods {
-            result = (result + Period::parse_single_period(&period)?)?;
+            result = (result + Self::parse_single_period(&period)?)?;
         }
         Ok(result)
     }
 
-    fn parse_single_period(tenor: &str) -> Result<Period> {
+    fn parse_single_period(tenor: &str) -> Result<Self> {
         let chars = tenor.chars();
         let mut length = String::new();
         let mut units = String::new();
@@ -184,9 +290,7 @@ impl Period {
             }
         }
         let length = length.parse::<i32>().map_err(|_| {
-            AtlasError::PeriodOperationErr(
-                format!("Invalid period length ({})", length).to_string(),
-            )
+            AtlasError::PeriodOperationErr(format!("Invalid period length ({length})"))
         })?;
         let units = match units.as_str() {
             "Y" => TimeUnit::Years,
@@ -194,20 +298,30 @@ impl Period {
             "W" => TimeUnit::Weeks,
             "D" => TimeUnit::Days,
             _ => {
-                return Err(AtlasError::PeriodOperationErr(
-                    format!("Invalid time unit ({})", units).to_string(),
-                ))
+                return Err(AtlasError::PeriodOperationErr(format!(
+                    "Invalid time unit ({units})"
+                )))
             }
         };
-        Ok(Period::new(length, units))
+        Ok(Self::new(length, units))
     }
 
+    /// Returns the fraction of a year represented by this Period.
+    ///
+    /// # Examples
+    /// ```
+    /// use rustatlas::prelude::*;
+    ///
+    /// let p = Period::new(6, TimeUnit::Months);
+    /// assert_eq!(p.period_in_year(), 0.5);
+    /// ```
+    #[must_use]
     pub fn period_in_year(&self) -> f64 {
         match self.units {
-            TimeUnit::Years => self.length as f64,
-            TimeUnit::Months => self.length as f64 / 12.0,
-            TimeUnit::Weeks => self.length as f64 / 52.0,
-            TimeUnit::Days => self.length as f64 / 365.0,
+            TimeUnit::Years => f64::from(self.length),
+            TimeUnit::Months => f64::from(self.length) / 12.0,
+            TimeUnit::Weeks => f64::from(self.length) / 52.0,
+            TimeUnit::Days => f64::from(self.length) / 365.0,
         }
     }
 }
@@ -216,7 +330,15 @@ impl TryFrom<String> for Period {
     type Error = AtlasError;
 
     fn try_from(s: String) -> Result<Self> {
-        Period::from_str(&s)
+        Self::from_str(&s)
+    }
+}
+
+impl std::str::FromStr for Period {
+    type Err = AtlasError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Self::parse_impl(s)
     }
 }
 
@@ -233,13 +355,13 @@ impl From<Period> for String {
 
 /// Deserializes a string in the format like 1Y or 1Y6M to a Period.
 impl<'de> serde::Deserialize<'de> for Period {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Period, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         struct PeriodVisitor;
 
-        impl<'de> Visitor<'de> for PeriodVisitor {
+        impl Visitor<'_> for PeriodVisitor {
             type Value = Period;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -274,8 +396,8 @@ impl Serialize for Period {
     }
 }
 
-/// # PartialEq for Period
-/// Compares two Periods.
+/// # `PartialEq` for `Period`
+/// Compares two `Period` values.
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
@@ -293,8 +415,8 @@ impl PartialOrd for Period {
     }
 }
 
-/// # Ord for Period
-/// Compares two Periods.
+/// # `Ord` for `Period`
+/// Compares two `Period` values.
 /// # Examples
 /// ```
 /// use rustatlas::prelude::*;
@@ -344,10 +466,10 @@ impl Ord for Period {
 /// assert_eq!(negated.units(), TimeUnit::Days);
 /// ```
 impl Neg for Period {
-    type Output = Period;
+    type Output = Self;
 
     fn neg(self) -> Self::Output {
-        Period {
+        Self {
             length: -self.length,
             units: self.units,
         }
@@ -365,7 +487,7 @@ impl Neg for Period {
 /// assert_eq!(p3.length(), 8);
 /// assert_eq!(p3.units(), TimeUnit::Days);
 impl Add for Period {
-    type Output = Result<Period>;
+    type Output = Result<Self>;
 
     fn add(self, other: Self) -> Self::Output {
         let mut result = self;
@@ -382,16 +504,16 @@ impl Add for Period {
                         result.length = result.length * 12 + other.length;
                     }
                     TimeUnit::Weeks | TimeUnit::Days => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
-                                .to_string(),
-                        ));
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "impossible addition between {result:?} and {other:?}"
+                        )));
                     }
 
-                    _ => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("unknown time unit ({:?})", other.units).to_string(),
-                        ))
+                    TimeUnit::Years => {
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "unknown time unit ({:?})",
+                            other.units
+                        )))
                     }
                 },
 
@@ -400,16 +522,16 @@ impl Add for Period {
                         result.length += other.length * 12;
                     }
                     TimeUnit::Weeks | TimeUnit::Days => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
-                                .to_string(),
-                        ));
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "impossible addition between {result:?} and {other:?}"
+                        )));
                     }
 
-                    _ => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("unknown time unit ({:?})", other.units).to_string(),
-                        ))
+                    TimeUnit::Months => {
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "unknown time unit ({:?})",
+                            other.units
+                        )))
                     }
                 },
 
@@ -419,16 +541,16 @@ impl Add for Period {
                         result.length = result.length * 7 + other.length;
                     }
                     TimeUnit::Years | TimeUnit::Months => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
-                                .to_string(),
-                        ));
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "impossible addition between {result:?} and {other:?}"
+                        )));
                     }
 
-                    _ => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("unknown time unit ({:?})", other.units).to_string(),
-                        ))
+                    TimeUnit::Weeks => {
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "unknown time unit ({:?})",
+                            other.units
+                        )))
                     }
                 },
 
@@ -437,16 +559,16 @@ impl Add for Period {
                         result.length += other.length * 7;
                     }
                     TimeUnit::Years | TimeUnit::Months => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("impossible addition between {:?} and {:?}", result, other)
-                                .to_string(),
-                        ));
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "impossible addition between {result:?} and {other:?}"
+                        )));
                     }
 
-                    _ => {
-                        return Err(AtlasError::PeriodOperationErr(
-                            format!("unknown time unit ({:?})", other.units).to_string(),
-                        ))
+                    TimeUnit::Days => {
+                        return Err(AtlasError::PeriodOperationErr(format!(
+                            "unknown time unit ({:?})",
+                            other.units
+                        )))
                     }
                 },
             }
@@ -468,7 +590,7 @@ impl Add for Period {
 /// assert_eq!(p3.units(), TimeUnit::Days);
 /// ```
 impl Sub for Period {
-    type Output = Result<Period>;
+    type Output = Result<Self>;
 
     fn sub(self, other: Self) -> Self::Output {
         self + -other
@@ -487,17 +609,17 @@ impl Sub for Period {
 /// assert_eq!(p2.units(), TimeUnit::Days);
 /// ```
 impl Mul<i32> for Period {
-    type Output = Period;
+    type Output = Self;
 
     fn mul(self, n: i32) -> Self::Output {
-        Period {
+        Self {
             length: self.length * n,
             units: self.units,
         }
     }
 }
 
-/// # MulAssign`<i32>` for Period
+/// # Implementing `MulAssign<i32>` for `Period`
 /// Multiplies a Period by an integer.
 /// # Examples
 /// ```
@@ -540,7 +662,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 8);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -555,7 +677,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 - p2).unwrap();
+        let p3 = (p1 - p2).unwrap_or_else(|e| panic!("period subtraction should succeed: {e}"));
         assert_eq!(p3.length, 2);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -603,7 +725,7 @@ mod tests {
             length: 6,
             units: TimeUnit::Months,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -618,7 +740,7 @@ mod tests {
             length: 3,
             units: TimeUnit::Days,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -633,7 +755,8 @@ mod tests {
             length: 1,
             units: TimeUnit::Weeks,
         };
-        let p3: Period = (p1 + p2).unwrap();
+        let p3: Period =
+            (p1 + p2).unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 17);
         assert_eq!(p3.units, TimeUnit::Days);
     }
@@ -648,7 +771,7 @@ mod tests {
             length: 1,
             units: TimeUnit::Years,
         };
-        let p3 = (p1 + p2).unwrap();
+        let p3 = (p1 + p2).unwrap_or_else(|e| panic!("period addition should succeed: {e}"));
         assert_eq!(p3.length, 18);
         assert_eq!(p3.units, TimeUnit::Months);
     }
@@ -667,7 +790,7 @@ mod tests {
         let r = p1 + p2;
         match r {
             Err(_) => Ok(()),
-            _ => Err(AtlasError::PeriodOperationErr(
+            Ok(_) => Err(AtlasError::PeriodOperationErr(
                 "impossible addition between 2W and 1Y".to_string(),
             )),
         }
@@ -686,7 +809,7 @@ mod tests {
         let r = p1 + p2;
         match r {
             Err(_) => Ok(()),
-            _ => Err(AtlasError::PeriodOperationErr(
+            Ok(_) => Err(AtlasError::PeriodOperationErr(
                 "impossible addition between 5D and 1Y".to_string(),
             )),
         }
@@ -694,15 +817,18 @@ mod tests {
 
     #[test]
     fn test_period_parsing() {
-        let p = Period::from_str("1Y").unwrap();
+        let p =
+            Period::from_str("1Y").unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Years);
 
-        let p = Period::from_str("1M").unwrap();
+        let p =
+            Period::from_str("1M").unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 1);
         assert_eq!(p.units(), TimeUnit::Months);
 
-        let p = Period::from_str("1Y1M").unwrap();
+        let p = Period::from_str("1Y1M")
+            .unwrap_or_else(|e| panic!("period parsing should succeed: {e}"));
         assert_eq!(p.length(), 13);
         assert_eq!(p.units(), TimeUnit::Months);
     }

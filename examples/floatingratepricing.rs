@@ -1,3 +1,5 @@
+//! Example demonstrating pricing of floating rate instruments using the rustatlas library.
+
 extern crate rustatlas;
 
 use rustatlas::{
@@ -18,12 +20,13 @@ use rustatlas::{
 };
 
 mod common;
-use crate::common::common::*;
+use crate::common::common::{create_store, print_separator, print_table, print_title};
 
 fn starting_today_pricing() {
     print_title("Pricing of a Floating Rate Loan starting today");
 
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date;
@@ -39,20 +42,22 @@ fn starting_today_pricing() {
         .with_forecast_curve_id(Some(1))
         .with_discount_curve_id(Some(2))
         .build()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"));
 
     let indexer = IndexingVisitor::new();
-    let result = indexer.visit(&mut instrument);
-    match result {
-        Ok(_) => (),
-        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
-    }
+    indexer
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("IndexingVisitor failed with error: {err}"));
 
     let model = SimpleModel::new(&market_store);
-    let data = model.gen_market_data(&indexer.request()).unwrap();
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
 
     let fixing_visitor = FixingVisitor::new(&data);
-    let _ = fixing_visitor.visit(&mut instrument);
+    fixing_visitor
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("FixingVisitor failed with error: {err}"));
 
     print_table(instrument.cashflows(), &data);
 
@@ -60,17 +65,23 @@ fn starting_today_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv.unwrap());
+    println!(
+        "NPV: {}",
+        npv.unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"))
+    );
 
     let par_visitor = ParValueConstVisitor::new(&data);
-    let par_value = par_visitor.visit(&instrument).unwrap();
-    println!("Par Value: {}", par_value);
+    let par_value = par_visitor
+        .visit(&instrument)
+        .unwrap_or_else(|err| panic!("Failed to compute par value: {err}"));
+    println!("Par Value: {par_value}");
 }
 
 fn already_started_pricing() {
     print_title("Pricing of a Floating Rate Loan already started -1Y");
 
-    let market_store = create_store().unwrap();
+    let market_store =
+        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
     let ref_date = market_store.reference_date();
 
     let start_date = ref_date - Period::new(3, TimeUnit::Months);
@@ -86,20 +97,22 @@ fn already_started_pricing() {
         .with_forecast_curve_id(Some(1))
         .with_discount_curve_id(Some(2))
         .build()
-        .unwrap();
+        .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"));
 
     let indexer = IndexingVisitor::new();
-    let result = indexer.visit(&mut instrument);
-    match result {
-        Ok(_) => (),
-        Err(e) => panic!("IndexingVisitor failed with error: {}", e),
-    }
+    indexer
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("IndexingVisitor failed with error: {err}"));
 
     let model = SimpleModel::new(&market_store);
-    let data = model.gen_market_data(&indexer.request()).unwrap();
+    let data = model
+        .gen_market_data(&indexer.request())
+        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
 
     let fixing_visitor = FixingVisitor::new(&data);
-    let _ = fixing_visitor.visit(&mut instrument);
+    fixing_visitor
+        .visit(&mut instrument)
+        .unwrap_or_else(|err| panic!("FixingVisitor failed with error: {err}"));
 
     print_table(instrument.cashflows(), &data);
 
@@ -107,7 +120,10 @@ fn already_started_pricing() {
     let npv = npv_visitor.visit(&instrument);
 
     print_separator();
-    println!("NPV: {}", npv.unwrap());
+    println!(
+        "NPV: {}",
+        npv.unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"))
+    );
 }
 
 fn main() {
