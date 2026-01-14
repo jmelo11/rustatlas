@@ -48,21 +48,25 @@ pub fn print_table(cashflows: &[Cashflow], market_data: Rc<Vec<MarketData>>) {
     );
     for (cf, md) in cashflows.iter().zip(market_data.deref()) {
         let date = format!("{:10}", cf.payment_date().to_string());
-        let amount = format!("{:10.2}", cf.amount().unwrap()); // Assuming `cf.amount()` is a float
+
+        let amount = match cf.amount() {
+            Ok(amt) => format!("{:10.2}", amt),
+            Err(_) => "None      ".to_string(),
+        };
 
         let df = match md.df() {
             Ok(df) => format!("{:10.2}", df),
-            _ => "None      ".to_string(), // 10 characters wide
+            _ => "None      ".to_string(),
         };
 
         let fx = match md.fx() {
             Ok(fx) => format!("{:10.2}", fx),
-            _ => "None      ".to_string(), // 10 characters wide
+            _ => "None      ".to_string(),
         };
 
         let fwd = match md.fwd() {
             Ok(fwd) => format!("{:9.3}", fwd),
-            _ => "None      ".to_string(), // 10 characters wide
+            _ => "None      ".to_string(),
         };
 
         println!("{} | {} | {} | {} | {}", date, amount, df, fwd, fx);
@@ -79,7 +83,7 @@ fn make_fixings(start: Date, end: Date, rate: f64) -> HashMap<Date, f64> {
         seed = seed + Period::new(1, TimeUnit::Days);
         init = init * (1.0 + rate * 1.0 / 360.0);
     }
-    return fixings;
+    fixings
 }
 
 #[allow(dead_code)]
@@ -107,8 +111,8 @@ pub fn create_store() -> Result<MarketStore> {
     ));
 
     let mut ibor_fixings = HashMap::new();
-    ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
-    ibor_fixings.insert(Date::new(2021, 8, 31), 0.02); // yesterday
+    ibor_fixings.insert(Date::new(2021, 9, 1), 0.02);
+    ibor_fixings.insert(Date::new(2021, 8, 31), 0.02);
 
     let ibor_index = IborIndex::new(forecast_curve_1.reference_date())
         .with_fixings(ibor_fixings)
@@ -135,7 +139,8 @@ pub fn create_store() -> Result<MarketStore> {
     market_store
         .mut_index_store()
         .add_index(2, Arc::new(RwLock::new(discount_index)))?;
-    return Ok(market_store);
+
+    Ok(market_store)
 }
 
 use rand::Rng;
@@ -155,7 +160,7 @@ pub trait Mock {
 
     fn random_currency() -> Currency;
 
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
+    fn generate_random_instruments(n: usize, today: Date) -> Result<Vec<Instrument>>;
 }
 
 impl Mock for MockMaker {
@@ -211,9 +216,9 @@ impl Mock for MockMaker {
         }
     }
 
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument> {
-        let instruments = (0..n)
-            .into_par_iter() // Create a parallel iterator
+    fn generate_random_instruments(n: usize, today: Date) -> Result<Vec<Instrument>> {
+        let instruments: Result<Vec<Instrument>> = (0..n)
+            .into_par_iter()
             .map(|_| {
                 let start_date = MockMaker::random_start_date(today);
                 let end_date = start_date + MockMaker::random_tenor();
@@ -221,7 +226,8 @@ impl Mock for MockMaker {
                 let notional = MockMaker::random_notional();
                 let random_currency = MockMaker::random_currency();
                 let payment_frequency = MockMaker::random_frequency();
-                let instrument = MakeFixedRateInstrument::new()
+
+                MakeFixedRateInstrument::new()
                     .with_start_date(start_date)
                     .with_end_date(end_date)
                     .with_payment_frequency(payment_frequency)
@@ -232,11 +238,10 @@ impl Mock for MockMaker {
                     .with_side(Side::Receive)
                     .bullet()
                     .build()
-                    .unwrap();
-
-                Instrument::FixedRateInstrument(instrument)
+                    .map(Instrument::FixedRateInstrument)
             })
-            .collect();
+            .collect::<Result<Vec<_>>>();
+
         instruments
     }
 }

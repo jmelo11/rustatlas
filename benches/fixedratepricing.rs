@@ -1,11 +1,5 @@
 extern crate rustatlas;
-
-use std::sync::Arc;
-
-use rayon::{
-    prelude::{IntoParallelIterator, ParallelIterator},
-    slice::ParallelSliceMut,
-};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
     cashflows::cashflow::Side,
     currencies::enums::Currency,
@@ -25,16 +19,16 @@ use rustatlas::{
         traits::{ConstVisit, Visit},
     },
 };
-
+use std::sync::Arc;
 mod common;
 use crate::common::common::*;
-
 use criterion::{criterion_group, criterion_main, Criterion};
 
-fn multiple() {
-    let market_store = create_store().unwrap();
-    let ref_date = market_store.reference_date();
+type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
 
+fn multiple() -> AppResult<()> {
+    let market_store = create_store()?;
+    let ref_date = market_store.reference_date();
     let start_date = ref_date;
     let end_date = start_date + Period::new(10, TimeUnit::Years);
     let notional = 100_000.0;
@@ -45,13 +39,13 @@ fn multiple() {
         DayCounter::Thirty360,
     );
 
-    // par build
-    let mut instruments: Vec<FixedRateInstrument> = (0..150000)
-        .into_par_iter() // Create a parallel iterator
+    // par build - collect Results separately, then unwrap
+    let instruments: Vec<FixedRateInstrument> = (0..150000)
+        .into_par_iter()
         .map(|_| {
             MakeFixedRateInstrument::new()
-                .with_start_date(start_date.clone()) // clone data if needed
-                .with_end_date(end_date.clone()) // clone data if needed
+                .with_start_date(start_date.clone())
+                .with_end_date(end_date.clone())
                 .with_rate(rate)
                 .with_payment_frequency(Frequency::Semiannual)
                 .with_side(Side::Receive)
@@ -60,36 +54,48 @@ fn multiple() {
                 .with_discount_curve_id(Some(2))
                 .with_notional(notional)
                 .build()
-                .unwrap()
         })
-        .collect(); // Collect the results into a Vec<_>
+        .collect::<Result<Vec<_>, _>>()?;
 
-    fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-        let store = Arc::new(create_store().unwrap());
-        let mut npv = 0.0;
-        let indexer = IndexingVisitor::new();
-        instruments
-            .iter_mut()
-            .for_each(|inst| indexer.visit(inst).unwrap());
+    let mut instruments = instruments;
+    npv(&mut instruments)?;
 
-        let model = SimpleModel::new(&store);
-        let data = model.gen_market_data(&indexer.request()).unwrap();
+    Ok(())
+}
 
-        let npv_visitor = NPVConstVisitor::new(&data, true);
-        instruments
-            .iter()
-            .for_each(|inst| npv += npv_visitor.visit(inst).unwrap());
-        npv
+fn npv(instruments: &mut [FixedRateInstrument]) -> AppResult<f64> {
+    let store = Arc::new(create_store()?);
+    let mut total_npv = 0.0;
+
+    let indexer = IndexingVisitor::new();
+
+    // Should index all instruments
+    for inst in instruments.iter_mut() {
+        indexer
+            .visit(inst)
+            .map_err(|e| format!("IndexingVisitor failed: {}", e))?;
     }
-    // let n_threads = rayon::current_num_threads();
-    // let chunk_size = instruments.len() / n_threads;
-    instruments.par_rchunks_mut(1000).for_each(|chunk| {
-        npv(chunk);
-    });
+
+    let model = SimpleModel::new(&store);
+    let data = model.gen_market_data(&indexer.request())?;
+
+    let npv_visitor = NPVConstVisitor::new(&data, true);
+
+    // Calculate NPV for all instruments
+    for inst in instruments.iter() {
+        let inst_npv = npv_visitor
+            .visit(inst)
+            .map_err(|e| format!("NPVConstVisitor failed: {}", e))?;
+        total_npv += inst_npv;
+    }
+
+    Ok(total_npv)
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("multiple", |b| b.iter(|| multiple()));
+    c.bench_function("multiple", |b| {
+        b.iter(|| multiple().expect("benchmark failed"))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);
