@@ -6,10 +6,15 @@ use crate::utils::errors::{AtlasError, Result};
 /// Enumerate the different compounding methods.
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Compounding {
+    /// Simple interest compounding method.
     Simple,
+    /// Compounded interest compounding method.
     Compounded,
+    /// Continuous interest compounding method.
     Continuous,
+    /// Simple interest followed by compounded interest.
     SimpleThenCompounded,
+    /// Compounded interest followed by simple interest.
     CompoundedThenSimple,
 }
 
@@ -18,14 +23,13 @@ impl TryFrom<String> for Compounding {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Simple" => Ok(Compounding::Simple),
-            "Compounded" => Ok(Compounding::Compounded),
-            "Continuous" => Ok(Compounding::Continuous),
-            "SimpleThenCompounded" => Ok(Compounding::SimpleThenCompounded),
-            "CompoundedThenSimple" => Ok(Compounding::CompoundedThenSimple),
+            "Simple" => Ok(Self::Simple),
+            "Compounded" => Ok(Self::Compounded),
+            "Continuous" => Ok(Self::Continuous),
+            "SimpleThenCompounded" => Ok(Self::SimpleThenCompounded),
+            "CompoundedThenSimple" => Ok(Self::CompoundedThenSimple),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid compounding: {}",
-                s
+                "Invalid compounding: {s}"
             ))),
         }
     }

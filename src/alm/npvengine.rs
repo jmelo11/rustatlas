@@ -20,8 +20,8 @@ use crate::{
     },
 };
 
-/// # NPVEngine
-/// The NPVEngine is responsible for calculating the NPV of a portfolio.
+/// # `NPVEngine`
+/// The `NPVEngine` is responsible for calculating the NPV of a portfolio.
 /// It is a parallelized engine that uses rayon to parallelize the calculation.
 ///
 /// ## Parameters
@@ -35,19 +35,29 @@ pub struct NPVEngine<'a> {
 }
 
 impl<'a> NPVEngine<'a> {
+    /// Creates a new `NPVEngine` with default chunk size of 1000.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(instruments: &'a mut [Instrument], market_store: &'a MarketStore) -> Self {
-        NPVEngine {
+        Self {
             instruments,
             market_store,
             chunk_size: 1000,
         }
     }
 
-    pub fn with_chunk_size(mut self, chunk_size: usize) -> Self {
+    /// Sets the chunk size for parallel processing and returns self for method chaining.
+    #[must_use]
+    pub const fn with_chunk_size(mut self, chunk_size: usize) -> Self {
         self.chunk_size = chunk_size;
         self
     }
 
+    /// Executes the NPV calculation on the instruments and returns a map of NPV values by date.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if indexing, market data generation, fixing, or NPV evaluation fails.
     pub fn run(&mut self) -> Result<BTreeMap<Date, f64>> {
         // indexing
         let indexing_visitor = IndexingVisitor::new();
@@ -71,9 +81,8 @@ impl<'a> NPVEngine<'a> {
                 chunk.iter_mut().try_for_each(|inst| {
                     fixing_visitor.visit(inst).map_err(|e| {
                         AtlasError::EvaluationErr(format!(
-                            "An error was found while processing instrument with id {:?}: {}",
-                            inst.id(),
-                            e
+                            "An error was found while processing instrument with id {id:?}: {e}",
+                            id = inst.id()
                         ))
                     })
                 })
@@ -93,28 +102,31 @@ impl<'a> NPVEngine<'a> {
                             .visit(inst)
                             .map_err(|e| {
                                 AtlasError::EvaluationErr(format!(
-                                "An error was found while processing instrument with id {:?}: {}",
-                                inst.id(),
-                                e
+                                "An error was found while processing instrument with id {id:?}: {e}",
+                                id = inst.id()
                             ))
                             })
-                            .unwrap();
+                            .unwrap_or_else(|e| {
+                                panic!(
+                                    "NPVByDateConstVisitor visit should succeed in NPVEngine::run: {e}"
+                                )
+                            });
                         npv_map
                     })
                     .fold(BTreeMap::new(), |mut acc, npv_map| {
-                        npv_map.iter().for_each(|(date, npv)| {
+                        for (date, npv) in &npv_map {
                             let acc_npv = acc.entry(*date).or_insert(0.0);
                             *acc_npv += npv;
-                        });
+                        }
                         acc
                     });
                 chunk_npv
             })
             .reduce(BTreeMap::new, |mut acc, chunk_npv| {
-                chunk_npv.iter().for_each(|(date, npv)| {
+                for (date, npv) in &chunk_npv {
                     let acc_npv = acc.entry(*date).or_insert(0.0);
                     *acc_npv += npv;
-                });
+                }
                 acc
             });
 

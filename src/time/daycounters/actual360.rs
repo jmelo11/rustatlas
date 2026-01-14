@@ -7,7 +7,7 @@ use crate::time::date::Date;
 /// $$
 /// \frac{ActualDays}{360}
 /// $$
-/// where ActualDays is the number of days between the start date and the end date.
+/// where `ActualDays` is the number of days between the start date and the end date.
 /// # Example
 /// ```
 /// use rustatlas::prelude::*;
@@ -25,6 +25,8 @@ impl DayCountProvider for Actual360 {
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Actual360::day_count(start, end) as f64 / 360.0
+        let days = i32::try_from(Self::day_count(start, end))
+            .unwrap_or_else(|_| panic!("day count should fit in i32"));
+        f64::from(days) / 360.0
     }
 }

@@ -12,12 +12,12 @@ use crate::{
         enums::{Frequency, TimeUnit},
         period::Period,
     },
-    utils::errors::Result,
+    utils::errors::{AtlasError, Result},
 };
 
 use super::traits::{AdvanceTermStructureInTime, YieldTermStructureTrait};
 
-/// # TenorBasedZeroRateTermStructure
+/// # `TenorBasedZeroRateTermStructure`
 /// A term structure of zero rates based on tenors.
 ///
 /// ## Parameters
@@ -39,6 +39,19 @@ pub struct TenorBasedZeroRateTermStructure {
 }
 
 impl TenorBasedZeroRateTermStructure {
+    /// Creates a new `TenorBasedZeroRateTermStructure`.
+    ///
+    /// # Arguments
+    /// * `reference_date` - The reference date of the term structure
+    /// * `tenors` - The tenors of the term structure
+    /// * `spreads` - The spreads of the term structure
+    /// * `rate_definition` - The rate definition of the term structure
+    /// * `interpolation` - The interpolation method of the term structure
+    /// * `enable_extrapolation` - Enable extrapolation
+    ///
+    /// # Errors
+    /// Returns an error if the year fractions for the provided tenors
+    /// cannot be computed.
     pub fn new(
         reference_date: Date,
         tenors: Vec<Period>,
@@ -46,7 +59,7 @@ impl TenorBasedZeroRateTermStructure {
         rate_definition: RateDefinition,
         interpolation: Interpolator,
         enable_extrapolation: bool,
-    ) -> Result<TenorBasedZeroRateTermStructure> {
+    ) -> Result<Self> {
         let year_fractions = tenors
             .iter()
             .map(|x| {
@@ -57,7 +70,7 @@ impl TenorBasedZeroRateTermStructure {
             })
             .collect();
 
-        Ok(TenorBasedZeroRateTermStructure {
+        Ok(Self {
             reference_date,
             tenors,
             spreads,
@@ -68,11 +81,15 @@ impl TenorBasedZeroRateTermStructure {
         })
     }
 
-    pub fn tenors(&self) -> &Vec<Period> {
+    /// Returns the tenors of the term structure.
+    #[must_use]
+    pub const fn tenors(&self) -> &Vec<Period> {
         &self.tenors
     }
 
-    pub fn spreads(&self) -> &Vec<f64> {
+    /// Returns the spreads of the term structure.
+    #[must_use]
+    pub const fn spreads(&self) -> &Vec<f64> {
         &self.spreads
     }
 }
@@ -129,7 +146,7 @@ impl YieldProvider for TenorBasedZeroRateTermStructure {
 impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
     fn advance_to_period(&self, period: Period) -> Result<Arc<dyn YieldTermStructureTrait>> {
         let new_reference_date = self.reference_date + period;
-        Ok(Arc::new(TenorBasedZeroRateTermStructure::new(
+        Ok(Arc::new(Self::new(
             new_reference_date,
             self.tenors.clone(),
             self.spreads.clone(),
@@ -140,7 +157,9 @@ impl AdvanceTermStructureInTime for TenorBasedZeroRateTermStructure {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<dyn YieldTermStructureTrait>> {
-        let days = (date - self.reference_date) as i32;
+        let days = i32::try_from(date - self.reference_date).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -188,18 +207,20 @@ mod tests {
             enable_extrapolation,
         )?;
 
-        years.iter().for_each(|x| {
+        for (i, &x) in years.iter().enumerate() {
             let forward_rate = zero_rate_term_structure
                 .forward_rate(
                     reference_date,
-                    reference_date + Period::new(*x, TimeUnit::Years),
-                    Compounding::Compounded,
+                    reference_date + Period::new(x, TimeUnit::Years),
+                    Compounding::Simple,
                     Frequency::Annual,
                 )
-                .unwrap();
-            let tmp = *x as f64;
-            assert!(forward_rate - tmp < 1e-10);
-        });
+                .unwrap_or_else(|e| {
+                    panic!("forward_rate should succeed in test_forward_rate_by_tenor: {e}")
+                });
+            let expected_rate = spreads[i];
+            assert!((forward_rate - expected_rate).abs() < 1e-10);
+        }
 
         Ok(())
     }

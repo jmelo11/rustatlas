@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 
 use super::traits::Interpolate;
 
-/// # Log-Linear Interpolator
+/// # `Log-Linear Interpolator`
 /// Log-linear interpolator.
 #[derive(Clone)]
 pub struct LogLinearInterpolator {}
@@ -11,13 +11,17 @@ impl Interpolate for LogLinearInterpolator {
     fn interpolate(x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         let index =
             match x_.binary_search_by(|&probe| probe.partial_cmp(&x).unwrap_or(Ordering::Less)) {
-                Ok(index) => index,
-                Err(index) => index,
+                Ok(index) | Err(index) => index,
             };
 
-        if !enable_extrapolation && (x < *x_.first().unwrap() || x > *x_.last().unwrap()) {
-            panic!("Extrapolation is not enabled, and the provided value is outside the range.");
-        }
+        let (Some(first_x), Some(last_x)) = (x_.first(), x_.last()) else {
+            panic!("Interpolation data must contain at least one x value.");
+        };
+
+        assert!(
+            enable_extrapolation || (x >= *first_x && x <= *last_x),
+            "Extrapolation is not enabled, and the provided value is outside the range."
+        );
 
         match index {
             0 => y_[0] * (y_[1] / y_[0]).powf((x - x_[0]) / (x_[1] - x_[0])),

@@ -24,15 +24,15 @@ impl DayCountProvider for Business252 {
     fn day_count(start: Date, end: Date) -> i64 {
         let calendar = Calendar::Brazil(Brazil::new(Market::Settlement));
 
-        if end < start {
-            -(calendar.business_day_list(start, end).len() as i64)
-        } else {
-            calendar.business_day_list(start, end).len() as i64
-        }
+        let count = i64::try_from(calendar.business_day_list(start, end).len())
+            .unwrap_or_else(|_| panic!("business day count should fit in i64"));
+        if end < start { -count } else { count }
     }
 
     fn year_fraction(start: Date, end: Date) -> f64 {
-        Self::day_count(start, end) as f64 / 252.0
+        let days = i32::try_from(Self::day_count(start, end))
+            .unwrap_or_else(|_| panic!("day count should fit in i32"));
+        f64::from(days) / 252.0
     }
 }
 
@@ -47,6 +47,7 @@ mod test {
         let start = Date::new(2020, 1, 1);
         let end = Date::new(2020, 2, 1);
         assert_eq!(Business252::day_count(start, end), 22);
-        assert_eq!(Business252::year_fraction(start, end), 22.0 / 252.0);
+        let yf = Business252::year_fraction(start, end);
+        assert!((yf - 22.0 / 252.0).abs() < 1e-12);
     }
 }

@@ -22,79 +22,134 @@ use super::{
     traits::Structure,
 };
 
-/// # LoanDepo
+/// # `LoanDepo`
 /// Struct that represents a serialized loan or deposit. Used for serialization purposes.
+// #[deprecated(note = "LoanDepo is deprecated and will be removed in future versions. Use specific instrument implementations instead.")]
 #[derive(Serialize, Deserialize, Clone)]
 pub struct LoanDepo {
+    /// Optional unique identifier for the loan/deposit
     pub id: Option<usize>,
+    /// MIS (Management Information System) identifier
     pub mis_id: String,
+    /// Reference date for the instrument
     pub reference_date: Date,
+    /// Loan/deposit configuration identifier
     pub loandepo_configuration_id: usize,
+    /// Principal amount
     pub notional: f64,
+    /// Optional issue date of the instrument
     pub issue_date: Option<Date>,
+    /// Start date of the loan/deposit
     pub start_date: Date,
+    /// End/maturity date of the loan/deposit
     pub end_date: Date,
+    /// Credit status of the instrument
     pub credit_status: String,
+    /// Structure type of the instrument
     pub structure: Structure,
+    /// Side (asset or liability) of the instrument
     pub side: Side,
+    /// Account type classification
     pub account_type: AccountType,
+    /// Business segment
     pub segment: String,
+    /// Geographic area
     pub area: String,
+    /// Product family classification
     pub product_family: String,
+    /// Payment frequency
     pub payment_frequency: Frequency,
 
+    /// First FTP (Funds Transfer Pricing) rate
     pub first_ftp_rate: f64,
+    /// First client rate
     pub first_client_rate: f64,
+    /// Optional second FTP rate (after rate change)
     pub second_ftp_rate: Option<f64>,
+    /// Optional second client rate (after rate change)
     pub second_client_rate: Option<f64>,
 
-    // pre-calculated fields
+    /// Notional amount in local currency
     pub notional_local_ccy: Option<f64>,
+    /// Outstanding balance
     pub outstanding: Option<f64>,
+    /// Outstanding balance in local currency
     pub outstanding_local_ccy: Option<f64>,
+    /// Readjustment amount in local currency
     pub readjustment_local_ccy: Option<f64>,
+    /// Average outstanding balance
     pub avg_outstanding: Option<f64>,
+    /// Average outstanding balance in local currency
     pub avg_outstanding_local_ccy: Option<f64>,
+    /// Average readjustment amount
     pub avg_readjustment: Option<f64>,
+    /// Average interest accrued
     pub avg_interest: Option<f64>,
+    /// Average interest accrued in local currency
     pub avg_interest_local_ccy: Option<f64>,
+    /// FTP interest amount
     pub ftp_interest: Option<f64>,
+    /// FTP interest amount in local currency
     pub ftp_interest_local_ccy: Option<f64>,
+    /// Earned interest amount
     pub earned_interest: Option<f64>,
+    /// Earned interest amount in local currency
     pub earned_interest_local_ccy: Option<f64>,
+    /// Margin amount
     pub margin: Option<f64>,
+    /// Margin amount in local currency
     pub margin_local_ccy: Option<f64>,
 
+    /// Interest amount
     pub interest: Option<f64>,
+    /// Interest amount in local currency
     pub interest_local_ccy: Option<f64>,
 
+    /// Type of rate (fixed or floating)
     pub rate_type: RateType,
+    /// Frequency of the first rate period
     pub first_rate_frequency: Frequency,
+    /// Day counter convention for the first rate
     pub first_rate_day_counter: DayCounter,
+    /// Compounding convention for the first rate
     pub first_rate_compounding: Compounding,
 
+    /// Months until the first coupon payment
     pub months_to_first_coupon: Option<i16>,
+    /// Optional frequency of the second rate period
     pub second_rate_frequency: Option<Frequency>,
+    /// Optional day counter convention for the second rate
     pub second_rate_day_counter: Option<DayCounter>,
+    /// Optional compounding convention for the second rate
     pub second_rate_compounding: Option<Compounding>,
 
+    /// Currency of the instrument
     pub currency: Currency,
+    /// Discount curve identifier
     pub discount_curve_id: usize,
+    /// Optional forecast curve identifier
     pub forecast_curve_id: Option<usize>,
 
+    /// List of cash flows
     pub cashflows: Vec<Cashflow>,
+    /// Evaluation mode (FTP rate or client rate)
     pub evaluation_mode: Option<EvaluationMode>,
+    /// Optional date when the rate changes
     pub rate_change_date: Option<Date>,
+    /// Source of the cash flows data
     pub cashflows_source: String,
 
+    /// Optional date of the last repricing
     pub last_reprice_date: Option<Date>,
+    /// Optional date of the next repricing
     pub next_reprice_date: Option<Date>,
 }
 
 impl TryFrom<LoanDepo> for Instrument {
     type Error = AtlasError;
 
-    fn try_from(value: LoanDepo) -> Result<Instrument> {
+    #[allow(clippy::too_many_lines)]
+    fn try_from(value: LoanDepo) -> Result<Self> {
         let mut cashflows = value.cashflows.clone();
         cashflows.iter_mut().try_for_each(|cf| -> Result<()> {
             match cf {
@@ -275,7 +330,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     None,
                 );
 
-                Ok(Instrument::FixedRateInstrument(instrument))
+                Ok(Self::FixedRateInstrument(instrument))
             }
             RateType::Floating => {
                 let (rate, rate_definition) = match value.evaluation_mode {
@@ -313,7 +368,7 @@ impl TryFrom<LoanDepo> for Instrument {
                     Some(value.mis_id),
                     value.issue_date,
                 );
-                Ok(Instrument::FloatingRateInstrument(instrument))
+                Ok(Self::FloatingRateInstrument(instrument))
             }
             _ => Err(AtlasError::NotImplementedErr("RateType".to_string())),
         }

@@ -13,7 +13,7 @@ use crate::{
     utils::errors::Result,
 };
 
-/// # FixedRateCoupon
+/// # `FixedRateCoupon`
 /// A fixed rate coupon is a cashflow that pays a fixed rate of interest on a notional amount.
 ///
 /// ## Parameters
@@ -34,6 +34,18 @@ pub struct FixedRateCoupon {
 }
 
 impl FixedRateCoupon {
+    /// Creates a new fixed rate coupon.
+    ///
+    /// # Arguments
+    ///
+    /// * `notional` - The notional amount of the coupon
+    /// * `rate` - The fixed interest rate
+    /// * `accrual_start_date` - The date from which interest accrues
+    /// * `accrual_end_date` - The date until which interest accrues
+    /// * `payment_date` - The date on which the coupon is paid
+    /// * `currency` - The currency of the coupon
+    /// * `side` - Whether this is a Pay or Receive side
+    #[must_use]
     pub fn new(
         notional: f64,
         rate: InterestRate,
@@ -42,10 +54,10 @@ impl FixedRateCoupon {
         payment_date: Date,
         currency: Currency,
         side: Side,
-    ) -> FixedRateCoupon {
+    ) -> Self {
         let amount = notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
         let cashflow = SimpleCashflow::new(payment_date, currency, side).with_amount(amount);
-        FixedRateCoupon {
+        Self {
             notional,
             rate,
             accrual_start_date,
@@ -54,20 +66,25 @@ impl FixedRateCoupon {
         }
     }
 
-    pub fn with_discount_curve_id(mut self, id: usize) -> FixedRateCoupon {
+    /// Sets the discount curve ID and returns self for method chaining.
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: usize) -> Self {
         self.cashflow.set_discount_curve_id(id);
         self
     }
 
-    pub fn set_discount_curve_id(&mut self, id: usize) {
+    /// Sets the discount curve ID.
+    pub const fn set_discount_curve_id(&mut self, id: usize) {
         self.cashflow.set_discount_curve_id(id);
     }
 
+    /// Sets the interest rate value.
     pub fn set_rate_value(&mut self, rate_value: f64) {
         let rate = InterestRate::from_rate_definition(rate_value, self.rate.rate_definition());
         self.set_rate(rate);
     }
 
+    /// Sets the interest rate and updates the cashflow amount.
     pub fn set_rate(&mut self, rate: InterestRate) {
         self.rate = rate;
         // Update the cashflow amount
@@ -77,6 +94,7 @@ impl FixedRateCoupon {
         );
     }
 
+    /// Sets the notional amount and updates the cashflow amount.
     pub fn set_notional(&mut self, notional: f64) {
         self.notional = notional;
         self.cashflow.set_amount(
@@ -88,11 +106,15 @@ impl FixedRateCoupon {
         );
     }
 
-    pub fn notional(&self) -> f64 {
+    /// Returns the notional amount.
+    #[must_use]
+    pub const fn notional(&self) -> f64 {
         self.notional
     }
 
-    pub fn rate(&self) -> InterestRate {
+    /// Returns the interest rate.
+    #[must_use]
+    pub const fn rate(&self) -> InterestRate {
         self.rate
     }
 }
@@ -213,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn test_amount_calculation() {
+    fn test_amount_calculation() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -241,16 +263,13 @@ mod tests {
 
         let expected_amount =
             notional * (rate.compound_factor(accrual_start_date, accrual_end_date) - 1.0);
-        assert_eq!(
-            coupon
-                .accrued_amount(accrual_start_date, accrual_end_date)
-                .unwrap(),
-            expected_amount
-        );
+        let accrued = coupon.accrued_amount(accrual_start_date, accrual_end_date)?;
+        assert!((accrued - expected_amount).abs() < 1e-12);
+        Ok(())
     }
 
     #[test]
-    fn test_accrual() {
+    fn test_accrual() -> Result<()> {
         let notional = 1000.0;
         let rate = InterestRate::new(
             0.05,
@@ -278,11 +297,9 @@ mod tests {
 
         let star_date = Date::new(2024, 2, 28);
         let end_date = Date::new(2024, 3, 1);
-        let accrued_amount = coupon.accrued_amount(star_date, end_date).unwrap();
+        let accrued_amount = coupon.accrued_amount(star_date, end_date)?;
 
-        print!(
-            "Accrued amount between {} and {} is {}",
-            star_date, end_date, accrued_amount
-        );
+        print!("Accrued amount between {star_date} and {end_date} is {accrued_amount}");
+        Ok(())
     }
 }

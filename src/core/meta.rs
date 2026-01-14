@@ -5,7 +5,7 @@ use crate::{
     utils::errors::{AtlasError, Result},
 };
 
-/// # ExchangeRateRequest
+/// # `ExchangeRateRequest`
 /// Meta data for an exchange rate. Holds the first currency, the second currency and the reference
 /// date required to fetch the exchange rate.
 ///
@@ -21,32 +21,40 @@ pub struct ExchangeRateRequest {
 }
 
 impl ExchangeRateRequest {
-    pub fn new(
+    /// Creates a new `ExchangeRateRequest`.
+    #[must_use]
+    pub const fn new(
         first_currency: Currency,
         second_currency: Option<Currency>,
         reference_date: Option<Date>,
-    ) -> ExchangeRateRequest {
-        ExchangeRateRequest {
+    ) -> Self {
+        Self {
             first_currency,
             second_currency,
             reference_date,
         }
     }
 
-    pub fn first_currency(&self) -> Currency {
+    /// Returns the first currency.
+    #[must_use]
+    pub const fn first_currency(&self) -> Currency {
         self.first_currency
     }
 
-    pub fn second_currency(&self) -> Option<Currency> {
+    /// Returns the second currency.
+    #[must_use]
+    pub const fn second_currency(&self) -> Option<Currency> {
         self.second_currency
     }
 
-    pub fn reference_date(&self) -> Option<Date> {
+    /// Returns the reference date.
+    #[must_use]
+    pub const fn reference_date(&self) -> Option<Date> {
         self.reference_date
     }
 }
 
-/// # DiscountFactorRequest
+/// # `DiscountFactorRequest`
 /// Meta data for a discount factor. Holds the discount curve id and the reference date required to
 /// fetch the discount factor.
 ///
@@ -60,20 +68,26 @@ pub struct DiscountFactorRequest {
 }
 
 impl DiscountFactorRequest {
-    pub fn new(provider_id: usize, date: Date) -> DiscountFactorRequest {
-        DiscountFactorRequest { provider_id, date }
+    /// Creates a new `DiscountFactorRequest`.
+    #[must_use]
+    pub const fn new(provider_id: usize, date: Date) -> Self {
+        Self { provider_id, date }
     }
 
-    pub fn provider_id(&self) -> usize {
+    /// Returns the provider id.
+    #[must_use]
+    pub const fn provider_id(&self) -> usize {
         self.provider_id
     }
 
-    pub fn date(&self) -> Date {
+    /// Returns the date.
+    #[must_use]
+    pub const fn date(&self) -> Date {
         self.date
     }
 }
 
-/// # ForwardRateRequest
+/// # `ForwardRateRequest`
 /// Meta data for a forward rate. Holds the forward curve id and the start and end dates required
 /// to fetch the forward rate.
 ///
@@ -94,15 +108,17 @@ pub struct ForwardRateRequest {
 }
 
 impl ForwardRateRequest {
-    pub fn new(
+    /// Creates a new `ForwardRateRequest`.
+    #[must_use]
+    pub const fn new(
         provider_id: usize,
         fixing_date: Date,
         start_date: Date,
         end_date: Date,
         compounding: Compounding,
         frequency: Frequency,
-    ) -> ForwardRateRequest {
-        ForwardRateRequest {
+    ) -> Self {
+        Self {
             provider_id,
             fixing_date,
             start_date,
@@ -112,28 +128,38 @@ impl ForwardRateRequest {
         }
     }
 
-    pub fn provider_id(&self) -> usize {
+    /// Returns the provider id.
+    #[must_use]
+    pub const fn provider_id(&self) -> usize {
         self.provider_id
     }
 
-    pub fn start_date(&self) -> Date {
+    /// Returns the start date.
+    #[must_use]
+    pub const fn start_date(&self) -> Date {
         self.start_date
     }
 
-    pub fn end_date(&self) -> Date {
+    /// Returns the end date.
+    #[must_use]
+    pub const fn end_date(&self) -> Date {
         self.end_date
     }
 
-    pub fn compounding(&self) -> Compounding {
+    /// Returns the compounding.
+    #[must_use]
+    pub const fn compounding(&self) -> Compounding {
         self.compounding
     }
 
-    pub fn frequency(&self) -> Frequency {
+    /// Returns the frequency.
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         self.frequency
     }
 }
 
-/// # MarketRequest
+/// # `MarketRequest`
 /// Meta data for market data. Holds all the meta data required to fetch the market data.
 ///
 /// ## Parameters
@@ -150,33 +176,43 @@ pub struct MarketRequest {
 }
 
 impl MarketRequest {
-    pub fn new(
+    /// Creates a new `MarketRequest`.
+    #[must_use]
+    pub const fn new(
         id: usize,
         df: Option<DiscountFactorRequest>,
         fwd: Option<ForwardRateRequest>,
         fx: Option<ExchangeRateRequest>,
-    ) -> MarketRequest {
-        MarketRequest { id, df, fwd, fx }
+    ) -> Self {
+        Self { id, df, fwd, fx }
     }
 
-    pub fn id(&self) -> usize {
+    /// Returns the id.
+    #[must_use]
+    pub const fn id(&self) -> usize {
         self.id
     }
 
-    pub fn df(&self) -> Option<DiscountFactorRequest> {
+    /// Returns the discount factor request.
+    #[must_use]
+    pub const fn df(&self) -> Option<DiscountFactorRequest> {
         self.df
     }
 
-    pub fn fwd(&self) -> Option<ForwardRateRequest> {
+    /// Returns the forward rate request.
+    #[must_use]
+    pub const fn fwd(&self) -> Option<ForwardRateRequest> {
         self.fwd
     }
 
-    pub fn fx(&self) -> Option<ExchangeRateRequest> {
+    /// Returns the exchange rate request.
+    #[must_use]
+    pub const fn fx(&self) -> Option<ExchangeRateRequest> {
         self.fx
     }
 }
 
-/// # MarketDataNode
+/// # `MarketDataNode`
 /// Market data. Holds all the data required to price a cashflow.
 ///
 /// ## Parameters
@@ -195,15 +231,17 @@ pub struct MarketData {
 }
 
 impl MarketData {
-    pub fn new(
+    /// Creates a new `MarketData`.
+    #[must_use]
+    pub const fn new(
         id: usize,
         reference_date: Date,
         df: Option<f64>,
         fwd: Option<f64>,
         fx: Option<f64>,
         numerarie: f64,
-    ) -> MarketData {
-        MarketData {
+    ) -> Self {
+        Self {
             id,
             reference_date,
             df,
@@ -213,27 +251,45 @@ impl MarketData {
         }
     }
 
-    pub fn id(&self) -> usize {
+    /// Returns the id.
+    #[must_use]
+    pub const fn id(&self) -> usize {
         self.id
     }
 
-    pub fn reference_date(&self) -> Date {
+    /// Returns the reference date.
+    #[must_use]
+    pub const fn reference_date(&self) -> Date {
         self.reference_date
     }
 
+    /// Returns the discount factor.
+    ///
+    /// # Errors
+    /// Returns an error if the discount factor was not set in this market data.
     pub fn df(&self) -> Result<f64> {
         self.df.ok_or(AtlasError::ValueNotSetErr("df".to_owned()))
     }
 
+    /// Returns the forward rate.
+    ///
+    /// # Errors
+    /// Returns an error if the forward rate was not set in this market data.
     pub fn fwd(&self) -> Result<f64> {
         self.fwd.ok_or(AtlasError::ValueNotSetErr("fwd".to_owned()))
     }
 
+    /// Returns the exchange rate.
+    ///
+    /// # Errors
+    /// Returns an error if the exchange rate was not set in this market data.
     pub fn fx(&self) -> Result<f64> {
         self.fx.ok_or(AtlasError::ValueNotSetErr("fx".to_owned()))
     }
 
-    pub fn numerarie(&self) -> f64 {
+    /// Returns the numeraire.
+    #[must_use]
+    pub const fn numerarie(&self) -> f64 {
         self.numerarie
     }
 }

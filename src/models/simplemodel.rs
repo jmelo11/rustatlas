@@ -10,7 +10,7 @@ use crate::{
 
 use super::traits::Model;
 
-/// # SimpleModel
+/// # `SimpleModel`
 /// A simple model that provides market data based on the current market state. Uses the
 /// market store to get the market data (curves, currencies and others). All values are calculated using the
 /// reference date and local currency of the market store.
@@ -24,20 +24,39 @@ pub struct SimpleModel<'a> {
     transform_currencies: bool,
 }
 
+#[allow(clippy::elidable_lifetime_names)]
 impl<'a> SimpleModel<'a> {
-    pub fn new(market_store: &'a MarketStore) -> SimpleModel<'a> {
-        SimpleModel {
+    /// Creates a new `SimpleModel` instance.
+    ///
+    /// # Arguments
+    /// * `market_store` - A reference to the market store containing market data.
+    ///
+    /// # Returns
+    /// A new `SimpleModel` instance with currency transformation disabled by default.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    pub fn new(market_store: &'a MarketStore) -> Self {
+        Self {
             market_store,
             transform_currencies: false,
         }
     }
 
-    pub fn with_transform_currencies(mut self, flag: bool) -> SimpleModel<'a> {
+    /// Enables or disables currency transformation to the local currency.
+    ///
+    /// # Arguments
+    /// * `flag` - If `true`, currencies will be transformed to the local currency of the market store.
+    ///
+    /// # Returns
+    /// The modified `SimpleModel` instance for method chaining.
+    #[must_use]
+    pub const fn with_transform_currencies(mut self, flag: bool) -> Self {
         self.transform_currencies = flag;
         self
     }
 }
 
+#[allow(clippy::elidable_lifetime_names)]
 impl<'a> Model for SimpleModel<'a> {
     fn reference_date(&self) -> Date {
         self.market_store.reference_date()
@@ -80,16 +99,13 @@ impl<'a> Model for SimpleModel<'a> {
 
     fn gen_fx_data(&self, fx: ExchangeRateRequest) -> Result<f64> {
         let first_currency = fx.first_currency();
-        let second_currency = match fx.second_currency() {
-            Some(ccy) => ccy,
-            None => {
-                if self.transform_currencies {
-                    self.market_store.local_currency()
-                } else {
-                    first_currency
-                }
+        let second_currency = fx.second_currency().unwrap_or_else(|| {
+            if self.transform_currencies {
+                self.market_store.local_currency()
+            } else {
+                first_currency
             }
-        };
+        });
 
         match fx.reference_date() {
             Some(date) => {

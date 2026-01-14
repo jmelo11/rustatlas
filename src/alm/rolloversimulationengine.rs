@@ -25,7 +25,7 @@ use crate::{
     },
 };
 
-/// # RolloverSimulationEngine
+/// # `RolloverSimulationEngine`
 /// Engine is the main component of the simulation. It is responsible for:
 /// - generating the new positions
 /// - indexing the new positions and getting the relevant market data
@@ -40,10 +40,16 @@ use crate::{
 /// ## Details
 /// - Requires redemptions and the currency of the redemptions
 pub enum GrowthMode {
+    /// Annual growth mode applies growth rate on an annual basis to the outstanding amount.
     Annual,
+    /// Paid amount growth mode applies growth rate to each redemption payment.
     PaidAmount,
 }
 
+/// Simulation engine for rolling over positions with market data indexing and fixing.
+///
+/// This engine generates new positions based on redemption schedules and growth strategies,
+/// applies market indexing and fixing, and aggregates redemption cashflows.
 pub struct RolloverSimulationEngine<'a> {
     market_store: &'a MarketStore,
     base_redemptions: BTreeMap<Date, f64>,
@@ -54,6 +60,8 @@ pub struct RolloverSimulationEngine<'a> {
 }
 
 impl<'a> RolloverSimulationEngine<'a> {
+    /// Creates a new `RolloverSimulationEngine` with the specified market store, redemptions, and horizon.
+    #[must_use]
     pub fn new(
         market_store: &'a MarketStore,
         base_redemptions: BTreeMap<Date, f64>,
@@ -68,7 +76,9 @@ impl<'a> RolloverSimulationEngine<'a> {
         .with_calendar(Calendar::NullCalendar(NullCalendar::new()))
         .with_convention(BusinessDayConvention::Unadjusted)
         .build()
-        .unwrap();
+        .unwrap_or_else(|e| {
+            panic!("schedule build should succeed in RolloverSimulationEngine::new: {e}")
+        });
 
         Self {
             market_store,
@@ -80,17 +90,26 @@ impl<'a> RolloverSimulationEngine<'a> {
         }
     }
 
-    pub fn with_growth_mode(mut self, mode: GrowthMode) -> Self {
+    /// Sets the growth mode for the simulation engine.
+    #[must_use]
+    pub const fn with_growth_mode(mut self, mode: GrowthMode) -> Self {
         self.growth_mode = mode;
         self
     }
 
-    pub fn with_growth_rate(mut self, rate: f64) -> Self {
+    /// Sets the growth rate for the simulation engine.
+    #[must_use]
+    pub const fn with_growth_rate(mut self, rate: f64) -> Self {
         self.growth_rate = rate;
         self
     }
 
-    pub fn run(&self, strategies: Vec<RolloverStrategy>) -> Result<Vec<Instrument>> {
+    /// Runs the simulation engine with the given rollover strategies and returns the simulated instruments.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if advancing the market store, indexing, pricing, or aggregation fails.
+    pub fn run(&self, strategies: &[RolloverStrategy]) -> Result<Vec<Instrument>> {
         let mut redemptions = self.base_redemptions.clone(); // redemptions for target portfolio
 
         let outstanding_0 = self
@@ -99,26 +118,25 @@ impl<'a> RolloverSimulationEngine<'a> {
             .iter()
             .fold(0.0, |acc, (_, value)| acc + value); // total outstanding amount
         let mut outstanding = outstanding_0;
-        let first_date = self.eval_dates.first().unwrap();
+        let first_date = self.eval_dates.first().unwrap_or_else(|| {
+            panic!("eval_dates should not be empty in RolloverSimulationEngine::run")
+        });
 
         // vector of new positions
         let mut simulated_instruments = Vec::new();
 
         // redemptions for target portfolio
-        let generator = PositionGenerator::new(self.redemptions_currency, strategies.clone());
+        let generator = PositionGenerator::new(self.redemptions_currency, strategies.to_owned());
         self.eval_dates.iter().try_for_each(|date| -> Result<()> {
             let maturing_amount = redemptions.get(date);
 
-            let redemption = match maturing_amount {
-                Some(amount) => *amount,
-                None => 0.0,
-            };
+            let redemption = maturing_amount.map_or(0.0, |amount| *amount);
             let amount = match self.growth_mode {
                 GrowthMode::Annual => {
                     let delta_date = Actual360::year_fraction(*first_date, *date);
                     outstanding -= redemption;
                     let placement =
-                        outstanding_0 * (1.0 + self.growth_rate * delta_date) - outstanding;
+                        outstanding_0 * self.growth_rate.mul_add(delta_date, 1.0) - outstanding;
                     outstanding += placement;
                     placement
                 }
@@ -129,10 +147,10 @@ impl<'a> RolloverSimulationEngine<'a> {
                 let amount_abs = amount.abs();
 
                 // relevant data for new positions
-                let tmp_store = if self.market_store.reference_date() != *date {
-                    self.market_store.advance_to_date(*date)?
-                } else {
+                let tmp_store = if self.market_store.reference_date() == *date {
                     self.market_store.clone()
+                } else {
+                    self.market_store.advance_to_date(*date)?
                 };
 
                 let new_generator = generator
@@ -174,7 +192,6 @@ impl<'a> RolloverSimulationEngine<'a> {
 
                 let new_redemptions = aggregator.redemptions();
 
-                //println!("New redemptions: {:?}", new_redemptions);
                 for (key, value) in new_redemptions {
                     let entry = redemptions.entry(key).or_insert(0.0);
                     *entry += value;
@@ -219,29 +236,21 @@ mod tests {
 
     // function to get the outstanding amount at a given date -- Move to a library?
     pub fn get_outstandings_at_date(instruments: &[Instrument], eval_date: Date) -> Result<f64> {
-        let outstanding = instruments
-            .iter()
-            .map(|inst| {
-                let mut local_sum = 0.0;
-                inst.cashflows().iter().for_each(|cf| match cf {
-                    Cashflow::Disbursement(f) => {
+        instruments.iter().try_fold(0.0, |acc, inst| {
+            let mut local_sum = 0.0;
+            for cf in inst.cashflows() {
+                match cf {
+                    Cashflow::Disbursement(f) | Cashflow::Redemption(f) => {
                         let payment_date = f.payment_date();
                         if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap() * f.side().sign();
-                        }
-                    }
-                    Cashflow::Redemption(f) => {
-                        let payment_date = f.payment_date();
-                        if payment_date <= eval_date {
-                            local_sum += f.amount().unwrap() * f.side().sign();
+                            local_sum += f.amount()? * f.side().sign();
                         }
                     }
                     _ => {}
-                });
-                local_sum
-            })
-            .sum::<f64>();
-        Ok(outstanding)
+                }
+            }
+            Ok(acc + local_sum)
+        })
     }
 
     fn create_store() -> Result<MarketStore> {
@@ -324,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_rollover_simulation_engine() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -372,20 +381,20 @@ mod tests {
                 None,
             ),
         ];
-        let inst = engine.run(strategies)?;
+        let inst = engine.run(&strategies)?;
         let eval_date = Date::new(2023, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert_eq!(outstanding, -1800.0);
+        assert!((outstanding + 1800.0).abs() < 1e-12);
 
         let eval_date = Date::new(2024, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert_eq!(outstanding, -1800.0);
+        assert!((outstanding + 1800.0).abs() < 1e-12);
         Ok(())
     }
 
     #[test]
     fn test_rollover_simulation_engine_with_growth_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -434,16 +443,16 @@ mod tests {
                 None,
             ),
         ];
-        let inst = engine.run(strategies)?;
+        let inst = engine.run(&strategies)?;
         let eval_date = Date::new(2023, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert_eq!(outstanding, -1980.0);
+        assert!((outstanding + 1980.0).abs() < 1e-12);
         Ok(())
     }
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -493,21 +502,21 @@ mod tests {
             ),
         ];
 
-        let inst = engine.run(strategies)?;
+        let inst = engine.run(&strategies)?;
         let eval_date = Date::new(2023, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert_eq!(outstanding, -1800.0);
+        assert!((outstanding + 1800.0).abs() < 1e-12);
 
         let eval_date = Date::new(2024, 9, 2);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        println!("Outstanding: {}", outstanding);
-        assert_eq!(outstanding, -1800.0);
+        println!("Outstanding: {outstanding}");
+        assert!((outstanding + 1800.0).abs() < 1e-12);
         Ok(())
     }
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode_and_growth_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -558,22 +567,24 @@ mod tests {
             ),
         ];
 
-        let inst = engine.run(strategies)?;
+        let inst = engine.run(&strategies)?;
         let eval_date = Date::new(2023, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
         Ok(())
     }
 
     #[test]
     fn test_rollover_simulation_engine_with_anual_growth_mode_and_growth_rate_2() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let horizon = Period::new(5, TimeUnit::Years);
 
         let base_redemptions = [
@@ -624,16 +635,18 @@ mod tests {
             ),
         ];
 
-        let inst = engine.run(strategies)?;
+        let inst = engine.run(&strategies)?;
         let eval_date = Date::new(2023, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
 
         let eval_date = Date::new(2024, 9, 1);
         let delta_date = Actual360::year_fraction(Date::new(2021, 9, 1), eval_date);
         let outstanding = get_outstandings_at_date(&inst, eval_date)?;
-        assert!((outstanding + 1800.0 * (1.0 + 0.1 * delta_date)).abs() < 1e-6);
+        let growth_factor = 0.1_f64.mul_add(delta_date, 1.0);
+        assert!((1800.0f64.mul_add(growth_factor, outstanding)).abs() < 1e-6);
         Ok(())
     }
 }

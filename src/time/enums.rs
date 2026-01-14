@@ -11,18 +11,31 @@ use crate::utils::errors::{AtlasError, Result};
 /// Enum representing a financial frequency.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub enum Frequency {
+    /// No frequency.
     NoFrequency = -1,
+    /// Once.
     Once = 0,
+    /// Annual frequency.
     Annual = 1,
+    /// Semiannual frequency.
     Semiannual = 2,
+    /// Every fourth month frequency.
     EveryFourthMonth = 3,
+    /// Quarterly frequency.
     Quarterly = 4,
+    /// Bimonthly frequency.
     Bimonthly = 6,
+    /// Monthly frequency.
     Monthly = 12,
+    /// Every fourth week frequency.
     EveryFourthWeek = 13,
+    /// Biweekly frequency.
     Biweekly = 26,
+    /// Weekly frequency.
     Weekly = 52,
+    /// Daily frequency.
     Daily = 365,
+    /// Other frequency.
     OtherFrequency = 999,
 }
 
@@ -31,22 +44,21 @@ impl TryFrom<String> for Frequency {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "NoFrequency" => Ok(Frequency::NoFrequency),
-            "Once" => Ok(Frequency::Once),
-            "Annual" => Ok(Frequency::Annual),
-            "Semiannual" => Ok(Frequency::Semiannual),
-            "EveryFourthMonth" => Ok(Frequency::EveryFourthMonth),
-            "Quarterly" => Ok(Frequency::Quarterly),
-            "Bimonthly" => Ok(Frequency::Bimonthly),
-            "Monthly" => Ok(Frequency::Monthly),
-            "EveryFourthWeek" => Ok(Frequency::EveryFourthWeek),
-            "Biweekly" => Ok(Frequency::Biweekly),
-            "Weekly" => Ok(Frequency::Weekly),
-            "Daily" => Ok(Frequency::Daily),
-            "OtherFrequency" => Ok(Frequency::OtherFrequency),
+            "NoFrequency" => Ok(Self::NoFrequency),
+            "Once" => Ok(Self::Once),
+            "Annual" => Ok(Self::Annual),
+            "Semiannual" => Ok(Self::Semiannual),
+            "EveryFourthMonth" => Ok(Self::EveryFourthMonth),
+            "Quarterly" => Ok(Self::Quarterly),
+            "Bimonthly" => Ok(Self::Bimonthly),
+            "Monthly" => Ok(Self::Monthly),
+            "EveryFourthWeek" => Ok(Self::EveryFourthWeek),
+            "Biweekly" => Ok(Self::Biweekly),
+            "Weekly" => Ok(Self::Weekly),
+            "Daily" => Ok(Self::Daily),
+            "OtherFrequency" => Ok(Self::OtherFrequency),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid frequency: {}",
-                s
+                "Invalid frequency: {s}"
             ))),
         }
     }
@@ -72,13 +84,17 @@ impl From<Frequency> for String {
     }
 }
 
-/// # TimeUnit
+/// # `TimeUnit`
 /// Enum representing a time unit.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum TimeUnit {
+    /// Days.
     Days,
+    /// Weeks.
     Weeks,
+    /// Months.
     Months,
+    /// Years.
     Years,
 }
 
@@ -87,13 +103,12 @@ impl TryFrom<String> for TimeUnit {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Days" => Ok(TimeUnit::Days),
-            "Weeks" => Ok(TimeUnit::Weeks),
-            "Months" => Ok(TimeUnit::Months),
-            "Years" => Ok(TimeUnit::Years),
+            "Days" => Ok(Self::Days),
+            "Weeks" => Ok(Self::Weeks),
+            "Months" => Ok(Self::Months),
+            "Years" => Ok(Self::Years),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid time unit: {}",
-                s
+                "Invalid time unit: {s}"
             ))),
         }
     }
@@ -114,17 +129,29 @@ impl From<TimeUnit> for String {
 /// Enum representing a month.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Month {
+    /// January.
     January = 1,
+    /// February.
     February,
+    /// March.
     March,
+    /// April.
     April,
+    /// May.
     May,
+    /// June.
     June,
+    /// July.
     July,
+    /// August.
     August,
+    /// September.
     September,
+    /// October.
     October,
+    /// November.
     November,
+    /// December.
     December,
 }
 
@@ -133,19 +160,19 @@ impl TryFrom<String> for Month {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "January" => Ok(Month::January),
-            "February" => Ok(Month::February),
-            "March" => Ok(Month::March),
-            "April" => Ok(Month::April),
-            "May" => Ok(Month::May),
-            "June" => Ok(Month::June),
-            "July" => Ok(Month::July),
-            "August" => Ok(Month::August),
-            "September" => Ok(Month::September),
-            "October" => Ok(Month::October),
-            "November" => Ok(Month::November),
-            "December" => Ok(Month::December),
-            _ => Err(AtlasError::InvalidValueErr(format!("Invalid month: {}", s))),
+            "January" => Ok(Self::January),
+            "February" => Ok(Self::February),
+            "March" => Ok(Self::March),
+            "April" => Ok(Self::April),
+            "May" => Ok(Self::May),
+            "June" => Ok(Self::June),
+            "July" => Ok(Self::July),
+            "August" => Ok(Self::August),
+            "September" => Ok(Self::September),
+            "October" => Ok(Self::October),
+            "November" => Ok(Self::November),
+            "December" => Ok(Self::December),
+            _ => Err(AtlasError::InvalidValueErr(format!("Invalid month: {s}"))),
         }
     }
 }
@@ -169,37 +196,59 @@ impl From<Month> for String {
     }
 }
 
-/// # IMMMonth
+/// # `IMMMonth`
 /// Enum representing an IMM month.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum IMMMonth {
+    /// F.
     F = 1,
+    /// G.
     G = 2,
+    /// H.
     H = 3,
+    /// J.
     J = 4,
+    /// K.
     K = 5,
+    /// M.
     M = 6,
+    /// N.
     N = 7,
+    /// Q.
     Q = 8,
+    /// U.
     U = 9,
+    /// V.
     V = 10,
+    /// X.
     X = 11,
+    /// Z.
     Z = 12,
 }
 
-/// # DateGenerationRule
+/// # `DateGenerationRule`
 /// Enum representing a date generation rule.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum DateGenerationRule {
+    /// Backward generation rule.
     Backward,
+    /// Forward generation rule.
     Forward,
+    /// Zero generation rule.
     Zero,
+    /// Third Wednesday generation rule.
     ThirdWednesday,
+    /// Third Wednesday inclusive generation rule.
     ThirdWednesdayInclusive,
+    /// Twentieth generation rule.
     Twentieth,
+    /// Twentieth IMM generation rule.
     TwentiethIMM,
+    /// Old CDS generation rule.
     OldCDS,
+    /// CDS generation rule.
     CDS,
+    /// CDS 2015 generation rule.
     CDS2015,
 }
 
@@ -208,19 +257,18 @@ impl TryFrom<String> for DateGenerationRule {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Backward" => Ok(DateGenerationRule::Backward),
-            "Forward" => Ok(DateGenerationRule::Forward),
-            "Zero" => Ok(DateGenerationRule::Zero),
-            "ThirdWednesday" => Ok(DateGenerationRule::ThirdWednesday),
-            "ThirdWednesdayInclusive" => Ok(DateGenerationRule::ThirdWednesdayInclusive),
-            "Twentieth" => Ok(DateGenerationRule::Twentieth),
-            "TwentiethIMM" => Ok(DateGenerationRule::TwentiethIMM),
-            "OldCDS" => Ok(DateGenerationRule::OldCDS),
-            "CDS" => Ok(DateGenerationRule::CDS),
-            "CDS2015" => Ok(DateGenerationRule::CDS2015),
+            "Backward" => Ok(Self::Backward),
+            "Forward" => Ok(Self::Forward),
+            "Zero" => Ok(Self::Zero),
+            "ThirdWednesday" => Ok(Self::ThirdWednesday),
+            "ThirdWednesdayInclusive" => Ok(Self::ThirdWednesdayInclusive),
+            "Twentieth" => Ok(Self::Twentieth),
+            "TwentiethIMM" => Ok(Self::TwentiethIMM),
+            "OldCDS" => Ok(Self::OldCDS),
+            "CDS" => Ok(Self::CDS),
+            "CDS2015" => Ok(Self::CDS2015),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid date generation rule: {}",
-                s
+                "Invalid date generation rule: {s}"
             ))),
         }
     }
@@ -243,28 +291,35 @@ impl From<DateGenerationRule> for String {
     }
 }
 
-/// # BusinessDayConvention
+/// # `BusinessDayConvention`
 /// Enum representing a business day convention. Business day conventions are used to
 /// adjust a date in case it is not a business day.
 ///
 /// ## Convention
-/// * Following - Choose the first business day after the given holiday.
-/// * ModifiedFollowing - Choose the first business day after the given holiday unless
+/// * `Following` - Choose the first business day after the given holiday.
+/// * `ModifiedFollowing` - Choose the first business day after the given holiday unless
 ///   it belongs to a different month, in which case choose the first business day before the given holiday.
-/// * Preceding - Choose the first business day before the given holiday.
-/// * ModifiedPreceding - Choose the first business day before the given holiday unless
+/// * `Preceding` - Choose the first business day before the given holiday.
+/// * `ModifiedPreceding` - Choose the first business day before the given holiday unless
 ///   it belongs to a different month, in which case choose the first business day after the given holiday.
-/// * Unadjusted - Do not adjust.
-/// * HalfMonthModifiedFollowing - Choose the first business day after the given holiday
+/// * `Unadjusted` - Do not adjust.
+/// * `HalfMonthModifiedFollowing` - Choose the first business day after the given holiday
 ///   unless that day falls in the first half of the month, in which case choose the first business day before the given holiday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize, Hash)]
 pub enum BusinessDayConvention {
+    /// Following convention.
     Following,
+    /// Modified following convention.
     ModifiedFollowing,
+    /// Preceding convention.
     Preceding,
+    /// Modified preceding convention.
     ModifiedPreceding,
+    /// Unadjusted convention.
     Unadjusted,
+    /// Half month modified following convention.
     HalfMonthModifiedFollowing,
+    /// Nearest convention.
     Nearest,
 }
 
@@ -273,16 +328,15 @@ impl TryFrom<String> for BusinessDayConvention {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Following" => Ok(BusinessDayConvention::Following),
-            "ModifiedFollowing" => Ok(BusinessDayConvention::ModifiedFollowing),
-            "Preceding" => Ok(BusinessDayConvention::Preceding),
-            "ModifiedPreceding" => Ok(BusinessDayConvention::ModifiedPreceding),
-            "Unadjusted" => Ok(BusinessDayConvention::Unadjusted),
-            "HalfMonthModifiedFollowing" => Ok(BusinessDayConvention::HalfMonthModifiedFollowing),
-            "Nearest" => Ok(BusinessDayConvention::Nearest),
+            "Following" => Ok(Self::Following),
+            "ModifiedFollowing" => Ok(Self::ModifiedFollowing),
+            "Preceding" => Ok(Self::Preceding),
+            "ModifiedPreceding" => Ok(Self::ModifiedPreceding),
+            "Unadjusted" => Ok(Self::Unadjusted),
+            "HalfMonthModifiedFollowing" => Ok(Self::HalfMonthModifiedFollowing),
+            "Nearest" => Ok(Self::Nearest),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid business day convention: {}",
-                s
+                "Invalid business day convention: {s}"
             ))),
         }
     }
@@ -308,12 +362,19 @@ impl From<BusinessDayConvention> for String {
 /// Enum representing a weekday.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 pub enum Weekday {
+    /// Sunday.
     Sunday = 1,
+    /// Monday.
     Monday,
+    /// Tuesday.
     Tuesday,
+    /// Wednesday.
     Wednesday,
+    /// Thursday.
     Thursday,
+    /// Friday.
     Friday,
+    /// Saturday.
     Saturday,
 }
 
@@ -322,17 +383,14 @@ impl TryFrom<String> for Weekday {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Sunday" => Ok(Weekday::Sunday),
-            "Monday" => Ok(Weekday::Monday),
-            "Tuesday" => Ok(Weekday::Tuesday),
-            "Wednesday" => Ok(Weekday::Wednesday),
-            "Thursday" => Ok(Weekday::Thursday),
-            "Friday" => Ok(Weekday::Friday),
-            "Saturday" => Ok(Weekday::Saturday),
-            _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid weekday: {}",
-                s
-            ))),
+            "Sunday" => Ok(Self::Sunday),
+            "Monday" => Ok(Self::Monday),
+            "Tuesday" => Ok(Self::Tuesday),
+            "Wednesday" => Ok(Self::Wednesday),
+            "Thursday" => Ok(Self::Thursday),
+            "Friday" => Ok(Self::Friday),
+            "Saturday" => Ok(Self::Saturday),
+            _ => Err(AtlasError::InvalidValueErr(format!("Invalid weekday: {s}"))),
         }
     }
 }
@@ -367,24 +425,24 @@ impl Sub<i32> for Weekday {
     }
 }
 
-impl Add<Weekday> for Weekday {
+impl Add<Self> for Weekday {
     type Output = i32;
 
-    fn add(self, rhs: Weekday) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
         rhs as i32 + self as i32
     }
 }
 
-impl Sub<Weekday> for Weekday {
+impl Sub<Self> for Weekday {
     type Output = i32;
 
-    fn sub(self, rhs: Weekday) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         self as i32 + -(rhs as i32)
     }
 }
 
 impl Add<Weekday> for i32 {
-    type Output = i32;
+    type Output = Self;
 
     fn add(self, rhs: Weekday) -> Self::Output {
         rhs + self
@@ -392,10 +450,10 @@ impl Add<Weekday> for i32 {
 }
 
 impl Sub<Weekday> for i32 {
-    type Output = i32;
+    type Output = Self;
 
     fn sub(self, rhs: Weekday) -> Self::Output {
-        self + -(rhs as i32)
+        self + -(rhs as Self)
     }
 }
 

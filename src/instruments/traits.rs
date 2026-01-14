@@ -9,15 +9,21 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 
-/// # Structure
+/// # `Structure`
 /// A struct that contains the information needed to define a structure.
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Structure {
+    /// Bullet structure.
     Bullet,
+    /// Equal redemptions structure.
     EqualRedemptions,
+    /// Zero structure.
     Zero,
+    /// Equal payments structure.
     EqualPayments,
+    /// Other structure.
     Other,
 }
 
@@ -26,14 +32,13 @@ impl TryFrom<String> for Structure {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Bullet" => Ok(Structure::Bullet),
-            "EqualRedemptions" => Ok(Structure::EqualRedemptions),
-            "Zero" => Ok(Structure::Zero),
-            "EqualPayments" => Ok(Structure::EqualPayments),
-            "Other" => Ok(Structure::Other),
+            "Bullet" => Ok(Self::Bullet),
+            "EqualRedemptions" => Ok(Self::EqualRedemptions),
+            "Zero" => Ok(Self::Zero),
+            "EqualPayments" => Ok(Self::EqualPayments),
+            "Other" => Ok(Self::Other),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid structure: {}",
-                s
+                "Invalid structure: {s}"
             ))),
         }
     }
@@ -56,13 +61,12 @@ impl TryFrom<String> for CashflowType {
 
     fn try_from(s: String) -> Result<Self> {
         match s.as_str() {
-            "Redemption" => Ok(CashflowType::Redemption),
-            "Disbursement" => Ok(CashflowType::Disbursement),
-            "FixedRateCoupon" => Ok(CashflowType::FixedRateCoupon),
-            "FloatingRateCoupon" => Ok(CashflowType::FloatingRateCoupon),
+            "Redemption" => Ok(Self::Redemption),
+            "Disbursement" => Ok(Self::Disbursement),
+            "FixedRateCoupon" => Ok(Self::FixedRateCoupon),
+            "FloatingRateCoupon" => Ok(Self::FloatingRateCoupon),
             _ => Err(AtlasError::InvalidValueErr(format!(
-                "Invalid cashflow type: {}",
-                s
+                "Invalid cashflow type: {s}"
             ))),
         }
     }
@@ -79,7 +83,8 @@ impl From<CashflowType> for String {
     }
 }
 
-// Infer cashflows from amounts to handle negative amounts and sides.
+/// Infer cashflows from amounts to handle negative amounts and sides.
+#[must_use]
 pub fn infer_cashflows_from_amounts(
     dates: &[Date],
     amounts: &[f64],
@@ -115,22 +120,29 @@ pub fn add_cashflows_to_vec(
     currency: Currency,
     cashflow_type: CashflowType,
 ) {
-    dates.iter().zip(amounts).for_each(|(date, amount)| {
+    for (date, amount) in dates.iter().zip(amounts) {
         let cashflow = SimpleCashflow::new(*date, currency, side).with_amount(*amount);
         match cashflow_type {
             CashflowType::Redemption => cashflows.push(Cashflow::Redemption(cashflow)),
             CashflowType::Disbursement => cashflows.push(Cashflow::Disbursement(cashflow)),
             _ => (),
         }
-    });
+    }
 }
 
-// Calculate the notionals for a given structure
+/// Calculate the notionals for a given structure
+#[must_use]
 pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f64> {
     match structure {
         Structure::Bullet => vec![notional; n],
         Structure::EqualRedemptions => {
-            let redemptions = vec![notional / n as f64; n];
+            let redemptions = vec![
+                notional
+                    / f64::from(u32::try_from(n).unwrap_or_else(|_| {
+                        panic!("notional schedule length should fit in u32")
+                    }));
+                n
+            ];
             let mut results = Vec::new();
             let mut sum = 0.0;
             for r in redemptions {
@@ -144,18 +156,19 @@ pub fn notionals_vector(n: usize, notional: f64, structure: Structure) -> Vec<f6
     }
 }
 
-// Calculate the outstanding amounts for a given set of disbursements and redemptions
+/// Calculate the outstanding amounts for a given set of disbursements and redemptions
+#[must_use]
 pub fn calculate_outstanding(
-    disbursements: &HashMap<Date, f64>,
-    redemptions: &HashMap<Date, f64>,
-    additional_dates: &HashSet<Date>,
+    disbursements: &HashMap<Date, f64, impl BuildHasher>,
+    redemptions: &HashMap<Date, f64, impl BuildHasher>,
+    additional_dates: &HashSet<Date, impl BuildHasher>,
 ) -> Vec<(Date, Date, f64)> {
     let mut outstanding = Vec::new();
 
     // Combine disbursements and redemptions into a timeline of events
     let mut timeline: Vec<(Date, f64)> = disbursements.iter().map(|(k, v)| (*k, *v)).collect();
 
-    for (date, amount) in redemptions.iter() {
+    for (date, amount) in redemptions {
         match timeline.iter_mut().find(|(d, _)| *d == *date) {
             Some((_, a)) => *a -= amount,
             None => timeline.push((*date, -amount)),

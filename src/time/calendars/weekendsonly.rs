@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
-/// # WeekendsOnly
+/// # `WeekendsOnly`
 /// A calendar that considers only weekends as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WeekendsOnly {
@@ -12,8 +12,10 @@ pub struct WeekendsOnly {
 }
 
 impl WeekendsOnly {
+    /// Creates a new `WeekendsOnly` calendar instance.
+    #[must_use]
     pub fn new() -> Self {
-        WeekendsOnly {
+        Self {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         }

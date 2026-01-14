@@ -4,7 +4,7 @@ use crate::time::date::Date;
 
 use super::traits::{ImplCalendar, IsCalendar};
 
-/// # NullCalendar
+/// # `NullCalendar`
 /// A calendar that considers all days as business days.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NullCalendar {
@@ -13,8 +13,10 @@ pub struct NullCalendar {
 }
 
 impl NullCalendar {
+    /// Creates a new instance of `NullCalendar`.
+    #[must_use]
     pub fn new() -> Self {
-        NullCalendar {
+        Self {
             added_holidays: HashSet::new(),
             removed_holidays: HashSet::new(),
         }

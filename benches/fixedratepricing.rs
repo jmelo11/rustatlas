@@ -1,3 +1,4 @@
+//! Benchmark for fixed rate pricing calculations.
 extern crate rustatlas;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
@@ -21,12 +22,40 @@ use rustatlas::{
 };
 use std::sync::Arc;
 mod common;
-use crate::common::common::*;
+use crate::common::common::create_store;
 use criterion::{criterion_group, criterion_main, Criterion};
 
-type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
+fn npv(instruments: &mut [FixedRateInstrument]) -> Result<f64, Box<dyn std::error::Error>> {
+    let store = Arc::new(create_store()?);
+    let mut total_npv = 0.0;
+    
+    let indexer = IndexingVisitor::new();
+    
+    // Should index all instruments
+    for inst in instruments.iter_mut() {
+        indexer
+            .visit(inst)
+            .map_err(|e| format!("IndexingVisitor failed: {}", e))?;
+    }
 
-fn multiple() -> AppResult<()> {
+    let model = SimpleModel::new(&store);
+    let data = model.gen_market_data(&indexer.request())?;
+
+    let npv_visitor = NPVConstVisitor::new(&data, true);
+    
+    // Calculate NPV for all instruments
+    for inst in instruments.iter() {
+        let inst_npv = npv_visitor
+            .visit(inst)
+            .map_err(|e| format!("NPVConstVisitor failed: {}", e))?;
+        total_npv += inst_npv;
+    }
+
+    Ok(total_npv)
+}
+
+/// Benchmark function that creates and processes 150,000 fixed rate instruments in parallel.
+fn multiple() -> Result<(), Box<dyn std::error::Error>> {
     let market_store = create_store()?;
     let ref_date = market_store.reference_date();
     let start_date = ref_date;
@@ -39,13 +68,13 @@ fn multiple() -> AppResult<()> {
         DayCounter::Thirty360,
     );
 
-    // par build - collect Results separately, then unwrap
-    let instruments: Vec<FixedRateInstrument> = (0..150000)
+    // Build instruments in parallel
+    let mut instruments: Vec<FixedRateInstrument> = (0..150000)
         .into_par_iter()
         .map(|_| {
             MakeFixedRateInstrument::new()
-                .with_start_date(start_date.clone())
-                .with_end_date(end_date.clone())
+                .with_start_date(start_date)
+                .with_end_date(end_date)
                 .with_rate(rate)
                 .with_payment_frequency(Frequency::Semiannual)
                 .with_side(Side::Receive)
@@ -57,44 +86,22 @@ fn multiple() -> AppResult<()> {
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    let mut instruments = instruments;
-    npv(&mut instruments)?;
+    // Process instruments in parallel chunks
+    instruments.par_rchunks_mut(1000).for_each(|chunk| {
+        if let Err(e) = npv(chunk) {
+            eprintln!("Error processing chunk: {}", e);
+        }
+    });
 
     Ok(())
 }
 
-fn npv(instruments: &mut [FixedRateInstrument]) -> AppResult<f64> {
-    let store = Arc::new(create_store()?);
-    let mut total_npv = 0.0;
-
-    let indexer = IndexingVisitor::new();
-
-    // Should index all instruments
-    for inst in instruments.iter_mut() {
-        indexer
-            .visit(inst)
-            .map_err(|e| format!("IndexingVisitor failed: {}", e))?;
-    }
-
-    let model = SimpleModel::new(&store);
-    let data = model.gen_market_data(&indexer.request())?;
-
-    let npv_visitor = NPVConstVisitor::new(&data, true);
-
-    // Calculate NPV for all instruments
-    for inst in instruments.iter() {
-        let inst_npv = npv_visitor
-            .visit(inst)
-            .map_err(|e| format!("NPVConstVisitor failed: {}", e))?;
-        total_npv += inst_npv;
-    }
-
-    Ok(total_npv)
-}
-
+/// Benchmark criterion for fixed rate pricing calculations.
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("multiple", |b| {
-        b.iter(|| multiple().expect("benchmark failed"))
+        b.iter(|| {
+            multiple().expect("benchmark failed")
+        })
     });
 }
 

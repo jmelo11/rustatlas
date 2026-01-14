@@ -26,7 +26,7 @@ use super::{
     },
 };
 
-/// # OvernightCompoundedRateIndex
+/// # `OvernightCompoundedRateIndex`
 /// Overnight index, used for overnight rates. Uses a price index (such as ICP) to calculate the overnight rates.
 #[derive(Clone)]
 pub struct OvernightCompoundedRateIndex {
@@ -34,6 +34,18 @@ pub struct OvernightCompoundedRateIndex {
     overnight_index: OvernightIndex,
 }
 
+/// Calculates the overnight index value for a given period.
+///
+/// # Arguments
+/// * `start_date` - The start date of the period
+/// * `end_date` - The end date of the period
+/// * `index` - The current index value
+/// * `rate` - The overnight rate for the period
+/// * `rate_definition` - The rate definition containing day counter information
+///
+/// # Returns
+/// The updated index value
+#[must_use]
 pub fn calculate_overnight_index(
     start_date: Date,
     end_date: Date,
@@ -44,14 +56,23 @@ pub fn calculate_overnight_index(
     let year_fraction = rate_definition
         .day_counter()
         .year_fraction(start_date, end_date);
-    (1.0 + rate * year_fraction) * index
+    rate.mul_add(year_fraction, 1.0) * index
 }
 
+/// Composes a fixing index from overnight fixing rates.
+///
+/// # Arguments
+/// * `fixings_rates` - A map of dates to overnight rates
+/// * `rate_definition` - The rate definition containing day counter information
+///
+/// # Returns
+/// A map of dates to computed index values
+#[must_use]
 pub fn compose_fixing_rate(
-    fixings_rates: HashMap<Date, f64>,
+    fixings_rates: &HashMap<Date, f64, impl std::hash::BuildHasher>,
     rate_definition: RateDefinition,
 ) -> HashMap<Date, f64> {
-    let mut fixings_rates = fixings_rates.into_iter().collect::<Vec<_>>();
+    let mut fixings_rates = fixings_rates.iter().map(|(k, v)| (*k, *v)).collect::<Vec<_>>();
     fixings_rates.sort_by(|a, b| a.0.cmp(&b.0));
 
     let mut fixing_index = HashMap::new();
@@ -60,54 +81,77 @@ pub fn compose_fixing_rate(
     fixing_index.insert(fixings_rates[0].0, index);
 
     for i in 1..fixings_rates.len() {
-        let (previus_date, previus_rate) = fixings_rates[i - 1];
-        let date = fixings_rates[i].0;
-        let new_index =
-            calculate_overnight_index(previus_date, date, index, previus_rate, rate_definition);
-        fixing_index.insert(date, new_index);
+        let (fixing_date, applied_rate) = fixings_rates[i - 1];
+        let current_date = fixings_rates[i].0;
+        let new_index = calculate_overnight_index(
+            fixing_date,
+            current_date,
+            index,
+            applied_rate,
+            rate_definition,
+        );
+        fixing_index.insert(current_date, new_index);
         index = new_index;
     }
     fixing_index
 }
 
 impl OvernightCompoundedRateIndex {
-    pub fn new(reference_date: Date) -> OvernightCompoundedRateIndex {
-        OvernightCompoundedRateIndex {
+    /// Creates a new `OvernightCompoundedRateIndex` with the given reference date.
+    #[must_use]
+    pub fn new(reference_date: Date) -> Self {
+        Self {
             fixings_rates: HashMap::new(),
             overnight_index: OvernightIndex::new(reference_date),
         }
     }
 
+    /// Sets the name for this index.
+    #[must_use]
     pub fn with_name(mut self, name: Option<String>) -> Self {
         self.overnight_index = self.overnight_index.with_name(name);
         self
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition for this index.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.overnight_index.rate_definition()
     }
 
+    /// Sets the rate definition for this index.
+    #[must_use]
     pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.overnight_index = self.overnight_index.with_rate_definition(rate_definition);
         self
     }
 
+    /// Sets the overnight fixing rates for this index.
+    #[must_use]
     pub fn with_fixings_rates(mut self, fixings_rates: HashMap<Date, f64>) -> Self {
-        self.fixings_rates = fixings_rates.clone();
-        let fixing_index = compose_fixing_rate(fixings_rates, self.rate_definition());
+        let fixing_index = compose_fixing_rate(&fixings_rates, self.rate_definition());
+        self.fixings_rates = fixings_rates;
         self.overnight_index = self.overnight_index.with_fixings(fixing_index);
         self
     }
 
-    pub fn fixings_rates(&self) -> &HashMap<Date, f64> {
+    /// Returns a reference to the fixing rates map.
+    #[must_use]
+    pub const fn fixings_rates(&self) -> &HashMap<Date, f64> {
         &self.fixings_rates
     }
 
+    /// Sets the yield term structure for this index.
+    #[must_use]
     pub fn with_term_structure(mut self, term_structure: Arc<dyn YieldTermStructureTrait>) -> Self {
         self.overnight_index = self.overnight_index.with_term_structure(term_structure);
         self
     }
 
+    /// Calculates the average overnight rate between two dates.
+    ///
+    /// # Errors
+    /// Returns an error if required fixings or rate data are unavailable.
     pub fn average_rate(&self, start_date: Date, end_date: Date) -> Result<f64> {
         self.overnight_index.average_rate(start_date, end_date)
     }
@@ -118,11 +162,10 @@ impl FixingProvider for OvernightCompoundedRateIndex {
         self.overnight_index
             .fixings()
             .get(&date)
-            .cloned()
+            .copied()
             .ok_or(AtlasError::NotFoundErr(format!(
-                "No fixing for date {} for index {:?}",
-                date,
-                self.overnight_index.name()
+                "No fixing for date {date} for index {name:?}",
+                name = self.overnight_index.name()
             )))
     }
 
@@ -131,7 +174,7 @@ impl FixingProvider for OvernightCompoundedRateIndex {
     }
 
     fn add_fixing(&mut self, date: Date, rate: f64) {
-        self.overnight_index.add_fixing(date, rate)
+        self.overnight_index.add_fixing(date, rate);
     }
 }
 
@@ -176,7 +219,9 @@ impl AdvanceInterestRateIndexInTime for OvernightCompoundedRateIndex {
     }
 
     fn advance_to_date(&self, date: Date) -> Result<Arc<RwLock<dyn InterestRateIndexTrait>>> {
-        let days = (date - self.reference_date()) as i32;
+        let days = i32::try_from(date - self.reference_date()).map_err(|_| {
+            AtlasError::InvalidValueErr("Day count should fit in i32".to_string())
+        })?;
         let period = Period::new(days, TimeUnit::Days);
         self.advance_to_period(period)
     }
@@ -247,7 +292,7 @@ mod tests {
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
         let average_rate = overnight_index
             .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
-            .unwrap();
+            .unwrap_or_else(|e| panic!("average_rate should succeed in test_average_rate: {e}"));
         assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
@@ -267,20 +312,24 @@ mod tests {
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
         let average_rate = overnight_index
             .average_rate(Date::new(2021, 1, 2), Date::new(2021, 1, 5))
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!("average_rate should succeed in test_average_rate_disordered: {e}")
+            });
         assert!((average_rate - 0.03).abs() < 1e-5);
     }
 
     #[test]
-    fn test_fixing() -> Result<()> {
+    fn test_fixing() {
         let date = Date::new(2021, 1, 1);
         let mut fixings = HashMap::new();
         fixings.insert(Date::new(2021, 1, 1), 0.02);
         let overnight_index =
             OvernightCompoundedRateIndex::new(date).with_fixings_rates(fixings.clone());
 
-        assert_eq!(overnight_index.fixing(Date::new(2021, 1, 1))?, 1000.0);
-        Ok(())
+        let fixing = overnight_index
+            .fixing(Date::new(2021, 1, 1))
+            .unwrap_or_else(|e| panic!("fixing should succeed in test_fixing: {e}"));
+        assert!((fixing - 1000.0).abs() < 1e-10);
     }
 
     #[test]
@@ -314,11 +363,11 @@ mod tests {
     }
 
     #[test]
-    fn test_fixing_provider_overnight() -> Result<()> {
+    fn test_fixing_provider_overnight() {
         let fixing: HashMap<Date, f64> =
             [(Date::new(2023, 6, 2), 2.5), (Date::new(2023, 6, 5), 3.0)]
                 .iter()
-                .cloned()
+                .copied()
                 .collect();
 
         let mut overnight_index =
@@ -330,11 +379,12 @@ mod tests {
             (overnight_index
                 .fixings()
                 .get(&Date::new(2023, 6, 3))
-                .unwrap()
+                .unwrap_or_else(|| panic!(
+                    "fixings map should contain interpolated fixing for 2023-06-03"
+                ))
                 - 1006.944444)
                 .abs()
                 < 0.001
         );
-        Ok(())
     }
 }

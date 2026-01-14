@@ -7,7 +7,7 @@ use crate::{
 
 use super::enums::Compounding;
 
-/// # RateDefinition
+/// # `RateDefinition`
 /// Struct that defines a rate.
 /// # Example
 /// ```
@@ -25,34 +25,42 @@ pub struct RateDefinition {
 }
 
 impl RateDefinition {
-    pub fn new(
+    /// Creates a new `RateDefinition` with the specified day counter, compounding, and frequency.
+    #[must_use]
+    pub const fn new(
         day_counter: DayCounter,
         compounding: Compounding,
         frequency: Frequency,
-    ) -> RateDefinition {
-        RateDefinition {
+    ) -> Self {
+        Self {
             day_counter,
             compounding,
             frequency,
         }
     }
 
-    pub fn compounding(&self) -> Compounding {
+    /// Returns the compounding method of this rate definition.
+    #[must_use]
+    pub const fn compounding(&self) -> Compounding {
         self.compounding
     }
 
-    pub fn frequency(&self) -> Frequency {
+    /// Returns the frequency of this rate definition.
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         self.frequency
     }
 
-    pub fn day_counter(&self) -> DayCounter {
+    /// Returns the day counter of this rate definition.
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.day_counter
     }
 }
 
 impl Default for RateDefinition {
     fn default() -> Self {
-        RateDefinition::new(
+        Self::new(
             DayCounter::Actual360,
             Compounding::Simple,
             Frequency::Annual,
@@ -60,7 +68,7 @@ impl Default for RateDefinition {
     }
 }
 
-/// # InterestRate
+/// # `InterestRate`
 /// Struct that defines an interest rate.
 ///
 /// ## Example
@@ -79,60 +87,79 @@ pub struct InterestRate {
 }
 
 impl InterestRate {
-    pub fn new(
+    /// Creates a new `InterestRate` with the specified rate value and rate definition parameters.
+    #[must_use]
+    pub const fn new(
         rate: f64,
         compounding: Compounding,
         frequency: Frequency,
         day_counter: DayCounter,
-    ) -> InterestRate {
-        InterestRate {
+    ) -> Self {
+        Self {
             rate,
             rate_definition: RateDefinition::new(day_counter, compounding, frequency),
         }
     }
 
-    pub fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> InterestRate {
-        InterestRate {
+    /// Creates a new `InterestRate` from a rate value and a `RateDefinition`.
+    #[must_use]
+    pub const fn from_rate_definition(rate: f64, rate_definition: RateDefinition) -> Self {
+        Self {
             rate,
             rate_definition,
         }
     }
 
-    pub fn rate(&self) -> f64 {
+    /// Returns the rate value of this interest rate.
+    #[must_use]
+    pub const fn rate(&self) -> f64 {
         self.rate
     }
 
-    pub fn rate_definition(&self) -> RateDefinition {
+    /// Returns the rate definition of this interest rate.
+    #[must_use]
+    pub const fn rate_definition(&self) -> RateDefinition {
         self.rate_definition
     }
 
-    pub fn compounding(&self) -> Compounding {
+    /// Returns the compounding method of this interest rate.
+    #[must_use]
+    pub const fn compounding(&self) -> Compounding {
         self.rate_definition.compounding()
     }
 
-    pub fn frequency(&self) -> Frequency {
+    /// Returns the frequency of this interest rate.
+    #[must_use]
+    pub const fn frequency(&self) -> Frequency {
         self.rate_definition.frequency()
     }
 
-    pub fn day_counter(&self) -> DayCounter {
+    /// Returns the day counter of this interest rate.
+    #[must_use]
+    pub const fn day_counter(&self) -> DayCounter {
         self.rate_definition.day_counter()
     }
 
+    /// Calculates the implied interest rate from a compound factor.
+    ///
+    /// # Errors
+    /// Returns an error if the compound factor or time are invalid for the
+    /// requested compounding convention.
     pub fn implied_rate(
         compound: f64,
         result_dc: DayCounter,
         comp: Compounding,
         freq: Frequency,
         t: f64,
-    ) -> Result<InterestRate> {
+    ) -> Result<Self> {
         if compound <= 0.0 {
             return Err(AtlasError::InvalidValueErr(
                 "Positive compound factor required".to_string(),
             ));
         }
         let r: f64;
-        let f = freq as i64 as f64;
-        if compound == 1.0 {
+        let f = f64::from(freq as i32);
+        if (compound - 1.0).abs() < 1e-12 {
             if t < 0.0 {
                 return Err(AtlasError::InvalidValueErr(
                     "Non-negative time required".to_string(),
@@ -151,47 +178,51 @@ impl InterestRate {
                 Compounding::Continuous => r = (compound).ln() / t,
                 Compounding::SimpleThenCompounded => {
                     if t <= 1.0 / f {
-                        r = (compound - 1.0) / t
+                        r = (compound - 1.0) / t;
                     } else {
-                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f
+                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f;
                     }
                 }
                 Compounding::CompoundedThenSimple => {
                     if t > 1.0 / f {
-                        r = (compound - 1.0) / t
+                        r = (compound - 1.0) / t;
                     } else {
-                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f
+                        r = (compound.powf(1.0 / (f * t)) - 1.0) * f;
                     }
                 }
             }
         }
-        Ok(InterestRate::new(r, comp, freq, result_dc))
+        Ok(Self::new(r, comp, freq, result_dc))
     }
 
+    /// Calculates the compound factor between two dates using the day counter.
+    #[must_use]
     pub fn compound_factor(&self, start: Date, end: Date) -> f64 {
         let day_counter = self.day_counter();
         let year_fraction = day_counter.year_fraction(start, end);
         self.compound_factor_from_yf(year_fraction)
     }
 
+    /// Calculates the compound factor from a year fraction.
+    #[must_use]
     pub fn compound_factor_from_yf(&self, year_fraction: f64) -> f64 {
         let rate = self.rate();
         let compounding = self.compounding();
-        let f = self.frequency() as i64 as f64;
+        let f = f64::from(self.frequency() as i32);
         match compounding {
-            Compounding::Simple => 1.0 + rate * year_fraction,
+            Compounding::Simple => rate.mul_add(year_fraction, 1.0),
             Compounding::Compounded => (1.0 + rate / f).powf(f * year_fraction),
             Compounding::Continuous => (rate * year_fraction).exp(),
             Compounding::SimpleThenCompounded => {
                 if year_fraction <= 1.0 / f {
-                    1.0 + rate * year_fraction
+                    rate.mul_add(year_fraction, 1.0)
                 } else {
                     (1.0 + rate / f).powf(year_fraction * f)
                 }
             }
             Compounding::CompoundedThenSimple => {
                 if year_fraction > 1.0 / f {
-                    1.0 + rate * year_fraction
+                    rate.mul_add(year_fraction, 1.0)
                 } else {
                     (1.0 + rate / f).powf(year_fraction * f)
                 }
@@ -199,11 +230,15 @@ impl InterestRate {
         }
     }
 
+    /// Calculates the discount factor between two dates.
+    #[must_use]
     pub fn discount_factor(&self, start: Date, end: Date) -> f64 {
         1.0 / self.compound_factor(start, end)
     }
 
-    pub fn forward_rate(
+    /// Calculates the forward rate between two dates with specified compounding and frequency.
+    #[must_use]
+    pub const fn forward_rate(
         &self,
         _start_date: Date,
         _end_date: Date,
@@ -222,6 +257,7 @@ mod tests {
             interestrate::{InterestRate, RateDefinition},
         },
         time::{daycounter::DayCounter, enums::Frequency},
+        utils::errors::Result,
     };
 
     struct InterestRateData {
@@ -234,6 +270,7 @@ mod tests {
         rate2: f64,
         precision: i64,
     }
+    #[allow(clippy::too_many_lines)]
     fn test_cases() -> Vec<InterestRateData> {
         let test_cases = vec![
             InterestRateData {
@@ -556,11 +593,15 @@ mod tests {
                 test_case.frequency2,
                 test_case.time,
             )
-            .unwrap();
-            assert!(
-                (implied_rate.rate() - test_case.rate2).abs()
-                    < (test_case.precision as f64) / 100.0
-            );
+            .unwrap_or_else(|e| {
+                panic!(
+                    "implied_rate should succeed in test_implied_rate_for_compounding_and_frequency: {e}"
+                )
+            });
+            let precision_i32 = i32::try_from(test_case.precision)
+                .unwrap_or_else(|_| panic!("precision should fit in i32"));
+            let precision_limit = f64::from(precision_i32);
+            assert!((implied_rate.rate() - test_case.rate2).abs() < precision_limit / 100.0);
         }
     }
 
@@ -592,7 +633,7 @@ mod tests {
             Frequency::Annual,
             DayCounter::Actual360,
         );
-        assert_eq!(ir.rate(), 0.05);
+        assert!((ir.rate() - 0.05).abs() < 1e-12);
         assert_eq!(ir.compounding(), Compounding::Simple);
         assert_eq!(ir.frequency(), Frequency::Annual);
         assert_eq!(ir.day_counter(), DayCounter::Actual360);
@@ -606,7 +647,7 @@ mod tests {
             Frequency::Annual,
         );
         let ir = InterestRate::from_rate_definition(0.05, rd);
-        assert_eq!(ir.rate(), 0.05);
+        assert!((ir.rate() - 0.05).abs() < 1e-12);
         assert_eq!(ir.compounding(), Compounding::Simple);
         assert_eq!(ir.frequency(), Frequency::Annual);
         assert_eq!(ir.day_counter(), DayCounter::Actual360);
@@ -615,7 +656,7 @@ mod tests {
     const EPSILON: f64 = 1e-9; // or any other small value that you choose
 
     #[test]
-    fn test_implied_rate() {
+    fn test_implied_rate() -> Result<()> {
         // Choose parameters that make sense for your implied_rate function
         // For example:
         let ir = InterestRate::implied_rate(
@@ -624,10 +665,10 @@ mod tests {
             Compounding::Simple,
             Frequency::Annual,
             1.0,
-        )
-        .unwrap();
+        )?;
         let expected_rate = 0.05;
         assert!((ir.rate() - expected_rate).abs() < EPSILON);
+        Ok(())
     }
 
     #[test]

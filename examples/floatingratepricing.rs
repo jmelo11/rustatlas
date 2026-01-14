@@ -1,3 +1,5 @@
+//! Example demonstrating pricing of floating rate instruments using the rustatlas library.
+
 extern crate rustatlas;
 use rustatlas::{
     instruments::makefloatingrateinstrument::MakeFloatingRateInstrument,
@@ -16,10 +18,8 @@ use rustatlas::{
     },
 };
 mod common;
-use crate::common::common::*;
+use crate::common::common::{create_store, print_separator, print_table, print_title};
 
-// Replace with the actual error type from your crate
-// Check your crate's documentation or error module for the correct type
 type AppResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 fn starting_today_pricing() -> AppResult<()> {

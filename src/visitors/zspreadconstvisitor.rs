@@ -12,8 +12,8 @@ use crate::{
 
 use super::traits::{ConstVisit, HasCashflows};
 
-/// # ZSpreadConstVisitor
-/// ZSpreadConstVisitor is a visitor that calculates the ZSpread of a generic instrument.
+/// # `ZSpreadConstVisitor`
+/// `ZSpreadConstVisitor` is a visitor that calculates the `ZSpread` of a generic instrument.
 ///
 /// ## Parameters
 /// * `market_data` - The market data to use for evaluation
@@ -26,6 +26,9 @@ pub struct ZSpreadConstVisitor<'a> {
 }
 
 impl<'a> ZSpreadConstVisitor<'a> {
+    /// Creates a new `ZSpreadConstVisitor` with the given market data, rate definition, and target NPV.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(
         market_data: &'a [MarketData],
         rate_definition: RateDefinition,
@@ -46,7 +49,7 @@ struct SpreadedNPV<'a, T> {
     target: f64,
 }
 
-impl<'a, T> SpreadedNPV<'a, T>
+impl<T> SpreadedNPV<'_, T>
 where
     T: HasCashflows,
 {
@@ -56,8 +59,7 @@ where
             .market_data
             .get(id)
             .ok_or(AtlasError::NotFoundErr(format!(
-                "Market data for cashflow with id {}",
-                id
+                "Market data for cashflow with id {id}"
             )))?;
 
         let t = self
@@ -91,7 +93,7 @@ where
     }
 }
 
-impl<'a, T> CostFunction for SpreadedNPV<'a, T>
+impl<T> CostFunction for SpreadedNPV<'_, T>
 where
     T: HasCashflows,
 {
@@ -104,19 +106,18 @@ where
             .cashflows()
             .iter()
             .try_fold(0.0, |acc, cf| -> Result<f64> {
-                match cf {
-                    Cashflow::Disbursement(_) => Ok(acc),
-                    _ => {
-                        let cf_npv = self.cashflow_npv(cf, *param)?;
-                        Ok(acc + cf_npv)
-                    }
+                if let Cashflow::Disbursement(_) = cf {
+                    Ok(acc)
+                } else {
+                    let cf_npv = self.cashflow_npv(cf, *param)?;
+                    Ok(acc + cf_npv)
                 }
             })?;
         Ok((npv - self.target).abs())
     }
 }
 
-impl<'a, T> ConstVisit<T> for ZSpreadConstVisitor<'a>
+impl<T> ConstVisit<T> for ZSpreadConstVisitor<'_>
 where
     T: HasCashflows,
 {
@@ -134,7 +135,10 @@ where
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
-        Ok(*res.state().get_best_param().unwrap())
+        let best_param = res.state().get_best_param().ok_or_else(|| {
+            AtlasError::EvaluationErr("ZSpread solver did not return best parameter".to_string())
+        })?;
+        Ok(*best_param)
     }
 }
 
@@ -236,8 +240,8 @@ mod tests {
         );
         let zspread_visitor = ZSpreadConstVisitor::new(&data, zspread_rate_definition, 100.0);
 
-        let zspread = zspread_visitor.visit(&instrument)?;
-        println!("ZSpread: {}", zspread * 100.0);
+        let zspread = zspread_visitor.visit(&instrument)? * 100.0;
+        println!("ZSpread: {zspread}");
         Ok(())
     }
 }

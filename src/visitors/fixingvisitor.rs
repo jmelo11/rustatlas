@@ -6,8 +6,8 @@ use crate::{
 
 use super::traits::{HasCashflows, Visit};
 
-/// # FixingVisitor
-/// FixingVisitor is a visitor that fixes the rate of a floating rate cashflow.
+/// # `FixingVisitor`
+/// `FixingVisitor` is a visitor that fixes the rate of a floating rate cashflow.
 ///
 /// ## Parameters
 /// * `market_data` - The market data to use for fixing
@@ -16,12 +16,18 @@ pub struct FixingVisitor<'a> {
 }
 
 impl<'a> FixingVisitor<'a> {
+    /// Creates a new `FixingVisitor` with the given market data.
+    ///
+    /// # Arguments
+    /// * `market_data` - A slice of market data to use for fixing rates
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(market_data: &'a [MarketData]) -> Self {
-        FixingVisitor { market_data }
+        Self { market_data }
     }
 }
 
-impl<'a, T: HasCashflows> Visit<T> for FixingVisitor<'a> {
+impl<T: HasCashflows> Visit<T> for FixingVisitor<'_> {
     type Output = Result<()>;
     fn visit(&self, has_cashflows: &mut T) -> Self::Output {
         has_cashflows
@@ -34,8 +40,7 @@ impl<'a, T: HasCashflows> Visit<T> for FixingVisitor<'a> {
                         self.market_data
                             .get(id)
                             .ok_or(AtlasError::NotFoundErr(format!(
-                                "Market data for cashflow with id {}",
-                                id
+                                "Market data for cashflow with id {id}"
                             )))?;
                     let fixing_rate = cf_market_data.fwd()?;
                     frcf.set_fixing_rate(fixing_rate);

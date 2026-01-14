@@ -19,8 +19,8 @@ use super::{
     traits::{ConstVisit, Visit},
 };
 
-/// # ParValue
-/// ParValue is a cost function that calculates the NPV of a generic instrument.
+/// # `ParValue`
+/// `ParValue` is a cost function that calculates the NPV of a generic instrument.
 ///
 /// ## Parameters
 /// * `eval` - The instrument to evaluate
@@ -32,6 +32,8 @@ struct ParValue<'a, T> {
 }
 
 impl<'a, T> ParValue<'a, T> {
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(eval: &'a T, market_data: &'a [MarketData]) -> Self {
         let npv_visitor = NPVConstVisitor::new(market_data, true);
         let fixing_visitor = FixingVisitor::new(market_data);
@@ -44,7 +46,7 @@ impl<'a, T> ParValue<'a, T> {
 }
 
 // cost function for fixed rate instrument
-impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
+impl CostFunction for ParValue<'_, FixedRateInstrument> {
     type Param = f64;
     type Output = f64;
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
@@ -65,7 +67,7 @@ impl<'a> CostFunction for ParValue<'a, FixedRateInstrument> {
 }
 
 // cost function for floating rate instrument
-impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
+impl CostFunction for ParValue<'_, FloatingRateInstrument> {
     type Param = f64;
     type Output = f64;
     fn cost(&self, param: &Self::Param) -> std::result::Result<Self::Output, Error> {
@@ -82,19 +84,22 @@ impl<'a> CostFunction for ParValue<'a, FloatingRateInstrument> {
     }
 }
 
-/// # ParValueConstVisitor
-/// ParValueConstVisitor is a visitor that calculates the par rate/spread of.
+/// # `ParValueConstVisitor`
+/// `ParValueConstVisitor` is a visitor that calculates the par rate or spread of an instrument.
 pub struct ParValueConstVisitor<'a> {
     market_data: &'a [MarketData],
 }
 
 impl<'a> ParValueConstVisitor<'a> {
+    /// Creates a new `ParValueConstVisitor` with the given market data.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(market_data: &'a [MarketData]) -> Self {
-        ParValueConstVisitor { market_data }
+        Self { market_data }
     }
 }
 
-impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
+impl ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'_> {
     type Output = Result<f64>;
     // visit fixed rate instrument
     // use BrentRoot solver to find the par rate
@@ -110,11 +115,18 @@ impl<'a> ConstVisit<FixedRateInstrument> for ParValueConstVisitor<'a> {
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
-        Ok(*res.state().get_best_param().unwrap())
+        let best_param = res.state().get_best_param().copied().ok_or_else(|| {
+            crate::utils::errors::AtlasError::EvaluationErr(
+                "No optimal parameter found in ParValueConstVisitor for FixedRateInstrument"
+                    .to_string(),
+            )
+        })?;
+
+        Ok(best_param)
     }
 }
 
-impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
+impl ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'_> {
     type Output = Result<f64>;
     // visit floating rate instrument
     // use BrentRoot solver to find the par spread
@@ -126,7 +138,14 @@ impl<'a> ConstVisit<FloatingRateInstrument> for ParValueConstVisitor<'a> {
             .configure(|state| state.max_iters(100).target_cost(0.0))
             .run()?;
 
-        Ok(*res.state().get_best_param().unwrap())
+        let best_param = res.state().get_best_param().copied().ok_or_else(|| {
+            crate::utils::errors::AtlasError::EvaluationErr(
+                "No optimal parameter found in ParValueConstVisitor for FloatingRateInstrument"
+                    .to_string(),
+            )
+        })?;
+
+        Ok(best_param)
     }
 }
 
@@ -238,14 +257,14 @@ mod test {
         while seed <= end {
             fixings.insert(seed, init);
             seed = seed + Period::new(1, TimeUnit::Days);
-            init *= 1.0 + rate * 1.0 / 360.0
+            init *= 1.0 + rate * 1.0 / 360.0;
         }
         fixings
     }
 
     #[test]
     fn test_par_value_fixed_equal_payment() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -286,7 +305,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -325,7 +344,7 @@ mod test {
 
     #[test]
     fn test_par_value_fixed_bullet_negative_rate() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;
@@ -365,7 +384,7 @@ mod test {
 
     #[test]
     fn test_par_value_floating_bullet() -> Result<()> {
-        let market_store = create_store().unwrap();
+        let market_store = create_store()?;
         let ref_date = market_store.reference_date();
 
         let start_date = ref_date;

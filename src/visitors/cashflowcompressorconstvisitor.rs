@@ -1,4 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, hash::Hash};
+use std::{
+    cell::RefCell,
+    collections::{hash_map::Entry, HashMap},
+    hash::Hash,
+};
 
 use crate::{
     cashflows::{
@@ -20,12 +24,15 @@ use crate::{
 use super::traits::{ConstVisit, HasCashflows};
 use crate::utils::errors::Result;
 
-/// # SimpleCashlowGroup
+/// # `SimpleCashlowGroup`
 /// Struct that defines a cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SimpleCashlowGroup {
+    /// The discount curve identifier
     pub discount_curve_id: Option<usize>,
+    /// The payment date
     pub payment_date: Date,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -36,13 +43,18 @@ impl Hash for SimpleCashlowGroup {
     }
 }
 
-/// # FixedRateCashflowGroup
+/// # `FixedRateCashflowGroup`
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FixedRateCashflowGroup {
+    /// The accrual start date
     pub accrual_start_date: Date,
+    /// The accrual end date
     pub accrual_end_date: Date,
+    /// The discount curve identifier
     pub discount_curve_id: usize,
+    /// The rate definition
     pub rate_definition: RateDefinition,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -56,16 +68,23 @@ impl Hash for FixedRateCashflowGroup {
     }
 }
 
-/// # FloatingRateCashflowGroup
+/// # `FloatingRateCashflowGroup`
 /// Struct that defines a floating rate cashflow group.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FloatingRateCashflowGroup {
+    /// The accrual start date
     pub accrual_start_date: Date,
+    /// The accrual end date
     pub accrual_end_date: Date,
+    /// The fixing date
     pub fixing_date: Date,
+    /// The discount curve identifier
     pub discount_curve_id: usize,
+    /// The forecast curve identifier
     pub forecast_curve_id: usize,
+    /// The rate definition
     pub rate_definition: RateDefinition,
+    /// The side of the cashflow
     pub side: Side,
 }
 
@@ -81,7 +100,7 @@ impl Hash for FloatingRateCashflowGroup {
     }
 }
 
-/// # CashflowCompressorConstVisitor
+/// # `CashflowCompressorConstVisitor`
 /// This visitor is used to compress cashflows into groups to reduce the number of cashflows that need to be processed.
 ///
 /// ## Details
@@ -106,6 +125,8 @@ pub struct CashflowCompressorConstVisitor {
 }
 
 impl CashflowCompressorConstVisitor {
+    /// Creates a new `CashflowCompressorConstVisitor` with the specified currency.
+    #[must_use]
     pub fn new(currency: Currency) -> Self {
         Self {
             disbursements: RefCell::new(HashMap::new()),
@@ -119,16 +140,21 @@ impl CashflowCompressorConstVisitor {
         }
     }
 
+    /// Converts the compressed cashflows into an `Instrument`.
+    ///
+    /// # Errors
+    /// Returns an error if the estimated start or end date has not been set
+    /// when building the instrument from the compressed cashflows.
     pub fn as_instrument(&self) -> Result<Instrument> {
         let mut cashflows = Vec::new();
 
-        cashflows.extend(self.disbursements.borrow().values().cloned());
-        cashflows.extend(self.redemptions.borrow().values().cloned());
-        cashflows.extend(self.fixed_rate_coupons.borrow().values().cloned());
-        cashflows.extend(self.floating_rate_coupons.borrow().values().cloned());
+        cashflows.extend(self.disbursements.borrow().values().copied());
+        cashflows.extend(self.redemptions.borrow().values().copied());
+        cashflows.extend(self.fixed_rate_coupons.borrow().values().copied());
+        cashflows.extend(self.floating_rate_coupons.borrow().values().copied());
 
         // Sort cashflows chronologically based on payment dates
-        cashflows.sort_by_key(|cf| cf.payment_date());
+        cashflows.sort_by_key(Payable::payment_date);
 
         // most of the fields do not make sense in this context
         let instrument = Instrument::HybridRateInstrument(HybridRateInstrument::new(
@@ -162,6 +188,7 @@ impl CashflowCompressorConstVisitor {
 impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
     type Output = Result<()>;
 
+    #[allow(clippy::too_many_lines)]
     fn visit(&self, visitable: &T) -> Self::Output {
         visitable
             .cashflows()
@@ -170,9 +197,9 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                 // validate that the cashflow currency is the same as the instrument currency
                 if cf.currency()? != self.currency {
                     return Err(AtlasError::InvalidValueErr(format!(
-                        "Cashflow currency {} does not match instrument currency {}",
-                        String::from(cf.currency()?),
-                        String::from(self.currency)
+                        "Cashflow currency {cashflow_currency} does not match instrument currency {instrument_currency}",
+                        cashflow_currency = String::from(cf.currency()?),
+                        instrument_currency = String::from(self.currency)
                     )));
                 }
 
@@ -197,65 +224,69 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
 
                 match cf {
                     Cashflow::Disbursement(disbursement) => {
+                        let disbursement_amount = disbursement.amount()?;
                         let group = SimpleCashlowGroup {
                             discount_curve_id: Some(disbursement.discount_curve_id()?),
                             payment_date: disbursement.payment_date(),
                             side: disbursement.side(),
                         };
                         let mut disbursements = self.disbursements.borrow_mut();
-                        disbursements
-                            .entry(group)
-                            .and_modify(|pos| {
-                                if let Cashflow::Disbursement(pos) = pos {
-                                    pos.set_amount(
-                                        pos.amount().unwrap() + disbursement.amount().unwrap(),
-                                    );
+                        match disbursements.entry(group) {
+                            Entry::Occupied(mut entry) => {
+                                if let Cashflow::Disbursement(pos) = entry.get_mut() {
+                                    let new_amount = pos.amount()? + disbursement_amount;
+                                    pos.set_amount(new_amount);
                                 }
-                            })
-                            .or_insert(Cashflow::Disbursement(disbursement));
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(Cashflow::Disbursement(disbursement));
+                            }
+                        }
                     }
                     Cashflow::Redemption(redemption) => {
+                        let redemption_amount = redemption.amount()?;
                         let group = SimpleCashlowGroup {
                             discount_curve_id: Some(redemption.discount_curve_id()?),
                             payment_date: redemption.payment_date(),
                             side: redemption.side(),
                         };
                         let mut redemptions = self.redemptions.borrow_mut();
-                        redemptions
-                            .entry(group)
-                            .and_modify(|pos| {
-                                if let Cashflow::Redemption(pos) = pos {
-                                    pos.set_amount(
-                                        pos.amount().unwrap() + redemption.amount().unwrap(),
-                                    );
+                        match redemptions.entry(group) {
+                            Entry::Occupied(mut entry) => {
+                                if let Cashflow::Redemption(pos) = entry.get_mut() {
+                                    let new_amount = pos.amount()? + redemption_amount;
+                                    pos.set_amount(new_amount);
                                 }
-                            })
-                            .or_insert(Cashflow::Redemption(redemption));
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(Cashflow::Redemption(redemption));
+                            }
+                        }
 
                         let mut estimated_notional = self.estimated_notional.borrow_mut();
-                        *estimated_notional +=
-                            redemption.amount().unwrap() * redemption.side().sign();
+                        *estimated_notional += redemption_amount * redemption.side().sign();
                     }
                     Cashflow::FixedRateCoupon(cf) => {
+                        let accrual_start_date = cf.accrual_start_date()?;
                         let group = FixedRateCashflowGroup {
-                            accrual_start_date: cf.accrual_start_date().unwrap(),
-                            accrual_end_date: cf.accrual_end_date().unwrap(),
+                            accrual_start_date,
+                            accrual_end_date: cf.accrual_end_date()?,
                             discount_curve_id: cf.discount_curve_id()?,
                             rate_definition: cf.rate().rate_definition(),
                             side: cf.side(),
                         };
                         let mut fixed_rate_coupons = self.fixed_rate_coupons.borrow_mut();
-                        fixed_rate_coupons
-                            .entry(group)
-                            .and_modify(|pos| {
-                                if let Cashflow::FixedRateCoupon(pos) = pos {
-                                    let interest = pos.amount().unwrap() + cf.amount().unwrap();
+                        match fixed_rate_coupons.entry(group) {
+                            Entry::Occupied(mut entry) => {
+                                if let Cashflow::FixedRateCoupon(pos) = entry.get_mut() {
+                                    let interest = pos.amount()? + cf.amount()?;
                                     let notional = pos.notional() + cf.notional();
                                     let compound_factor = (notional + interest) / notional;
-                                    let t = cf.rate().day_counter().year_fraction(
-                                        cf.accrual_start_date().unwrap(),
-                                        cf.accrual_end_date().unwrap(),
-                                    );
+                                    let accrual_end_date = cf.accrual_end_date()?;
+                                    let t = cf
+                                        .rate()
+                                        .day_counter()
+                                        .year_fraction(accrual_start_date, accrual_end_date);
                                     let new_rate = InterestRate::implied_rate(
                                         compound_factor,
                                         cf.rate().rate_definition().day_counter(),
@@ -263,26 +294,34 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                                         cf.rate().rate_definition().frequency(),
                                         t,
                                     )
-                                    .unwrap();
+                                    .map_err(|e| {
+                                        AtlasError::EvaluationErr(format!(
+                                            "Failed to compute implied rate in CashflowCompressorConstVisitor: {e}",
+                                        ))
+                                    })?;
                                     pos.set_rate(new_rate);
                                     pos.set_notional(notional);
                                 }
-                            })
-                            .or_insert(Cashflow::FixedRateCoupon(cf));
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(Cashflow::FixedRateCoupon(cf));
+                            }
+                        }
 
                         // check if start_accrual_date is less than the current estimated start date
                         if let Some(start_date) = *estimated_start_date {
-                            if cf.accrual_start_date().unwrap() < start_date {
-                                *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            if accrual_start_date < start_date {
+                                *estimated_start_date = Some(accrual_start_date);
                             }
                         } else {
-                            *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            *estimated_start_date = Some(accrual_start_date);
                         }
                     }
                     Cashflow::FloatingRateCoupon(cf) => {
+                        let accrual_start_date = cf.accrual_start_date()?;
                         let group = FloatingRateCashflowGroup {
-                            accrual_start_date: cf.accrual_start_date().unwrap(),
-                            accrual_end_date: cf.accrual_end_date().unwrap(),
+                            accrual_start_date,
+                            accrual_end_date: cf.accrual_end_date()?,
                             fixing_date: cf.fixing_date(),
                             discount_curve_id: cf.discount_curve_id()?,
                             forecast_curve_id: cf.forecast_curve_id()?,
@@ -290,27 +329,29 @@ impl<T: HasCashflows> ConstVisit<T> for CashflowCompressorConstVisitor {
                             side: cf.side(),
                         };
                         let mut floating_rate_coupons = self.floating_rate_coupons.borrow_mut();
-                        floating_rate_coupons
-                            .entry(group)
-                            .and_modify(|pos| {
-                                if let Cashflow::FloatingRateCoupon(pos) = pos {
+                        match floating_rate_coupons.entry(group) {
+                            Entry::Occupied(mut entry) => {
+                                if let Cashflow::FloatingRateCoupon(pos) = entry.get_mut() {
                                     let total = pos.notional() + cf.notional();
                                     let w1 = pos.notional() / total;
                                     let w2 = cf.notional() / total;
-                                    let spread = w1 * pos.spread() + w2 * cf.spread();
+                                    let spread = w1.mul_add(pos.spread(), w2 * cf.spread());
                                     pos.set_spread(spread);
                                     pos.set_notional(total);
                                 }
-                            })
-                            .or_insert(Cashflow::FloatingRateCoupon(cf));
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(Cashflow::FloatingRateCoupon(cf));
+                            }
+                        }
 
                         // check if start_accrual_date is less than the current estimated start date
                         if let Some(start_date) = *estimated_start_date {
-                            if cf.accrual_start_date().unwrap() < start_date {
-                                *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            if accrual_start_date < start_date {
+                                *estimated_start_date = Some(accrual_start_date);
                             }
                         } else {
-                            *estimated_start_date = Some(cf.accrual_start_date().unwrap());
+                            *estimated_start_date = Some(accrual_start_date);
                         }
                     }
                 }
@@ -374,7 +415,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -425,7 +466,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -478,7 +519,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -530,7 +571,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
         assert_eq!(instrument.end_date(), end_date);
         assert_eq!(instrument.currency()?, Currency::USD);
@@ -589,7 +630,7 @@ mod tests {
         visitor.visit(&instrument_b)?;
 
         let instrument = visitor.as_instrument()?;
-        assert_eq!(instrument.notional(), 200.0);
+        assert!((instrument.notional() - 200.0).abs() < 1e-12);
         assert_eq!(instrument.start_date(), start_date);
 
         instrument.cashflows().iter().for_each(|cf| {

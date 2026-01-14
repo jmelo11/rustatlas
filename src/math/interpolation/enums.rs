@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits::Interpolate};
 
-/// # Interpolator
+/// # `Interpolator`
 /// Enum that represents the type of interpolation.
 ///
 /// ## Example
@@ -17,17 +17,21 @@ use super::{linear::LinearInterpolator, loglinear::LogLinearInterpolator, traits
 /// ```
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Interpolator {
+    /// Linear interpolation method.
     Linear,
+    /// Logarithmic linear interpolation method.
     LogLinear,
 }
 
 impl Interpolator {
+    /// Performs interpolation for a given x value using the specified interpolation method.
+    #[must_use]
     pub fn interpolate(&self, x: f64, x_: &[f64], y_: &[f64], enable_extrapolation: bool) -> f64 {
         match self {
-            Interpolator::Linear => {
+            Self::Linear => {
                 LinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)
             }
-            Interpolator::LogLinear => {
+            Self::LogLinear => {
                 LogLinearInterpolator::interpolate(x, x_, y_, enable_extrapolation)
             }
         }

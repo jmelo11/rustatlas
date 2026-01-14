@@ -1,7 +1,7 @@
 use super::leg::Leg;
 use crate::cashflows::cashflow::Cashflow;
 
-/// # Swap
+/// # `Swap`
 /// A financial swap derivative.
 pub struct Swap {
     cashflows: Vec<Cashflow>,
@@ -11,8 +11,10 @@ pub struct Swap {
 
 impl Swap {
     /// Create a new swap.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new(cashflows: Vec<Cashflow>, legs: Vec<Leg>, id: Option<String>) -> Self {
-        Swap {
+        Self {
             cashflows,
             legs,
             id,
@@ -21,23 +23,25 @@ impl Swap {
 
     /// Add a leg to the swap.
     pub fn add_leg(&mut self, leg: Leg) {
-        self.legs.push(leg.clone());
-        self.cashflows
-            .extend(leg.clone().cashflows().iter().cloned());
+        self.cashflows.extend(leg.cashflows().iter().copied());
+        self.legs.push(leg);
     }
 
     /// Get the legs of the swap.
-    pub fn legs(&self) -> &Vec<Leg> {
+    #[must_use]
+    pub const fn legs(&self) -> &Vec<Leg> {
         &self.legs
     }
 
     /// Get the cashflows of the swap.
-    pub fn cashflows(&self) -> &Vec<Cashflow> {
+    #[must_use]
+    pub const fn cashflows(&self) -> &Vec<Cashflow> {
         &self.cashflows
     }
 
     /// Get the id of the swap.
-    pub fn id(&self) -> &Option<String> {
+    #[must_use]
+    pub const fn id(&self) -> &Option<String> {
         &self.id
     }
 

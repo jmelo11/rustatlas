@@ -26,11 +26,13 @@ use super::{
     doublerateinstrument::DoubleRateInstrument, instrument::RateType, traits::add_cashflows_to_vec,
 };
 
-/// MakeDoubleRateInstrument
-/// MakeDoubleRateInstrument is a builder for DoubleRateInstrument struct.
-/// Three different types of rates are supported: FixedThenFixed, FixedThenFloating and FloatingThenFixed
-/// In the case of floating part, te values "first_part_rate_definition", "first_part_rate" or "second_part_rate_definition" and "second_part_rate" make reference to the spread over the fixing rate
-/// In the case of fixed part, theses values make reference to the fixed rate
+/// # `MakeDoubleRateInstrument`
+/// `MakeDoubleRateInstrument` is a builder for the `DoubleRateInstrument` struct.
+/// Three different types of rates are supported: `FixedThenFixed`, `FixedThenFloating`, and
+/// `FloatingThenFixed`.
+/// In the case of the floating part, the values `first_part_rate_definition`, `first_part_rate`,
+/// `second_part_rate_definition`, and `second_part_rate` refer to the spread over the fixing rate.
+/// In the case of the fixed part, these values refer to the fixed rate.
 pub struct MakeDoubleRateInstrument {
     start_date: Option<Date>,
     end_date: Option<Date>,
@@ -58,8 +60,11 @@ pub struct MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
+    /// Creates a new instance of `MakeDoubleRateInstrument` with default values.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
     pub fn new() -> Self {
-        MakeDoubleRateInstrument {
+        Self {
             start_date: None,
             end_date: None,
             change_rate_date: None,
@@ -87,147 +92,170 @@ impl MakeDoubleRateInstrument {
     }
 
     /// Sets the issue date.
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
         self.issue_date = Some(issue_date);
         self
     }
 
     /// Sets the first coupon date.
-    pub fn with_first_coupon_date(mut self, first_coupon_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_first_coupon_date(mut self, first_coupon_date: Date) -> Self {
         self.first_coupon_date = Some(first_coupon_date);
         self
     }
 
     /// Sets the currency.
-    pub fn with_currency(mut self, currency: Currency) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
     /// Sets the side.
-    pub fn with_side(mut self, side: Side) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> Self {
         self.side = Some(side);
         self
     }
 
     /// Sets the notional.
-    pub fn with_notional(mut self, notional: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_id(mut self, id: String) -> MakeDoubleRateInstrument {
+    /// Sets the instrument identifier.
+    #[must_use]
+    pub fn with_id(mut self, id: String) -> Self {
         self.id = Some(id);
         self
     }
 
     /// Sets the start date.
-    pub fn with_start_date(mut self, start_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
     /// Sets the end date.
-    pub fn with_end_date(mut self, end_date: Date) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
     /// Sets the discount curve id.
-    pub fn with_discount_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_discount_curve_id(mut self, id: Option<usize>) -> Self {
         self.discount_curve_id = id;
         self
     }
 
     /// Sets the forecast curve id.
-    pub fn with_forecast_curve_id(mut self, id: Option<usize>) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_forecast_curve_id(mut self, id: Option<usize>) -> Self {
         self.forecast_curve_id = id;
         self
     }
 
     /// Sets the tenor.
-    pub fn with_tenor(mut self, tenor: Period) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = Some(tenor);
         self
     }
 
     /// Sets the change rate date.
-    pub fn with_tenor_change_rate(mut self, tenor_change_rate: Period) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_tenor_change_rate(mut self, tenor_change_rate: Period) -> Self {
         self.tenor_change_rate = Some(tenor_change_rate);
         self
     }
 
     /// Sets the tenor grace period.
-    pub fn with_tenor_grace_period(
+    #[must_use]
+    pub const fn with_tenor_grace_period(
         mut self,
         tenor_grace_period: Period,
-    ) -> MakeDoubleRateInstrument {
+    ) -> Self {
         self.tenor_grace_period = Some(tenor_grace_period);
         self
     }
 
     /// Sets the payment frequency.
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.payment_frequency = Some(frequency);
         self
     }
 
     /// Sets the change rate date.
-    pub fn with_calendar(mut self, calendar: Calendar) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub fn with_calendar(mut self, calendar: Calendar) -> Self {
         self.calendar = Some(calendar);
         self
     }
 
     /// Sets the business day convention.
-    pub fn with_business_day_convention(
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: BusinessDayConvention,
-    ) -> MakeDoubleRateInstrument {
+    ) -> Self {
         self.business_day_convention = Some(business_day_convention);
         self
     }
 
     /// Sets the date generation rule.
-    pub fn with_date_generation_rule(
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: DateGenerationRule,
-    ) -> MakeDoubleRateInstrument {
+    ) -> Self {
         self.date_generation_rule = Some(date_generation_rule);
         self
     }
 
     /// Sets the rate type.
-    pub fn with_rate_type(mut self, rate_type: RateType) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_rate_type(mut self, rate_type: RateType) -> Self {
         self.rate_type = Some(rate_type);
         self
     }
 
     /// Sets the rate definition for the first part.
-    pub fn with_first_part_rate_definition(
+    #[must_use]
+    pub const fn with_first_part_rate_definition(
         mut self,
         rate_definition: RateDefinition,
-    ) -> MakeDoubleRateInstrument {
+    ) -> Self {
         self.first_part_rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the rate value for the first part.
-    pub fn with_first_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_first_part_rate(mut self, rate: f64) -> Self {
         self.first_part_rate = Some(rate);
         self
     }
 
     /// Sets the rate definition for the second part.
-    pub fn with_second_part_rate_definition(
+    #[must_use]
+    pub const fn with_second_part_rate_definition(
         mut self,
         rate_definition: RateDefinition,
-    ) -> MakeDoubleRateInstrument {
+    ) -> Self {
         self.second_part_rate_definition = Some(rate_definition);
         self
     }
 
     /// Sets the rate value for the second part.
-    pub fn with_second_part_rate(mut self, rate: f64) -> MakeDoubleRateInstrument {
+    #[must_use]
+    pub const fn with_second_part_rate(mut self, rate: f64) -> Self {
         self.second_part_rate = Some(rate);
         self
     }
@@ -240,6 +268,11 @@ impl Default for MakeDoubleRateInstrument {
 }
 
 impl MakeDoubleRateInstrument {
+    /// Builds and returns a `DoubleRateInstrument` from the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<DoubleRateInstrument> {
         // vector to store cashflows
         let mut cashflows = Vec::new();
@@ -251,16 +284,7 @@ impl MakeDoubleRateInstrument {
 
         // Definition of rate use to construct the redemption profile
         let rate = match rate_type {
-            RateType::FixedThenFixed => {
-                let rate_definition = self
-                    .first_part_rate_definition
-                    .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
-                let rate_value = self
-                    .first_part_rate
-                    .ok_or(AtlasError::ValueNotSetErr("Rate value".into()))?;
-                InterestRate::from_rate_definition(rate_value, rate_definition)
-            }
-            RateType::FixedThenFloating => {
+            RateType::FixedThenFixed | RateType::FixedThenFloating => {
                 let rate_definition = self
                     .first_part_rate_definition
                     .ok_or(AtlasError::ValueNotSetErr("Rate definition".into()))?;
@@ -296,26 +320,23 @@ impl MakeDoubleRateInstrument {
             .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
 
         // end_date is required, if not set, it will be calculated using tenor
-        let end_date = match self.end_date {
-            Some(date) => date,
-            None => {
-                let tenor = self.tenor.ok_or(AtlasError::ValueNotSetErr(
-                    "Tenor or end date is required".into(),
-                ))?;
-                start_date + tenor
-            }
+        let end_date = if let Some(date) = self.end_date {
+            date
+        } else {
+            let tenor = self.tenor.ok_or(AtlasError::ValueNotSetErr(
+                "Tenor or end date is required".into(),
+            ))?;
+            start_date + tenor
         };
 
         // change_rate_date is required, if not set, it will be calculated using tenor_change_rate
-        let change_rate_date = match self.change_rate_date {
-            Some(date) => date,
-            None => {
-                let tenor_change_rate =
-                    self.tenor_change_rate.ok_or(AtlasError::ValueNotSetErr(
-                        "Tenor change rate or change rate date is required".into(),
-                    ))?;
-                start_date + tenor_change_rate
-            }
+        let change_rate_date = if let Some(date) = self.change_rate_date {
+            date
+        } else {
+            let tenor_change_rate = self.tenor_change_rate.ok_or(AtlasError::ValueNotSetErr(
+                "Tenor change rate or change rate date is required".into(),
+            ))?;
+            start_date + tenor_change_rate
         };
 
         // schedule builder for period between start date and change rate date
@@ -398,24 +419,30 @@ impl MakeDoubleRateInstrument {
             .ok_or(AtlasError::ValueNotSetErr("Notional".into()))?;
 
         let redemptions_raw: Vec<f64> =
-            calculate_equal_payment_redemptions(dates.clone(), rate, notional)?;
+            calculate_equal_payment_redemptions(&dates, rate, notional)?;
 
-        let mut notionals = redemptions_raw.iter().fold(vec![notional], |mut acc, x| {
-            acc.push(acc.last().unwrap() - x);
-            acc
-        });
+        let mut notionals =
+            redemptions_raw
+                .iter()
+                .try_fold(vec![notional], |mut acc, x| {
+                    let last = *acc.last().ok_or(AtlasError::InvalidValueErr(
+                        "Notional schedule cannot be empty".into(),
+                    ))?;
+                    acc.push(last - x);
+                    Ok::<_, AtlasError>(acc)
+                })?;
 
         notionals.pop();
 
         let first_part_notionals: Vec<f64> = notionals
             .iter()
             .take(dates_first_part.len() - 1)
-            .cloned()
+            .copied()
             .collect();
         let second_part_notionals: Vec<f64> = notionals
             .iter()
             .skip(dates_first_part.len() - 1)
-            .cloned()
+            .copied()
             .collect();
 
         let notional_at_change_rate = second_part_notionals
@@ -457,7 +484,9 @@ impl MakeDoubleRateInstrument {
             currency,
         )?;
 
-        let first_date = vec![*dates.first().unwrap()];
+        let first_date = vec![*dates
+            .first()
+            .ok_or(AtlasError::ValueNotSetErr("Dates".into()))?];
         add_cashflows_to_vec(
             &mut cashflows,
             &first_date,
@@ -472,7 +501,7 @@ impl MakeDoubleRateInstrument {
         let mut redemptions = vec![];
         let mut disbursements = vec![];
 
-        let aux_dates: Vec<Date> = dates.iter().skip(1).cloned().collect();
+        let aux_dates: Vec<Date> = dates.iter().skip(1).copied().collect();
         aux_dates
             .iter()
             .zip(redemptions_raw.iter())
@@ -507,15 +536,15 @@ impl MakeDoubleRateInstrument {
         }
 
         if let Some(id) = self.discount_curve_id {
-            cashflows
-                .iter_mut()
-                .for_each(|cf| cf.set_discount_curve_id(id))
+            for cf in &mut cashflows {
+                cf.set_discount_curve_id(id);
+            }
         }
 
         if let Some(id) = self.forecast_curve_id {
-            cashflows
-                .iter_mut()
-                .for_each(|cf| cf.set_forecast_curve_id(id))
+            for cf in &mut cashflows {
+                cf.set_forecast_curve_id(id);
+            }
         }
 
         Ok(DoubleRateInstrument::new(
@@ -541,6 +570,8 @@ impl MakeDoubleRateInstrument {
     }
 }
 
+// allowed: high-arity API; refactor deferred
+#[allow(clippy::too_many_arguments)]
 fn build_coupons_from_notionals(
     cashflows: &mut Vec<Cashflow>,
     rate_type: RateType,
@@ -573,13 +604,7 @@ fn build_coupons_from_notionals(
         let d2 = date_pair[1];
 
         match rate_type {
-            RateType::FixedThenFixed => {
-                let rate =
-                    InterestRate::from_rate_definition(first_part_rate, first_part_rate_definition);
-                let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
-                cashflows.push(Cashflow::FixedRateCoupon(coupon));
-            }
-            RateType::FixedThenFloating => {
+            RateType::FixedThenFixed | RateType::FixedThenFloating => {
                 let rate =
                     InterestRate::from_rate_definition(first_part_rate, first_part_rate_definition);
                 let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
@@ -611,7 +636,7 @@ fn build_coupons_from_notionals(
         let d2 = date_pair[1];
 
         match rate_type {
-            RateType::FixedThenFixed => {
+            RateType::FixedThenFixed | RateType::FloatingThenFixed => {
                 let rate = InterestRate::from_rate_definition(
                     second_part_rate,
                     second_part_rate_definition,
@@ -632,14 +657,6 @@ fn build_coupons_from_notionals(
                     side,
                 );
                 cashflows.push(Cashflow::FloatingRateCoupon(coupon));
-            }
-            RateType::FloatingThenFixed => {
-                let rate = InterestRate::from_rate_definition(
-                    second_part_rate,
-                    second_part_rate_definition,
-                );
-                let coupon = FixedRateCoupon::new(*notional, rate, d1, d2, d2, currency, side);
-                cashflows.push(Cashflow::FixedRateCoupon(coupon));
             }
             _ => Err(AtlasError::NotImplementedErr("Rate type".into()))?,
         }
@@ -670,18 +687,21 @@ impl CostFunction for EqualPaymentCost {
 
 //  function to calculate equal payment redemptions, always returns a vector of positive values
 fn calculate_equal_payment_redemptions(
-    dates: Vec<Date>,
+    dates: &[Date],
     rate: InterestRate,
     notional: f64,
 ) -> Result<Vec<f64>> {
     let cost = EqualPaymentCost {
-        dates: dates.clone(),
+        dates: dates.to_vec(),
         rate,
     };
     let (min, max) = (-0.2, 1.5);
     let solver = BrentRoot::new(min, max, 1e-6);
 
-    let init_param = 1.0 / (dates.len() as f64);
+    let len = u32::try_from(dates.len()).map_err(|_| {
+        AtlasError::InvalidValueErr("Dates length should fit in u32".to_string())
+    })?;
+    let init_param = 1.0 / f64::from(len);
     let res = Executor::new(cost, solver)
         .configure(|state| state.param(init_param).max_iters(100).target_cost(0.0))
         .run()?;
@@ -754,7 +774,7 @@ mod test {
         instrument
             .mut_cashflows()
             .iter_mut()
-            .for_each(|cf| cf.set_fixing_rate(0.03));
+            .for_each(|cf: &mut Cashflow| cf.set_fixing_rate(0.03));
 
         instrument.cashflows().iter().for_each(|cf| match cf {
             Cashflow::FixedRateCoupon(coupon) => {

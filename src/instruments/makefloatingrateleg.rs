@@ -25,7 +25,7 @@ use super::{
     traits::{add_cashflows_to_vec, calculate_outstanding, notionals_vector, Structure},
 };
 
-/// # MakeFloatingRateLeg
+/// # `MakeFloatingRateLeg`
 /// Builder for a floating rate loan.
 #[derive(Debug, Clone)]
 pub struct MakeFloatingRateLeg {
@@ -54,8 +54,11 @@ pub struct MakeFloatingRateLeg {
 
 /// Constructor, setters and getters.
 impl MakeFloatingRateLeg {
-    pub fn new() -> MakeFloatingRateLeg {
-        MakeFloatingRateLeg {
+    /// Creates a new `MakeFloatingRateLeg` builder with default values.
+    #[allow(clippy::missing_const_for_fn)]
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
             start_date: None,
             end_date: None,
             first_coupon_date: None,
@@ -80,147 +83,197 @@ impl MakeFloatingRateLeg {
         }
     }
 
-    pub fn with_end_of_month(mut self, end_of_month: Option<bool>) -> MakeFloatingRateLeg {
+    /// Sets the end of month flag.
+    #[must_use]
+    pub const fn with_end_of_month(mut self, end_of_month: Option<bool>) -> Self {
         self.end_of_month = end_of_month;
         self
     }
 
-    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> MakeFloatingRateLeg {
+    /// Sets the calendar for business day adjustments.
+    #[must_use]
+    pub fn with_calendar(mut self, calendar: Option<Calendar>) -> Self {
         self.calendar = calendar;
         self
     }
 
-    pub fn with_business_day_convention(
+    /// Sets the business day convention.
+    #[must_use]
+    pub const fn with_business_day_convention(
         mut self,
         business_day_convention: Option<BusinessDayConvention>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.business_day_convention = business_day_convention;
         self
     }
 
-    pub fn with_date_generation_rule(
+    /// Sets the date generation rule.
+    #[must_use]
+    pub const fn with_date_generation_rule(
         mut self,
         date_generation_rule: Option<DateGenerationRule>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.date_generation_rule = date_generation_rule;
         self
     }
 
-    pub fn with_issue_date(mut self, issue_date: Date) -> MakeFloatingRateLeg {
+    /// Sets the issue date.
+    #[must_use]
+    pub const fn with_issue_date(mut self, issue_date: Date) -> Self {
         self.issue_date = Some(issue_date);
         self
     }
 
-    pub fn with_first_coupon_date(
+    /// Sets the first coupon date.
+    #[must_use]
+    pub const fn with_first_coupon_date(
         mut self,
         first_coupon_date: Option<Date>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.first_coupon_date = first_coupon_date;
         self
     }
 
-    pub fn with_start_date(mut self, start_date: Date) -> MakeFloatingRateLeg {
+    /// Sets the start date.
+    #[must_use]
+    pub const fn with_start_date(mut self, start_date: Date) -> Self {
         self.start_date = Some(start_date);
         self
     }
 
-    pub fn with_end_date(mut self, end_date: Date) -> MakeFloatingRateLeg {
+    /// Sets the end date.
+    #[must_use]
+    pub const fn with_end_date(mut self, end_date: Date) -> Self {
         self.end_date = Some(end_date);
         self
     }
 
-    pub fn with_tenor(mut self, tenor: Period) -> MakeFloatingRateLeg {
+    /// Sets the tenor.
+    #[must_use]
+    pub const fn with_tenor(mut self, tenor: Period) -> Self {
         self.tenor = Some(tenor);
         self
     }
 
-    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> MakeFloatingRateLeg {
+    /// Sets the disbursement schedule.
+    #[must_use]
+    pub fn with_disbursements(mut self, disbursements: HashMap<Date, f64>) -> Self {
         self.disbursements = Some(disbursements);
         self
     }
 
-    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> MakeFloatingRateLeg {
+    /// Sets the redemption schedule.
+    #[must_use]
+    pub fn with_redemptions(mut self, redemptions: HashMap<Date, f64>) -> Self {
         self.redemptions = Some(redemptions);
         self
     }
 
+    /// Sets additional coupon dates.
+    #[must_use]
     pub fn with_additional_coupon_dates(
         mut self,
         additional_coupon_dates: HashSet<Date>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.additional_coupon_dates = Some(additional_coupon_dates);
         self
     }
 
-    pub fn with_forecast_curve_id(
+    /// Sets the forecast curve ID.
+    #[must_use]
+    pub const fn with_forecast_curve_id(
         mut self,
         forecast_curve_id: Option<usize>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.forecast_curve_id = forecast_curve_id;
         self
     }
 
-    pub fn with_discount_curve_id(
+    /// Sets the discount curve ID.
+    #[must_use]
+    pub const fn with_discount_curve_id(
         mut self,
         discount_curve_id: Option<usize>,
-    ) -> MakeFloatingRateLeg {
+    ) -> Self {
         self.discount_curve_id = discount_curve_id;
         self
     }
 
-    pub fn with_rate_definition(mut self, rate_definition: RateDefinition) -> MakeFloatingRateLeg {
+    /// Sets the rate definition.
+    #[must_use]
+    pub const fn with_rate_definition(mut self, rate_definition: RateDefinition) -> Self {
         self.rate_definition = Some(rate_definition);
         self
     }
 
-    pub fn with_notional(mut self, notional: f64) -> MakeFloatingRateLeg {
+    /// Sets the notional amount.
+    #[must_use]
+    pub const fn with_notional(mut self, notional: f64) -> Self {
         self.notional = Some(notional);
         self
     }
 
-    pub fn with_currency(mut self, currency: Currency) -> MakeFloatingRateLeg {
+    /// Sets the currency.
+    #[must_use]
+    pub const fn with_currency(mut self, currency: Currency) -> Self {
         self.currency = Some(currency);
         self
     }
 
-    pub fn with_spread(mut self, spread: f64) -> MakeFloatingRateLeg {
+    /// Sets the spread.
+    #[must_use]
+    pub const fn with_spread(mut self, spread: f64) -> Self {
         self.spread = Some(spread);
         self
     }
 
-    pub fn bullet(mut self) -> MakeFloatingRateLeg {
+    /// Sets the structure to bullet.
+    #[must_use]
+    pub const fn bullet(mut self) -> Self {
         self.structure = Some(Structure::Bullet);
         self
     }
 
-    pub fn equal_redemptions(mut self) -> MakeFloatingRateLeg {
+    /// Sets the structure to equal redemptions.
+    #[must_use]
+    pub const fn equal_redemptions(mut self) -> Self {
         self.structure = Some(Structure::EqualRedemptions);
         self
     }
 
-    pub fn zero(mut self) -> MakeFloatingRateLeg {
+    /// Sets the structure to zero.
+    #[must_use]
+    pub const fn zero(mut self) -> Self {
         self.structure = Some(Structure::Zero);
         self.payment_frequency = Some(Frequency::Once);
         self
     }
 
-    pub fn other(mut self) -> MakeFloatingRateLeg {
+    /// Sets the structure to other.
+    #[must_use]
+    pub const fn other(mut self) -> Self {
         self.structure = Some(Structure::Other);
         self.payment_frequency = Some(Frequency::OtherFrequency);
         self
     }
 
-    pub fn with_side(mut self, side: Side) -> MakeFloatingRateLeg {
+    /// Sets the side of the transaction.
+    #[must_use]
+    pub const fn with_side(mut self, side: Side) -> Self {
         self.side = Some(side);
         self
     }
 
-    pub fn with_payment_frequency(mut self, frequency: Frequency) -> MakeFloatingRateLeg {
+    /// Sets the payment frequency.
+    #[must_use]
+    pub const fn with_payment_frequency(mut self, frequency: Frequency) -> Self {
         self.payment_frequency = Some(frequency);
         self
     }
 
-    pub fn with_structure(mut self, structure: Structure) -> MakeFloatingRateLeg {
+    /// Sets the structure.
+    #[must_use]
+    pub const fn with_structure(mut self, structure: Structure) -> Self {
         self.structure = Some(structure);
         self
     }
@@ -234,6 +287,11 @@ impl Default for MakeFloatingRateLeg {
 
 /// Build
 impl MakeFloatingRateLeg {
+    /// Builds the floating rate leg with the configured parameters.
+    ///
+    /// # Errors
+    /// Returns an error if required builder fields are missing or inconsistent.
+    #[allow(clippy::too_many_lines)]
     pub fn build(self) -> Result<Leg> {
         let mut cashflows = Vec::new();
         let structure = self
@@ -258,14 +316,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .end_of_month(self.end_of_month.unwrap_or(false))
@@ -303,8 +360,14 @@ impl MakeFloatingRateLeg {
                 // end common
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Bullet);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -333,15 +396,15 @@ impl MakeFloatingRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -361,14 +424,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let schedule = MakeSchedule::new(start_date, end_date)
                     .with_frequency(payment_frequency)
@@ -393,8 +455,14 @@ impl MakeFloatingRateLeg {
 
                 let notionals =
                     notionals_vector(schedule.dates().len() - 1, notional, Structure::Zero);
-                let first_date = vec![*schedule.dates().first().unwrap()];
-                let last_date = vec![*schedule.dates().last().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
+                let last_date = vec![*schedule
+                    .dates()
+                    .last()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -423,15 +491,15 @@ impl MakeFloatingRateLeg {
                 );
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -451,14 +519,13 @@ impl MakeFloatingRateLeg {
                 let start_date = self
                     .start_date
                     .ok_or(AtlasError::ValueNotSetErr("Start date".into()))?;
-                let end_date = match self.end_date {
-                    Some(date) => date,
-                    None => {
-                        let tenor = self
-                            .tenor
-                            .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
-                        start_date + tenor
-                    }
+                let end_date = if let Some(date) = self.end_date {
+                    date
+                } else {
+                    let tenor = self
+                        .tenor
+                        .ok_or(AtlasError::ValueNotSetErr("Tenor".into()))?;
+                    start_date + tenor
                 };
                 let mut schedule_builder = MakeSchedule::new(start_date, end_date)
                     .end_of_month(self.end_of_month.unwrap_or(false))
@@ -497,9 +564,15 @@ impl MakeFloatingRateLeg {
 
                 let n = schedule.dates().len() - 1;
                 let notionals = notionals_vector(n, notional, Structure::EqualRedemptions);
-                let redemptions = vec![notional / n as f64; n];
+                let n_f64 = f64::from(u32::try_from(n).map_err(|_| {
+                    AtlasError::InvalidValueErr("Redemption count exceeds u32".into())
+                })?);
+                let redemptions = vec![notional / n_f64; n];
 
-                let first_date = vec![*schedule.dates().first().unwrap()];
+                let first_date = vec![*schedule
+                    .dates()
+                    .first()
+                    .ok_or(AtlasError::ValueNotSetErr("Schedule dates".into()))?];
 
                 add_cashflows_to_vec(
                     &mut cashflows,
@@ -519,7 +592,7 @@ impl MakeFloatingRateLeg {
                     currency,
                 );
                 let redemption_dates: Vec<Date> =
-                    schedule.dates().iter().skip(1).cloned().collect();
+                    schedule.dates().iter().skip(1).copied().collect();
                 add_cashflows_to_vec(
                     &mut cashflows,
                     &redemption_dates,
@@ -529,14 +602,14 @@ impl MakeFloatingRateLeg {
                     CashflowType::Redemption,
                 );
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
 
                 Ok(Leg::new(
@@ -571,7 +644,7 @@ impl MakeFloatingRateLeg {
                 let timeline =
                     calculate_outstanding(&disbursements, &redemptions, &additional_dates);
 
-                for (date, amount) in disbursements.iter() {
+                for (date, amount) in &disbursements {
                     let cashflow = Cashflow::Disbursement(
                         SimpleCashflow::new(*date, currency, side.inverse()).with_amount(*amount),
                     );
@@ -593,7 +666,7 @@ impl MakeFloatingRateLeg {
                     cashflows.push(Cashflow::FloatingRateCoupon(coupon));
                 }
 
-                for (date, amount) in redemptions.iter() {
+                for (date, amount) in &redemptions {
                     let cashflow = Cashflow::Redemption(
                         SimpleCashflow::new(*date, currency, side).with_amount(*amount),
                     );
@@ -601,15 +674,15 @@ impl MakeFloatingRateLeg {
                 }
 
                 if let Some(id) = self.discount_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_discount_curve_id(id);
-                    })
+                    }
                 }
 
                 if let Some(id) = self.forecast_curve_id {
-                    cashflows.iter_mut().for_each(|cf| {
+                    for cf in &mut cashflows {
                         cf.set_forecast_curve_id(id);
-                    })
+                    }
                 }
                 Ok(Leg::new(
                     structure,
@@ -623,7 +696,7 @@ impl MakeFloatingRateLeg {
                     cashflows,
                 ))
             }
-            _ => Err(AtlasError::InvalidValueErr(
+            Structure::EqualPayments => Err(AtlasError::InvalidValueErr(
                 "Invalid structure for floating rate loan".into(),
             ))?,
         }
