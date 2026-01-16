@@ -190,10 +190,9 @@ impl fmt::Display for MarketStore {
         msg.push_str(&indices_names.len().to_string());
         msg.push_str("):\n");
         for indice_name in indices_names {
-            let indice_idx = match indices_map.get(&indice_name) {
-                Some(idx) => idx.to_string(),
-                None => "".to_string(),
-            };
+            let indice_idx = indices_map
+                .get(&indice_name)
+                .map_or_else(|| "Unknown".to_string(), std::string::ToString::to_string);
 
             msg.push_str(">> ");
             msg.push_str(&indice_idx);
