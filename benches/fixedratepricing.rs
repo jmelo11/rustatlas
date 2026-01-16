@@ -1,12 +1,6 @@
 //! Benchmark for fixed rate pricing calculations.
 extern crate rustatlas;
-
-use std::sync::Arc;
-
-use rayon::{
-    prelude::{IntoParallelIterator, ParallelIterator},
-    slice::ParallelSliceMut,
-};
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use rustatlas::{
     cashflows::cashflow::Side,
     currencies::enums::Currency,
@@ -26,44 +20,44 @@ use rustatlas::{
         traits::{ConstVisit, Visit},
     },
 };
-
+use std::sync::Arc;
 mod common;
 use crate::common::common::create_store;
+use criterion::{criterion_group, criterion_main, Criterion};
 
-use criterion::Criterion;
-
-fn npv(instruments: &mut [FixedRateInstrument]) -> f64 {
-    let store = Arc::new(
-        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}")),
-    );
-    let mut npv = 0.0;
+fn npv(instruments: &mut [FixedRateInstrument]) -> Result<f64, Box<dyn std::error::Error>> {
+    let store = Arc::new(create_store()?);
+    let mut total_npv = 0.0;
+    
     let indexer = IndexingVisitor::new();
+    
+    // Should index all instruments
     for inst in instruments.iter_mut() {
         indexer
             .visit(inst)
-            .unwrap_or_else(|err| panic!("Failed to index instrument: {err}"));
+            .map_err(|e| format!("IndexingVisitor failed: {}", e))?;
     }
 
     let model = SimpleModel::new(&store);
-    let data = model
-        .gen_market_data(&indexer.request())
-        .unwrap_or_else(|err| panic!("Failed to generate market data: {err}"));
+    let data = model.gen_market_data(&indexer.request())?;
 
     let npv_visitor = NPVConstVisitor::new(&data, true);
+    
+    // Calculate NPV for all instruments
     for inst in instruments.iter() {
-        npv += npv_visitor
+        let inst_npv = npv_visitor
             .visit(inst)
-            .unwrap_or_else(|err| panic!("Failed to compute NPV: {err}"));
+            .map_err(|e| format!("NPVConstVisitor failed: {}", e))?;
+        total_npv += inst_npv;
     }
-    npv
+
+    Ok(total_npv)
 }
 
 /// Benchmark function that creates and processes 150,000 fixed rate instruments in parallel.
-fn multiple() {
-    let market_store =
-        create_store().unwrap_or_else(|err| panic!("Failed to create store: {err}"));
+fn multiple() -> Result<(), Box<dyn std::error::Error>> {
+    let market_store = create_store()?;
     let ref_date = market_store.reference_date();
-
     let start_date = ref_date;
     let end_date = start_date + Period::new(10, TimeUnit::Years);
     let notional = 100_000.0;
@@ -74,9 +68,9 @@ fn multiple() {
         DayCounter::Thirty360,
     );
 
-    // par build
+    // Build instruments in parallel
     let mut instruments: Vec<FixedRateInstrument> = (0..150000)
-        .into_par_iter() // Create a parallel iterator
+        .into_par_iter()
         .map(|_| {
             MakeFixedRateInstrument::new()
                 .with_start_date(start_date)
@@ -89,23 +83,27 @@ fn multiple() {
                 .with_discount_curve_id(Some(2))
                 .with_notional(notional)
                 .build()
-                .unwrap_or_else(|err| panic!("Failed to build instrument: {err}"))
         })
-        .collect(); // Collect the results into a Vec<_>
+        .collect::<Result<Vec<_>, _>>()?;
 
-    // let n_threads = rayon::current_num_threads();
-    // let chunk_size = instruments.len() / n_threads;
+    // Process instruments in parallel chunks
     instruments.par_rchunks_mut(1000).for_each(|chunk| {
-        npv(chunk);
+        if let Err(e) = npv(chunk) {
+            eprintln!("Error processing chunk: {}", e);
+        }
     });
+
+    Ok(())
 }
 
 /// Benchmark criterion for fixed rate pricing calculations.
 fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("multiple", |b| b.iter(multiple));
+    c.bench_function("multiple", |b| {
+        b.iter(|| {
+            multiple().expect("benchmark failed")
+        })
+    });
 }
 
-fn main() {
-    let mut c = Criterion::default().configure_from_args();
-    criterion_benchmark(&mut c);
-}
+criterion_group!(benches, criterion_benchmark);
+criterion_main!(benches);

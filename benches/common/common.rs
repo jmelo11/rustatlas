@@ -45,24 +45,25 @@ pub fn print_table(cashflows: &[Cashflow], market_data: &Rc<Vec<MarketData>>) {
         "{:10} | {:10} | {:10} | {:10}| {:10}",
         "Date", "Amount", "DF", "FWD", "FX"
     );
-    for (cf, md) in cashflows.iter().zip(&**market_data) {
+    for (cf, md) in cashflows.iter().zip(market_data.deref()) {
         let date = format!("{:10}", cf.payment_date());
+
         let amount = cf.amount().map_or_else(
             |_| "None      ".to_string(),
-            |amount| format!("{amount:10.2}"),
+            |amt| format!("{:10.2}", amt),
         );
 
         let df = md
             .df()
-            .map_or_else(|_| "None      ".to_string(), |df| format!("{df:10.2}"));
+            .map_or_else(|_| "None      ".to_string(), |df| format!("{:10.2}", df));
 
         let fx = md
             .fx()
-            .map_or_else(|_| "None      ".to_string(), |fx| format!("{fx:10.2}"));
+            .map_or_else(|_| "None      ".to_string(), |fx| format!("{:10.2}", fx));
 
         let fwd = md
             .fwd()
-            .map_or_else(|_| "None      ".to_string(), |fwd| format!("{fwd:9.3}"));
+            .map_or_else(|_| "None      ".to_string(), |fwd| format!("{:9.3}", fwd));
 
         println!("{date} | {amount} | {df} | {fwd} | {fx}");
     }
@@ -106,8 +107,8 @@ pub fn create_store() -> Result<MarketStore> {
     ));
 
     let mut ibor_fixings = HashMap::new();
-    ibor_fixings.insert(Date::new(2021, 9, 1), 0.02); // today
-    ibor_fixings.insert(Date::new(2021, 8, 31), 0.02); // yesterday
+    ibor_fixings.insert(Date::new(2021, 9, 1), 0.02);
+    ibor_fixings.insert(Date::new(2021, 8, 31), 0.02);
 
     let ibor_index = IborIndex::new(forecast_curve_1.reference_date())
         .with_fixings(ibor_fixings)
@@ -116,7 +117,7 @@ pub fn create_store() -> Result<MarketStore> {
 
     let overnight_fixings =
         make_fixings(ref_date - Period::new(1, TimeUnit::Years), ref_date, 0.06);
-    let overnigth_index = OvernightIndex::new(forecast_curve_2.reference_date())
+    let overnight_index = OvernightIndex::new(forecast_curve_2.reference_date())
         .with_term_structure(forecast_curve_2)
         .with_fixings(overnight_fixings);
 
@@ -126,7 +127,7 @@ pub fn create_store() -> Result<MarketStore> {
 
     market_store
         .mut_index_store()
-        .add_index(1, Arc::new(RwLock::new(overnigth_index)))?;
+        .add_index(1, Arc::new(RwLock::new(overnight_index)))?;
 
     let discount_index =
         IborIndex::new(discount_curve.reference_date()).with_term_structure(discount_curve);
@@ -134,6 +135,7 @@ pub fn create_store() -> Result<MarketStore> {
     market_store
         .mut_index_store()
         .add_index(2, Arc::new(RwLock::new(discount_index)))?;
+
     Ok(market_store)
 }
 
@@ -145,25 +147,18 @@ pub struct MockMaker;
 #[allow(dead_code)]
 pub trait Mock {
     fn random_frequency() -> Frequency;
-
     fn random_tenor() -> Period;
-
     fn random_start_date(today: Date) -> Date;
-
     fn random_notional() -> f64;
-
     fn random_rate_value() -> f64;
-
     fn random_currency() -> Currency;
-
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument>;
+    fn generate_random_instruments(n: usize, today: Date) -> Result<Vec<Instrument>>;
 }
 
 impl Mock for MockMaker {
     fn random_frequency() -> Frequency {
         let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
+        match rng.gen_range(0..4) {
             1 => Frequency::Semiannual,
             2 => Frequency::Quarterly,
             3 => Frequency::Monthly,
@@ -173,8 +168,7 @@ impl Mock for MockMaker {
 
     fn random_tenor() -> Period {
         let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
+        match rng.gen_range(0..4) {
             0 => Period::new(1, TimeUnit::Years),
             1 => Period::new(3, TimeUnit::Years),
             2 => Period::new(5, TimeUnit::Years),
@@ -201,8 +195,7 @@ impl Mock for MockMaker {
 
     fn random_currency() -> Currency {
         let mut rng = rand::thread_rng();
-        let freq = rng.gen_range(0..4);
-        match freq {
+        match rng.gen_range(0..4) {
             1 => Currency::EUR,
             2 => Currency::CLP,
             3 => Currency::CLF,
@@ -210,9 +203,9 @@ impl Mock for MockMaker {
         }
     }
 
-    fn generate_random_instruments(n: usize, today: Date) -> Vec<Instrument> {
-        (0..n)
-            .into_par_iter() // Create a parallel iterator
+    fn generate_random_instruments(n: usize, today: Date) -> Result<Vec<Instrument>> {
+        let instruments: Result<Vec<Instrument>> = (0..n)
+            .into_par_iter()
             .map(|_| {
                 let start_date = Self::random_start_date(today);
                 let end_date = start_date + Self::random_tenor();
@@ -220,7 +213,8 @@ impl Mock for MockMaker {
                 let notional = Self::random_notional();
                 let random_currency = Self::random_currency();
                 let payment_frequency = Self::random_frequency();
-                let instrument = MakeFixedRateInstrument::new()
+
+                MakeFixedRateInstrument::new()
                     .with_start_date(start_date)
                     .with_end_date(end_date)
                     .with_payment_frequency(payment_frequency)
@@ -231,10 +225,10 @@ impl Mock for MockMaker {
                     .with_side(Side::Receive)
                     .bullet()
                     .build()
-                    .unwrap_or_else(|err| panic!("Failed to build fixed rate instrument: {err}"));
-
-                Instrument::FixedRateInstrument(instrument)
+                    .map(Instrument::FixedRateInstrument)
             })
-            .collect()
+            .collect::<Result<Vec<_>>>();
+
+        instruments
     }
 }
