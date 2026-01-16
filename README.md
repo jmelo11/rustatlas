@@ -6,7 +6,7 @@ RustAtlas
 Usage Example
 -------------
 
-The following example shows how to create a fixed rate instrument with a notional of $1,000.0, a 5% annual rate, and monthly payments:
+The following example shows how to define a fixed-rate instrument and inspect its generated cashflows.
 
 ```rust
         use rustatlas::prelude::*;
@@ -47,7 +47,9 @@ The following example shows how to create a fixed rate instrument with a notiona
             .for_each(|cf| println!("{}", cf));
 ```
 
-Various financial instruments are available, such as loans, bonds, swaps, and options. The library also includes tools for market data, analytics, and simulation. Pricing can be achieved through visitors. See the example below:
+Various financial instruments are available, such as loans, bonds, swaps, and options. The library also includes tools for market data, analytics, and simulation. Pricing in RustAtlas is performed using the visitor pattern, which cleanly separates instrument definition, market data, and analytics.
+The example below demonstrates how to compute the NPV of an instrument.
+
 
 ```rust
         use rustatlas::prelude::*;
@@ -90,8 +92,8 @@ Various financial instruments are available, such as loans, bonds, swaps, and op
 
 For more examples, see the [examples](examples) folder.
 
-Features
---------
+Features Overview
+-----------------
 
 ### Market Tools
 
@@ -180,7 +182,10 @@ Features
 Contributing
 ------------
 
-Contributions to RustAtlas are welcome! If you have suggestions for improvements or have identified issues, please open an issue or submit a pull request.
+Contributions to RustAtlas are welcome.
+For small fixes, feel free to open a pull request directly.
+For larger changes or design discussions, please open an issue first.
+
 
 License
 -------
