@@ -42,7 +42,7 @@ impl VolatilityCubeBuilder {
         let mut cubes = HashMap::new();
 
         for spec in &self.specs {
-            let (cube, labels) = self.build_one(spec, selector, level, reference_date)?;
+            let (cube, labels) = Self::build_one(spec, selector, level, reference_date)?;
             let element = VolatilityCubeElement::new(
                 spec.market_index().clone(),
                 Rc::new(RefCell::new(cube.with_labels(&labels))),
@@ -53,9 +53,7 @@ impl VolatilityCubeBuilder {
         Ok(cubes)
     }
 
-    #[allow(clippy::unused_self)]
     fn build_one(
-        &self,
         spec: &VolatilityCubeConfiguration,
         selector: &impl QuoteSelector,
         level: Level,

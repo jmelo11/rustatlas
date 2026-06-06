@@ -41,7 +41,7 @@ impl VolatilitySurfaceBuilder {
         let mut surfaces = HashMap::new();
 
         for spec in &self.specs {
-            let (surface, labels) = self.build_one(spec, selector, level, reference_date)?;
+            let (surface, labels) = Self::build_one(spec, selector, level, reference_date)?;
             let element = VolatilitySurfaceElement::new(
                 spec.market_index().clone(),
                 Rc::new(RefCell::new(surface.with_labels(&labels))),
@@ -52,9 +52,7 @@ impl VolatilitySurfaceBuilder {
         Ok(surfaces)
     }
 
-    #[allow(clippy::unused_self)]
     fn build_one(
-        &self,
         spec: &VolatilitySurfaceConfiguration,
         selector: &impl QuoteSelector,
         level: Level,
