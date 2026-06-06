@@ -607,7 +607,7 @@ where
                     .ok_or_else(|| QSError::ValueNotSetErr("Redemptions".into()))?;
                 let notional = disbursements.values().fold(0.0, |acc, x| acc + x).abs();
                 let redemption = redemptions.values().fold(0.0, |acc, x| acc + x).abs();
-                if (notional - redemption).abs() > 0.000001 {
+                if (notional - redemption).abs() > 0.000_001 {
                     return Err(QSError::InvalidValueErr(
                         "Notional and redemption must be equal".into(),
                     ));
