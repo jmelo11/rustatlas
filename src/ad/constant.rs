@@ -1,4 +1,4 @@
-//! [`Const<T>`] — constant expression wrapper for interoperability with AD
+//! [`Const`](crate::ad::constant::Const) — constant expression wrapper for interoperability with AD
 //! expressions.
 
 use core::fmt;

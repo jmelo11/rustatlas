@@ -1,11 +1,11 @@
 //! Block-based slab allocator for tape nodes.
 //!
-//! [`BlockList<T>`] stores elements in fixed-capacity blocks (`Box<[MaybeUninit<T>]>`).
+//! [`BlockList`](crate::ad::blocklist::BlockList) stores elements in fixed-capacity blocks (`Box<[MaybeUninit<T>]>`).
 //! Pointers into blocks remain stable because the heap data behind each `Box` never
 //! moves, even when the outer `Vec<Box<…>>` grows.  This makes it safe to hand out
 //! `NonNull<T>` pointers that survive across subsequent allocations.
 //!
-//! The allocator supports mark/rewind: [`rewind_to`](BlockList::rewind_to) drops
+//! The allocator supports mark/rewind: [`BlockList::rewind_to`](crate::ad::blocklist::BlockList::rewind_to) drops
 //! elements past the mark (running destructors) while keeping the blocks for reuse,
 //! so the next batch of allocations incurs no heap traffic.
 
