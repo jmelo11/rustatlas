@@ -8,7 +8,7 @@
 pub mod blocklist;
 /// Constant wrapper (Const<T>).
 pub mod constant;
-/// Backward-mode AD wrapper ([`Dual`]) and `DualFwd` alias.
+/// Backward-mode AD wrapper ([`Dual`](crate::ad::dual::Dual)) and `DualFwd` alias.
 pub mod dual;
 /// Expression-template system (Expr, operators, BinExpr, UnExpr, FloatExt, free fns).
 pub mod expr;
