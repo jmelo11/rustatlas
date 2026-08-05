@@ -1,3 +1,4 @@
+
 //! `QuantSupport` is a Rust library for financial calculations and analysis.
 //!
 //! This library provides tools for computing prices, sensitivities and other
@@ -60,7 +61,7 @@
 //!
 //! ## 3 — Set up the pricing context
 //!
-//! A [`ContextManager`](crate::core::contextmanager::ContextManager) holds
+//! A [`PricingContext`](crate::core::pricingcontext::PricingContext) holds
 //! market data (discount curves, quote / fixing stores) that pricers consult
 //! during evaluation.  Here we create a flat SOFR discount curve at 3.0%.
 //!
@@ -99,14 +100,16 @@
 //! let quote_store  = QuoteStore::new(evaluation_date);
 //! let fixing_store = FixingStore::default();
 //!
-//! let context = ContextManager::new(quote_store, fixing_store)
+//! let context = PricingContext::new()
+//!     .with_quote_store(quote_store)
+//!     .with_fixing_store(fixing_store)
 //!     .with_base_currency(Currency::USD)
 //!     .with_constructed_elements(constructed_elements);
 //! ```
 //!
 //! ## 4 — Price the swap and read results
 //!
-//! Create a [`CashflowDiscountPricer`](crate::pricers::cashflows::discountingcashflowpricer::CashflowDiscountPricer),
+//! Create a [`DiscountedCashflowPricer`](crate::pricers::cashflows::discountedcashflowpricer::DiscountedCashflowPricer),
 //! choose which outputs you need via [`Request`](crate::core::request::Request),
 //! and call `evaluate`.
 //!
@@ -143,10 +146,12 @@
 //! #         Rc::new(RefCell::new(discount_curve))));
 //! # let quote_store  = QuoteStore::new(evaluation_date);
 //! # let fixing_store = FixingStore::default();
-//! # let context = ContextManager::new(quote_store, fixing_store)
+//! # let context = PricingContext::new()
+//! #     .with_quote_store(quote_store)
+//! #     .with_fixing_store(fixing_store)
 //! #     .with_base_currency(Currency::USD)
 //! #     .with_constructed_elements(constructed_elements);
-//! let pricer   = CashflowDiscountPricer::<Swap<DualFwd>, SwapTrade<DualFwd>>::new();
+//! let pricer   = DiscountedCashflowPricer::<Swap<DualFwd>, SwapTrade<DualFwd>>::new();
 //! let requests = vec![Request::Value, Request::Cashflows, Request::Sensitivities];
 //! let results  = pricer.evaluate(&trade, &requests, &context).expect("pricing failed");
 //!

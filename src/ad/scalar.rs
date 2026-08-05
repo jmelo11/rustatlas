@@ -8,7 +8,7 @@ use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Trait unifying plain `f64`, [`ADForward`](super::forward::ADForward), and
-/// [`Dual<T>`](super::dual::Dual) so that pricing / math code can be written
+/// [`Dual`](super::dual::Dual) so that pricing / math code can be written
 /// generically over the scalar type.
 ///
 /// Provides only construction, value access, and transcendentals.
@@ -183,7 +183,7 @@ impl Scalar for f64 {
 ///
 /// Requires `Output = Self`. This is satisfied by the *inner* scalar types
 /// (`f64`, [`ADForward`](super::forward::ADForward)) but **not** by
-/// [`Dual<T>`](super::dual::Dual) (whose operators return expression-template
+/// [`Dual`](super::dual::Dual) (whose operators return expression-template
 /// types).
 pub trait InnerScalar:
     Scalar

@@ -56,3 +56,29 @@ impl NormCDF for DualFwd {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ad::dual::DualFwd;
+    use crate::ad::tape::Tape;
+
+    #[test]
+    fn dualfwd_norm_cdf_derivative_matches_pdf() {
+        Tape::start_recording_fwd();
+
+        let x = DualFwd::new(0.5);
+        let y = norm_cdf(x);
+
+        y.backward().unwrap();
+
+        let ad = x.adjoint().unwrap().value();
+
+        let expected =
+            (-0.5_f64 * 0.5_f64 * 0.5_f64).exp() * 0.398_942_280_401_432_7;
+
+        assert!((ad - expected).abs() < 1e-6);
+
+        Tape::stop_recording_fwd();
+    }
+}

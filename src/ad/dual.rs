@@ -1,4 +1,4 @@
-//! [`Dual<T>`] — backward-mode AD wrapper generic over inner scalar `T`.
+//! [`Dual`](crate::ad::dual::Dual) — backward-mode AD wrapper generic over inner scalar `T`.
 
 use core::fmt;
 use std::cmp::Ordering;

@@ -1,7 +1,14 @@
 //! Expression-template system for automatic differentiation.
 //!
-//! Provides [`Expr`], [`BinOp`], [`UnOp`], operators,
-//! [`BinExpr`], [`UnExpr`], [`FloatExt`], and free-standing transcendentals.
+//! Provides 
+//! [`Expr`](crate::ad::expr::Expr), 
+//! [`BinOp`](crate::ad::expr::BinOp), 
+//! [`UnOp`](crate::ad::expr::UnOp), 
+//! operators,
+//! [`BinExpr`](crate::ad::expr::BinExpr), 
+//! [`UnExpr`](crate::ad::expr::UnExpr), 
+//! [`FloatExt`](crate::ad::expr::FloatExt), 
+//! and free-standing transcendentals.
 
 use std::cmp::Ordering;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -33,14 +40,16 @@ mod sealed {
 
 /// A differentiable expression node in the expression-template tree.
 ///
-/// Every arithmetic operation on [`Dual<T>`] values returns a lazy
-/// expression type ([`BinExpr`] or [`UnExpr`]) instead of immediately
-/// recording on the tape. Call [`.into()`](Into::into) on the final
-/// expression to flatten the entire tree into a single tape node,
-/// producing a `Dual<T>` again.
+/// Every arithmetic operation on [`Dual`] values returns a lazy expression type ([`BinExpr`] or [`UnExpr`]) instead of immediately recording on the tape. Call [`.into()`](Into::into) on the final expression to flatten the entire tree into a single tape node,
+/// producing a `Dual` again.
 ///
-/// This trait is **sealed** — only types defined in this module
-/// ([`Dual`], [`Const`], [`BinExpr`], [`UnExpr`]) implement it.
+/// This trait is **sealed** — only the following types implement it: 
+///
+/// - [`Dual`]
+/// - [`Const`]
+/// - [`BinExpr`] 
+/// - [`UnExpr`]
+
 pub trait Expr<T>: sealed::Sealed + Clone {
     /// Returns the scalar value of the expression.
     fn inner_value(&self) -> T;
@@ -359,7 +368,7 @@ impl<T: InnerScalar, A: Expr<T>, O: UnOp<T> + Clone> Expr<T> for UnExpr<T, A, O>
 //  flatten — records an expression tree into one tape node
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Records an expression tree into one tape node, returning a [`Dual<T>`].
+/// Records an expression tree into one tape node, returning a [`Dual`].
 pub(crate) fn flatten<T: TapeHolder + InnerScalar, E: Expr<T>>(e: &E) -> Dual<T> {
     let mut node = TapeNode::default();
     e.push_adj(&mut node, T::one());
