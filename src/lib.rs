@@ -100,7 +100,9 @@
 //! let quote_store  = QuoteStore::new(evaluation_date);
 //! let fixing_store = FixingStore::default();
 //!
-//! let context = PricingContext::new(quote_store, fixing_store)
+//! let context = PricingContext::new()
+//!     .with_quote_store(quote_store)
+//!     .with_fixing_store(fixing_store)
 //!     .with_base_currency(Currency::USD)
 //!     .with_constructed_elements(constructed_elements);
 //! ```
@@ -144,7 +146,9 @@
 //! #         Rc::new(RefCell::new(discount_curve))));
 //! # let quote_store  = QuoteStore::new(evaluation_date);
 //! # let fixing_store = FixingStore::default();
-//! # let context = PricingContext::new(quote_store, fixing_store)
+//! # let context = PricingContext::new()
+//! #     .with_quote_store(quote_store)
+//! #     .with_fixing_store(fixing_store)
 //! #     .with_base_currency(Currency::USD)
 //! #     .with_constructed_elements(constructed_elements);
 //! let pricer   = DiscountedCashflowPricer::<Swap<DualFwd>, SwapTrade<DualFwd>>::new();
