@@ -483,6 +483,13 @@ pub struct FundingCurveFvaFactory {
     pub pillar_spreads: Vec<f64>,
     /// Labels of the pillar spreads (e.g. funding curve quote identifiers).
     pub pillar_labels: Vec<String>,
+    /// Pillar dates of an additive overlay spread curve (e.g. an explicit
+    /// funding spread over the funding index). Empty when unused.
+    pub overlay_dates: Vec<Date>,
+    /// Overlay spreads at the overlay pillar dates.
+    pub overlay_spreads: Vec<f64>,
+    /// Labels of the overlay pillar spreads.
+    pub overlay_labels: Vec<String>,
     /// Number of Monte Carlo paths.
     pub n_paths: usize,
     /// Day counter used to convert dates into year fractions.
@@ -519,9 +526,14 @@ impl PfeAggregatorFactory for FundingCurveFvaFactory {
     }
 
     fn create_aggregator(&self, ref_date: Date, dates: &[Date]) -> AggregatorBundle {
-        // Tracked leaves: one per pillar spread.
+        // Tracked leaves: one per pillar spread (base curve + overlay).
         let pillar_leaves: Vec<DualFwd> = self
             .pillar_spreads
+            .iter()
+            .map(|s| DualFwd::new(*s))
+            .collect();
+        let overlay_leaves: Vec<DualFwd> = self
+            .overlay_spreads
             .iter()
             .map(|s| DualFwd::new(*s))
             .collect();
@@ -531,12 +543,22 @@ impl PfeAggregatorFactory for FundingCurveFvaFactory {
             .iter()
             .map(|d| self.day_counter.year_fraction(ref_date, *d))
             .collect();
+        let overlay_times: Vec<f64> = self
+            .overlay_dates
+            .iter()
+            .map(|d| self.day_counter.year_fraction(ref_date, *d))
+            .collect();
 
         let spreads: Vec<DualFwd> = dates
             .iter()
             .map(|d| {
                 let t = self.day_counter.year_fraction(ref_date, *d);
-                Self::spread_at(t, &pillar_times, &pillar_leaves)
+                let base = Self::spread_at(t, &pillar_times, &pillar_leaves);
+                if overlay_leaves.is_empty() {
+                    base
+                } else {
+                    base.add_val(Self::spread_at(t, &overlay_times, &overlay_leaves))
+                }
             })
             .collect();
 
@@ -549,6 +571,7 @@ impl PfeAggregatorFactory for FundingCurveFvaFactory {
             .pillar_labels
             .iter()
             .zip(&pillar_leaves)
+            .chain(self.overlay_labels.iter().zip(&overlay_leaves))
             .map(|(label, leaf)| (format!("FVA.{label}"), *leaf))
             .collect();
 
@@ -802,6 +825,9 @@ mod tests {
             ],
             pillar_spreads: vec![spread, spread],
             pillar_labels: vec!["1Y".into(), "3Y".into()],
+            overlay_dates: vec![],
+            overlay_spreads: vec![],
+            overlay_labels: vec![],
             n_paths: 1,
             day_counter: DC,
             system_dfs: None,
@@ -849,6 +875,9 @@ mod tests {
             pillar_dates: pillar_dates.clone(),
             pillar_spreads: vec![s1, s3],
             pillar_labels: vec!["1Y".into(), "3Y".into()],
+            overlay_dates: vec![],
+            overlay_spreads: vec![],
+            overlay_labels: vec![],
             n_paths: 1,
             day_counter: DC,
             system_dfs: None,

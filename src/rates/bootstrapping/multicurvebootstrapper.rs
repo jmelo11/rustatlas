@@ -449,7 +449,7 @@ impl MultiCurveBootstrapper {
                 for k in 0..parent_n_quotes {
                     let mut combined = 0.0_f64;
                     for m in 0..m_count {
-                        combined += dep.cross_df_sens[i][m] * dep.parent_ift_sens[m][k];
+                        combined = f64::mul_add(dep.cross_df_sens[i][m], dep.parent_ift_sens[m][k], combined);
                     }
                     row_ext.push(combined);
                 }

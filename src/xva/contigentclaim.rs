@@ -440,7 +440,6 @@ impl ContingentClaim {
 
             ClaimEvaluationStrategy::SpotPayoff {
                 payoff_ops,
-                strike: _,
                 ..
             } => {
                 let spot = response.spots.unwrap_or_else(T::zero);
@@ -449,7 +448,6 @@ impl ContingentClaim {
 
             ClaimEvaluationStrategy::PathDependent {
                 payoff_ops,
-                strike: _,
                 ..
             } => {
                 let obs = response.path_dependent_observations.unwrap_or_else(T::zero);

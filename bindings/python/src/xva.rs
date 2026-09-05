@@ -24,7 +24,7 @@ use crate::QuantSupportError;
 ///
 /// Credit, funding and collateral parameters are **not** part of this
 /// config — they are per client, see [`CsaTerms`].
-#[pyclass(name = "XvaConfig")]
+#[pyclass(name = "XvaConfig", from_py_object)]
 #[derive(Clone)]
 pub struct XvaConfig {
     pub inner: QsXvaEngineConfig,
@@ -59,7 +59,7 @@ impl XvaConfig {
 }
 
 /// Per-client CSA terms: collateral treatment and credit/funding parameters.
-#[pyclass(name = "CsaTerms")]
+#[pyclass(name = "CsaTerms", from_py_object)]
 #[derive(Clone)]
 pub struct CsaTerms {
     pub inner: QsCsaTerms,
@@ -207,7 +207,7 @@ enum TradeSpec {
 
 /// A group of trades under a single netting agreement (one client),
 /// carrying the client's [`CsaTerms`].
-#[pyclass(name = "NettingSet")]
+#[pyclass(name = "NettingSet", from_py_object)]
 #[derive(Clone)]
 pub struct NettingSet {
     name: String,
@@ -277,7 +277,7 @@ impl NettingSet {
 }
 
 /// Per-netting-set exposure profile (EPE / ENE / EE by date).
-#[pyclass(name = "ExposureProfile")]
+#[pyclass(name = "ExposureProfile", from_py_object)]
 #[derive(Clone)]
 pub struct ExposureProfile {
     #[pyo3(get)]

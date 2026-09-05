@@ -66,7 +66,7 @@ where
         }
 
         for _ in 0..self.max_iter {
-            let mid = 0.5 * (low + high);
+            let mid = f64::midpoint(low, high);
             let f_mid = f.call(&mid)?;
             if f_mid.abs() < self.ftol {
                 return Ok(OptimizerSolution {
@@ -84,7 +84,7 @@ where
             }
         }
 
-        let mid = 0.5 * (low + high);
+        let mid = f64::midpoint(low, high);
         Ok(OptimizerSolution {
             x: mid,
             f: f.call(&mid)?,

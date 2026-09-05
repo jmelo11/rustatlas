@@ -43,6 +43,11 @@ pub struct LgmMarketModel<'a, T: Scalar> {
     fx_models: HashMap<Currency, LgmFxModel<'a, T>>,
     currency_to_index: HashMap<Currency, MarketIndex>,
     fx_spot_indices: HashMap<MarketIndex, Currency>,
+    /// Derived curve → driving rate model. Derived curves (e.g. FX-implied
+    /// collateral curves) carry no factor of their own: their discount
+    /// factors are reconstructed from the driver's simulated factor with the
+    /// derived curve's initial term structure (deterministic basis).
+    curve_drivers: HashMap<MarketIndex, MarketIndex>,
     dates: Vec<Date>,
     requests: Vec<SimulationRequest>,
     reference_date: Date,
@@ -69,6 +74,7 @@ impl<'a, T: Scalar> LgmMarketModel<'a, T> {
             fx_models: HashMap::new(),
             currency_to_index: HashMap::new(),
             fx_spot_indices: HashMap::new(),
+            curve_drivers: HashMap::new(),
             dates: Vec::new(),
             requests: Vec::new(),
             reference_date,
@@ -113,6 +119,21 @@ impl<'a, T: Scalar> LgmMarketModel<'a, T> {
     /// Adds an FX model for the given foreign currency.
     pub fn add_fx_model(&mut self, currency: Currency, model: LgmFxModel<'a, T>) {
         self.fx_models.insert(currency, model);
+    }
+
+    /// Declares `index` as a derived curve driven by `driver`'s factor.
+    ///
+    /// The derived curve's rate model should be built with the driver's
+    /// parameters (lambda, sigma schedule) and its own initial term
+    /// structure; simulation then reconstructs its discount factors from the
+    /// driver's simulated Gaussian factor (deterministic-basis assumption).
+    pub fn set_curve_driver(&mut self, index: MarketIndex, driver: MarketIndex) {
+        self.curve_drivers.insert(index, driver);
+    }
+
+    /// Resolves the index whose simulated factor drives `index`.
+    fn factor_index<'b>(&'b self, index: &'b MarketIndex) -> &'b MarketIndex {
+        self.curve_drivers.get(index).unwrap_or(index)
     }
 
     /// Registers a [`MarketIndex`] as an FX spot index so that
@@ -327,11 +348,13 @@ impl<'a, T: Scalar> LgmPathContext<'a, T> {
                 if let Some(fwd_req) = &req.forward_rate_request {
                     let idx = fwd_req.market_index();
                     if let Some(curve_model) = self.model.curve_models.get(&idx) {
-                        // Find the z_t for this curve
+                        // Find the z_t for this curve (derived curves are
+                        // driven by their driver's factor).
+                        let fidx = self.model.factor_index(&idx);
                         let rate_pos = self
                             .rate_indices
                             .iter()
-                            .position(|ri| *ri == idx)
+                            .position(|ri| ri == fidx)
                             .unwrap_or(0);
                         let z_t = z[rate_pos];
 
@@ -378,10 +401,11 @@ impl<'a, T: Scalar> LgmPathContext<'a, T> {
                 if let Some(disc_req) = &req.discount_request {
                     let idx = disc_req.market_index();
                     if let Some(curve_model) = self.model.curve_models.get(&idx) {
+                        let fidx = self.model.factor_index(&idx);
                         let rate_pos = self
                             .rate_indices
                             .iter()
-                            .position(|ri| *ri == idx)
+                            .position(|ri| ri == fidx)
                             .unwrap_or(0);
                         let z_t = z[rate_pos];
                         let t_eval = self.model.time_from_date(eval_date);
@@ -549,7 +573,7 @@ impl<T: Scalar + 'static> MarketModel<T> for LgmMarketModel<'_, T> {
 // ---------------------------------------------------------------------------
 impl<T: Scalar> LgmMarketModel<'_, T> {
     fn state_z(&self, index: &MarketIndex, date: Date) -> Option<f64> {
-        self.state.rates.get(index)?.get(&date).copied()
+        self.state.rates.get(self.factor_index(index))?.get(&date).copied()
     }
 
     fn state_fx(&self, currency: Currency, date: Date) -> Option<f64> {

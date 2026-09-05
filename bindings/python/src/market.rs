@@ -42,7 +42,7 @@ fn list_from_value<T: DeserializeOwned>(value: serde_json::Value, what: &str) ->
 macro_rules! config_wrapper {
     ($name:ident, $inner:ty, $pyname:literal, $what:literal) => {
         #[doc = concat!("Wrapper around the library's `", stringify!($inner), "`.")]
-        #[pyclass(name = $pyname)]
+        #[pyclass(name = $pyname, from_py_object)]
         #[derive(Clone)]
         pub struct $name {
             pub inner: $inner,
@@ -115,7 +115,7 @@ config_wrapper!(
 /// Market quotes with a reference date.
 ///
 /// Created from `{"reference_date": "YYYY-MM-DD", "quotes": [{"identifier": ..., "mid": ...}]}`.
-#[pyclass(name = "QuoteStore")]
+#[pyclass(name = "QuoteStore", from_py_object)]
 #[derive(Clone)]
 pub struct QuoteStore {
     pub inner: QsQuoteStore,
@@ -196,7 +196,7 @@ impl QuoteStore {
 }
 
 /// Historical index fixings.
-#[pyclass(name = "FixingStore")]
+#[pyclass(name = "FixingStore", from_py_object)]
 #[derive(Clone)]
 pub struct FixingStore {
     pub inner: QsFixingStore,
@@ -227,7 +227,7 @@ impl FixingStore {
 
 /// FX spot rates. Records are `{"base": "CLP", "quote": "USD", "rate": 0.00111}`,
 /// meaning 1 base = rate quote.
-#[pyclass(name = "FxStore")]
+#[pyclass(name = "FxStore", from_py_object)]
 #[derive(Clone, Default)]
 pub struct FxStore {
     pub inner: QsFxStore,

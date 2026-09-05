@@ -31,7 +31,7 @@ use crate::QuantSupportError;
 /// Base-curve (risk-free discounting) configuration of the context:
 /// the reporting currency and the remuneration index whose curve anchors
 /// collateral-adjusted discounting.
-#[pyclass(name = "DiscountingConfig")]
+#[pyclass(name = "DiscountingConfig", from_py_object)]
 #[derive(Clone)]
 pub struct DiscountingConfig {
     pub currency: Currency,

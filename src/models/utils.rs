@@ -159,7 +159,7 @@ pub fn swap_annuity_from_curve(
         let next = std::cmp::min(date + one_year, end);
         let t = day_counter.year_fraction(reference_date, next);
         let tau = day_counter.year_fraction(date, next);
-        annuity += tau * curve.discount_factor_from_time(t)?;
+        annuity = tau.mul_add(curve.discount_factor_from_time(t)?, annuity);
         date = next;
     }
     Ok(annuity)

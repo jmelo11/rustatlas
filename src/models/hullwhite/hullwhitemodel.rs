@@ -297,25 +297,42 @@ impl HullWhite<'_, f64> {
             cashflows.push((t_i, c));
         }
 
-        // Bisection to find r* such that sum c_i A(t,T_i) exp(-B(t,T_i) r*) = 1
-        let mut lo = -0.5_f64;
-        let mut hi = 0.5_f64;
-        for _ in 0..200 {
-            let mid = 0.5 * (lo + hi);
-            let val: f64 = cashflows
+        // Bisection to find r* such that sum c_i A(t,T_i) exp(-B(t,T_i) r*) = 1.
+        // The objective is monotone decreasing in r, so first expand the
+        // bracket until it contains the root (extreme trial sigmas during
+        // calibration can push r* far outside a fixed interval).
+        let eval = |r: f64| -> f64 {
+            cashflows
                 .iter()
                 .map(|&(t_i, c_i)| {
                     let a = self.A(t_option, t_i, sigma, curve).unwrap_or(0.0);
-                    c_i * a * (-self.B(t_option, t_i) * mid).exp()
+                    c_i * a * (-self.B(t_option, t_i) * r).exp()
                 })
-                .sum();
-            if val > 1.0 {
+                .sum()
+        };
+        let mut lo = -0.5_f64;
+        let mut hi = 0.5_f64;
+        for _ in 0..60 {
+            if eval(lo) >= 1.0 {
+                break;
+            }
+            lo *= 2.0;
+        }
+        for _ in 0..60 {
+            if eval(hi) <= 1.0 {
+                break;
+            }
+            hi *= 2.0;
+        }
+        for _ in 0..200 {
+            let mid = f64::midpoint(lo, hi);
+            if eval(mid) > 1.0 {
                 lo = mid;
             } else {
                 hi = mid;
             }
         }
-        let r_star = 0.5 * (lo + hi);
+        let r_star = f64::midpoint(lo, hi);
 
         // Step 2: compute bond option strikes X_i = P(t_opt, T_i | r*)
         // and sum up the bond puts
@@ -323,7 +340,7 @@ impl HullWhite<'_, f64> {
         for &(t_i, c_i) in &cashflows {
             let x_i =
                 self.A(t_option, t_i, sigma, curve)? * (-self.B(t_option, t_i) * r_star).exp();
-            total += c_i * self.bond_put_price(t_option, t_i, x_i, sigma, curve)?;
+            total = f64::mul_add(c_i, self.bond_put_price(t_option, t_i, x_i, sigma, curve)?, total);
         }
         Ok(total)
     }

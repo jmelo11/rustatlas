@@ -235,7 +235,7 @@ impl StripContext<'_> {
             integral += hazard * (boundary - prev);
             prev = boundary;
         }
-        integral += last * (t - prev).max(0.0);
+        integral = last.mul_add((t - prev).max(0.0), integral);
         (-integral).exp()
     }
 
@@ -273,8 +273,8 @@ impl ContFunc<f64> for HazardObjective<'_> {
             let s1 = ctx.survival(ctx.time(d1), self.known_hazards, *x);
             let default_prob = s_prev - s1;
             // Premium on survival plus accrual-on-default (half-period approx).
-            premium += self.spread * delta * df * 0.5f64.mul_add(default_prob, s1);
-            protection += (1.0 - ctx.recovery) * df * default_prob;
+            premium = (self.spread * delta * df).mul_add(0.5f64.mul_add(default_prob, s1), premium);
+            protection = ((1.0 - ctx.recovery) * df).mul_add(default_prob, protection);
             s_prev = s1;
         }
         Ok(premium - protection)

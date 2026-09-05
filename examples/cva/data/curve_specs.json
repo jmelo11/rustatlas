@@ -72,6 +72,19 @@
                 "OIS_CLP_ICP_10Y",
                 "OIS_CLP_ICP_20Y"
             ]
+        },
+        {
+            "market_index": "TermSOFR3m",
+            "quotes": [
+                "FixedRateDeposit_USD_TermSOFR3m_3M",
+                "BasisSwap_USD_SOFR_TermSOFR3m_6M",
+                "BasisSwap_USD_SOFR_TermSOFR3m_1Y",
+                "BasisSwap_USD_SOFR_TermSOFR3m_2Y",
+                "BasisSwap_USD_SOFR_TermSOFR3m_3Y",
+                "BasisSwap_USD_SOFR_TermSOFR3m_5Y",
+                "BasisSwap_USD_SOFR_TermSOFR3m_7Y",
+                "BasisSwap_USD_SOFR_TermSOFR3m_10Y"
+            ]
         }
     ]
 }

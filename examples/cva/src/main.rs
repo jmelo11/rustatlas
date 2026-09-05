@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use quantsupport::prelude::*;
 
-use utils::{load_curve_specs, load_quotes};
+use utils::{load_curve_specs, load_quotes, load_vol_specs};
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // ── 1. Build PricingContext from market data ────────────────
@@ -14,11 +14,17 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let quote_store = load_quotes(&data_dir.join("quotes.json"))?;
     let ref_date = quote_store.reference_date();
     let curve_specs = load_curve_specs(&data_dir.join("curve_specs.json"))?;
-    // Only bootstrap curves we need: SOFR, ICP, and Collateral(CLP, USD).
+    // Only bootstrap curves we need: SOFR, ICP, Collateral(CLP, USD) and the
+    // TermSOFR3m funding-index curve, bootstrapped from a 3M deposit plus
+    // OIS-vs-TermSOFR basis swaps.
     let curve_specs: Vec<_> = curve_specs
         .into_iter()
         .filter(|s| *s.market_index() != MarketIndex::ESTR)
         .collect();
+
+    // Volatility inputs: a SOFR caplet surface and an ICP swaption cube. The
+    // XVA engine calibrates its LGM sigma schedules against them.
+    let vol_specs = load_vol_specs(&data_dir.join("vol_specs.json"))?;
 
     println!("Reference date: {ref_date}");
 
@@ -31,10 +37,13 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .with_fx_store(fx_store)
         .with_base_currency(Currency::USD)
         .with_base_index(MarketIndex::SOFR)
-        .with_curve_configurations(curve_specs);
+        .with_curve_configurations(curve_specs)
+        .with_volatility_surface_configurations(vol_specs.volatility_surfaces)
+        .with_volatility_cube_configurations(vol_specs.volatility_cubes);
     ctx.initialize()?;
 
-    println!("Curves bootstrapped (SOFR, ICP, Collateral CLP/USD).");
+    println!("Curves bootstrapped (SOFR, ICP, Collateral CLP/USD, TermSOFR3m funding).");
+    println!("Volatility surface (SOFR caplets) and cube (ICP swaptions) built.");
 
     // ── 2. Build trades ─────────────────────────────────────────
     let swap = MakeSwap::<f64>::default()
@@ -84,6 +93,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("XCCY claims: {}", xccy_claims.len());
 
     // ── 3. Configure & run XVA engine ───────────────────────────
+    // The LGM models for SOFR and ICP are calibrated against the caplet
+    // surface and swaption cube constructed in the pricing context; the
+    // collateral basis curve keeps a flat sigma.
     let config: XvaEngineConfig =
         serde_json::from_reader(std::fs::File::open(data_dir.join("xva_config.json"))?)?;
 
@@ -91,7 +103,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Both trades share the same CSA → single netting set.
     // The client's CSA terms carry the collateral treatment and the
-    // credit/funding parameters used for CVA/FVA.
+    // credit/funding parameters used for CVA/FVA. FVA spreads combine the
+    // OIS-vs-TermSOFR basis implied by the bootstrapped funding curve
+    // (`funding_index`) with the bank's own funding spread curve over
+    // TermSOFR (`funding_spread_curve`).
     let csa: CsaTerms =
         serde_json::from_reader(std::fs::File::open(data_dir.join("csa_terms.json"))?)?;
     let n_claims = irs_claims.len() + xccy_claims.len();
@@ -111,7 +126,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\nXVA Values:");
     if let Some(ref xva_values) = result.xva_values {
         for v in xva_values {
-            println!("  {:<12} {:<6} = {:>12.2}", v.netting_set, v.measure, v.value);
+            println!(
+                "  {:<12} {:<6} = {:>12.2}",
+                v.netting_set, v.measure, v.value
+            );
         }
     }
 

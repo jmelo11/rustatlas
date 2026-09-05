@@ -30,7 +30,7 @@ use crate::QuantSupportError;
 macro_rules! mirror_enum {
     ($(#[$meta:meta])* $name:ident, $qs:ty, $pyname:literal, [$($variant:ident),+ $(,)?]) => {
         $(#[$meta])*
-        #[pyclass(name = $pyname, eq, frozen, hash)]
+        #[pyclass(name = $pyname, eq, frozen, hash, from_py_object)]
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
         pub enum $name {
             $($variant),+
@@ -398,7 +398,7 @@ impl SmileType {
 /// (`MarketIndex.SOFR`); parameterised variants are built with
 /// [`MarketIndex.equity`], [`MarketIndex.fx_pair`],
 /// [`MarketIndex.collateral`] and [`MarketIndex.other`].
-#[pyclass(name = "MarketIndex", eq, frozen, hash)]
+#[pyclass(name = "MarketIndex", eq, frozen, hash, from_py_object)]
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct MarketIndex {
     pub inner: QsMarketIndex,

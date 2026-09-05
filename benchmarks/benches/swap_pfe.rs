@@ -162,7 +162,7 @@ fn bench_swap_pfe(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Protobuf));
     targets = bench_swap_pfe
 }
 criterion_main!(benches);

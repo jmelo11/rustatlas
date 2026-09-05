@@ -219,7 +219,7 @@ fn bench_second_order(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Protobuf));
     targets = bench_record, bench_backward, bench_full_grad, bench_second_order
 }
 criterion_main!(benches);

@@ -91,10 +91,7 @@ impl Brazil {
     fn is_passion_of_christ(day: u32, month: u32, year: i32) -> bool {
         let em = easter_monday(year);
         let dd = Date::new(year, month, day).day_of_year();
-        if em - 3 == dd {
-            return true;
-        }
-        false
+        em - 3 == dd
     }
 
     fn is_carnival(day: u32, month: u32, year: i32) -> bool {
@@ -129,7 +126,7 @@ impl Brazil {
 
         match self.market {
             Market::Settlement => {
-                if Self::is_new_years_day(day, month)
+                !(Self::is_new_years_day(day, month)
                     || Self::is_tiradentes_day(day, month)
                     || Self::is_labor_day(day, month)
                     || Self::is_independence_day(day, month)
@@ -138,15 +135,10 @@ impl Brazil {
                     || Self::is_republic_day(day, month)
                     || Self::is_christmas(day, month)
                     || Self::is_passion_of_christ(day, month, year)
-                    || Self::is_carnival(day, month, year)
-                    || Self::is_corpus_christi(day, month, year)
-                {
-                    return false;
-                }
-                true
+                    || Self::is_carnival(day, month, year) || Self::is_corpus_christi(day, month, year))
             }
             Market::Exchange => {
-                if Self::is_new_years_day(day, month)
+                !(Self::is_new_years_day(day, month)
                     || Self::is_sao_paulo_city_day(day, month)
                     || Self::is_tiradentes_day(day, month)
                     || Self::is_labor_day(day, month)
@@ -160,12 +152,7 @@ impl Brazil {
                     || Self::is_christmas(day, month)
                     || Self::is_passion_of_christ(day, month, year)
                     || Self::is_carnival(day, month, year)
-                    || Self::is_corpus_christi(day, month, year)
-                    || Self::is_last_business_day_of_year(day, month, year)
-                {
-                    return false;
-                }
-                true
+                    || Self::is_corpus_christi(day, month, year) || Self::is_last_business_day_of_year(day, month, year))
             }
         }
     }

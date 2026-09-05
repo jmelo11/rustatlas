@@ -469,7 +469,7 @@ where
                         } else {
                             forward_curve.discount_factor(payment_date)?.value()
                         };
-                        annuity += coupon.notional() * year_fraction * df_fx;
+                        annuity = f64::mul_add(coupon.notional() * year_fraction, df_fx, annuity);
                     }
                     CashflowType::FloatingRateCoupon(coupon) => {
                         // Use historical fixing when accrual has already
@@ -505,7 +505,7 @@ where
                         } else {
                             forward_curve.discount_factor(payment_date)?.value()
                         };
-                        float_pv += amount * df_fx;
+                        float_pv = f64::mul_add(amount, df_fx, float_pv);
                     }
                     // Disbursements and redemptions cancel in a vanilla swap
                     // (both legs have the same notional exchange)

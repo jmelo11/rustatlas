@@ -41,18 +41,13 @@ impl ImplCalendar for TARGET {
         let m = date.month();
         let y = date.year();
         let em = self.easter_monday(y);
-        if self.is_weekend(&w)
+        !(self.is_weekend(&w)
             || (d == 1 && m == 1)
             || (dd == em - 3 && y >= 2000)
             || (dd == em && y >= 2000)
             || (d == 1 && m == 5 && y >= 2000)
             || (d == 25 && m == 12)
-            || (d == 26 && m == 12 && y >= 2000)
-            || (d == 31 && m == 12 && (y == 1998 || y == 1999 || y == 2001))
-        {
-            return false;
-        }
-        true
+            || (d == 26 && m == 12 && y >= 2000) || (d == 31 && m == 12 && (y == 1998 || y == 1999 || y == 2001)))
     }
 
     fn added_holidays(&self) -> HashSet<Date> {

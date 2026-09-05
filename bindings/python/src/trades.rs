@@ -18,7 +18,7 @@ use crate::conv::{
 };
 
 /// A vanilla fixed-vs-floating interest rate swap.
-#[pyclass(name = "Swap")]
+#[pyclass(name = "Swap", from_py_object)]
 #[derive(Clone)]
 pub struct Swap {
     pub identifier: String,
@@ -217,7 +217,7 @@ impl Swap {
 }
 
 /// A float-vs-float cross-currency swap.
-#[pyclass(name = "CrossCurrencySwap")]
+#[pyclass(name = "CrossCurrencySwap", from_py_object)]
 #[derive(Clone)]
 pub struct CrossCurrencySwap {
     pub identifier: String,

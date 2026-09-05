@@ -38,17 +38,17 @@ impl<'a> BootstrapStepEvaluation<'a> {
                 CashflowType::Disbursement(disbursement) => {
                     let payment_date = disbursement.payment_date();
                     let df = discount_curve.discount_factor(payment_date)?;
-                    pv += -side * disbursement.amount()? * df;
+                    pv = (-side * disbursement.amount()?).mul_add(df, pv);
                 }
                 CashflowType::Redemption(redemption) => {
                     let payment_date = redemption.payment_date();
                     let df = discount_curve.discount_factor(payment_date)?;
-                    pv += side * redemption.amount()? * df;
+                    pv = (side * redemption.amount()?).mul_add(df, pv);
                 }
                 CashflowType::FixedRateCoupon(fixed_coupon) => {
                     let payment_date = fixed_coupon.payment_date();
                     let df = discount_curve.discount_factor(payment_date)?;
-                    pv += side * fixed_coupon.amount()? * df;
+                    pv = (side * fixed_coupon.amount()?).mul_add(df, pv);
                 }
                 CashflowType::FloatingRateCoupon(floating_coupon) => {
                     let payment_date = floating_coupon.payment_date();
@@ -72,7 +72,7 @@ impl<'a> BootstrapStepEvaluation<'a> {
                         )?;
 
                     floating_coupon.set_fixing(fixing);
-                    pv += side * floating_coupon.amount()? * df;
+                    pv = (side * floating_coupon.amount()?).mul_add(df, pv);
                 }
                 _ => {
                     return Err(QSError::InvalidValueErr(
@@ -250,7 +250,7 @@ fn fixed_leg_annuity(leg: &Leg<f64>, curves: &BootstrapStep) -> Result<f64> {
                 .rate()
                 .day_counter()
                 .year_fraction(coupon.accrual_start_date(), coupon.accrual_end_date());
-            annuity += side * yf * coupon.notional() * df;
+            annuity = (side * yf * coupon.notional()).mul_add(df, annuity);
         }
     }
     Ok(annuity)
@@ -267,7 +267,7 @@ fn floating_leg_annuity(leg: &Leg<f64>, curves: &BootstrapStep) -> Result<f64> {
             let yf = coupon
                 .day_counter()
                 .year_fraction(coupon.accrual_start_date(), coupon.accrual_end_date());
-            annuity += side * yf * coupon.notional() * df;
+            annuity = (side * yf * coupon.notional()).mul_add(df, annuity);
         }
     }
     Ok(annuity)

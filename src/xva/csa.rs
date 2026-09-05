@@ -106,14 +106,17 @@ pub struct CsaTerms {
     #[serde(default)]
     pub funding_spread: f64,
     /// Explicit term structure of funding spreads used for FVA. Takes
-    /// precedence over the flat [`Self::funding_spread`]; superseded by
-    /// [`Self::funding_index`] when both are set.
+    /// precedence over the flat [`Self::funding_spread`]. When
+    /// [`Self::funding_index`] is also set, this curve is applied as an
+    /// additive overlay on top of the curve-implied basis (i.e. it is a
+    /// spread over the funding curve).
     #[serde(default)]
     pub funding_spread_curve: Option<FundingSpreadCurve>,
     /// Bootstrapped funding discount curve. When set, the FVA funding spreads
     /// are derived as the forward spreads of this curve over the engine's
-    /// system (base) curve at the simulation dates. Takes precedence over
-    /// [`Self::funding_spread_curve`] and [`Self::funding_spread`].
+    /// system (base) curve at the simulation dates, plus any
+    /// [`Self::funding_spread_curve`] overlay. Takes precedence over the
+    /// flat [`Self::funding_spread`].
     #[serde(default)]
     pub funding_index: Option<MarketIndex>,
     /// Bootstrapped credit curve of the counterparty. When set, CVA uses the

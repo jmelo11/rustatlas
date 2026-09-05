@@ -8,11 +8,14 @@ use crate::{
     currencies::currency::Currency,
     indices::marketindex::MarketIndex,
     math::interpolation::interpolator::Interpolator,
-    models::lgm::{
-        lgmcomponents::{LgmFxModel, LgmRateModel},
-        lgmmarketmodel::LgmMarketModel,
+    models::{
+        hullwhite::hullwhitemodel::HullWhite,
+        lgm::{
+            lgmcomponents::{LgmFxModel, LgmRateModel},
+            lgmmarketmodel::LgmMarketModel,
+        },
     },
-    quotes::fixingstore::FixingStore,
+    quotes::{fixingstore::FixingStore, quote::Level},
     rates::yieldtermstructure::{
         discounttermstructure::DiscountTermStructure,
         interestratestermstructure::InterestRatesTermStructure,
@@ -24,6 +27,7 @@ use crate::{
         schedule::MakeSchedule,
     },
     utils::errors::{QSError, Result},
+    volatility::volatilitysource::VolatilitySourceConfiguration,
     xva::{
         aggregator::{
             CreditCurveCvaFactory, CvaFactory, FundingCurveFvaFactory, FvaFactory,
@@ -42,11 +46,40 @@ use crate::{
 };
 
 /// LGM model parameters for a single rate curve.
+///
+/// The short-rate volatility is either a flat `sigma` or a
+/// [`VolatilitySourceConfiguration`]: `Constant`, or `Calibrated` against a
+/// volatility surface (caplets) or cube (swaptions) constructed in the
+/// pricing context. When both are set, `volatility` takes precedence.
+///
+/// Curves without dynamics of their own (e.g. FX-implied collateral curves
+/// such as `Collateral(CLP, USD)`) must instead set [`Self::driver`].
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LgmModelConfig {
     pub market_index: MarketIndex,
-    pub lambda: f64,
-    pub sigma: f64,
+    /// Mean reversion. Required unless [`Self::driver`] is set.
+    #[serde(default)]
+    pub lambda: Option<f64>,
+    /// Flat short-rate volatility. Ignored when [`Self::volatility`] is set.
+    #[serde(default)]
+    pub sigma: Option<f64>,
+    /// Volatility source (`Constant` or `Calibrated` from a constructed
+    /// surface/cube). Takes precedence over [`Self::sigma`].
+    #[serde(default)]
+    pub volatility: Option<VolatilitySourceConfiguration>,
+    /// Rate model that drives this curve's dynamics.
+    ///
+    /// Use for curves that carry no volatility of their own, e.g. FX-implied
+    /// collateral curves: under a deterministic cross-currency basis,
+    /// `Collateral(CLP, USD)` evolves with the CLP risk-free model (ICP) —
+    /// its vol is implied by the driver's curve vol together with the FX
+    /// vol, whose quanto effect is already carried by the driver's factor
+    /// drift under the domestic measure. The curve is reconstructed from the
+    /// driver's simulated factor and parameters, with its own initial term
+    /// structure. Mutually exclusive with `lambda`, `sigma` and
+    /// `volatility`.
+    #[serde(default)]
+    pub driver: Option<MarketIndex>,
 }
 
 /// FX model parameters for a single currency pair.
@@ -116,52 +149,30 @@ impl XvaEngine {
     ///
     /// Snapshots the f64 curve data from every discount curve referenced
     /// in `config.model_configs`. The curves must already be bootstrapped
-    /// in the context.
+    /// in the context. Model configs with a `Calibrated` volatility source
+    /// are calibrated here, against the volatility surfaces/cubes
+    /// constructed in the context.
     ///
     /// # Errors
-    /// Returns an error if a required discount curve is missing or has no nodes.
+    /// Returns an error if a required discount curve, volatility surface or
+    /// cube is missing, if the curve has no nodes, or if calibration fails.
     pub fn new(context: &PricingContext, config: XvaEngineConfig) -> Result<Self> {
         let store = context.constructed_elements();
 
         let mut curves = HashMap::new();
-        let mut model_configs = HashMap::new();
+        let mut model_params = HashMap::new();
 
-        for mc in &config.model_configs {
-            let elem = store.discount_curve(&mc.market_index).ok_or_else(|| {
-                QSError::NotFoundErr(format!(
-                    "Discount curve not found for index {:?}",
-                    mc.market_index
-                ))
-            })?;
-
-            // Snapshot f64 data from the already-bootstrapped curve.
-            let borrowed = elem.curve();
-            let nodes = borrowed
-                .nodes()
-                .ok_or_else(|| QSError::NotFoundErr("Curve has no nodes".into()))?;
-            let dates: Vec<Date> = nodes.iter().map(|(d, _)| *d).collect();
-            let dfs: Vec<f64> = nodes.iter().map(|(_, v)| v.value()).collect();
-            let pillar_labels = borrowed.pillar_labels().unwrap_or_default();
-            let pillar_values: Vec<f64> = borrowed
-                .pillars()
-                .unwrap_or_default()
-                .iter()
-                .map(|(_, v)| v.value())
-                .collect();
-            let dc = borrowed.day_counter().unwrap_or(DayCounter::Actual365);
-
-            curves.insert(
-                mc.market_index.clone(),
-                CurveSnapshot {
-                    dates,
-                    discount_factors: dfs,
-                    day_counter: dc,
-                    interpolator: Interpolator::LogLinear,
-                    pillar_labels,
-                    pillar_values,
-                },
-            );
-            model_configs.insert(mc.market_index.clone(), mc.clone());
+        // Resolve base models first; derived configs (with a `driver`)
+        // inherit the driver's resolved parameters in a second pass.
+        for mc in config.model_configs.iter().filter(|mc| mc.driver.is_none()) {
+            let (snapshot, params) = Self::snapshot_model_curve(context, mc)?;
+            curves.insert(mc.market_index.clone(), snapshot);
+            model_params.insert(mc.market_index.clone(), params);
+        }
+        for mc in config.model_configs.iter().filter(|mc| mc.driver.is_some()) {
+            let (snapshot, params) = Self::snapshot_derived_curve(context, mc, &model_params)?;
+            curves.insert(mc.market_index.clone(), snapshot);
+            model_params.insert(mc.market_index.clone(), params);
         }
 
         // Snapshot FX spots from the FxStore.
@@ -215,7 +226,7 @@ impl XvaEngine {
         Ok(Self {
             setup: InternalModelSetup {
                 curves,
-                model_configs,
+                model_params,
                 fx_configs: config.fx_configs,
                 fx_spots,
                 domestic_currency: domestic,
@@ -373,6 +384,209 @@ impl XvaEngine {
         evaluate_with_xva(&sim_dates, &ns_slices, &factories, &self.setup)
     }
 
+    /// Snapshots the f64 data of a model's bootstrapped discount curve and
+    /// resolves its LGM parameters (calibrating the sigma schedule when a
+    /// volatility source is configured).
+    ///
+    /// # Errors
+    /// Returns an error if the curve is missing or empty, or if sigma
+    /// resolution fails.
+    fn snapshot_model_curve(
+        context: &PricingContext,
+        mc: &LgmModelConfig,
+    ) -> Result<(CurveSnapshot, LgmResolvedParams)> {
+        let snapshot = Self::snapshot_curve_data(context, &mc.market_index)?;
+
+        // Resolve the short-rate sigma schedule: calibrate against the
+        // constructed vol surface/cube when a volatility source is
+        // configured, otherwise use the flat sigma. Calibrated models
+        // also retain the vol-quote pillars and the IFT sensitivities
+        // `d(sigma_i)/d(vol_i)` so the AAD pass can report XVA
+        // sensitivities to the market vol quotes.
+        let (sigma_schedule, vol_pillars) = Self::resolve_sigma_schedule(
+            context,
+            mc,
+            &snapshot.dates,
+            &snapshot.discount_factors,
+            snapshot.day_counter,
+        )?;
+        let lambda = mc.lambda.ok_or_else(|| {
+            QSError::InvalidValueErr(format!(
+                "LgmModelConfig for {} must set `lambda` (or use `driver`)",
+                mc.market_index
+            ))
+        })?;
+
+        Ok((
+            snapshot,
+            LgmResolvedParams {
+                lambda,
+                sigma_schedule,
+                vol_pillars,
+                driver: None,
+            },
+        ))
+    }
+
+    /// Resolves a derived-curve config: the curve has no dynamics of its
+    /// own and is reconstructed from its driver's simulated factor and
+    /// parameters (deterministic basis), with its own initial term
+    /// structure.
+    ///
+    /// # Errors
+    /// Returns an error if the config also sets `lambda`/`sigma`/`volatility`,
+    /// or if the driver is missing or itself derived.
+    fn snapshot_derived_curve(
+        context: &PricingContext,
+        mc: &LgmModelConfig,
+        resolved: &HashMap<MarketIndex, LgmResolvedParams>,
+    ) -> Result<(CurveSnapshot, LgmResolvedParams)> {
+        if mc.lambda.is_some() || mc.sigma.is_some() || mc.volatility.is_some() {
+            return Err(QSError::InvalidValueErr(format!(
+                "LgmModelConfig for {}: `driver` is mutually exclusive with `lambda`, `sigma` \
+                 and `volatility` — the curve inherits its driver's dynamics",
+                mc.market_index
+            )));
+        }
+        let driver = mc.driver.clone().ok_or_else(|| {
+            QSError::UnexpectedErr("snapshot_derived_curve called without driver".into())
+        })?;
+        let driver_params = resolved.get(&driver).ok_or_else(|| {
+            QSError::NotFoundErr(format!(
+                "Driver model {driver} for {} must be configured as a non-derived \
+                 LgmModelConfig",
+                mc.market_index
+            ))
+        })?;
+        let snapshot = Self::snapshot_curve_data(context, &mc.market_index)?;
+        Ok((
+            snapshot,
+            LgmResolvedParams {
+                lambda: driver_params.lambda,
+                sigma_schedule: driver_params.sigma_schedule.clone(),
+                vol_pillars: None,
+                driver: Some(driver),
+            },
+        ))
+    }
+
+    /// Snapshots the f64 data of a bootstrapped discount curve.
+    ///
+    /// # Errors
+    /// Returns an error if the curve is missing or empty.
+    fn snapshot_curve_data(context: &PricingContext, index: &MarketIndex) -> Result<CurveSnapshot> {
+        let store = context.constructed_elements();
+        let elem = store.discount_curve(index).ok_or_else(|| {
+            QSError::NotFoundErr(format!("Discount curve not found for index {index:?}"))
+        })?;
+
+        // Snapshot f64 data from the already-bootstrapped curve.
+        let borrowed = elem.curve();
+        let nodes = borrowed
+            .nodes()
+            .ok_or_else(|| QSError::NotFoundErr("Curve has no nodes".into()))?;
+        let dates: Vec<Date> = nodes.iter().map(|(d, _)| *d).collect();
+        let dfs: Vec<f64> = nodes.iter().map(|(_, v)| v.value()).collect();
+        let pillar_labels = borrowed.pillar_labels().unwrap_or_default();
+        let pillar_values: Vec<f64> = borrowed
+            .pillars()
+            .unwrap_or_default()
+            .iter()
+            .map(|(_, v)| v.value())
+            .collect();
+        let dc = borrowed.day_counter().unwrap_or(DayCounter::Actual365);
+        let ift_sensitivities = borrowed.ift_sensitivities().map(<[Vec<f64>]>::to_vec);
+
+        Ok(CurveSnapshot {
+            dates,
+            discount_factors: dfs,
+            day_counter: dc,
+            interpolator: Interpolator::LogLinear,
+            pillar_labels,
+            pillar_values,
+            ift_sensitivities,
+        })
+    }
+
+    /// Resolves an LGM model config into a piecewise-constant sigma schedule
+    /// plus, for calibrated models, the vol-quote pillars carrying the
+    /// calibration IFT sensitivities `d(sigma_i)/d(vol_i)`.
+    ///
+    /// # Errors
+    /// Returns an error if neither `sigma` nor `volatility` is set, if the
+    /// volatility source is unsupported, or if calibration fails.
+    fn resolve_sigma_schedule(
+        context: &PricingContext,
+        mc: &LgmModelConfig,
+        dates: &[Date],
+        dfs: &[f64],
+        dc: DayCounter,
+    ) -> Result<SigmaResolution> {
+        let Some(volatility) = &mc.volatility else {
+            return mc.sigma.map_or_else(
+                || {
+                    Err(QSError::InvalidValueErr(format!(
+                        "LgmModelConfig for {} must set either `sigma` or `volatility`",
+                        mc.market_index
+                    )))
+                },
+                |sigma| Ok((vec![(0.0, sigma)], None)),
+            );
+        };
+        let curve_f64 = DiscountTermStructure::<f64>::new(
+            dates.to_vec(),
+            dfs.to_vec(),
+            dc,
+            Interpolator::LogLinear,
+            true,
+        )?;
+        match volatility {
+            VolatilitySourceConfiguration::Constant { value } => Ok((vec![(0.0, *value)], None)),
+            VolatilitySourceConfiguration::Calibrated(calibration) => {
+                let lambda = mc.lambda.ok_or_else(|| {
+                    QSError::InvalidValueErr(format!(
+                        "LgmModelConfig for {} must set `lambda` to calibrate",
+                        mc.market_index
+                    ))
+                })?;
+                let mut hw = HullWhite::new(lambda, &curve_f64);
+                hw.calibrate_with_configuration(
+                    calibration,
+                    context.constructed_elements(),
+                    context.quote_store(),
+                    &curve_f64,
+                    Level::Mid,
+                )?;
+                let vol_func = hw.vol_func().ok_or_else(|| {
+                    QSError::UnexpectedErr("Calibration produced no vol function".into())
+                })?;
+                let schedule: Vec<(f64, f64)> = vol_func.iter().copied().collect();
+                let vol_pillars = match (vol_func.ift_sensitivities(), hw.calibration_quality()) {
+                    (Some(ift), Some(quality)) => Some(
+                        quality
+                            .records
+                            .iter()
+                            .enumerate()
+                            .map(|(i, r)| VolPillar {
+                                label: r.identifier.clone(),
+                                market_vol: r.market_vol,
+                                dsigma_dvol: ift[i][i],
+                            })
+                            .collect(),
+                    ),
+                    _ => None,
+                };
+                Ok((schedule, vol_pillars))
+            }
+            VolatilitySourceConfiguration::Surface { .. }
+            | VolatilitySourceConfiguration::Cube { .. } => Err(QSError::InvalidValueErr(
+                "Lgm supports Constant or Calibrated volatility sources; sampling a \
+                 surface/cube directly would misuse Black vols as short-rate vols"
+                    .into(),
+            )),
+        }
+    }
+
     /// Snapshots the f64 data of every bootstrapped discount curve in the
     /// store (used for funding-curve FVA lookups).
     fn snapshot_discount_curves(
@@ -398,6 +612,7 @@ impl XvaEngine {
                         .iter()
                         .map(|(_, v)| v.value())
                         .collect(),
+                    ift_sensitivities: borrowed.ift_sensitivities().map(<[Vec<f64>]>::to_vec),
                 },
             );
         }
@@ -405,8 +620,9 @@ impl XvaEngine {
     }
 
     /// Builds the FVA aggregator factory for one netting set from its CSA
-    /// terms: funding curve when assigned, explicit spread term structure
-    /// otherwise, flat spread as fallback.
+    /// terms: funding curve when assigned (with any explicit spread curve
+    /// applied as an additive overlay on top), explicit spread term
+    /// structure otherwise, flat spread as fallback.
     fn build_fva_factory(
         &self,
         id: &str,
@@ -414,6 +630,25 @@ impl XvaEngine {
         system_ts: &DiscountTermStructure<f64>,
         system_dfs: &[f64],
     ) -> Result<Box<dyn PfeAggregatorFactory>> {
+        // Optional overlay: explicit funding spread curve applied on top of
+        // the curve-implied basis (spread over the funding index).
+        let (overlay_dates, overlay_spreads, overlay_labels) =
+            if let Some(spread_curve) = &csa.funding_spread_curve {
+                spread_curve.validate()?;
+                let labels = spread_curve
+                    .dates
+                    .iter()
+                    .map(|d| format!("funding_spread.{d}"))
+                    .collect();
+                (
+                    spread_curve.dates.clone(),
+                    spread_curve.spreads.clone(),
+                    labels,
+                )
+            } else {
+                (Vec::new(), Vec::new(), Vec::new())
+            };
+
         if let Some(funding_index) = &csa.funding_index {
             let snapshot = self.funding_curves.get(funding_index).ok_or_else(|| {
                 QSError::NotFoundErr(format!(
@@ -460,6 +695,9 @@ impl XvaEngine {
                 pillar_dates,
                 pillar_spreads,
                 pillar_labels: labels,
+                overlay_dates,
+                overlay_spreads,
+                overlay_labels,
                 n_paths: self.setup.n_paths,
                 day_counter: dc,
                 system_dfs: Some(system_dfs.to_vec()),
@@ -475,6 +713,9 @@ impl XvaEngine {
                 pillar_dates: spread_curve.dates.clone(),
                 pillar_spreads: spread_curve.spreads.clone(),
                 pillar_labels: labels,
+                overlay_dates: Vec::new(),
+                overlay_spreads: Vec::new(),
+                overlay_labels: Vec::new(),
                 n_paths: self.setup.n_paths,
                 day_counter: DayCounter::Actual365,
                 system_dfs: Some(system_dfs.to_vec()),
@@ -499,6 +740,10 @@ struct CurveSnapshot {
     interpolator: Interpolator,
     pillar_labels: Vec<String>,
     pillar_values: Vec<f64>,
+    /// Bootstrap IFT matrix `d(DF_i)/d(quote_j)`. When present, the rebuilt
+    /// per-thread curve connects its discount factors to the quote pillar
+    /// leaves so the AAD pass yields dXVA/dquote sensitivities.
+    ift_sensitivities: Option<Vec<Vec<f64>>>,
 }
 
 /// Snapshot of a bootstrapped credit (survival) curve. The reference-date
@@ -509,6 +754,64 @@ struct CreditCurveSnapshot {
     survivals: Vec<f64>,
     labels: Vec<String>,
     day_counter: DayCounter,
+}
+
+/// Resolved sigma schedule plus optional calibrated vol-quote pillars.
+type SigmaResolution = (Vec<(f64, f64)>, Option<Vec<VolPillar>>);
+
+/// Resolved LGM parameters: mean reversion plus a (possibly calibrated)
+/// piecewise-constant sigma schedule.
+#[derive(Clone)]
+struct LgmResolvedParams {
+    lambda: f64,
+    sigma_schedule: Vec<(f64, f64)>,
+    /// Vol-quote pillars aligned with `sigma_schedule` (calibrated models
+    /// only): quote label, market vol, and IFT sensitivity `d(sigma)/d(vol)`.
+    vol_pillars: Option<Vec<VolPillar>>,
+    /// Set for derived curves: the rate model whose simulated factor and
+    /// parameters drive this curve (deterministic-basis reconstruction).
+    driver: Option<MarketIndex>,
+}
+
+impl LgmResolvedParams {
+    /// Builds the per-thread `DualFwd` sigma schedule. Calibrated sigmas are
+    /// rebuilt as tape expressions connected to vol-quote leaves via the
+    /// calibration IFT sensitivities:
+    ///   `sigma_i = sigma_i0 + (dsigma/dvol)_i * (v_i - v_i0)`
+    /// so the backward pass yields dXVA/dvol. The vol leaves are appended to
+    /// `all_leaves` under their quote labels.
+    fn dualfwd_schedule(&self, all_leaves: &mut Vec<(String, DualFwd)>) -> Vec<(f64, DualFwd)> {
+        self.vol_pillars.as_ref().map_or_else(
+            || {
+                self.sigma_schedule
+                    .iter()
+                    .map(|&(t, s)| (t, DualFwd::scalar(s)))
+                    .collect()
+            },
+            |pillars| {
+                self.sigma_schedule
+                    .iter()
+                    .zip(pillars)
+                    .map(|(&(t, s), vp)| {
+                        let leaf = DualFwd::new(vp.market_vol);
+                        all_leaves.push((vp.label.clone(), leaf));
+                        let delta: DualFwd = (leaf - DualFwd::scalar(vp.market_vol)).into();
+                        let sigma: DualFwd =
+                            (DualFwd::scalar(s) + DualFwd::scalar(vp.dsigma_dvol) * delta).into();
+                        (t, sigma)
+                    })
+                    .collect()
+            },
+        )
+    }
+}
+
+/// One calibrated sigma pillar traced back to its market vol quote.
+#[derive(Clone)]
+struct VolPillar {
+    label: String,
+    market_vol: f64,
+    dsigma_dvol: f64,
 }
 
 impl CurveSnapshot {
@@ -538,6 +841,10 @@ impl CurveSnapshot {
         .with_pillar_values(pvs)?
         .with_pillar_labels(self.pillar_labels.clone())?;
 
+        if let Some(ift) = &self.ift_sensitivities {
+            curve = curve.with_ift_sensitivities(ift.clone());
+        }
+
         curve.put_pillars_on_tape();
         Ok(curve)
     }
@@ -546,7 +853,7 @@ impl CurveSnapshot {
 /// Internal model setup implementing `XvaModelSetup`.
 struct InternalModelSetup {
     curves: HashMap<MarketIndex, CurveSnapshot>,
-    model_configs: HashMap<MarketIndex, LgmModelConfig>,
+    model_params: HashMap<MarketIndex, LgmResolvedParams>,
     fx_configs: Vec<FxModelConfig>,
     fx_spots: HashMap<Currency, f64>,
     domestic_currency: Currency,
@@ -562,6 +869,66 @@ struct InternalModelSetup {
 // Safety: all fields are owned plain data (Vec, HashMap, f64, etc.). No Rc/RefCell.
 unsafe impl Send for InternalModelSetup {}
 unsafe impl Sync for InternalModelSetup {}
+
+impl InternalModelSetup {
+    /// Builds the LGM rate models on top of the rebuilt `DualFwd` curves and
+    /// registers them (plus any derived-curve driver links) on `model`.
+    /// Returns separate rate-model instances for FX models to borrow.
+    ///
+    /// Sigma schedules are built once per base model; derived curves share
+    /// their driver's schedule (same tape leaves) so both curves respond to
+    /// the same vol quotes.
+    fn add_rate_models<'c>(
+        &self,
+        built_curves: &'c [(MarketIndex, DiscountTermStructure<DualFwd>)],
+        all_leaves: &mut Vec<(String, DualFwd)>,
+        model: &mut LgmMarketModel<'c, DualFwd>,
+    ) -> Result<Vec<(MarketIndex, LgmRateModel<'c, DualFwd>)>> {
+        let mut schedules: HashMap<MarketIndex, Vec<(f64, DualFwd)>> = HashMap::new();
+        for (idx, _) in built_curves {
+            let params = self.model_params.get(idx).ok_or_else(|| {
+                QSError::NotFoundErr(format!("Model config missing for curve {idx:?}"))
+            })?;
+            if params.driver.is_none() {
+                schedules.insert(idx.clone(), params.dualfwd_schedule(all_leaves));
+            }
+        }
+
+        let mut fx_rate_models: Vec<(MarketIndex, LgmRateModel<'c, DualFwd>)> = Vec::new();
+        for (idx, curve) in built_curves {
+            let params = self.model_params.get(idx).ok_or_else(|| {
+                QSError::NotFoundErr(format!("Model config missing for curve {idx:?}"))
+            })?;
+            let schedule_key = params.driver.as_ref().unwrap_or(idx);
+            let schedule = schedules
+                .get(schedule_key)
+                .ok_or_else(|| {
+                    QSError::NotFoundErr(format!(
+                        "Sigma schedule missing for model {schedule_key} (curve {idx})"
+                    ))
+                })?
+                .clone();
+            let rate_model = LgmRateModel::new_piecewise(
+                DualFwd::scalar(params.lambda),
+                schedule.clone(),
+                curve,
+            )?;
+            model.add_curve_model(idx.clone(), rate_model);
+            if let Some(d) = &params.driver {
+                model.set_curve_driver(idx.clone(), d.clone());
+            }
+
+            // If any FX config references this curve's currency, build an extra
+            // rate model for the FX model to borrow.
+            if !self.fx_configs.is_empty() {
+                let fx_rate =
+                    LgmRateModel::new_piecewise(DualFwd::scalar(params.lambda), schedule, curve)?;
+                fx_rate_models.push((idx.clone(), fx_rate));
+            }
+        }
+        Ok(fx_rate_models)
+    }
+}
 
 impl XvaModelSetup for InternalModelSetup {
     fn n_paths(&self) -> usize {
@@ -585,10 +952,8 @@ impl XvaModelSetup for InternalModelSetup {
             built_curves.push((idx.clone(), curve));
         }
 
-        // 2. Build rate models for curve_models (moved into the market model).
-        //    Also build separate rate model instances for FX model references.
-        let mut fx_rate_models: Vec<(MarketIndex, LgmRateModel<'_, DualFwd>)> = Vec::new();
-
+        // 2. Build rate models for curve_models (moved into the market model)
+        //    plus separate instances for FX models to borrow.
         let mut model = LgmMarketModel::new(
             self.domestic_currency,
             self.domestic_index.clone(),
@@ -598,28 +963,7 @@ impl XvaModelSetup for InternalModelSetup {
         .with_n_paths(self.n_paths)
         .with_seed(self.seed);
 
-        for (idx, curve) in &built_curves {
-            let cfg = self.model_configs.get(idx).ok_or_else(|| {
-                QSError::NotFoundErr(format!("Model config missing for curve {idx:?}"))
-            })?;
-            let rate_model = LgmRateModel::new(
-                DualFwd::scalar(cfg.lambda),
-                DualFwd::scalar(cfg.sigma),
-                curve,
-            );
-            model.add_curve_model(idx.clone(), rate_model);
-
-            // If any FX config references this curve's currency, build an extra
-            // rate model for the FX model to borrow.
-            if !self.fx_configs.is_empty() {
-                let fx_rate = LgmRateModel::new(
-                    DualFwd::scalar(cfg.lambda),
-                    DualFwd::scalar(cfg.sigma),
-                    curve,
-                );
-                fx_rate_models.push((idx.clone(), fx_rate));
-            }
-        }
+        let fx_rate_models = self.add_rate_models(&built_curves, &mut all_leaves, &mut model)?;
 
         // 3. Build FX models from the separate rate model instances.
         //    Find domestic and foreign rate models by index.
@@ -633,14 +977,12 @@ impl XvaModelSetup for InternalModelSetup {
             })?;
             // Find the foreign index by currency
             let foreign_index = self
-                .model_configs
-                .iter()
-                .find(|(_, mc)| {
-                    mc.market_index
-                        .rate_index_details()
+                .model_params
+                .keys()
+                .find(|idx| {
+                    idx.rate_index_details()
                         .is_ok_and(|d| d.currency() == fx_cfg.foreign_currency)
                 })
-                .map(|(_, mc)| &mc.market_index)
                 .ok_or_else(|| {
                     QSError::NotFoundErr("Foreign rate model not found for FX".into())
                 })?;
@@ -665,11 +1007,19 @@ impl XvaModelSetup for InternalModelSetup {
                 ))
             })?;
 
+            // FX spot and vol are tracked tape leaves so the backward pass
+            // yields dXVA/dspot and dXVA/dvol.
+            let pair = format!("{}{}", fx_cfg.foreign_currency, self.domestic_currency);
+            let spot_leaf = DualFwd::new(spot);
+            let fx_vol_leaf = DualFwd::new(fx_cfg.fx_vol);
+            all_leaves.push((format!("FX.{pair}.spot"), spot_leaf));
+            all_leaves.push((format!("FX.{pair}.vol"), fx_vol_leaf));
+
             let fx_model = LgmFxModel::new(
                 dom_rate,
                 for_rate,
-                DualFwd::scalar(fx_cfg.fx_vol),
-                DualFwd::scalar(spot),
+                fx_vol_leaf,
+                spot_leaf,
                 DualFwd::scalar(fx_cfg.rho),
             );
             model.add_fx_model(fx_cfg.foreign_currency, fx_model);

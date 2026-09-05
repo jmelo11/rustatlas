@@ -18,7 +18,7 @@ use crate::QuantSupportError;
 ///
 /// Wherever the bindings expect a date, a [`Date`], an ISO string
 /// (`"2025-11-11"`) or a `datetime.date` may be passed.
-#[pyclass(name = "Date", eq, ord, frozen, hash)]
+#[pyclass(name = "Date", eq, ord, frozen, hash, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Date {
     pub inner: QsDate,
@@ -133,7 +133,7 @@ impl Date {
     }
 
     /// `date - date` returns days; `date - n` / `date - Period` returns a date.
-    fn __sub__(&self, py: Python<'_>, other: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+    fn __sub__(&self, py: Python<'_>, other: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         if let Ok(d) = other.extract::<Self>() {
             return (self.inner - d.inner).into_py_any(py);
         }
@@ -162,7 +162,7 @@ impl Date {
 ///
 /// Wherever the bindings expect a period, a [`Period`] or its string form
 /// may be passed.
-#[pyclass(name = "Period", eq, frozen)]
+#[pyclass(name = "Period", eq, frozen, from_py_object)]
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Period {
     pub inner: QsPeriod,
@@ -221,7 +221,7 @@ impl Period {
 ///
 /// Available calendars: `NullCalendar`, `WeekendsOnly`, `TARGET`,
 /// `UnitedStates`, `Brazil`, `Chile`.
-#[pyclass(name = "Calendar")]
+#[pyclass(name = "Calendar", from_py_object)]
 #[derive(Clone)]
 pub struct Calendar {
     pub inner: QsCalendar,

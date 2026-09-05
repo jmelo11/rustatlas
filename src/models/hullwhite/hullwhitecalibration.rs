@@ -146,7 +146,7 @@ impl HullWhiteCalibration<'_, '_> {
                 let df_start = self.curve.discount_factor_from_time(t)?;
                 let df_end = self.curve.discount_factor_from_time(big_t)?;
                 let fwd = (df_start / df_end - 1.0) / tau;
-                total += df_end * tau * vanilla_call(fwd, strike.resolve(fwd), market_vol, t)?;
+                total = (df_end * tau).mul_add(vanilla_call(fwd, strike.resolve(fwd), market_vol, t)?, total);
             }
             return Ok(total);
         }

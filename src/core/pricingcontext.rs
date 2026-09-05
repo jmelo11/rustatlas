@@ -257,7 +257,7 @@ impl PricingContext {
         for (index, curve) in curves {
             self.constructed_elements
                 .discount_curves_mut()
-                .insert(index.clone(), curve);
+                .insert(index, curve);
         }
 
         // Bootstrap credit (survival) curves. Runs after the discount curves
