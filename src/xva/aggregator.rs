@@ -441,3 +441,219 @@ impl PfeAggregatorFactory for FvaFactory {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ad::tape::Tape, time::enums::TimeUnit};
+
+    const DC: DayCounter = DayCounter::Actual365;
+
+    fn sim_dates(ref_date: Date, months: &[i32]) -> Vec<Date> {
+        std::iter::once(ref_date)
+            .chain(months.iter().map(|m| ref_date.advance(*m, TimeUnit::Months)))
+            .collect()
+    }
+
+    /// For constant positive exposure `E`, the CVA sum telescopes exactly to
+    /// `E · LGD · (1 − S(t_last))` with `S(t) = exp(−(s/LGD)·t)`.
+    #[test]
+    fn cva_constant_exposure_telescopes() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[3, 6, 9, 12, 24, 36]);
+        let (spread, recovery, exposure) = (0.02_f64, 0.4_f64, 1_000.0_f64);
+        let lgd = 1.0 - recovery;
+
+        let agg = CvaAggregator::<f64>::new(spread, recovery, 1, ref_date, &dates);
+        let npvs = vec![exposure; dates.len()];
+        let cva = agg.aggregate_path(&npvs, &dates);
+
+        let t_last = DC.year_fraction(ref_date, dates[dates.len() - 1]);
+        let expected = exposure * lgd * (1.0 - (-(spread / lgd) * t_last).exp());
+        assert!(
+            (cva - expected).abs() < 1e-12 * expected,
+            "telescoping CVA {cva} vs analytic {expected}"
+        );
+    }
+
+    /// Negative exposure never contributes to CVA.
+    #[test]
+    fn cva_negative_exposure_is_zero() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[6, 12, 24]);
+        let agg = CvaAggregator::<f64>::new(0.02, 0.4, 1, ref_date, &dates);
+        let npvs = vec![-500.0; dates.len()];
+        assert!(agg.aggregate_path(&npvs, &dates).abs() < 1e-15);
+    }
+
+    /// DVA of `−E` must equal CVA of `+E` for the same spread/recovery.
+    #[test]
+    fn dva_mirrors_cva() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[3, 12, 30, 60]);
+        let cva = CvaAggregator::<f64>::new(0.015, 0.35, 4, ref_date, &dates);
+        let dva = DvaAggregator::<f64>::new(0.015, 0.35, 4, ref_date, &dates);
+        let pos = vec![750.0; dates.len()];
+        let neg: Vec<f64> = pos.iter().map(|v| -v).collect();
+        let c = cva.aggregate_path(&pos, &dates);
+        let d = dva.aggregate_path(&neg, &dates);
+        assert!((c - d).abs() < 1e-14 * c.abs(), "CVA {c} vs mirrored DVA {d}");
+    }
+
+    /// Constant NPV `E`: FVA telescopes to `E·f·(t_last − t_0)`, and all-ones
+    /// system discounts must be a no-op.
+    #[test]
+    fn fva_constant_npv_analytic() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[6, 12, 24, 48]);
+        let (funding_spread, exposure) = (0.005_f64, 2_000.0_f64);
+        let npvs = vec![exposure; dates.len()];
+
+        let agg = FvaAggregator::<f64>::new(funding_spread, 1);
+        let fva = agg.aggregate_path(&npvs, &dates);
+        let t_last = DC.year_fraction(ref_date, dates[dates.len() - 1]);
+        let expected = exposure * funding_spread * t_last;
+        assert!(
+            (fva - expected).abs() < 1e-12 * expected,
+            "FVA {fva} vs analytic {expected}"
+        );
+
+        let discounted = FvaAggregator::<f64>::new(funding_spread, 1)
+            .with_system_discounts(vec![1.0; dates.len()])
+            .aggregate_path(&npvs, &dates);
+        assert!((discounted - fva).abs() < 1e-15 * fva.abs());
+    }
+
+    /// System discounting scales each bucket by `DF(t_d)`; verify against a
+    /// direct hand-computed sum.
+    #[test]
+    fn cva_system_discounts_apply_per_bucket() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[12, 24, 36]);
+        let (spread, recovery, exposure, r) = (0.02_f64, 0.4_f64, 1_000.0_f64, 0.03_f64);
+        let lgd = 1.0 - recovery;
+        let hazard = spread / lgd;
+
+        let dfs: Vec<f64> = dates
+            .iter()
+            .map(|d| (-r * DC.year_fraction(ref_date, *d)).exp())
+            .collect();
+        let agg = CvaAggregator::<f64>::new(spread, recovery, 1, ref_date, &dates)
+            .with_system_discounts(dfs.clone());
+        let npvs = vec![exposure; dates.len()];
+        let cva = agg.aggregate_path(&npvs, &dates);
+
+        let mut expected = 0.0;
+        let mut s_prev = 1.0;
+        for (d, date) in dates.iter().enumerate().skip(1) {
+            let t = DC.year_fraction(ref_date, *date);
+            let s = (-hazard * t).exp();
+            expected += exposure * dfs[d] * (s_prev - s);
+            s_prev = s;
+        }
+        expected *= lgd;
+        assert!(
+            (cva - expected).abs() < 1e-12 * expected,
+            "discounted CVA {cva} vs hand-computed {expected}"
+        );
+    }
+
+    /// The curve-driven factory with flat-hazard pillar survivals must agree
+    /// with the flat-spread [`CvaFactory`] (log-linear interpolation is exact
+    /// for a flat hazard), covering interpolation before the first pillar,
+    /// between pillars and flat-hazard extrapolation beyond the last pillar.
+    #[test]
+    fn credit_curve_factory_matches_flat_hazard() {
+        let ref_date = Date::new(2025, 1, 2);
+        // Sim dates: before first pillar (3M), between pillars, beyond last (7Y).
+        let dates = sim_dates(ref_date, &[3, 9, 18, 30, 54, 84]);
+        let (lambda, recovery, n_paths) = (0.04_f64, 0.4_f64, 2_usize);
+        let lgd = 1.0 - recovery;
+
+        let pillar_dates: Vec<Date> = [1, 3, 5]
+            .iter()
+            .map(|y| ref_date.advance(*y, TimeUnit::Years))
+            .collect();
+        let pillar_survivals: Vec<f64> = pillar_dates
+            .iter()
+            .map(|d| (-lambda * DC.year_fraction(ref_date, *d)).exp())
+            .collect();
+
+        let curve_factory = CreditCurveCvaFactory {
+            pillar_dates,
+            pillar_survivals,
+            pillar_labels: vec!["1Y".into(), "3Y".into(), "5Y".into()],
+            recovery,
+            n_paths,
+            day_counter: DC,
+            system_dfs: None,
+        };
+        let flat_factory = CvaFactory {
+            credit_spread: lambda * lgd,
+            recovery,
+            n_paths,
+            system_dfs: None,
+        };
+
+        Tape::start_recording_fwd();
+        let curve_bundle = curve_factory.create_aggregator(ref_date, &dates);
+        let flat_bundle = flat_factory.create_aggregator(ref_date, &dates);
+        Tape::set_mark_fwd();
+
+        let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(1_000.0)).collect();
+        let from_curve = curve_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        let from_flat = flat_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        Tape::stop_recording_fwd();
+
+        assert!(from_curve > 0.0);
+        assert!(
+            (from_curve - from_flat).abs() < 1e-10 * from_flat,
+            "curve-driven CVA {from_curve} vs flat-spread CVA {from_flat}"
+        );
+        assert!(
+            curve_bundle.leaves.iter().any(|(l, _)| l == "CVA.5Y"),
+            "pillar leaves must be labeled with the quote ids"
+        );
+    }
+
+    /// Single-pillar curve: extrapolation beyond the pillar must use the flat
+    /// hazard implied from `(0, 1) → (t_1, S_1)`.
+    #[test]
+    fn single_pillar_flat_hazard_extrapolation() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[6, 12, 36]); // 3Y is beyond the 1Y pillar
+        let (lambda, recovery) = (0.05_f64, 0.4_f64);
+
+        let pillar_date = ref_date.advance(1, TimeUnit::Years);
+        let s1 = (-lambda * DC.year_fraction(ref_date, pillar_date)).exp();
+        let factory = CreditCurveCvaFactory {
+            pillar_dates: vec![pillar_date],
+            pillar_survivals: vec![s1],
+            pillar_labels: vec!["1Y".into()],
+            recovery,
+            n_paths: 1,
+            day_counter: DC,
+            system_dfs: None,
+        };
+        let flat = CvaFactory {
+            credit_spread: lambda * (1.0 - recovery),
+            recovery,
+            n_paths: 1,
+            system_dfs: None,
+        };
+
+        Tape::start_recording_fwd();
+        let curve_bundle = factory.create_aggregator(ref_date, &dates);
+        let flat_bundle = flat.create_aggregator(ref_date, &dates);
+        Tape::set_mark_fwd();
+        let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(500.0)).collect();
+        let from_curve = curve_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        let from_flat = flat_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        Tape::stop_recording_fwd();
+
+        assert!(
+            (from_curve - from_flat).abs() < 1e-10 * from_flat,
+            "single-pillar extrapolated CVA {from_curve} vs flat {from_flat}"
+        );
+    }
+}

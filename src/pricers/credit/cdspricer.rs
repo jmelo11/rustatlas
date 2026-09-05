@@ -300,3 +300,249 @@ impl Pricer for CdsPricer {
         self.discount_policy.as_deref()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        core::{
+            elements::curveelement::{CreditCurveElement, DiscountCurveElement},
+            marketdatahandling::constructedelementstore::ConstructedElementStore,
+            trade::Side,
+        },
+        currencies::currency::Currency,
+        indices::marketindex::MarketIndex,
+        instruments::credit::creditdefaultswap::CreditDefaultSwap,
+        math::interpolation::interpolator::Interpolator,
+        rates::yieldtermstructure::discounttermstructure::DiscountTermStructure,
+        time::{
+            daycounter::DayCounter,
+            enums::{Frequency, TimeUnit},
+        },
+    };
+    use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+    const DC: DayCounter = DayCounter::Actual360;
+
+    struct FlatProvider {
+        evaluation_date: Date,
+        market_data: MarketData,
+    }
+
+    impl MarketDataProvider for FlatProvider {
+        fn handle_request(&self, _: &MarketDataRequest) -> Result<MarketData> {
+            Ok(MarketData::new(
+                self.market_data.fixings().clone(),
+                self.market_data.constructed_elements().clone(),
+            ))
+        }
+
+        fn evaluation_date(&self) -> Date {
+            self.evaluation_date
+        }
+    }
+
+    /// Term structure with `exp(-rate·t)` factors at monthly nodes.
+    fn flat_exp_curve(ref_date: Date, rate: f64) -> Result<DiscountTermStructure<DualFwd>> {
+        let dates: Vec<Date> = (0..=120)
+            .map(|i| ref_date.advance(i, TimeUnit::Months))
+            .collect();
+        let dfs: Vec<DualFwd> = dates
+            .iter()
+            .map(|d| DualFwd::scalar((-rate * DC.year_fraction(ref_date, *d)).exp()))
+            .collect();
+        DiscountTermStructure::<DualFwd>::new(dates, dfs, DC, Interpolator::LogLinear, true)
+    }
+
+    /// Provider with a flat `r` discount curve and a flat `λ` hazard curve.
+    fn flat_provider(ref_date: Date, r: f64, lambda: f64) -> Result<FlatProvider> {
+        let discount = DiscountCurveElement::new(
+            MarketIndex::SOFR,
+            Rc::new(RefCell::new(flat_exp_curve(ref_date, r)?)),
+        );
+        let credit = CreditCurveElement::new(
+            MarketIndex::Credit("ACME".to_string()),
+            0.4,
+            Rc::new(RefCell::new(flat_exp_curve(ref_date, lambda)?)),
+        );
+        let mut store = ConstructedElementStore::default();
+        store
+            .discount_curves_mut()
+            .insert(MarketIndex::SOFR, discount);
+        store
+            .credit_curves_mut()
+            .insert(MarketIndex::Credit("ACME".to_string()), credit);
+        Ok(FlatProvider {
+            evaluation_date: ref_date,
+            market_data: MarketData::new(HashMap::new(), store),
+        })
+    }
+
+    fn make_trade(
+        ref_date: Date,
+        years: i32,
+        spread: f64,
+        recovery: f64,
+        side: Side,
+        notional: f64,
+    ) -> Result<CdsTrade> {
+        let cds = CreditDefaultSwap::new(
+            format!("CDS_ACME_{years}Y"),
+            MarketIndex::Credit("ACME".to_string()),
+            MarketIndex::SOFR,
+            Currency::USD,
+            ref_date,
+            ref_date.advance(years, TimeUnit::Years),
+            spread,
+            recovery,
+            Frequency::Quarterly,
+            DC,
+        )?;
+        Ok(CdsTrade::new(cds, ref_date, notional, side))
+    }
+
+    /// Benchmarks the discretized legs against the continuous-time closed
+    /// forms for flat hazard `λ` and flat rate `r`:
+    /// `protection = LGD·λ/(λ+r)·(1−e^{−(λ+r)T})`,
+    /// `annuity = (1−e^{−(λ+r)T})/(λ+r)` and `par ≈ LGD·λ`.
+    #[test]
+    fn matches_continuous_time_closed_form() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (r, lambda, recovery, notional) = (0.03, 0.05, 0.4, 1_000_000.0);
+        let lgd = 1.0 - recovery;
+        let years = 5;
+        let t = DC.year_fraction(ref_date, ref_date.advance(years, TimeUnit::Years));
+
+        let provider = flat_provider(ref_date, r, lambda)?;
+        let contract_spread = 0.02;
+        let trade = make_trade(
+            ref_date,
+            years,
+            contract_spread,
+            recovery,
+            Side::LongReceive,
+            notional,
+        )?;
+        let results =
+            CdsPricer::new().evaluate(&trade, &[Request::Value, Request::FairRate], &provider)?;
+
+        let decay = 1.0 - (-(lambda + r) * t).exp();
+        let protection = lgd * lambda / (lambda + r) * decay;
+        let annuity = decay / (lambda + r);
+        let expected_value = notional * (protection - contract_spread * annuity);
+        let expected_par = protection / annuity; // ≈ lgd·λ
+
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        assert!(
+            (price - expected_value).abs() / expected_value.abs() < 5e-3,
+            "value {price} vs closed form {expected_value}"
+        );
+
+        let fair = results
+            .fair_rate()
+            .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
+        assert!(
+            (fair - expected_par).abs() / expected_par < 5e-3,
+            "fair spread {fair} vs closed form {expected_par}"
+        );
+        assert!(
+            (fair - lgd * lambda).abs() / (lgd * lambda) < 5e-3,
+            "credit triangle: fair {fair} vs lgd·λ {}",
+            lgd * lambda
+        );
+        Ok(())
+    }
+
+    /// λ → 0 limit: no default risk, protection is worthless and the value
+    /// collapses to minus the premium leg (a riskless annuity).
+    #[test]
+    fn zero_hazard_limit() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (r, notional, spread) = (0.03, 1_000_000.0, 0.01);
+        let provider = flat_provider(ref_date, r, 0.0)?;
+        let trade = make_trade(ref_date, 5, spread, 0.4, Side::LongReceive, notional)?;
+        let results = CdsPricer::new().evaluate(&trade, &[Request::Value], &provider)?;
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+
+        // Riskless quarterly annuity, computed directly.
+        let mut annuity = 0.0;
+        let schedule = MakeSchedule::new(ref_date, ref_date.advance(5, TimeUnit::Years))
+            .with_frequency(Frequency::Quarterly)
+            .build()?;
+        for w in schedule.dates().windows(2) {
+            let delta = DC.year_fraction(w[0], w[1]);
+            annuity += delta * (-r * DC.year_fraction(ref_date, w[1])).exp();
+        }
+        let expected = -notional * spread * annuity;
+        assert!(
+            (price - expected).abs() < 1e-6 * notional,
+            "zero hazard: price {price} vs riskless premium leg {expected}"
+        );
+        Ok(())
+    }
+
+    /// λ → ∞ limit: default is immediate, so the protection buyer's value
+    /// approaches `LGD · notional` (premium leg vanishes with survival).
+    #[test]
+    fn extreme_hazard_limit() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (notional, recovery) = (1_000_000.0, 0.4);
+        let provider = flat_provider(ref_date, 0.03, 50.0)?;
+        let trade = make_trade(ref_date, 5, 0.01, recovery, Side::LongReceive, notional)?;
+        let results = CdsPricer::new().evaluate(&trade, &[Request::Value], &provider)?;
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        let lgd_notional = (1.0 - recovery) * notional;
+        // Default happens almost surely within the first quarter; the first
+        // coupon is discounted over ~3 months so the bound is loose but tight
+        // enough to catch sign or leg errors.
+        assert!(
+            price > 0.9 * lgd_notional && price <= lgd_notional,
+            "extreme hazard: price {price} should approach LGD·notional {lgd_notional}"
+        );
+        Ok(())
+    }
+
+    /// R → 1 limit: recovery of everything makes protection worthless.
+    #[test]
+    fn full_recovery_limit() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let provider = flat_provider(ref_date, 0.03, 0.05)?;
+        let trade = make_trade(ref_date, 5, 0.0, 0.999_999, Side::LongReceive, 1_000_000.0)?;
+        let results = CdsPricer::new().evaluate(&trade, &[Request::Value], &provider)?;
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        assert!(
+            price.abs() < 1.0,
+            "full recovery with zero spread must be worthless, got {price}"
+        );
+        Ok(())
+    }
+
+    /// Value must be monotonically increasing in hazard for a protection buyer.
+    #[test]
+    fn value_monotone_in_hazard() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let mut last = f64::NEG_INFINITY;
+        for lambda in [0.001, 0.01, 0.05, 0.10, 0.25] {
+            let provider = flat_provider(ref_date, 0.03, lambda)?;
+            let trade = make_trade(ref_date, 5, 0.02, 0.4, Side::LongReceive, 1_000_000.0)?;
+            let price = CdsPricer::new()
+                .evaluate(&trade, &[Request::Value], &provider)?
+                .price()
+                .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+            assert!(
+                price > last,
+                "buyer value must increase with hazard: {price} after {last}"
+            );
+            last = price;
+        }
+        Ok(())
+    }
+}

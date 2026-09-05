@@ -79,8 +79,7 @@ fn norm_cdf(x: DualFwd) -> DualFwd {
 fn black_scholes(s: DualFwd, sigma: DualFwd, t: DualFwd, k: f64, r: f64) -> DualFwd {
     let sqrt_t: DualFwd = sqrt(t).into();
     let sig_sqrt_t: DualFwd = (sigma * sqrt_t).into();
-    let d1: DualFwd =
-        ((log(s / k) + (sigma * sigma * 0.5 + r) * t) / sig_sqrt_t).into();
+    let d1: DualFwd = ((log(s / k) + (sigma * sigma * 0.5 + r) * t) / sig_sqrt_t).into();
     let d2: DualFwd = (d1 - sig_sqrt_t).into();
     let disc: DualFwd = exp(-t * r).into();
     (s * norm_cdf(d1) - disc * norm_cdf(d2) * k).into()
@@ -168,8 +167,7 @@ fn bench_full_grad(c: &mut Criterion) {
         g.bench_with_input(BenchmarkId::new("dot_product", n), &n, |b, &n| {
             b.iter(|| {
                 Tape::start_recording();
-                let xs: Vec<Dual<f64>> =
-                    (0..n).map(|i| Dual::new(1.0 + i as f64 * 1e-6)).collect();
+                let xs: Vec<Dual<f64>> = (0..n).map(|i| Dual::new(1.0 + i as f64 * 1e-6)).collect();
                 let sum = dual_dot(&xs);
                 Tape::stop_recording();
                 sum.backward().unwrap();
@@ -192,25 +190,29 @@ fn bench_second_order(c: &mut Criterion) {
     for &reps in &[100usize, 1_000] {
         g.throughput(Throughput::Elements(reps as u64));
 
-        g.bench_with_input(BenchmarkId::new("black_scholes_gamma", reps), &reps, |b, &reps| {
-            b.iter(|| {
-                Tape::start_recording_fwd();
-                let mut acc = 0.0;
-                for i in 0..reps {
-                    let s = DualFwd::new_from_inner(ADForward::var(100.0 + i as f64 * 0.01));
-                    let sigma = DualFwd::new(0.2);
-                    let t = DualFwd::new(1.0);
-                    let price = black_scholes(s, sigma, t, 100.0, 0.03);
-                    price.backward().unwrap();
-                    let adj = s.adjoint().unwrap();
-                    // delta (backward) + gamma (forward-over-backward)
-                    acc += price.value() + adj.first_derivative() + adj.second_derivative();
-                    Tape::reset_adjoints_fwd();
-                }
-                Tape::stop_recording_fwd();
-                black_box(acc)
-            });
-        });
+        g.bench_with_input(
+            BenchmarkId::new("black_scholes_gamma", reps),
+            &reps,
+            |b, &reps| {
+                b.iter(|| {
+                    Tape::start_recording_fwd();
+                    let mut acc = 0.0;
+                    for i in 0..reps {
+                        let s = DualFwd::new_from_inner(ADForward::var(100.0 + i as f64 * 0.01));
+                        let sigma = DualFwd::new(0.2);
+                        let t = DualFwd::new(1.0);
+                        let price = black_scholes(s, sigma, t, 100.0, 0.03);
+                        price.backward().unwrap();
+                        let adj = s.adjoint().unwrap();
+                        // delta (backward) + gamma (forward-over-backward)
+                        acc += price.value() + adj.first_derivative() + adj.second_derivative();
+                        Tape::reset_adjoints_fwd();
+                    }
+                    Tape::stop_recording_fwd();
+                    black_box(acc)
+                });
+            },
+        );
     }
     g.finish();
 }

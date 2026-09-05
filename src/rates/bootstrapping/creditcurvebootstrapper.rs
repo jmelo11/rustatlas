@@ -90,9 +90,10 @@ impl CreditCurveBootstrapper {
             let quote = selector
                 .select(id)
                 .ok_or_else(|| QSError::NotFoundErr(format!("CDS quote {id}")))?;
-            let tenor = quote.details().tenor().ok_or_else(|| {
-                QSError::InvalidValueErr(format!("CDS quote {id} has no tenor"))
-            })?;
+            let tenor = quote
+                .details()
+                .tenor()
+                .ok_or_else(|| QSError::InvalidValueErr(format!("CDS quote {id} has no tenor")))?;
             let spread = quote.levels().value(level)?;
             pillars.push((ref_date + tenor, spread, id.clone()));
         }
@@ -201,18 +202,15 @@ impl StripContext<'_> {
                 schedule_dates: schedule.dates(),
                 spread: *spread,
             };
-            let solution = Bisection::<HazardObjective<'_>>::new(
-                HAZARD_LOWER,
-                HAZARD_UPPER,
-                MAX_ITERATIONS,
-            )
-            .solve(&objective)
-            .map_err(|e| {
-                QSError::SolverErr(format!(
-                    "Credit strip failed at pillar {} ({}): {e}",
-                    k, self.pillar_dates[k]
-                ))
-            })?;
+            let solution =
+                Bisection::<HazardObjective<'_>>::new(HAZARD_LOWER, HAZARD_UPPER, MAX_ITERATIONS)
+                    .solve(&objective)
+                    .map_err(|e| {
+                        QSError::SolverErr(format!(
+                            "Credit strip failed at pillar {} ({}): {e}",
+                            k, self.pillar_dates[k]
+                        ))
+                    })?;
             hazards.push(solution.x);
         }
         Ok(hazards)
@@ -341,18 +339,15 @@ mod tests {
 
     fn flat_discount_element(ref_date: Date, rate: f64) -> Result<DiscountCurveElement> {
         let dc = DayCounter::Actual360;
-        let dates: Vec<Date> = (0..=10).map(|i| ref_date.advance(i, TimeUnit::Years)).collect();
+        let dates: Vec<Date> = (0..=10)
+            .map(|i| ref_date.advance(i, TimeUnit::Years))
+            .collect();
         let dfs: Vec<DualFwd> = dates
             .iter()
             .map(|d| DualFwd::scalar((-rate * dc.year_fraction(ref_date, *d)).exp()))
             .collect();
-        let curve = DiscountTermStructure::<DualFwd>::new(
-            dates,
-            dfs,
-            dc,
-            Interpolator::LogLinear,
-            true,
-        )?;
+        let curve =
+            DiscountTermStructure::<DualFwd>::new(dates, dfs, dc, Interpolator::LogLinear, true)?;
         Ok(DiscountCurveElement::new(
             MarketIndex::SOFR,
             std::rc::Rc::new(std::cell::RefCell::new(curve)),
@@ -361,24 +356,26 @@ mod tests {
 
     fn cds_quote(id: &str, spread: f64) -> Result<(String, Quote)> {
         let details = QuoteDetails::parse(id, '_')?;
-        Ok((id.to_string(), Quote::new(details, QuoteLevels::with_mid(spread))))
+        Ok((
+            id.to_string(),
+            Quote::new(details, QuoteLevels::with_mid(spread)),
+        ))
     }
 
-    fn bootstrap_test_curve(
+    /// Bootstraps an ACME credit curve from the given `(quote id, spread)`
+    /// pairs over a flat 3% discount curve.
+    fn bootstrap_with(
         ref_date: Date,
-    ) -> Result<(HashMap<MarketIndex, CreditCurveElement>, DiscountCurveElement)> {
-        let quote_ids = vec![
-            "Cds_ACME_USD_1Y".to_string(),
-            "Cds_ACME_USD_3Y".to_string(),
-            "Cds_ACME_USD_5Y".to_string(),
-        ];
+        spreads: &[(&str, f64)],
+        recovery: f64,
+    ) -> Result<(
+        HashMap<MarketIndex, CreditCurveElement>,
+        DiscountCurveElement,
+    )> {
+        let quote_ids: Vec<String> = spreads.iter().map(|(id, _)| (*id).to_string()).collect();
         let mut quotes = HashMap::new();
-        for (id, spread) in [
-            ("Cds_ACME_USD_1Y", 0.010),
-            ("Cds_ACME_USD_3Y", 0.015),
-            ("Cds_ACME_USD_5Y", 0.020),
-        ] {
-            let (key, quote) = cds_quote(id, spread)?;
+        for (id, spread) in spreads {
+            let (key, quote) = cds_quote(id, *spread)?;
             quotes.insert(key, quote);
         }
         let selector = TestSelector { ref_date, quotes };
@@ -391,7 +388,7 @@ mod tests {
             MarketIndex::Credit("ACME".to_string()),
             Currency::USD,
             MarketIndex::SOFR,
-            0.4,
+            recovery,
             quote_ids,
         );
         let curves = CreditCurveBootstrapper::new(vec![spec]).bootstrap(
@@ -400,6 +397,81 @@ mod tests {
             &discount_curves,
         )?;
         Ok((curves, discount_element))
+    }
+
+    fn bootstrap_test_curve(
+        ref_date: Date,
+    ) -> Result<(
+        HashMap<MarketIndex, CreditCurveElement>,
+        DiscountCurveElement,
+    )> {
+        bootstrap_with(
+            ref_date,
+            &[
+                ("Cds_ACME_USD_1Y", 0.010),
+                ("Cds_ACME_USD_3Y", 0.015),
+                ("Cds_ACME_USD_5Y", 0.020),
+            ],
+            0.4,
+        )
+    }
+
+    fn get_acme_curve(
+        curves: &HashMap<MarketIndex, CreditCurveElement>,
+    ) -> Result<&CreditCurveElement> {
+        curves
+            .get(&MarketIndex::Credit("ACME".to_string()))
+            .ok_or_else(|| QSError::NotFoundErr("credit curve".into()))
+    }
+
+    /// Survival probabilities at the curve nodes (including the ref node).
+    fn node_survivals(element: &CreditCurveElement) -> Result<Vec<(Date, f64)>> {
+        let nodes = element
+            .curve()
+            .nodes()
+            .ok_or_else(|| QSError::NotFoundErr("nodes".into()))?;
+        Ok(nodes.iter().map(|(d, v)| (*d, v.value())).collect())
+    }
+
+    /// Prices a spot-starting quarterly ACME CDS against the given curves.
+    #[allow(clippy::too_many_arguments)]
+    fn price_cds(
+        curves: &HashMap<MarketIndex, CreditCurveElement>,
+        discount_element: &DiscountCurveElement,
+        ref_date: Date,
+        years: i32,
+        contract_spread: f64,
+        recovery: f64,
+        side: Side,
+        requests: &[Request],
+    ) -> Result<crate::core::evaluationresults::EvaluationResults> {
+        let credit_index = MarketIndex::Credit("ACME".to_string());
+        let mut store = ConstructedElementStore::default();
+        store
+            .discount_curves_mut()
+            .insert(MarketIndex::SOFR, discount_element.clone());
+        store
+            .credit_curves_mut()
+            .insert(credit_index.clone(), get_acme_curve(curves)?.clone());
+        let provider = SimpleMarketDataProvider {
+            evaluation_date: ref_date,
+            market_data: MarketData::new(HashMap::new(), store),
+        };
+
+        let cds = CreditDefaultSwap::new(
+            format!("CDS_ACME_{years}Y"),
+            credit_index,
+            MarketIndex::SOFR,
+            Currency::USD,
+            ref_date,
+            ref_date.advance(years, TimeUnit::Years),
+            contract_spread,
+            recovery,
+            Frequency::Quarterly,
+            DayCounter::Actual360,
+        )?;
+        let trade = CdsTrade::new(cds, ref_date, 1_000_000.0, side);
+        CdsPricer::new().evaluate(&trade, requests, &provider)
     }
 
     #[test]
@@ -495,6 +567,267 @@ mod tests {
                 .any(|k| k.contains("Cds_ACME_USD_5Y")),
             "sensitivities should include the CDS quote pillars"
         );
+        Ok(())
+    }
+
+    // -------------------------------------------------------------------
+    // Stress tests: boundary conditions and limiting cases
+    // -------------------------------------------------------------------
+
+    /// Credit triangle: for a flat CDS curve, the implied flat hazard must
+    /// satisfy `λ ≈ s / (1 − R)` (exact in continuous time; quarterly
+    /// discretization introduces only a small error).
+    #[test]
+    fn credit_triangle_flat_spread() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (spread, recovery) = (0.02, 0.4);
+        let (curves, _) = bootstrap_with(
+            ref_date,
+            &[
+                ("Cds_ACME_USD_1Y", spread),
+                ("Cds_ACME_USD_3Y", spread),
+                ("Cds_ACME_USD_5Y", spread),
+            ],
+            recovery,
+        )?;
+        let nodes = node_survivals(get_acme_curve(&curves)?)?;
+        let dc = DayCounter::Actual360;
+        let expected_hazard = spread / (1.0 - recovery);
+        for (date, survival) in nodes.iter().skip(1) {
+            let t = dc.year_fraction(ref_date, *date);
+            let implied_hazard = -survival.ln() / t;
+            let rel_err = (implied_hazard - expected_hazard).abs() / expected_hazard;
+            assert!(
+                rel_err < 5e-3,
+                "credit triangle violated at {date}: implied {implied_hazard}, expected {expected_hazard}"
+            );
+        }
+        Ok(())
+    }
+
+    /// Zero spread is a riskless entity: survival stays at ~1.
+    #[test]
+    fn zero_spread_gives_full_survival() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, _) = bootstrap_with(
+            ref_date,
+            &[("Cds_ACME_USD_1Y", 0.0), ("Cds_ACME_USD_5Y", 0.0)],
+            0.4,
+        )?;
+        for (_, survival) in node_survivals(get_acme_curve(&curves)?)? {
+            assert!(
+                (survival - 1.0).abs() < 1e-9,
+                "zero spread must imply ~full survival, got {survival}"
+            );
+        }
+        Ok(())
+    }
+
+    /// Tiny (1bp) and huge (2000bp) spreads must both strip cleanly and
+    /// respect the credit triangle within discretization error.
+    #[test]
+    fn extreme_spreads_bootstrap() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let dc = DayCounter::Actual360;
+        for spread in [1e-4, 0.20] {
+            let (curves, _) = bootstrap_with(
+                ref_date,
+                &[("Cds_ACME_USD_1Y", spread), ("Cds_ACME_USD_5Y", spread)],
+                0.4,
+            )?;
+            let nodes = node_survivals(get_acme_curve(&curves)?)?;
+            let expected_hazard = spread / 0.6;
+            for (date, survival) in nodes.iter().skip(1) {
+                assert!(*survival > 0.0 && *survival < 1.0);
+                let t = dc.year_fraction(ref_date, *date);
+                let implied = -survival.ln() / t;
+                let rel_err = (implied - expected_hazard).abs() / expected_hazard;
+                assert!(
+                    rel_err < 2e-2,
+                    "spread {spread}: implied hazard {implied} vs expected {expected_hazard}"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// A spread requiring a hazard beyond the solver cap must fail with a
+    /// clear error instead of returning a bogus curve.
+    #[test]
+    fn impossible_spread_errors() {
+        let ref_date = Date::new(2025, 1, 2);
+        // Required hazard ≈ 15 / 0.6 = 25 > HAZARD_UPPER (20).
+        let result = bootstrap_with(ref_date, &[("Cds_ACME_USD_5Y", 15.0)], 0.4);
+        assert!(result.is_err(), "absurd spread should fail the strip");
+    }
+
+    /// A mildly inverted spread curve must still strip into a valid,
+    /// monotonically decreasing survival curve.
+    #[test]
+    fn inverted_spread_curve_bootstraps() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, _) = bootstrap_with(
+            ref_date,
+            &[
+                ("Cds_ACME_USD_1Y", 0.020),
+                ("Cds_ACME_USD_3Y", 0.019),
+                ("Cds_ACME_USD_5Y", 0.018),
+            ],
+            0.4,
+        )?;
+        let nodes = node_survivals(get_acme_curve(&curves)?)?;
+        for w in nodes.windows(2) {
+            assert!(w[1].1 < w[0].1, "survivals must remain decreasing");
+            assert!(w[1].1 > 0.0);
+        }
+        Ok(())
+    }
+
+    /// Protection buyer and seller values must be exactly antisymmetric.
+    #[test]
+    fn buyer_seller_antisymmetry() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, discount) = bootstrap_test_curve(ref_date)?;
+        let buyer = price_cds(
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.012,
+            0.4,
+            Side::LongReceive,
+            &[Request::Value],
+        )?
+        .price()
+        .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        let seller = price_cds(
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.012,
+            0.4,
+            Side::PayShort,
+            &[Request::Value],
+        )?
+        .price()
+        .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        assert!(
+            buyer.abs() > 1.0,
+            "off-market CDS should have nonzero value"
+        );
+        assert!(
+            (buyer + seller).abs() < 1e-9 * buyer.abs(),
+            "buyer {buyer} and seller {seller} must be antisymmetric"
+        );
+        Ok(())
+    }
+
+    /// The protection leg is linear in loss-given-default: with the same
+    /// survival curve, fair spreads for two instrument recoveries must be in
+    /// the exact ratio of their LGDs.
+    #[test]
+    fn fair_spread_scales_with_lgd() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, discount) = bootstrap_test_curve(ref_date)?;
+        let fair_zero_recovery = price_cds(
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.02,
+            0.0,
+            Side::LongReceive,
+            &[Request::FairRate],
+        )?
+        .fair_rate()
+        .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
+        let fair_base = price_cds(
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.02,
+            0.4,
+            Side::LongReceive,
+            &[Request::FairRate],
+        )?
+        .fair_rate()
+        .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
+        let ratio = fair_zero_recovery / fair_base;
+        assert!(
+            (ratio - 1.0 / 0.6).abs() < 1e-10,
+            "fair spread must scale with LGD: ratio {ratio}, expected {}",
+            1.0 / 0.6
+        );
+        Ok(())
+    }
+
+    /// AD sensitivities (through the IFT Jacobian) must match a brute-force
+    /// finite-difference bump-and-rebootstrap of each CDS quote.
+    #[test]
+    fn ad_sensitivities_match_finite_difference() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let base_spreads = [
+            ("Cds_ACME_USD_1Y", 0.010),
+            ("Cds_ACME_USD_3Y", 0.015),
+            ("Cds_ACME_USD_5Y", 0.020),
+        ];
+        let contract_spread = 0.012; // off-market so quote sensitivities are nonzero
+        let bump = 1e-4; // 1bp
+
+        let (curves, discount) = bootstrap_with(ref_date, &base_spreads, 0.4)?;
+        let results = price_cds(
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            contract_spread,
+            0.4,
+            Side::LongReceive,
+            &[Request::Value, Request::Sensitivities],
+        )?;
+        let base_price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        let sens = results
+            .sensitivities()
+            .ok_or_else(|| QSError::UnexpectedErr("missing sensitivities".into()))?;
+
+        for (j, (bumped_id, _)) in base_spreads.iter().enumerate() {
+            let mut bumped = base_spreads;
+            bumped[j].1 += bump;
+            let (curves_up, discount_up) = bootstrap_with(ref_date, &bumped, 0.4)?;
+            let bumped_price = price_cds(
+                &curves_up,
+                &discount_up,
+                ref_date,
+                5,
+                contract_spread,
+                0.4,
+                Side::LongReceive,
+                &[Request::Value],
+            )?
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+            let fd = (bumped_price - base_price) / bump;
+
+            let ad = sens
+                .instrument_keys()
+                .iter()
+                .zip(sens.exposure())
+                .find(|(k, _)| k.as_str() == *bumped_id)
+                .map(|(_, v)| *v)
+                .ok_or_else(|| {
+                    QSError::UnexpectedErr(format!("missing AD sensitivity for {bumped_id}"))
+                })?;
+
+            let denom = fd.abs().max(1.0);
+            assert!(
+                (ad - fd).abs() / denom < 2e-2,
+                "{bumped_id}: AD {ad} vs FD {fd}"
+            );
+        }
         Ok(())
     }
 }
