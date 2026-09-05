@@ -37,7 +37,7 @@ use crate::{
 ///
 /// Each claim carries:
 /// * **Identity** — `trade_id`, `leg_id`, and a flat-vector `idx` assigned by
-///   the [`Inspector`](super::visitors::inspector::Inspector).
+///   the [`PreprocessorExecutor`](super::visitors::preprocessorexecutor::PreprocessorExecutor).
 /// * **Dates** — `payment_date`, optional `fixing_date`, `accrual_start`, `accrual_end`.
 /// * **Economics** — `currency`, optional `foreign_currency`, `notional`, `side`.
 /// * **Valuation rule** — a [`ClaimEvaluationStrategy`] that defines how the raw
@@ -197,7 +197,7 @@ impl ContingentClaim {
         self.index.as_ref()
     }
 
-    /// Returns the flat-vector index assigned by the [`Inspector`](super::visitors::inspector::Inspector).
+    /// Returns the flat-vector index assigned by the [`PreprocessorExecutor`](super::visitors::preprocessorexecutor::PreprocessorExecutor).
     #[must_use] 
     pub const fn idx(&self) -> Option<usize> {
         self.idx

@@ -1,4 +1,4 @@
-//! Scalar and InnerScalar trait definitions.
+//! Scalar and `InnerScalar` trait definitions.
 
 use core::fmt;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};

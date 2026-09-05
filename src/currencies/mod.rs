@@ -1,7 +1,7 @@
 //! Currency-related types and utilities.
 //!
 //! Defines the [`Currency`](crate::currencies::currency::Currency) enumeration, per-currency
-//! detail traits, and an [`ExchangeRateStore`](crate::currencies::exchangeratestore::ExchangeRateStore)
+//! detail traits, and an [`FxStore`](crate::quotes::fxstore::FxStore)
 //! for FX spot rates.
 
 /// Currency enumeration types.

@@ -1,7 +1,7 @@
 //! Generic volatility sources for models and simulations.
 //!
 //! Models consume volatility through the
-//! [`TimeDependentVolatility`](crate::models::montecarloengine::TimeDependentVolatility)
+//! [`TimeDependentVolatility`]
 //! trait. This module provides the adapters that connect that trait to the
 //! market data components:
 //!
@@ -14,7 +14,7 @@
 //!
 //! The serde-enabled [`VolatilitySourceConfiguration`] selects the source from
 //! JSON and is resolved against a
-//! [`ConstructedElementStore`](crate::core::marketdatahandling::constructedelementstore::ConstructedElementStore)
+//! [`ConstructedElementStore`]
 //! once surfaces and cubes have been built.
 
 use serde::{Deserialize, Serialize};

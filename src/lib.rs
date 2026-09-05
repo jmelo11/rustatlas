@@ -60,7 +60,7 @@
 //!
 //! ## 3 — Set up the pricing context
 //!
-//! A [`ContextManager`](crate::core::contextmanager::ContextManager) holds
+//! A `ContextManager` holds
 //! market data (discount curves, quote / fixing stores) that pricers consult
 //! during evaluation.  Here we create a flat SOFR discount curve at 3.0%.
 //!
@@ -106,7 +106,7 @@
 //!
 //! ## 4 — Price the swap and read results
 //!
-//! Create a [`CashflowDiscountPricer`](crate::pricers::cashflows::discountingcashflowpricer::CashflowDiscountPricer),
+//! Create a [`DiscountedCashflowPricer`](crate::pricers::cashflows::discountedcashflowpricer::DiscountedCashflowPricer),
 //! choose which outputs you need via [`Request`](crate::core::request::Request),
 //! and call `evaluate`.
 //!

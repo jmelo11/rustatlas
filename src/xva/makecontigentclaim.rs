@@ -21,7 +21,7 @@ use crate::{
 
 /// Builder for [`ContingentClaim`].
 ///
-/// Uses the same `with_*` + `build()` pattern as [`MakeLeg`] and [`MakeSwap`].
+/// Uses the same `with_*` + `build()` pattern as [`MakeLeg`](crate::instruments::cashflows::makeleg::MakeLeg) and [`MakeSwap`](crate::instruments::rates::makeswap::MakeSwap).
 ///
 /// ## Example
 /// ```ignore

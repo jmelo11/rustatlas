@@ -184,7 +184,7 @@ where
         self
     }
 
-    /// Builds the [`Swaption`] instance.
+    /// Builds the [`EuropeanSwaption`] instance.
     ///
     /// # Errors
     /// Returns an error when required fields are missing or the underlying

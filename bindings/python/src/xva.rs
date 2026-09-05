@@ -69,6 +69,7 @@ pub struct CsaTerms {
 impl CsaTerms {
     #[new]
     #[pyo3(signature = (collateral_index, collateral_currency, credit_spread, recovery, funding_spread = 0.0, credit_index = None, funding_spread_curve = None, funding_index = None))]
+    #[allow(clippy::too_many_arguments)]
     fn new(
         collateral_index: &Bound<'_, PyAny>,
         collateral_currency: &Bound<'_, PyAny>,

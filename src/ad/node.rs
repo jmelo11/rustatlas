@@ -17,7 +17,7 @@ const INLINE_CAP: usize = 4;
 /// mixed backward+forward second-order AD.
 ///
 /// Children and their local derivatives are stored inline (up to
-/// [`INLINE_CAP`]) so that recording a node performs no heap allocation.
+/// `INLINE_CAP`) so that recording a node performs no heap allocation.
 #[derive(Clone)]
 pub struct TapeNode<T> {
     /// Inline child pointers; the first `min(len, INLINE_CAP)` are valid.

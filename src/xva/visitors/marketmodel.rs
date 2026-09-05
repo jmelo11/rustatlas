@@ -68,7 +68,7 @@ where
 /// Trait for Monte Carlo market models that generate simulated paths.
 ///
 /// Implementors (e.g. LGM) must provide:
-/// * [`path_iter`](Self::path_iter) — lazily yields one [`PathScenario`] per MC path.
+/// * [`generate_path`](Self::generate_path) — yields one [`PathScenario`] per MC path.
 /// * [`set_evaluation_dates`](Self::set_evaluation_dates) — configures the time grid.
 /// * Individual `resolve_*` methods for each market data category.
 ///

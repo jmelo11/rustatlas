@@ -161,7 +161,7 @@ impl FxOptionTrade {
 
     /// Decomposes the FX option trade into contingent claims.
     ///
-    /// Produces a single [`ContingentClaim`] with a [`SpotPayoff`] strategy:
+    /// Produces a single [`ContingentClaim`] with a [`SpotPayoff`](crate::xva::claimevaluationstrategy::ClaimEvaluationStrategy::SpotPayoff) strategy:
     /// - Call: `max(S − K, 0)`
     /// - Put:  `max(K − S, 0)`
     ///

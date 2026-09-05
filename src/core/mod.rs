@@ -1,6 +1,6 @@
 //! Core types and utilities.
 //!
-//! Contains the pricing context ([`ContextManager`](crate::core::contextmanager::ContextManager)),
+//! Contains the pricing context ([`PricingContext`](crate::core::pricingcontext::PricingContext)),
 //! instrument and trade abstractions, evaluation results, market-data handling,
 //! and collateral / CSA discount policy definitions.
 

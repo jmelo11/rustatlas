@@ -41,7 +41,7 @@ impl<T> EuropeanSwaption<T>
 where
     T: Scalar,
 {
-    /// Creates a new [`Swaption`].
+    /// Creates a new [`EuropeanSwaption`].
     #[must_use]
     #[allow(clippy::too_many_arguments)]
     pub const fn new(

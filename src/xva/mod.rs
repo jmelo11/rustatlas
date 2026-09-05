@@ -6,7 +6,7 @@
 //! 1. **Decompose** each trade into a flat list of [`ContingentClaim`](contigentclaim::ContingentClaim)s
 //!    using [`IntoContingentClaims`](makecontigentclaim::IntoContingentClaims) or
 //!    [`MakeContingentClaim`](makecontigentclaim::MakeContingentClaim).
-//! 2. **Inspect** the claims with [`Inspector`](visitors::inspector::Inspector) to
+//! 2. **Inspect** the claims with [`PreprocessorExecutor`](visitors::preprocessorexecutor::PreprocessorExecutor) to
 //!    collect simulation requests and assign flat-vector indices.
 //! 3. **Generate** market scenarios via a [`MarketModel`](visitors::marketmodel::MarketModel)
 //!    implementation (e.g. LGM).
@@ -15,17 +15,10 @@
 //!    for cubes + XVA values + sensitivities.
 
 pub mod aggregator;
-/// Evaluation strategies that define how a single contingent claim is valued.
 pub mod claimevaluationstrategy;
-/// Per-client CSA terms: collateral treatment and credit/funding parameters.
-pub mod csa;
-/// The atomic unit of exposure: a single contingent cashflow.
 pub mod contigentclaim;
-/// XVA engine .
+pub mod csa;
 pub mod engine;
-/// Builder and conversion helpers for creating contingent claims.
 pub mod makecontigentclaim;
-/// Netting set — groups claims under a single netting agreement with its own discount policy.
 pub mod nettingset;
-/// Visitor pipeline: inspection, market generation, and exposure evaluation.
 pub mod visitors;

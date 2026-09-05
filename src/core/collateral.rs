@@ -26,7 +26,7 @@ pub trait Discountable {
 /// `T` (instrument, leg, etc.) and provides a list of all referenced discount indices for
 /// bootstrapping purposes.
 ///
-/// At least, `T` must implement [`HasCurrency`] get the currency of the target to
+/// At least, `T` must implement [`Discountable`] get the currency of the target to
 /// determine the appropriate discount curve.
 pub trait DiscountPolicy: Send + Sync {
     /// Resolves the discount curve index for the visited target.

@@ -6,7 +6,7 @@
 //! [`SimulationRequest`] into a flat vector while assigning indices so
 //! the evaluator can locate each claim's response within a scenario.
 //!
-//! Each [`NettingSet`] carries its own [`DiscountPolicy`] which is used
+//! Each [`NettingSet`] carries its own [`DiscountPolicy`](crate::core::collateral::DiscountPolicy) which is used
 //! to resolve the discount curve for claims within that set.
 
 use crate::{
@@ -23,7 +23,7 @@ use super::{
     claimpreprocessor::ClaimPreprocessor,
 };
 
-/// Declares the market data a [`ContingentClaim`] needs for simulation.
+/// Declares the market data a [`ContingentClaim`](crate::xva::contigentclaim::ContingentClaim) needs for simulation.
 ///
 /// Each field is optional — `None` means the claim does not require that
 /// data category.  The [`PreprocessorExecutor`] collects one of these per claim and

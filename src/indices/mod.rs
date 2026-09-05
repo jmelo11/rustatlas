@@ -5,13 +5,8 @@
 //! rate-index trait definitions, and concrete implementations for
 //! major overnight and term indices (SOFR, ESTR, EURIBOR, SONIA, etc.).
 
-/// FX currency-pair type.
 pub mod fxpair;
-/// Base index module
 pub mod marketindex;
-/// Quote types module.
 pub mod quotetype;
-/// Interest rate indices module.
 pub mod rateindex;
-/// Implementations of different indices.
 pub mod rateindices;

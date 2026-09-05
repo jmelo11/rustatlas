@@ -65,7 +65,7 @@ pub struct FxModelConfig {
 ///
 /// Contains only the simulation/model setup. Credit, funding and
 /// collateral (CSA) parameters are per client and belong to each
-/// [`NettingSet`]'s [`CsaTerms`](crate::xva::csa::CsaTerms).
+/// [`NettingSet`]'s [`CsaTerms`].
 #[derive(Clone, Serialize, Deserialize)]
 pub struct XvaEngineConfig {
     /// LGM model parameters, one per rate curve.
@@ -239,7 +239,7 @@ impl XvaEngine {
     /// runs it on all netting sets, then launches the Savine
     /// parallel AAD evaluation loop.
     ///
-    /// Each [`NettingSet`] carries its own [`CsaTerms`](crate::xva::csa::CsaTerms)
+    /// Each [`NettingSet`] carries its own [`CsaTerms`]
     /// (collateral discounting plus credit/funding parameters), from which the
     /// per-client CVA and FVA aggregators are built.
     ///

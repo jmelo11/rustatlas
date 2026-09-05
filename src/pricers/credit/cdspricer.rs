@@ -1,7 +1,7 @@
 //! Closed-form CDS pricer.
 //!
-//! Prices a [`CreditDefaultSwap`] off a bootstrapped survival curve
-//! ([`MarketIndex::Credit`]) and a discount curve. When a
+//! Prices a [`CreditDefaultSwap`](crate::instruments::credit::creditdefaultswap::CreditDefaultSwap) off a bootstrapped survival curve
+//! ([`MarketIndex::Credit`](crate::indices::marketindex::MarketIndex::Credit)) and a discount curve. When a
 //! [`DiscountPolicy`] is set, discounting uses the CSA collateral curve of
 //! the counterparty instead of the instrument's own `discount_index`.
 //!
