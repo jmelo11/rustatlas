@@ -366,7 +366,9 @@ mod tests {
             Rc::new(RefCell::new(flat_exp_curve(ref_date, lambda)?)),
         );
         let mut store = ConstructedElementStore::default();
-        store.discount_curves_mut().insert(MarketIndex::SOFR, discount);
+        store
+            .discount_curves_mut()
+            .insert(MarketIndex::SOFR, discount);
         store
             .credit_curves_mut()
             .insert(MarketIndex::Credit("ACME".to_string()), credit);
@@ -413,12 +415,16 @@ mod tests {
 
         let provider = flat_provider(ref_date, r, lambda)?;
         let contract_spread = 0.02;
-        let trade = make_trade(ref_date, years, contract_spread, recovery, Side::LongReceive, notional)?;
-        let results = CdsPricer::new().evaluate(
-            &trade,
-            &[Request::Value, Request::FairRate],
-            &provider,
+        let trade = make_trade(
+            ref_date,
+            years,
+            contract_spread,
+            recovery,
+            Side::LongReceive,
+            notional,
         )?;
+        let results =
+            CdsPricer::new().evaluate(&trade, &[Request::Value, Request::FairRate], &provider)?;
 
         let decay = 1.0 - (-(lambda + r) * t).exp();
         let protection = lgd * lambda / (lambda + r) * decay;
@@ -464,12 +470,9 @@ mod tests {
 
         // Riskless quarterly annuity, computed directly.
         let mut annuity = 0.0;
-        let schedule = MakeSchedule::new(
-            ref_date,
-            ref_date.advance(5, TimeUnit::Years),
-        )
-        .with_frequency(Frequency::Quarterly)
-        .build()?;
+        let schedule = MakeSchedule::new(ref_date, ref_date.advance(5, TimeUnit::Years))
+            .with_frequency(Frequency::Quarterly)
+            .build()?;
         for w in schedule.dates().windows(2) {
             let delta = DC.year_fraction(w[0], w[1]);
             annuity += delta * (-r * DC.year_fraction(ref_date, w[1])).exp();

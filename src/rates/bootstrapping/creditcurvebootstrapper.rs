@@ -90,9 +90,10 @@ impl CreditCurveBootstrapper {
             let quote = selector
                 .select(id)
                 .ok_or_else(|| QSError::NotFoundErr(format!("CDS quote {id}")))?;
-            let tenor = quote.details().tenor().ok_or_else(|| {
-                QSError::InvalidValueErr(format!("CDS quote {id} has no tenor"))
-            })?;
+            let tenor = quote
+                .details()
+                .tenor()
+                .ok_or_else(|| QSError::InvalidValueErr(format!("CDS quote {id} has no tenor")))?;
             let spread = quote.levels().value(level)?;
             pillars.push((ref_date + tenor, spread, id.clone()));
         }
@@ -201,18 +202,15 @@ impl StripContext<'_> {
                 schedule_dates: schedule.dates(),
                 spread: *spread,
             };
-            let solution = Bisection::<HazardObjective<'_>>::new(
-                HAZARD_LOWER,
-                HAZARD_UPPER,
-                MAX_ITERATIONS,
-            )
-            .solve(&objective)
-            .map_err(|e| {
-                QSError::SolverErr(format!(
-                    "Credit strip failed at pillar {} ({}): {e}",
-                    k, self.pillar_dates[k]
-                ))
-            })?;
+            let solution =
+                Bisection::<HazardObjective<'_>>::new(HAZARD_LOWER, HAZARD_UPPER, MAX_ITERATIONS)
+                    .solve(&objective)
+                    .map_err(|e| {
+                        QSError::SolverErr(format!(
+                            "Credit strip failed at pillar {} ({}): {e}",
+                            k, self.pillar_dates[k]
+                        ))
+                    })?;
             hazards.push(solution.x);
         }
         Ok(hazards)
@@ -341,18 +339,15 @@ mod tests {
 
     fn flat_discount_element(ref_date: Date, rate: f64) -> Result<DiscountCurveElement> {
         let dc = DayCounter::Actual360;
-        let dates: Vec<Date> = (0..=10).map(|i| ref_date.advance(i, TimeUnit::Years)).collect();
+        let dates: Vec<Date> = (0..=10)
+            .map(|i| ref_date.advance(i, TimeUnit::Years))
+            .collect();
         let dfs: Vec<DualFwd> = dates
             .iter()
             .map(|d| DualFwd::scalar((-rate * dc.year_fraction(ref_date, *d)).exp()))
             .collect();
-        let curve = DiscountTermStructure::<DualFwd>::new(
-            dates,
-            dfs,
-            dc,
-            Interpolator::LogLinear,
-            true,
-        )?;
+        let curve =
+            DiscountTermStructure::<DualFwd>::new(dates, dfs, dc, Interpolator::LogLinear, true)?;
         Ok(DiscountCurveElement::new(
             MarketIndex::SOFR,
             std::rc::Rc::new(std::cell::RefCell::new(curve)),
@@ -361,7 +356,10 @@ mod tests {
 
     fn cds_quote(id: &str, spread: f64) -> Result<(String, Quote)> {
         let details = QuoteDetails::parse(id, '_')?;
-        Ok((id.to_string(), Quote::new(details, QuoteLevels::with_mid(spread))))
+        Ok((
+            id.to_string(),
+            Quote::new(details, QuoteLevels::with_mid(spread)),
+        ))
     }
 
     /// Bootstraps an ACME credit curve from the given `(quote id, spread)`
@@ -370,7 +368,10 @@ mod tests {
         ref_date: Date,
         spreads: &[(&str, f64)],
         recovery: f64,
-    ) -> Result<(HashMap<MarketIndex, CreditCurveElement>, DiscountCurveElement)> {
+    ) -> Result<(
+        HashMap<MarketIndex, CreditCurveElement>,
+        DiscountCurveElement,
+    )> {
         let quote_ids: Vec<String> = spreads.iter().map(|(id, _)| (*id).to_string()).collect();
         let mut quotes = HashMap::new();
         for (id, spread) in spreads {
@@ -400,7 +401,10 @@ mod tests {
 
     fn bootstrap_test_curve(
         ref_date: Date,
-    ) -> Result<(HashMap<MarketIndex, CreditCurveElement>, DiscountCurveElement)> {
+    ) -> Result<(
+        HashMap<MarketIndex, CreditCurveElement>,
+        DiscountCurveElement,
+    )> {
         bootstrap_with(
             ref_date,
             &[
@@ -685,18 +689,33 @@ mod tests {
         let ref_date = Date::new(2025, 1, 2);
         let (curves, discount) = bootstrap_test_curve(ref_date)?;
         let buyer = price_cds(
-            &curves, &discount, ref_date, 5, 0.012, 0.4,
-            Side::LongReceive, &[Request::Value],
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.012,
+            0.4,
+            Side::LongReceive,
+            &[Request::Value],
         )?
         .price()
         .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
         let seller = price_cds(
-            &curves, &discount, ref_date, 5, 0.012, 0.4,
-            Side::PayShort, &[Request::Value],
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.012,
+            0.4,
+            Side::PayShort,
+            &[Request::Value],
         )?
         .price()
         .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
-        assert!(buyer.abs() > 1.0, "off-market CDS should have nonzero value");
+        assert!(
+            buyer.abs() > 1.0,
+            "off-market CDS should have nonzero value"
+        );
         assert!(
             (buyer + seller).abs() < 1e-9 * buyer.abs(),
             "buyer {buyer} and seller {seller} must be antisymmetric"
@@ -712,14 +731,26 @@ mod tests {
         let ref_date = Date::new(2025, 1, 2);
         let (curves, discount) = bootstrap_test_curve(ref_date)?;
         let fair_zero_recovery = price_cds(
-            &curves, &discount, ref_date, 5, 0.02, 0.0,
-            Side::LongReceive, &[Request::FairRate],
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.02,
+            0.0,
+            Side::LongReceive,
+            &[Request::FairRate],
         )?
         .fair_rate()
         .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
         let fair_base = price_cds(
-            &curves, &discount, ref_date, 5, 0.02, 0.4,
-            Side::LongReceive, &[Request::FairRate],
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            0.02,
+            0.4,
+            Side::LongReceive,
+            &[Request::FairRate],
         )?
         .fair_rate()
         .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
@@ -747,8 +778,14 @@ mod tests {
 
         let (curves, discount) = bootstrap_with(ref_date, &base_spreads, 0.4)?;
         let results = price_cds(
-            &curves, &discount, ref_date, 5, contract_spread, 0.4,
-            Side::LongReceive, &[Request::Value, Request::Sensitivities],
+            &curves,
+            &discount,
+            ref_date,
+            5,
+            contract_spread,
+            0.4,
+            Side::LongReceive,
+            &[Request::Value, Request::Sensitivities],
         )?;
         let base_price = results
             .price()
@@ -762,8 +799,14 @@ mod tests {
             bumped[j].1 += bump;
             let (curves_up, discount_up) = bootstrap_with(ref_date, &bumped, 0.4)?;
             let bumped_price = price_cds(
-                &curves_up, &discount_up, ref_date, 5, contract_spread, 0.4,
-                Side::LongReceive, &[Request::Value],
+                &curves_up,
+                &discount_up,
+                ref_date,
+                5,
+                contract_spread,
+                0.4,
+                Side::LongReceive,
+                &[Request::Value],
             )?
             .price()
             .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
