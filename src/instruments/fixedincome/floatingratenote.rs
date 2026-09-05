@@ -130,6 +130,15 @@ where
     }
 }
 
+impl<T> LegsProvider<T> for FloatingRateNoteTrade<T>
+where
+    T: Scalar,
+{
+    fn legs(&self) -> &[Leg<T>] {
+        self.instrument.legs()
+    }
+}
+
 impl<T> Trade<FloatingRateNote<T>> for FloatingRateNoteTrade<T>
 where
     T: Scalar,

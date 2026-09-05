@@ -133,6 +133,15 @@ where
     }
 }
 
+impl<T> LegsProvider<T> for BasisSwapTrade<T>
+where
+    T: Scalar,
+{
+    fn legs(&self) -> &[Leg<T>] {
+        self.instrument.legs()
+    }
+}
+
 impl<T> Trade<BasisSwap<T>> for BasisSwapTrade<T>
 where
     T: Scalar,

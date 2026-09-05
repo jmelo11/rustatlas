@@ -633,6 +633,13 @@ where
                     });
                 }
             }
+            if let Some(index) = Discountable::discount_index(leg) {
+                if seen_indices.insert(index.clone()) {
+                    constructed_elements.push(ConstructedElementRequest::DiscountCurve {
+                        market_index: index,
+                    });
+                }
+            }
         }
 
         // When a CSA discount policy is set, also request:

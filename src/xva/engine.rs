@@ -70,14 +70,22 @@ pub struct LgmModelConfig {
     /// Rate model that drives this curve's dynamics.
     ///
     /// Use for curves that carry no volatility of their own, e.g. FX-implied
-    /// collateral curves: under a deterministic cross-currency basis,
-    /// `Collateral(CLP, USD)` evolves with the CLP risk-free model (ICP) —
-    /// its vol is implied by the driver's curve vol together with the FX
-    /// vol, whose quanto effect is already carried by the driver's factor
-    /// drift under the domestic measure. The curve is reconstructed from the
-    /// driver's simulated factor and parameters, with its own initial term
-    /// structure. Mutually exclusive with `lambda`, `sigma` and
-    /// `volatility`.
+    /// collateral curves: under the standard deterministic cross-currency
+    /// basis assumption, `Collateral(CLP, USD)` evolves with the CLP
+    /// risk-free model (ICP) — its vol is implied by the driver's curve vol
+    /// together with the FX vol, whose quanto effect is already carried by
+    /// the driver's factor drift under the domestic measure.
+    ///
+    /// During simulation the curve's discount factors are reconstructed with
+    /// the driver's simulated factor, mean reversion and sigma schedule, but
+    /// from the curve's *own* initial term structure, so the time-0
+    /// cross-currency basis is preserved and evolves deterministically.
+    /// Mutually exclusive with `lambda`, `sigma` and `volatility`; the
+    /// driver must itself be a non-derived model config.
+    ///
+    /// ```json
+    /// { "market_index": { "Collateral": ["CLP", "USD"] }, "driver": "ICP" }
+    /// ```
     #[serde(default)]
     pub driver: Option<MarketIndex>,
 }

@@ -94,8 +94,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // ── 3. Configure & run XVA engine ───────────────────────────
     // The LGM models for SOFR and ICP are calibrated against the caplet
-    // surface and swaption cube constructed in the pricing context; the
-    // collateral basis curve keeps a flat sigma.
+    // surface and swaption cube constructed in the pricing context. The
+    // Collateral(CLP, USD) curve has no free parameters: it sets
+    // `"driver": "ICP"`, so it is simulated with the ICP model's factor and
+    // calibrated vols on top of its own FX-implied initial term structure
+    // (deterministic cross-currency basis).
     let config: XvaEngineConfig =
         serde_json::from_reader(std::fs::File::open(data_dir.join("xva_config.json"))?)?;
 

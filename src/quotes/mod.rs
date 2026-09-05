@@ -19,5 +19,7 @@ pub mod fxstore;
 /// Quote selection.
 pub mod quoteselector;
 
+pub mod scenario;
+
 /// Calibration instrument used in models and bootstrapping.
 pub mod calibrationinstrument;

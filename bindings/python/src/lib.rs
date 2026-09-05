@@ -33,6 +33,11 @@ fn quantsupport(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<enums::Request>()?;
     m.add_class::<enums::VolatilityType>()?;
     m.add_class::<enums::SmileType>()?;
+    m.add_class::<enums::ScenarioType>()?;
+    m.add_class::<enums::OptionType>()?;
+    m.add_class::<enums::CapFloorType>()?;
+    m.add_class::<enums::CapletFloorletType>()?;
+    m.add_class::<enums::PaymentStructure>()?;
     // Time
     m.add_class::<time::Date>()?;
     m.add_class::<time::Period>()?;
@@ -45,6 +50,7 @@ fn quantsupport(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<market::VolatilitySurfaceConfiguration>()?;
     m.add_class::<market::VolatilityCubeConfiguration>()?;
     m.add_class::<market::SimulationConfiguration>()?;
+    m.add_class::<market::Scenario>()?;
     // Constructed element views
     m.add_class::<explore::DiscountCurve>()?;
     m.add_class::<explore::VolatilitySurface>()?;
@@ -56,6 +62,18 @@ fn quantsupport(m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Trades
     m.add_class::<trades::Swap>()?;
     m.add_class::<trades::CrossCurrencySwap>()?;
+    m.add_class::<trades::BasisSwap>()?;
+    m.add_class::<trades::FixFloatCrossCurrencySwap>()?;
+    m.add_class::<trades::FixedRateBond>()?;
+    m.add_class::<trades::FloatingRateNote>()?;
+    m.add_class::<trades::FixedRateDeposit>()?;
+    m.add_class::<trades::FxForwardPy>()?;
+    m.add_class::<trades::FxOptionPy>()?;
+    m.add_class::<trades::EquityOption>()?;
+    m.add_class::<trades::CreditDefaultSwapPy>()?;
+    m.add_class::<trades::CapFloorPy>()?;
+    m.add_class::<trades::CapletFloorletPy>()?;
+    m.add_class::<trades::RateFuturesPy>()?;
     // Results
     m.add_class::<results::EvaluationResults>()?;
     // XVA

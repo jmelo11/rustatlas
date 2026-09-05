@@ -15,9 +15,12 @@
 
 use pyo3::prelude::*;
 use quantsupport::prelude::{
-    BusinessDayConvention as QsBusinessDayConvention, Compounding as QsCompounding,
-    Currency as QsCurrency, DayCounter as QsDayCounter, Frequency as QsFrequency, FxPair,
-    MarketIndex as QsMarketIndex, Request as QsRequest, Side as QsSide, SmileType as QsSmileType,
+    BusinessDayConvention as QsBusinessDayConvention, CapFloorType as QsCapFloorType,
+    CapletFloorletType as QsCapletFloorletType, Compounding as QsCompounding,
+    Currency as QsCurrency, DayCounter as QsDayCounter, EuroOptionType as QsEuroOptionType,
+    Frequency as QsFrequency, FxOptionType as QsFxOptionType, FxPair,
+    MarketIndex as QsMarketIndex, PaymentStructure as QsPaymentStructure, Request as QsRequest,
+    ScenarioType as QsScenarioType, Side as QsSide, SmileType as QsSmileType,
     TimeUnit as QsTimeUnit, VolatilityType as QsVolatilityType,
 };
 
@@ -497,6 +500,14 @@ impl MarketIndex {
         })
     }
 
+    /// Credit curve of a reference entity, identified by name.
+    #[staticmethod]
+    fn credit(name: &str) -> Self {
+        Self {
+            inner: QsMarketIndex::Credit(name.to_string()),
+        }
+    }
+
     /// A custom index identified by name.
     #[staticmethod]
     fn other(name: &str) -> Self {
@@ -511,5 +522,139 @@ impl MarketIndex {
 
     fn __repr__(&self) -> String {
         format!("MarketIndex('{}')", self.inner)
+    }
+}
+
+mirror_enum!(
+    /// How a scenario shock is applied to a quote value.
+    ScenarioType,
+    QsScenarioType,
+    "ScenarioType",
+    [Absolute, Relative]
+);
+
+#[pymethods]
+impl ScenarioType {
+    /// Parses a scenario type from its name.
+    #[staticmethod]
+    pub fn parse(s: &str) -> PyResult<Self> {
+        Self::from_name(s)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{self:?}")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("ScenarioType.{self:?}")
+    }
+}
+
+mirror_enum!(
+    /// European option payoff direction (equity and FX options).
+    OptionType,
+    QsEuroOptionType,
+    "OptionType",
+    [Call, Put]
+);
+
+impl From<OptionType> for QsFxOptionType {
+    fn from(v: OptionType) -> Self {
+        match v {
+            OptionType::Call => Self::Call,
+            OptionType::Put => Self::Put,
+        }
+    }
+}
+
+#[pymethods]
+impl OptionType {
+    /// Parses an option type from its name.
+    #[staticmethod]
+    pub fn parse(s: &str) -> PyResult<Self> {
+        Self::from_name(s)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{self:?}")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("OptionType.{self:?}")
+    }
+}
+
+mirror_enum!(
+    /// Cap or floor direction.
+    CapFloorType,
+    QsCapFloorType,
+    "CapFloorType",
+    [Cap, Floor]
+);
+
+#[pymethods]
+impl CapFloorType {
+    /// Parses a cap/floor type from its name.
+    #[staticmethod]
+    pub fn parse(s: &str) -> PyResult<Self> {
+        Self::from_name(s)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{self:?}")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("CapFloorType.{self:?}")
+    }
+}
+
+mirror_enum!(
+    /// Caplet or floorlet payoff direction.
+    CapletFloorletType,
+    QsCapletFloorletType,
+    "CapletFloorletType",
+    [Caplet, Floorlet]
+);
+
+#[pymethods]
+impl CapletFloorletType {
+    /// Parses a caplet/floorlet type from its name.
+    #[staticmethod]
+    pub fn parse(s: &str) -> PyResult<Self> {
+        Self::from_name(s)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{self:?}")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("CapletFloorletType.{self:?}")
+    }
+}
+
+mirror_enum!(
+    /// Amortization structure of a leg.
+    PaymentStructure,
+    QsPaymentStructure,
+    "PaymentStructure",
+    [Bullet, EqualPayments, EqualRedemptions, Zero, Other]
+);
+
+#[pymethods]
+impl PaymentStructure {
+    /// Parses a payment structure from its name.
+    #[staticmethod]
+    pub fn parse(s: &str) -> PyResult<Self> {
+        Self::from_name(s)
+    }
+
+    fn __str__(&self) -> String {
+        format!("{self:?}")
+    }
+
+    fn __repr__(&self) -> String {
+        format!("PaymentStructure.{self:?}")
     }
 }

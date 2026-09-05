@@ -9,6 +9,7 @@ use pyo3::prelude::*;
 use quantsupport::prelude::{
     CurveConfiguration as QsCurveConfiguration, DualFwd, FixingStore as QsFixingStore,
     FxRateRecord, FxStore as QsFxStore, QuoteStore as QsQuoteStore, QuoteStoreRecords,
+    Scenario as QsScenario, ScenarioType as QsScenarioType,
     SimulationConfiguration as QsSimulationConfiguration,
     VolatilityCubeConfiguration as QsVolatilityCubeConfiguration,
     VolatilitySurfaceConfiguration as QsVolatilitySurfaceConfiguration,
@@ -271,5 +272,78 @@ impl FxStore {
 
     fn __repr__(&self) -> String {
         "FxStore(...)".to_string()
+    }
+}
+
+/// A shock applied to one or more quotes before bootstrapping.
+///
+/// The target is either a full quote identifier (`"OIS_USD_SOFR_1Y"`) or a
+/// partial underscore-separated selector matched against the identifier
+/// segments of every quote (`"SOFR"` shocks all SOFR quotes — a parallel
+/// shift; `"Swaption_USD"` shocks the USD swaption vol slide).
+///
+/// ```python
+/// bump_all_sofr = qs.Scenario("SOFR", 0.0001, qs.ScenarioType.Absolute)
+/// bump_1y_pillar = qs.Scenario("OIS_USD_SOFR_1Y", 0.0001)  # Absolute default
+/// scale_vols = qs.Scenario("Swaption_USD", 0.10, "Relative")
+/// ```
+#[pyclass(name = "Scenario", from_py_object)]
+#[derive(Clone)]
+pub struct Scenario {
+    pub inner: QsScenario,
+}
+
+#[pymethods]
+impl Scenario {
+    #[new]
+    #[pyo3(signature = (target, shock, scenario_type = None))]
+    fn new(
+        target: String,
+        shock: f64,
+        scenario_type: Option<&Bound<'_, PyAny>>,
+    ) -> PyResult<Self> {
+        let scenario_type = scenario_type
+            .map(crate::conv::extract_scenario_type)
+            .transpose()?
+            .unwrap_or(QsScenarioType::Absolute);
+        Ok(Self {
+            inner: QsScenario::new(target, shock, scenario_type),
+        })
+    }
+
+    /// Builds a scenario from a dict
+    /// `{"target": ..., "shock": ..., "scenario_type": ...}`.
+    #[staticmethod]
+    fn from_dict(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+        Ok(Self {
+            inner: from_py(obj, "scenario")?,
+        })
+    }
+
+    /// Quote identifier or partial (segment) selector.
+    #[getter]
+    fn target(&self) -> &str {
+        self.inner.target()
+    }
+
+    /// Shock size.
+    #[getter]
+    fn shock(&self) -> f64 {
+        self.inner.shock()
+    }
+
+    /// How the shock is applied.
+    #[getter]
+    fn scenario_type(&self) -> crate::enums::ScenarioType {
+        self.inner.scenario_type().into()
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "Scenario(target='{}', shock={}, scenario_type={:?})",
+            self.inner.target(),
+            self.inner.shock(),
+            self.inner.scenario_type()
+        )
     }
 }

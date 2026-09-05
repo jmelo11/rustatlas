@@ -9,7 +9,13 @@ use crate::{
     currencies::currency::Currency,
     indices::marketindex::MarketIndex,
     models::modelconfiguration::SimulationConfiguration,
-    quotes::{fixingstore::FixingStore, fxstore::FxStore, quote::Level, quotestore::QuoteStore},
+    quotes::{
+        fixingstore::FixingStore,
+        fxstore::FxStore,
+        quote::Level,
+        quotestore::QuoteStore,
+        scenario::Scenario,
+    },
     rates::bootstrapping::{
         bootstrapdiscountpolicy::BootstrapDiscountPolicy,
         creditcurvebootstrapper::CreditCurveBootstrapper,
@@ -34,6 +40,10 @@ use crate::{
 pub struct PricingContext {
     /// The quote store provides access to direct market data quotes and reference date information.
     quote_store: QuoteStore,
+    /// Scenario shocks applied to the quote store before bootstrapping.
+    scenarios: Vec<Scenario>,
+    /// The quote store with scenario shocks applied (built on `initialize`).
+    shocked_quote_store: Option<QuoteStore>,
     /// The fixing store provides access to historical fixing values for indices and other reference data.
     fixing_store: FixingStore,
     /// Exchange rate store for FX spot rates used in cross-currency discounting.
@@ -62,6 +72,8 @@ impl PricingContext {
     pub fn new() -> Self {
         Self {
             quote_store: QuoteStore::default(),
+            scenarios: Vec::new(),
+            shocked_quote_store: None,
             fixing_store: FixingStore::default(),
             fx_store: FxStore::default(),
             curve_configurations: Vec::new(),
@@ -75,9 +87,17 @@ impl PricingContext {
         }
     }
 
-    /// Returns the market data store.
+    /// Returns the active market data store. When scenarios are set and the
+    /// context is initialized, the scenario-shocked store is returned;
+    /// otherwise the base store.
     #[must_use]
-    pub const fn quote_store(&self) -> &QuoteStore {
+    pub fn quote_store(&self) -> &QuoteStore {
+        self.shocked_quote_store.as_ref().unwrap_or(&self.quote_store)
+    }
+
+    /// Returns the base (unshocked) quote store.
+    #[must_use]
+    pub const fn base_quote_store(&self) -> &QuoteStore {
         &self.quote_store
     }
 
@@ -97,7 +117,22 @@ impl PricingContext {
     #[must_use]
     pub fn with_quote_store(mut self, quote_store: QuoteStore) -> Self {
         self.quote_store = quote_store;
+        self.shocked_quote_store = None;
         self
+    }
+
+    /// Sets the scenario shocks applied to the quote store on `initialize`.
+    #[must_use]
+    pub fn with_scenarios(mut self, scenarios: Vec<Scenario>) -> Self {
+        self.scenarios = scenarios;
+        self.shocked_quote_store = None;
+        self
+    }
+
+    /// Returns the scenarios applied to the quote store on `initialize`.
+    #[must_use]
+    pub const fn scenarios(&self) -> &Vec<Scenario> {
+        &self.scenarios
     }
 
     /// Sets the base currency of the context.
@@ -247,13 +282,27 @@ impl PricingContext {
     /// Placeholder for one-time initialisation (pre-loading caches, etc.).
     ///
     /// # Errors
-    /// Returns an error if bootstrapping or volatility surface construction fails.
+    /// Returns an error if a scenario matches no quotes, or if bootstrapping
+    /// or volatility surface construction fails.
     pub fn initialize(&mut self) -> Result<()> {
+        // Apply scenario shocks to a copy of the base quote store. All
+        // downstream construction (curves, vols, simulations) then uses the
+        // shocked market.
+        self.shocked_quote_store = if self.scenarios.is_empty() {
+            None
+        } else {
+            let mut store = self.quote_store.clone();
+            for scenario in &self.scenarios {
+                scenario.apply(&mut store)?;
+            }
+            Some(store)
+        };
+
         // Bootstrap discount curves.
         let policy = BootstrapDiscountPolicy::new(self.base_index.clone(), self.base_currency);
         let bootstrapper = MultiCurveBootstrapper::new(self.curve_configurations.clone(), policy)
             .with_fx_store(self.fx_store.clone());
-        let curves = bootstrapper.bootstrap(&self.quote_store, Level::Mid)?;
+        let curves = bootstrapper.bootstrap(self.quote_store(), Level::Mid)?;
         for (index, curve) in curves {
             self.constructed_elements
                 .discount_curves_mut()
@@ -266,7 +315,7 @@ impl PricingContext {
             let credit_bootstrapper =
                 CreditCurveBootstrapper::new(self.credit_curve_configurations.clone());
             let credit_curves = credit_bootstrapper.bootstrap(
-                &self.quote_store,
+                self.quote_store(),
                 Level::Mid,
                 self.constructed_elements.discount_curves(),
             )?;
@@ -281,7 +330,7 @@ impl PricingContext {
         if !self.volatility_surface_configurations.is_empty() {
             let surface_builder =
                 VolatilitySurfaceBuilder::new(self.volatility_surface_configurations.clone());
-            let surfaces = surface_builder.build(&self.quote_store, Level::Mid)?;
+            let surfaces = surface_builder.build(self.quote_store(), Level::Mid)?;
             for (index, surface) in surfaces {
                 self.constructed_elements
                     .volatility_surfaces_mut()
@@ -293,7 +342,7 @@ impl PricingContext {
         if !self.volatility_cube_configurations.is_empty() {
             let cube_builder =
                 VolatilityCubeBuilder::new(self.volatility_cube_configurations.clone());
-            let cubes = cube_builder.build(&self.quote_store, Level::Mid)?;
+            let cubes = cube_builder.build(self.quote_store(), Level::Mid)?;
             for (index, cube) in cubes {
                 self.constructed_elements
                     .volatility_cubes_mut()
@@ -308,7 +357,7 @@ impl PricingContext {
                 SimulationBuilder::new(self.simulation_configurations.clone());
             let simulations = simulation_builder.build(
                 &self.constructed_elements,
-                &self.quote_store,
+                self.quote_store(),
                 &self.fixing_store,
                 Level::Mid,
             )?;

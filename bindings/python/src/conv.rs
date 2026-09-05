@@ -6,8 +6,9 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use quantsupport::prelude::{
-    BusinessDayConvention, Compounding, Currency, Date, DayCounter, Frequency, MarketIndex, Period,
-    Request, Side, TimeUnit,
+    BusinessDayConvention, CapFloorType, CapletFloorletType, Compounding, Currency, Date,
+    DayCounter, EuroOptionType, Frequency, FxOptionType, MarketIndex, PaymentStructure, Period,
+    Request, ScenarioType, Side, Strike, TimeUnit,
 };
 use serde::de::DeserializeOwned;
 
@@ -117,6 +118,58 @@ enum_extractor!(
     BusinessDayConvention,
     "business day convention"
 );
+enum_extractor!(
+    extract_scenario_type,
+    crate::enums::ScenarioType,
+    ScenarioType,
+    "scenario type"
+);
+enum_extractor!(
+    extract_option_type,
+    crate::enums::OptionType,
+    EuroOptionType,
+    "option type"
+);
+enum_extractor!(
+    extract_fx_option_type,
+    crate::enums::OptionType,
+    FxOptionType,
+    "option type"
+);
+enum_extractor!(
+    extract_cap_floor_type,
+    crate::enums::CapFloorType,
+    CapFloorType,
+    "cap/floor type"
+);
+enum_extractor!(
+    extract_caplet_floorlet_type,
+    crate::enums::CapletFloorletType,
+    CapletFloorletType,
+    "caplet/floorlet type"
+);
+enum_extractor!(
+    extract_payment_structure,
+    crate::enums::PaymentStructure,
+    PaymentStructure,
+    "payment structure"
+);
+
+/// Extracts a `Strike` from a float (absolute strike) or the string `"ATM"`.
+pub fn extract_strike(obj: &Bound<'_, PyAny>) -> PyResult<Strike> {
+    if let Ok(v) = obj.extract::<f64>() {
+        return Ok(Strike::Absolute(v));
+    }
+    if let Ok(s) = obj.extract::<String>() {
+        if s.eq_ignore_ascii_case("atm") {
+            return Ok(Strike::Atm);
+        }
+    }
+    Err(QuantSupportError::new_err(format!(
+        "invalid strike: expected a float or 'ATM', got {}",
+        obj.get_type().name()?
+    )))
+}
 
 /// Extracts a `MarketIndex` from the wrapper class or a plain rate-index
 /// string (e.g. `"SOFR"`).

@@ -11,20 +11,30 @@ use std::collections::HashMap;
 
 use pyo3::prelude::*;
 use quantsupport::prelude::{
-    ADForward, ConstructedElementStore, Currency, DiscountedCashflowPricer, DualFwd,
-    FloatFloatCrossCurrencySwap, FloatFloatCrossCurrencySwapTrade, MarketIndex, Pricer,
-    PricingContext as QsPricingContext, Swap as QsSwap, SwapTrade, Tape, XvaEngine,
+    ADForward, BasisSwap as QsBasisSwap, BasisSwapTrade, BlackEuropeanOptionPricer, CdsPricer,
+    ClosedFormBlackCapPricer, ClosedFormBlackCapletPricer, ConstructedElementStore, Currency,
+    DiscountedCashflowPricer, DualFwd, FixFloatCrossCurrencySwap as QsFixFloatXccy,
+    FixFloatCrossCurrencySwapTrade, FixedRateBond as QsFixedRateBond, FixedRateBondTrade,
+    FixedRateDeposit as QsFixedRateDeposit, FixedRateDepositTrade, FloatFloatCrossCurrencySwap,
+    FloatFloatCrossCurrencySwapTrade, FloatingRateNote as QsFloatingRateNote,
+    FloatingRateNoteTrade, FxForwardPricer, FxOptionPricer, MarketIndex, Pricer,
+    PricingContext as QsPricingContext, RateFuturesPricer, Swap as QsSwap, SwapTrade, Tape,
+    XvaEngine,
 };
 
 use crate::conv::{extract_currency, extract_market_index, extract_requests, qs_err};
 use crate::explore::{DiscountCurve, Simulation, VolatilityCube, VolatilitySurface};
 use crate::market::{
-    CurveConfiguration, FixingStore, FxStore, QuoteStore, SimulationConfiguration,
+    CurveConfiguration, FixingStore, FxStore, QuoteStore, Scenario, SimulationConfiguration,
     VolatilityCubeConfiguration, VolatilitySurfaceConfiguration,
 };
 use crate::results::EvaluationResults;
 use crate::time::Date;
-use crate::trades::{CrossCurrencySwap, Swap};
+use crate::trades::{
+    BasisSwap, CapFloorPy, CapletFloorletPy, CreditDefaultSwapPy, CrossCurrencySwap, EquityOption,
+    FixFloatCrossCurrencySwap, FixedRateBond, FixedRateDeposit, FloatingRateNote, FxForwardPy,
+    FxOptionPy, RateFuturesPy, Swap,
+};
 use crate::xva::{NettingSet, XvaConfig, XvaResult};
 use crate::QuantSupportError;
 
@@ -127,6 +137,7 @@ impl PricingContext {
         volatility_cubes = None,
         simulations = None,
         discounting = None,
+        scenarios = None,
     ))]
     fn new(
         quotes: QuoteStore,
@@ -137,6 +148,7 @@ impl PricingContext {
         volatility_cubes: Option<Vec<VolatilityCubeConfiguration>>,
         simulations: Option<Vec<SimulationConfiguration>>,
         discounting: Option<DiscountingConfig>,
+        scenarios: Option<Vec<Scenario>>,
     ) -> PyResult<Self> {
         let mut ctx = QsPricingContext::new()
             .with_quote_store(quotes.inner)
@@ -160,6 +172,9 @@ impl PricingContext {
         }
         if let Some(d) = discounting {
             ctx = ctx.with_base_currency(d.currency).with_base_index(d.index);
+        }
+        if let Some(s) = scenarios {
+            ctx = ctx.with_scenarios(s.into_iter().map(|s| s.inner).collect());
         }
 
         Ok(Self {
@@ -396,9 +411,97 @@ impl PricingContext {
             let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
             return Ok(EvaluationResults::from_qs(&res));
         }
+        if let Ok(basis) = trade.extract::<BasisSwap>() {
+            let t = basis.build_trade_dual()?;
+            let pricer =
+                DiscountedCashflowPricer::<QsBasisSwap<DualFwd>, BasisSwapTrade<DualFwd>>::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(xccy) = trade.extract::<FixFloatCrossCurrencySwap>() {
+            let t = xccy.build_trade_dual()?;
+            let pricer = DiscountedCashflowPricer::<
+                QsFixFloatXccy<DualFwd>,
+                FixFloatCrossCurrencySwapTrade<DualFwd>,
+            >::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(bond) = trade.extract::<FixedRateBond>() {
+            let t = bond.build_trade_dual()?;
+            let pricer = DiscountedCashflowPricer::<
+                QsFixedRateBond<DualFwd>,
+                FixedRateBondTrade<DualFwd>,
+            >::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(frn) = trade.extract::<FloatingRateNote>() {
+            let t = frn.build_trade_dual()?;
+            let pricer = DiscountedCashflowPricer::<
+                QsFloatingRateNote<DualFwd>,
+                FloatingRateNoteTrade<DualFwd>,
+            >::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(deposit) = trade.extract::<FixedRateDeposit>() {
+            let t = deposit.build_trade_dual()?;
+            let pricer = DiscountedCashflowPricer::<
+                QsFixedRateDeposit<DualFwd>,
+                FixedRateDepositTrade<DualFwd>,
+            >::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(fwd) = trade.extract::<FxForwardPy>() {
+            let t = fwd.build_trade()?;
+            let pricer = FxForwardPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(opt) = trade.extract::<FxOptionPy>() {
+            let t = opt.build_trade()?;
+            let pricer = FxOptionPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(opt) = trade.extract::<EquityOption>() {
+            let t = opt.build_trade()?;
+            let pricer = BlackEuropeanOptionPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(cds) = trade.extract::<CreditDefaultSwapPy>() {
+            let t = cds.build_trade()?;
+            let pricer = CdsPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(cap) = trade.extract::<CapFloorPy>() {
+            let t = cap.build_trade()?;
+            let pricer = ClosedFormBlackCapPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(caplet) = trade.extract::<CapletFloorletPy>() {
+            let t = caplet.build_trade()?;
+            let pricer = ClosedFormBlackCapletPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
+        if let Ok(futures) = trade.extract::<RateFuturesPy>() {
+            let t = futures.build_trade()?;
+            let pricer = RateFuturesPricer::new();
+            let res = pricer.evaluate(&t, &reqs, &self.inner).map_err(qs_err)?;
+            return Ok(EvaluationResults::from_qs(&res));
+        }
 
         Err(QuantSupportError::new_err(
-            "unsupported trade type (expected Swap or CrossCurrencySwap)",
+            "unsupported trade type (expected Swap, CrossCurrencySwap, BasisSwap, \
+             FixFloatCrossCurrencySwap, FixedRateBond, FloatingRateNote, FixedRateDeposit, \
+             FxForward, FxOption, EquityOption, CreditDefaultSwap, CapFloor, CapletFloorlet \
+             or RateFutures)",
         ))
     }
 

@@ -17,7 +17,10 @@ use quantsupport::prelude::{
 use crate::conv::{
     dataframe, extract_currency, extract_date, extract_market_index, from_json_file, from_py,
 };
-use crate::trades::{CrossCurrencySwap, Swap};
+use crate::trades::{
+    BasisSwap, CrossCurrencySwap, FixFloatCrossCurrencySwap, FixedRateBond, FixedRateDeposit,
+    FloatingRateNote, Swap,
+};
 use crate::QuantSupportError;
 
 /// XVA engine configuration (models, paths, seed, frequency).
@@ -203,6 +206,11 @@ impl CsaTerms {
 enum TradeSpec {
     Swap(Swap),
     CrossCurrencySwap(CrossCurrencySwap),
+    BasisSwap(BasisSwap),
+    FixFloatCrossCurrencySwap(FixFloatCrossCurrencySwap),
+    FixedRateBond(FixedRateBond),
+    FloatingRateNote(FloatingRateNote),
+    FixedRateDeposit(FixedRateDeposit),
 }
 
 /// A group of trades under a single netting agreement (one client),
@@ -223,6 +231,11 @@ impl NettingSet {
             match t {
                 TradeSpec::Swap(s) => claims.extend(s.claims()?),
                 TradeSpec::CrossCurrencySwap(x) => claims.extend(x.claims()?),
+                TradeSpec::BasisSwap(b) => claims.extend(b.claims()?),
+                TradeSpec::FixFloatCrossCurrencySwap(x) => claims.extend(x.claims()?),
+                TradeSpec::FixedRateBond(b) => claims.extend(b.claims()?),
+                TradeSpec::FloatingRateNote(f) => claims.extend(f.claims()?),
+                TradeSpec::FixedRateDeposit(d) => claims.extend(d.claims()?),
             }
         }
         Ok(QsNettingSet::with_csa_terms(claims, self.csa.clone()))
@@ -244,10 +257,22 @@ impl NettingSet {
                 specs.push(TradeSpec::Swap(swap));
             } else if let Ok(xccy) = item.extract::<CrossCurrencySwap>() {
                 specs.push(TradeSpec::CrossCurrencySwap(xccy));
+            } else if let Ok(basis) = item.extract::<BasisSwap>() {
+                specs.push(TradeSpec::BasisSwap(basis));
+            } else if let Ok(xccy) = item.extract::<FixFloatCrossCurrencySwap>() {
+                specs.push(TradeSpec::FixFloatCrossCurrencySwap(xccy));
+            } else if let Ok(bond) = item.extract::<FixedRateBond>() {
+                specs.push(TradeSpec::FixedRateBond(bond));
+            } else if let Ok(frn) = item.extract::<FloatingRateNote>() {
+                specs.push(TradeSpec::FloatingRateNote(frn));
+            } else if let Ok(deposit) = item.extract::<FixedRateDeposit>() {
+                specs.push(TradeSpec::FixedRateDeposit(deposit));
             } else {
                 return Err(QuantSupportError::new_err(format!(
                     "unsupported trade type in netting set '{name}' \
-                     (expected Swap or CrossCurrencySwap)"
+                     (expected Swap, CrossCurrencySwap, BasisSwap, \
+                     FixFloatCrossCurrencySwap, FixedRateBond, FloatingRateNote \
+                     or FixedRateDeposit)"
                 )));
             }
         }

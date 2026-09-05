@@ -146,6 +146,7 @@ pub use crate::{
         quote::{Level, Quote, QuoteDetails, QuoteInstrument, QuoteLevels},
         quoteselector::QuoteSelector,
         quotestore::{QuoteRecord, QuoteStore, QuoteStoreRecords},
+        scenario::{Scenario, ScenarioType},
     },
     rates::{
         bootstrapping::{
@@ -190,19 +191,18 @@ pub use crate::{
         volatilitycubebuilder::VolatilityCubeBuilder,
         volatilitycubeconfiguration::VolatilityCubeConfiguration,
         volatilityindexing::{SmileType, Strike, VolatilityType},
-        volatilitysurface::VolatilitySurface,
-        volatilitysurfacebuilder::VolatilitySurfaceBuilder,
-        volatilitysurfaceconfiguration::VolatilitySurfaceConfiguration,
         volatilitysource::{
             bootstrap_black_term_volatility, ConstantVolatility, CubeTermVolatility,
             PiecewiseConstantVolatility, SurfaceTermVolatility, VolatilitySourceConfiguration,
         },
+        volatilitysurface::VolatilitySurface,
+        volatilitysurfacebuilder::VolatilitySurfaceBuilder,
+        volatilitysurfaceconfiguration::VolatilitySurfaceConfiguration,
     },
     xva::{
         aggregator::{
             CreditCurveCvaFactory, CvaAggregator, CvaFactory, DvaAggregator, DvaFactory,
-            FundingCurveFvaFactory, FvaAggregator, FvaFactory, PfeAggregator,
-            PfeAggregatorFactory,
+            FundingCurveFvaFactory, FvaAggregator, FvaFactory, PfeAggregator, PfeAggregatorFactory,
         },
         contigentclaim::ContingentClaim,
         csa::{CsaTerms, FundingSpreadCurve},
