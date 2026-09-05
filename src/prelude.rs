@@ -201,10 +201,11 @@ pub use crate::{
     xva::{
         aggregator::{
             CreditCurveCvaFactory, CvaAggregator, CvaFactory, DvaAggregator, DvaFactory,
-            FvaAggregator, FvaFactory, PfeAggregator, PfeAggregatorFactory,
+            FundingCurveFvaFactory, FvaAggregator, FvaFactory, PfeAggregator,
+            PfeAggregatorFactory,
         },
         contigentclaim::ContingentClaim,
-        csa::CsaTerms,
+        csa::{CsaTerms, FundingSpreadCurve},
         engine::{XvaEngine, XvaEngineConfig},
         makecontigentclaim::IntoContingentClaims,
         nettingset::NettingSet,

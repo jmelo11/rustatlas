@@ -25,8 +25,12 @@ use crate::{
     },
     utils::errors::{QSError, Result},
     xva::{
-        aggregator::{CreditCurveCvaFactory, CvaFactory, FvaFactory, PfeAggregatorFactory},
+        aggregator::{
+            CreditCurveCvaFactory, CvaFactory, FundingCurveFvaFactory, FvaFactory,
+            PfeAggregatorFactory,
+        },
         contigentclaim::ContingentClaim,
+        csa::CsaTerms,
         nettingset::NettingSet,
         visitors::{
             exposureevaluator::{evaluate_with_xva, ExposureResult, ModelCallback, XvaModelSetup},
@@ -101,6 +105,10 @@ pub struct XvaEngine {
     /// [`MarketIndex::Credit`]. Used to build per-counterparty CVA
     /// aggregators when a netting set's CSA references a credit curve.
     credit_curves: HashMap<MarketIndex, CreditCurveSnapshot>,
+    /// Snapshots of every bootstrapped discount curve in the context, keyed
+    /// by index. Used to derive per-counterparty funding spreads when a
+    /// netting set's CSA references a funding curve.
+    funding_curves: HashMap<MarketIndex, CurveSnapshot>,
 }
 
 impl XvaEngine {
@@ -201,6 +209,9 @@ impl XvaEngine {
             );
         }
 
+        // Snapshot every bootstrapped discount curve for funding-curve FVA.
+        let funding_curves = Self::snapshot_discount_curves(store);
+
         Ok(Self {
             setup: InternalModelSetup {
                 curves,
@@ -218,6 +229,7 @@ impl XvaEngine {
             },
             frequency: config.frequency,
             credit_curves,
+            funding_curves,
         })
     }
 
@@ -344,17 +356,11 @@ impl XvaEngine {
                     })
                 };
 
-            factories.insert(
-                id.clone(),
-                vec![
-                    cva_factory,
-                    Box::new(FvaFactory {
-                        funding_spread: csa.funding_spread,
-                        n_paths: self.setup.n_paths,
-                        system_dfs: Some(system_dfs.clone()),
-                    }),
-                ],
-            );
+            // FVA: funding curve when assigned, explicit spread term
+            // structure otherwise, flat spread as fallback.
+            let fva_factory = self.build_fva_factory(id, csa, &system_ts, &system_dfs)?;
+
+            factories.insert(id.clone(), vec![cva_factory, fva_factory]);
         }
 
         // 5. Build netting-set slice map.
@@ -365,6 +371,121 @@ impl XvaEngine {
 
         // 6. Run.
         evaluate_with_xva(&sim_dates, &ns_slices, &factories, &self.setup)
+    }
+
+    /// Snapshots the f64 data of every bootstrapped discount curve in the
+    /// store (used for funding-curve FVA lookups).
+    fn snapshot_discount_curves(
+        store: &crate::core::marketdatahandling::constructedelementstore::ConstructedElementStore,
+    ) -> HashMap<MarketIndex, CurveSnapshot> {
+        let mut snapshots = HashMap::new();
+        for (index, element) in store.discount_curves() {
+            let borrowed = element.curve();
+            let Some(nodes) = borrowed.nodes() else {
+                continue;
+            };
+            snapshots.insert(
+                index.clone(),
+                CurveSnapshot {
+                    dates: nodes.iter().map(|(d, _)| *d).collect(),
+                    discount_factors: nodes.iter().map(|(_, v)| v.value()).collect(),
+                    day_counter: borrowed.day_counter().unwrap_or(DayCounter::Actual365),
+                    interpolator: Interpolator::LogLinear,
+                    pillar_labels: borrowed.pillar_labels().unwrap_or_default(),
+                    pillar_values: borrowed
+                        .pillars()
+                        .unwrap_or_default()
+                        .iter()
+                        .map(|(_, v)| v.value())
+                        .collect(),
+                },
+            );
+        }
+        snapshots
+    }
+
+    /// Builds the FVA aggregator factory for one netting set from its CSA
+    /// terms: funding curve when assigned, explicit spread term structure
+    /// otherwise, flat spread as fallback.
+    fn build_fva_factory(
+        &self,
+        id: &str,
+        csa: &CsaTerms,
+        system_ts: &DiscountTermStructure<f64>,
+        system_dfs: &[f64],
+    ) -> Result<Box<dyn PfeAggregatorFactory>> {
+        if let Some(funding_index) = &csa.funding_index {
+            let snapshot = self.funding_curves.get(funding_index).ok_or_else(|| {
+                QSError::NotFoundErr(format!(
+                    "Netting set '{id}' references funding curve {funding_index}, but it was \
+                     not bootstrapped in the pricing context"
+                ))
+            })?;
+            let funding_ts = DiscountTermStructure::<f64>::new(
+                snapshot.dates.clone(),
+                snapshot.discount_factors.clone(),
+                snapshot.day_counter,
+                snapshot.interpolator,
+                true,
+            )?;
+            // Forward funding spreads over the system curve, one per
+            // funding-curve node bucket (assigned to the bucket's right
+            // endpoint).
+            let dc = snapshot.day_counter;
+            let ref_date = self.setup.reference_date;
+            let mut pillar_dates = Vec::new();
+            let mut pillar_spreads = Vec::new();
+            let mut prev = ref_date;
+            for date in snapshot.dates.iter().filter(|d| **d > ref_date) {
+                let dt = dc.year_fraction(prev, *date);
+                if dt <= 0.0 {
+                    continue;
+                }
+                let fwd_df_funding =
+                    funding_ts.discount_factor(*date)? / funding_ts.discount_factor(prev)?;
+                let fwd_df_system =
+                    system_ts.discount_factor(*date)? / system_ts.discount_factor(prev)?;
+                pillar_spreads.push((fwd_df_system / fwd_df_funding).ln() / dt);
+                pillar_dates.push(*date);
+                prev = *date;
+            }
+            let mut labels = snapshot.pillar_labels.clone();
+            if labels.len() != pillar_dates.len() {
+                labels = pillar_dates
+                    .iter()
+                    .map(|d| format!("{funding_index}.{d}"))
+                    .collect();
+            }
+            Ok(Box::new(FundingCurveFvaFactory {
+                pillar_dates,
+                pillar_spreads,
+                pillar_labels: labels,
+                n_paths: self.setup.n_paths,
+                day_counter: dc,
+                system_dfs: Some(system_dfs.to_vec()),
+            }))
+        } else if let Some(spread_curve) = &csa.funding_spread_curve {
+            spread_curve.validate()?;
+            let labels = spread_curve
+                .dates
+                .iter()
+                .map(|d| format!("funding_spread.{d}"))
+                .collect();
+            Ok(Box::new(FundingCurveFvaFactory {
+                pillar_dates: spread_curve.dates.clone(),
+                pillar_spreads: spread_curve.spreads.clone(),
+                pillar_labels: labels,
+                n_paths: self.setup.n_paths,
+                day_counter: DayCounter::Actual365,
+                system_dfs: Some(system_dfs.to_vec()),
+            }))
+        } else {
+            Ok(Box::new(FvaFactory {
+                funding_spread: csa.funding_spread,
+                n_paths: self.setup.n_paths,
+                system_dfs: Some(system_dfs.to_vec()),
+            }))
+        }
     }
 }
 

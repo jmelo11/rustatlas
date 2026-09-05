@@ -198,17 +198,41 @@ impl<T: Scalar> PfeAggregator<T> for DvaAggregator<T> {
     }
 }
 
+/// Funding spread term used by the [`FvaAggregator`]: either a single flat
+/// spread or one spread per simulation date.
+enum FundingSpreadTerm<T> {
+    /// Flat spread applied to every accrual bucket.
+    Flat(T),
+    /// `spreads[d]` applies over the bucket ending at simulation date `d`.
+    PerDate(Vec<T>),
+}
+
 /// Funding valuation adjustment aggregator.
 pub struct FvaAggregator<T: Scalar> {
-    funding_spread: T,
+    spread: FundingSpreadTerm<T>,
     system_discounts: Option<Vec<f64>>,
     inv_n: f64,
 }
 
 impl<T: Scalar> FvaAggregator<T> {
+    /// Creates an FVA aggregator with a flat funding spread.
     pub fn new(funding_spread: T, n_paths: usize) -> Self {
         Self {
-            funding_spread,
+            spread: FundingSpreadTerm::Flat(funding_spread),
+            system_discounts: None,
+            inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
+        }
+    }
+
+    /// Creates an FVA aggregator with a time-dependent funding spread.
+    ///
+    /// `spreads[d]` is the spread applied over the accrual bucket ending at
+    /// simulation date `d` (one entry per simulation date, e.g. interpolated
+    /// from a funding spread curve).
+    #[must_use]
+    pub fn from_spreads(spreads: Vec<T>, n_paths: usize) -> Self {
+        Self {
+            spread: FundingSpreadTerm::PerDate(spreads),
             system_discounts: None,
             inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
         }
@@ -233,7 +257,11 @@ impl<T: Scalar> PfeAggregator<T> for FvaAggregator<T> {
         let mut f_p = T::zero();
         for d in 1..dates.len().min(npvs.len()) {
             let dt = dc.year_fraction(dates[d - 1], dates[d]);
-            let mut term = npvs[d].mul_val(self.funding_spread).mul_val(T::scalar(dt));
+            let spread = match &self.spread {
+                FundingSpreadTerm::Flat(s) => *s,
+                FundingSpreadTerm::PerDate(v) => v[d],
+            };
+            let mut term = npvs[d].mul_val(spread).mul_val(T::scalar(dt));
             if let Some(dfs) = &self.system_discounts {
                 term = term.mul_val(T::scalar(dfs[d]));
             }
@@ -442,6 +470,95 @@ impl PfeAggregatorFactory for FvaFactory {
     }
 }
 
+/// Factory for an FVA aggregator driven by a funding spread term structure.
+///
+/// Spreads at the simulation dates are linearly interpolated between the
+/// pillars (flat extrapolation on both sides). The pillar spreads become
+/// tracked tape leaves so that the backward pass yields FVA sensitivities
+/// to the individual pillars (labels are prefixed with `"FVA."`).
+pub struct FundingCurveFvaFactory {
+    /// Pillar dates of the funding spread curve.
+    pub pillar_dates: Vec<Date>,
+    /// Funding spreads at the pillar dates.
+    pub pillar_spreads: Vec<f64>,
+    /// Labels of the pillar spreads (e.g. funding curve quote identifiers).
+    pub pillar_labels: Vec<String>,
+    /// Number of Monte Carlo paths.
+    pub n_paths: usize,
+    /// Day counter used to convert dates into year fractions.
+    pub day_counter: DayCounter,
+    /// System-curve discount factors `DF(0, t_d)` at the simulation dates.
+    pub system_dfs: Option<Vec<f64>>,
+}
+
+impl FundingCurveFvaFactory {
+    /// Linear spread interpolation at time `t` (year fraction from the
+    /// reference date), with flat extrapolation on both sides.
+    fn spread_at(t: f64, pillar_times: &[f64], leaves: &[DualFwd]) -> DualFwd {
+        let n = pillar_times.len();
+        if n == 0 {
+            return DualFwd::scalar(0.0);
+        }
+        if t <= pillar_times[0] {
+            return leaves[0];
+        }
+        for k in 1..n {
+            if t <= pillar_times[k] {
+                let w = (t - pillar_times[k - 1]) / (pillar_times[k] - pillar_times[k - 1]);
+                return leaves[k - 1]
+                    .add_val(leaves[k].sub_val(leaves[k - 1]).mul_val(DualFwd::scalar(w)));
+            }
+        }
+        leaves[n - 1]
+    }
+}
+
+impl PfeAggregatorFactory for FundingCurveFvaFactory {
+    fn name(&self) -> &'static str {
+        "FVA"
+    }
+
+    fn create_aggregator(&self, ref_date: Date, dates: &[Date]) -> AggregatorBundle {
+        // Tracked leaves: one per pillar spread.
+        let pillar_leaves: Vec<DualFwd> = self
+            .pillar_spreads
+            .iter()
+            .map(|s| DualFwd::new(*s))
+            .collect();
+
+        let pillar_times: Vec<f64> = self
+            .pillar_dates
+            .iter()
+            .map(|d| self.day_counter.year_fraction(ref_date, *d))
+            .collect();
+
+        let spreads: Vec<DualFwd> = dates
+            .iter()
+            .map(|d| {
+                let t = self.day_counter.year_fraction(ref_date, *d);
+                Self::spread_at(t, &pillar_times, &pillar_leaves)
+            })
+            .collect();
+
+        let mut agg = FvaAggregator::from_spreads(spreads, self.n_paths);
+        if let Some(dfs) = &self.system_dfs {
+            agg = agg.with_system_discounts(dfs.clone());
+        }
+
+        let leaves: Vec<(String, DualFwd)> = self
+            .pillar_labels
+            .iter()
+            .zip(&pillar_leaves)
+            .map(|(label, leaf)| (format!("FVA.{label}"), *leaf))
+            .collect();
+
+        AggregatorBundle {
+            aggregator: Box::new(agg),
+            leaves,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -451,7 +568,11 @@ mod tests {
 
     fn sim_dates(ref_date: Date, months: &[i32]) -> Vec<Date> {
         std::iter::once(ref_date)
-            .chain(months.iter().map(|m| ref_date.advance(*m, TimeUnit::Months)))
+            .chain(
+                months
+                    .iter()
+                    .map(|m| ref_date.advance(*m, TimeUnit::Months)),
+            )
             .collect()
     }
 
@@ -497,7 +618,10 @@ mod tests {
         let neg: Vec<f64> = pos.iter().map(|v| -v).collect();
         let c = cva.aggregate_path(&pos, &dates);
         let d = dva.aggregate_path(&neg, &dates);
-        assert!((c - d).abs() < 1e-14 * c.abs(), "CVA {c} vs mirrored DVA {d}");
+        assert!(
+            (c - d).abs() < 1e-14 * c.abs(),
+            "CVA {c} vs mirrored DVA {d}"
+        );
     }
 
     /// Constant NPV `E`: FVA telescopes to `E·f·(t_last − t_0)`, and all-ones
@@ -601,7 +725,10 @@ mod tests {
         Tape::set_mark_fwd();
 
         let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(1_000.0)).collect();
-        let from_curve = curve_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        let from_curve = curve_bundle
+            .aggregator
+            .aggregate_path(&npvs, &dates)
+            .value();
         let from_flat = flat_bundle.aggregator.aggregate_path(&npvs, &dates).value();
         Tape::stop_recording_fwd();
 
@@ -647,13 +774,119 @@ mod tests {
         let flat_bundle = flat.create_aggregator(ref_date, &dates);
         Tape::set_mark_fwd();
         let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(500.0)).collect();
-        let from_curve = curve_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        let from_curve = curve_bundle
+            .aggregator
+            .aggregate_path(&npvs, &dates)
+            .value();
         let from_flat = flat_bundle.aggregator.aggregate_path(&npvs, &dates).value();
         Tape::stop_recording_fwd();
 
         assert!(
             (from_curve - from_flat).abs() < 1e-10 * from_flat,
             "single-pillar extrapolated CVA {from_curve} vs flat {from_flat}"
+        );
+    }
+
+    /// A flat funding spread term structure must reproduce the flat-spread
+    /// FVA exactly, and the pillar leaves must be labeled.
+    #[test]
+    fn funding_curve_flat_spreads_match_flat_fva() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[6, 12, 24, 48]);
+        let spread = 0.005_f64;
+
+        let curve_factory = FundingCurveFvaFactory {
+            pillar_dates: vec![
+                ref_date.advance(1, TimeUnit::Years),
+                ref_date.advance(3, TimeUnit::Years),
+            ],
+            pillar_spreads: vec![spread, spread],
+            pillar_labels: vec!["1Y".into(), "3Y".into()],
+            n_paths: 1,
+            day_counter: DC,
+            system_dfs: None,
+        };
+        let flat_factory = FvaFactory {
+            funding_spread: spread,
+            n_paths: 1,
+            system_dfs: None,
+        };
+
+        Tape::start_recording_fwd();
+        let curve_bundle = curve_factory.create_aggregator(ref_date, &dates);
+        let flat_bundle = flat_factory.create_aggregator(ref_date, &dates);
+        Tape::set_mark_fwd();
+        let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(2_000.0)).collect();
+        let from_curve = curve_bundle
+            .aggregator
+            .aggregate_path(&npvs, &dates)
+            .value();
+        let from_flat = flat_bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        Tape::stop_recording_fwd();
+
+        assert!(
+            (from_curve - from_flat).abs() < 1e-12 * from_flat.abs(),
+            "curve-driven FVA {from_curve} vs flat FVA {from_flat}"
+        );
+        assert!(
+            curve_bundle.leaves.iter().any(|(l, _)| l == "FVA.1Y"),
+            "pillar leaves must be labeled with the pillar ids"
+        );
+    }
+
+    /// Time-dependent spreads: each accrual bucket must use the linearly
+    /// interpolated spread at the bucket's right endpoint.
+    #[test]
+    fn funding_curve_time_dependent_spreads_analytic() {
+        let ref_date = Date::new(2025, 1, 2);
+        let dates = sim_dates(ref_date, &[12, 24, 36]);
+        let exposure = 1_000.0_f64;
+
+        // Pillars at 1Y and 3Y: spread ramps from 0.002 to 0.006.
+        let pillar_dates = vec![dates[1], dates[3]];
+        let (s1, s3) = (0.002_f64, 0.006_f64);
+        let factory = FundingCurveFvaFactory {
+            pillar_dates: pillar_dates.clone(),
+            pillar_spreads: vec![s1, s3],
+            pillar_labels: vec!["1Y".into(), "3Y".into()],
+            n_paths: 1,
+            day_counter: DC,
+            system_dfs: None,
+        };
+
+        Tape::start_recording_fwd();
+        let bundle = factory.create_aggregator(ref_date, &dates);
+        Tape::set_mark_fwd();
+        let npvs: Vec<DualFwd> = dates.iter().map(|_| DualFwd::scalar(exposure)).collect();
+        let fva = bundle.aggregator.aggregate_path(&npvs, &dates).value();
+        Tape::stop_recording_fwd();
+
+        // Expected: sum over buckets of E · s(t_d) · Δt with s linearly
+        // interpolated between the pillars (flat outside).
+        let times: Vec<f64> = dates
+            .iter()
+            .map(|d| DC.year_fraction(ref_date, *d))
+            .collect();
+        let (t1, t3) = (
+            DC.year_fraction(ref_date, pillar_dates[0]),
+            DC.year_fraction(ref_date, pillar_dates[1]),
+        );
+        let spread_at = |t: f64| {
+            if t <= t1 {
+                s1
+            } else if t >= t3 {
+                s3
+            } else {
+                s1 + (s3 - s1) * (t - t1) / (t3 - t1)
+            }
+        };
+        let expected: f64 = (1..times.len())
+            .map(|d| exposure * spread_at(times[d]) * (times[d] - times[d - 1]))
+            .sum();
+
+        assert!(
+            (fva - expected).abs() < 1e-12 * expected,
+            "time-dependent FVA {fva} vs analytic {expected}"
         );
     }
 }

@@ -10,11 +10,13 @@
 
 use pyo3::prelude::*;
 use quantsupport::prelude::{
-    CsaTerms as QsCsaTerms, ExposureResult, NettingSet as QsNettingSet,
+    CsaTerms as QsCsaTerms, ExposureResult, FundingSpreadCurve, NettingSet as QsNettingSet,
     XvaEngineConfig as QsXvaEngineConfig,
 };
 
-use crate::conv::{dataframe, extract_currency, extract_market_index, from_json_file, from_py};
+use crate::conv::{
+    dataframe, extract_currency, extract_date, extract_market_index, from_json_file, from_py,
+};
 use crate::trades::{CrossCurrencySwap, Swap};
 use crate::QuantSupportError;
 
@@ -66,7 +68,7 @@ pub struct CsaTerms {
 #[pymethods]
 impl CsaTerms {
     #[new]
-    #[pyo3(signature = (collateral_index, collateral_currency, credit_spread, recovery, funding_spread = 0.0, credit_index = None))]
+    #[pyo3(signature = (collateral_index, collateral_currency, credit_spread, recovery, funding_spread = 0.0, credit_index = None, funding_spread_curve = None, funding_index = None))]
     fn new(
         collateral_index: &Bound<'_, PyAny>,
         collateral_currency: &Bound<'_, PyAny>,
@@ -74,7 +76,22 @@ impl CsaTerms {
         recovery: f64,
         funding_spread: f64,
         credit_index: Option<&Bound<'_, PyAny>>,
+        funding_spread_curve: Option<&Bound<'_, PyAny>>,
+        funding_index: Option<&Bound<'_, PyAny>>,
     ) -> PyResult<Self> {
+        // A list of (date, spread) pairs, dates as Date/'YYYY-MM-DD'/datetime.date.
+        let funding_spread_curve = funding_spread_curve
+            .map(|obj| {
+                let mut dates = Vec::new();
+                let mut spreads = Vec::new();
+                for item in obj.try_iter()? {
+                    let (date, spread) = item?.extract::<(Bound<'_, PyAny>, f64)>()?;
+                    dates.push(extract_date(&date)?);
+                    spreads.push(spread);
+                }
+                PyResult::Ok(FundingSpreadCurve { dates, spreads })
+            })
+            .transpose()?;
         Ok(Self {
             inner: QsCsaTerms {
                 collateral_index: extract_market_index(collateral_index)?,
@@ -82,6 +99,8 @@ impl CsaTerms {
                 credit_spread,
                 recovery,
                 funding_spread,
+                funding_spread_curve,
+                funding_index: funding_index.map(extract_market_index).transpose()?,
                 credit_index: credit_index.map(extract_market_index).transpose()?,
             },
         })
@@ -130,6 +149,27 @@ impl CsaTerms {
         self.inner.funding_spread
     }
 
+    /// The funding spread term structure as a list of `(date, spread)` pairs,
+    /// or `None` when a flat spread / funding curve is used.
+    #[getter]
+    fn funding_spread_curve(&self) -> Option<Vec<(String, f64)>> {
+        self.inner.funding_spread_curve.as_ref().map(|c| {
+            c.dates
+                .iter()
+                .zip(&c.spreads)
+                .map(|(d, s)| (d.to_string(), *s))
+                .collect()
+        })
+    }
+
+    #[getter]
+    fn funding_index(&self) -> Option<crate::enums::MarketIndex> {
+        self.inner
+            .funding_index
+            .clone()
+            .map(|inner| crate::enums::MarketIndex { inner })
+    }
+
     #[getter]
     fn credit_index(&self) -> Option<crate::enums::MarketIndex> {
         self.inner
@@ -139,13 +179,20 @@ impl CsaTerms {
     }
 
     fn __repr__(&self) -> String {
+        let funding = if let Some(idx) = &self.inner.funding_index {
+            format!("funding_index={idx:?}")
+        } else if let Some(c) = &self.inner.funding_spread_curve {
+            format!("funding_spread_curve=[{} pillars]", c.dates.len())
+        } else {
+            format!("funding_spread={}", self.inner.funding_spread)
+        };
         format!(
-            "CsaTerms(collateral_index={:?}, collateral_currency={}, credit_spread={}, recovery={}, funding_spread={})",
+            "CsaTerms(collateral_index={:?}, collateral_currency={}, credit_spread={}, recovery={}, {})",
             self.inner.collateral_index,
             self.inner.collateral_currency,
             self.inner.credit_spread,
             self.inner.recovery,
-            self.inner.funding_spread,
+            funding,
         )
     }
 }
@@ -330,8 +377,7 @@ impl XvaResult {
     /// (e.g. `"clientA.CVA.credit_spread"`).
     #[getter]
     fn sensitivities<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let (labels, values): (Vec<String>, Vec<f64>) =
-            self.sensitivities.iter().cloned().unzip();
+        let (labels, values): (Vec<String>, Vec<f64>) = self.sensitivities.iter().cloned().unzip();
         dataframe(
             py,
             &[
