@@ -369,3 +369,279 @@ impl PathGenerator<f64> for HullWhite<'_, f64> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rand::{rngs::StdRng, SeedableRng};
+
+    use super::*;
+    use crate::{
+        math::{interpolation::interpolator::Interpolator, random::fill_std_normal},
+        rates::yieldtermstructure::discounttermstructure::DiscountTermStructure,
+        time::{date::Date, daycounter::DayCounter, enums::TimeUnit, period::Period},
+    };
+
+    const RATE: f64 = 0.03;
+    const ALPHA: f64 = 0.1;
+    const SIGMA: f64 = 0.01;
+
+    /// Flat continuously-compounded curve; log-linear interpolation makes the
+    /// discount factors exact at every time.
+    fn flat_curve() -> Result<DiscountTermStructure<f64>> {
+        let reference_date = Date::new(2025, 1, 2);
+        let dc = DayCounter::Actual365;
+        let dates = vec![
+            reference_date,
+            reference_date + Period::new(1, TimeUnit::Years),
+            reference_date + Period::new(40, TimeUnit::Years),
+        ];
+        let dfs: Vec<f64> = dates
+            .iter()
+            .map(|d| (-RATE * dc.year_fraction(reference_date, *d)).exp())
+            .collect();
+        DiscountTermStructure::<f64>::new(dates, dfs, dc, Interpolator::LogLinear, true)
+    }
+
+    #[test]
+    fn zcb_price_reproduces_curve_at_time_zero() -> Result<()> {
+        // P(0,T | r_0 = f(0,0)) must reproduce the input curve for any sigma.
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        for t_bond in [0.25, 1.0, 5.0, 20.0] {
+            for sigma in [1e-6, SIGMA, 0.05] {
+                let model_df = hw.zcb_price(RATE, 0.0, t_bond, sigma, &curve)?;
+                let curve_df = curve.discount_factor_from_time(t_bond)?;
+                assert!(
+                    (model_df - curve_df).abs() < 1e-10,
+                    "P(0,{t_bond}) mismatch: model {model_df} vs curve {curve_df} (sigma {sigma})"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn bond_call_put_parity() -> Result<()> {
+        // Call - Put = P(0,S) - X * P(0,T) for all strikes and maturities.
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        for (t_option, t_bond) in [(0.5, 0.75), (1.0, 2.0), (5.0, 10.0)] {
+            for strike_bond in [0.5, 0.9, 0.99, 1.1] {
+                let call = hw.bond_call_price(t_option, t_bond, strike_bond, SIGMA, &curve)?;
+                let put = hw.bond_put_price(t_option, t_bond, strike_bond, SIGMA, &curve)?;
+                let p_s = curve.discount_factor_from_time(t_bond)?;
+                let p_t = curve.discount_factor_from_time(t_option)?;
+                assert!(
+                    (call - put - strike_bond.mul_add(-p_t, p_s)).abs() < 1e-14,
+                    "parity violated at T_opt={t_option}, T_bond={t_bond}, X={strike_bond}"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn caplet_floorlet_parity_matches_fra_value() -> Result<()> {
+        // Caplet - Floorlet = discounted FRA payoff df(S) * tau * (fwd - K).
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        for (t, s) in [(0.5, 0.75), (2.0, 2.5), (10.0, 11.0)] {
+            let tau = s - t;
+            let df_t = curve.discount_factor_from_time(t)?;
+            let df_s = curve.discount_factor_from_time(s)?;
+            let fwd = (df_t / df_s - 1.0) / tau;
+            for strike in [0.5 * fwd, fwd, 2.0 * fwd] {
+                let caplet = hw.caplet_price(strike, t, s, SIGMA, &curve)?;
+                let floorlet = hw.floorlet_price(strike, t, s, SIGMA, &curve)?;
+                let fra = df_s * tau * (fwd - strike);
+                assert!(
+                    (caplet - floorlet - fra).abs() < 1e-13,
+                    "parity violated at t={t}, S={s}, K={strike}"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn caplet_boundary_conditions_and_monotonicity() -> Result<()> {
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        let (t, s) = (1.0, 1.25);
+        let tau = s - t;
+        let df_t = curve.discount_factor_from_time(t)?;
+        let df_s = curve.discount_factor_from_time(s)?;
+        let fwd = (df_t / df_s - 1.0) / tau;
+
+        // sigma -> 0: ITM caplet converges to intrinsic, OTM to zero.
+        let itm_strike = 0.5 * fwd;
+        let intrinsic = df_s * tau * (fwd - itm_strike);
+        let itm = hw.caplet_price(itm_strike, t, s, 1e-8, &curve)?;
+        assert!(
+            (itm - intrinsic).abs() < 1e-10,
+            "low-vol ITM caplet {itm} should equal intrinsic {intrinsic}"
+        );
+        assert!(hw.caplet_price(2.0 * fwd, t, s, 1e-8, &curve)? < 1e-14);
+
+        // Deep OTM (extreme strike): negligible price at market vols.
+        assert!(hw.caplet_price(0.5, t, s, SIGMA, &curve)? < 1e-12);
+
+        // Price is increasing in sigma.
+        let mut prev = 0.0;
+        for sigma in [0.001, 0.005, 0.01, 0.02, 0.05] {
+            let price = hw.caplet_price(fwd, t, s, sigma, &curve)?;
+            assert!(price > prev, "caplet price must increase in sigma");
+            prev = price;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn single_period_swaption_degenerates_to_caplet() -> Result<()> {
+        // Jamshidian with one payment must reproduce the bond-put caplet.
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        let (t, s) = (1.0, 2.0);
+        let tau = s - t;
+        for strike in [0.01, 0.03, 0.06] {
+            let swaption = hw.swaption_price(strike, t, &[(s, tau)], SIGMA, &curve)?;
+            let caplet = hw.caplet_price(strike, t, s, SIGMA, &curve)?;
+            assert!(
+                (swaption - caplet).abs() < 1e-12,
+                "single-period swaption {swaption} != caplet {caplet} at K={strike}"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn swaption_boundary_conditions() -> Result<()> {
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve);
+        let t_option = 1.0;
+        let schedule: Vec<(f64, f64)> = (1..=5).map(|i| (t_option + f64::from(i), 1.0)).collect();
+
+        // Empty schedule prices to zero.
+        assert!(hw.swaption_price(0.03, t_option, &[], SIGMA, &curve)?.abs() < 1e-15);
+
+        // sigma -> 0: payer swaption converges to the forward swap intrinsic
+        // max(P(0,t_opt) - sum c_i P(0,T_i), 0).
+        for strike in [0.01_f64, 0.05] {
+            let mut coupon_bond = 0.0;
+            let n = schedule.len();
+            for (i, &(t_i, tau_i)) in schedule.iter().enumerate() {
+                let c = if i == n - 1 {
+                    tau_i.mul_add(strike, 1.0)
+                } else {
+                    tau_i * strike
+                };
+                coupon_bond += c * curve.discount_factor_from_time(t_i)?;
+            }
+            let intrinsic = (curve.discount_factor_from_time(t_option)? - coupon_bond).max(0.0);
+            let price = hw.swaption_price(strike, t_option, &schedule, 1e-8, &curve)?;
+            assert!(
+                (price - intrinsic).abs() < 1e-9,
+                "low-vol swaption {price} should equal intrinsic {intrinsic} at K={strike}"
+            );
+        }
+
+        // Extreme strike: deep OTM payer swaption is worthless.
+        assert!(hw.swaption_price(0.20, t_option, &schedule, SIGMA, &curve)? < 1e-10);
+
+        // Monotone increasing in sigma at the money-ish strike.
+        let mut prev = 0.0;
+        for sigma in [0.002, 0.005, 0.01, 0.02] {
+            let price = hw.swaption_price(RATE, t_option, &schedule, sigma, &curve)?;
+            assert!(price > prev, "swaption price must increase in sigma");
+            prev = price;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn analytic_factor_limits() {
+        let curve = flat_curve().expect("curve");
+        let hw = HullWhite::new(ALPHA, &curve);
+        // B(t,t) = 0; B(t,inf) -> 1/alpha.
+        assert!(hw.B(2.0, 2.0).abs() < 1e-15);
+        assert!((hw.B(0.0, 1e6) - 1.0 / ALPHA).abs() < 1e-10);
+        // Var(t,t) = 0; long-horizon variance -> sigma^2 / (2 alpha).
+        assert!(hw.short_rate_variance(3.0, 3.0, SIGMA).abs() < 1e-18);
+        let limit = SIGMA * SIGMA / (2.0 * ALPHA);
+        assert!((hw.short_rate_variance(0.0, 1e6, SIGMA) - limit).abs() < 1e-15);
+        // ZCB vol is zero at t=0 (no time for randomness) and for T=t.
+        assert!(hw.zcb_price_volatility(SIGMA, 0.0, 5.0).abs() < 1e-15);
+        assert!(hw.zcb_price_volatility(SIGMA, 2.0, 2.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn generate_requires_volatility() {
+        let curve = flat_curve().expect("curve");
+        let hw = HullWhite::new(ALPHA, &curve);
+        let times = [1.0];
+        let draws = [0.0];
+        let mut scenario = [0.0];
+        assert!(hw.generate(&times, &draws, &mut scenario).is_err());
+    }
+
+    #[test]
+    fn generated_paths_reproduce_curve_and_moments() -> Result<()> {
+        // Strong correctness test of the simulation drift (phi) and variance:
+        //   E[exp(-int r dt)] must reproduce P(0,T);
+        //   E[r_T] ~ f(0,T) + V(T)/2;  Var[r_T] ~ short_rate_variance(0,T).
+        let curve = flat_curve()?;
+        let hw = HullWhite::new(ALPHA, &curve).with_constant_volatility(SIGMA);
+
+        let horizon = 2.0_f64;
+        let n_steps = 24_usize;
+        let n_paths = 20_000_i32;
+        let times: Vec<f64> = (1..=n_steps)
+            .map(|i| horizon * f64::from(u32::try_from(i).unwrap_or(u32::MAX)) / 24.0)
+            .collect();
+        let dt = horizon / 24.0;
+
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut draws = vec![0.0_f64; n_steps];
+        let mut scenario = vec![0.0_f64; n_steps];
+
+        let mut sum_df = 0.0;
+        let mut sum_r = 0.0;
+        let mut sum_r2 = 0.0;
+        for _ in 0..n_paths {
+            fill_std_normal(&mut rng, &mut draws);
+            hw.generate(&times, &draws, &mut scenario)?;
+            // Trapezoid integral of the short rate, starting from r(0) = f(0,0).
+            let mut integral = 0.5 * (RATE + scenario[0]) * dt;
+            for w in scenario.windows(2) {
+                integral += 0.5 * (w[0] + w[1]) * dt;
+            }
+            sum_df += (-integral).exp();
+            let r_end = scenario[scenario.len() - 1];
+            sum_r += r_end;
+            sum_r2 += r_end * r_end;
+            assert!(scenario.iter().all(|r| r.is_finite()));
+        }
+        let n = f64::from(n_paths);
+        let mc_df = sum_df / n;
+        let mean_r = sum_r / n;
+        let var_r = sum_r2 / n - mean_r * mean_r;
+
+        let curve_df = curve.discount_factor_from_time(horizon)?;
+        assert!(
+            (mc_df - curve_df).abs() / curve_df < 0.01,
+            "MC discount factor {mc_df} should reproduce curve {curve_df}"
+        );
+
+        let theo_var = hw.short_rate_variance(0.0, horizon, SIGMA);
+        let theo_mean = RATE + 0.5 * theo_var;
+        assert!(
+            (mean_r - theo_mean).abs() < 5e-4,
+            "mean short rate {mean_r} should be near {theo_mean}"
+        );
+        assert!(
+            (var_r - theo_var).abs() / theo_var < 0.05,
+            "short-rate variance {var_r} should be near {theo_var}"
+        );
+        Ok(())
+    }
+}

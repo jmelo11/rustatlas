@@ -193,4 +193,132 @@ mod tests {
         assert!(bachelier_call(fwd, strike, vol, 0.0).is_err());
         Ok(())
     }
+
+    // -----------------------------------------------------------------------
+    // Stress tests: boundary conditions, extreme values, parities
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn black_put_call_parity_across_ladder() -> Result<()> {
+        // C - P = F - K must hold exactly for every strike/vol/tau combination.
+        let fwd = 0.04;
+        for strike_mult in [0.25, 0.5, 1.0, 1.5, 4.0] {
+            for vol in [0.01, 0.2, 1.0, 3.0] {
+                for tau in [0.01, 1.0, 30.0] {
+                    let strike = fwd * strike_mult;
+                    let call = black_call(fwd, strike, vol, tau)?;
+                    let put = black_put(fwd, strike, vol, tau)?;
+                    assert!(
+                        (call - put - (fwd - strike)).abs() < 1e-14,
+                        "parity violated at K={strike}, vol={vol}, tau={tau}"
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn black_call_respects_no_arbitrage_bounds_and_extreme_vol_limits() -> Result<()> {
+        let fwd = 100.0;
+        for strike in [1.0, 50.0, 100.0, 150.0, 10_000.0] {
+            for vol in [1e-6, 0.2, 5.0] {
+                for tau in [1e-6, 1.0, 50.0] {
+                    let call = black_call(fwd, strike, vol, tau)?;
+                    let intrinsic = (fwd - strike).max(0.0);
+                    assert!(
+                        call >= intrinsic - 1e-10 && call <= fwd + 1e-10,
+                        "bounds violated: C={call} at K={strike}, vol={vol}, tau={tau}"
+                    );
+                }
+            }
+        }
+        // vol -> 0: call converges to intrinsic.
+        assert!((black_call(fwd, 80.0, 1e-9, 1.0)? - 20.0).abs() < 1e-9);
+        assert!(black_call(fwd, 120.0, 1e-9, 1.0)? < 1e-12);
+        // total variance -> inf: call converges to F, put to K.
+        assert!((black_call(fwd, 80.0, 40.0, 10.0)? - fwd).abs() < 1e-9);
+        assert!((black_put(fwd, 80.0, 40.0, 10.0)? - 80.0).abs() < 1e-9);
+        Ok(())
+    }
+
+    #[test]
+    fn black_call_is_monotone_in_strike_vol_and_time() -> Result<()> {
+        let fwd = 0.05;
+        // Decreasing in strike.
+        let mut prev = f64::INFINITY;
+        for strike_mult in [0.5, 0.75, 1.0, 1.25, 1.5] {
+            let c = black_call(fwd, fwd * strike_mult, 0.3, 2.0)?;
+            assert!(c < prev, "call must decrease in strike");
+            prev = c;
+        }
+        // Increasing in vol.
+        prev = 0.0;
+        for vol in [0.05, 0.1, 0.2, 0.5, 1.0] {
+            let c = black_call(fwd, fwd, vol, 2.0)?;
+            assert!(c > prev, "call must increase in vol");
+            prev = c;
+        }
+        // Increasing in tau (total variance).
+        prev = 0.0;
+        for tau in [0.1, 0.5, 1.0, 5.0, 20.0] {
+            let c = black_call(fwd, fwd, 0.2, tau)?;
+            assert!(c > prev, "ATM call must increase in tau");
+            prev = c;
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn black_errors_on_degenerate_inputs() {
+        assert!(black_call(0.04, 0.0, 0.2, 1.0).is_err());
+        assert!(black_call(0.04, -0.01, 0.2, 1.0).is_err());
+        assert!(black_call(0.04, 0.04, 0.0, 1.0).is_err());
+        assert!(black_call(0.04, 0.04, -0.2, 1.0).is_err());
+        assert!(black_call(0.04, 0.04, 0.2, 0.0).is_err());
+        assert!(black_put(0.04, 0.04, 0.2, -1.0).is_err());
+    }
+
+    #[test]
+    fn bachelier_put_call_symmetry_gives_parity() -> Result<()> {
+        // In the normal model the put is P(F,K) = C(K,F), so the parity
+        // C(F,K) - C(K,F) = F - K must hold, including for negative rates.
+        for (fwd, strike) in [(0.04, 0.03), (0.04, 0.06), (-0.01, 0.005), (-0.02, -0.03)] {
+            for vol in [0.001, 0.01, 0.10] {
+                for tau in [0.1, 2.0, 20.0] {
+                    let call = bachelier_call(fwd, strike, vol, tau)?;
+                    let reversed = bachelier_call(strike, fwd, vol, tau)?;
+                    assert!(
+                        (call - reversed - (fwd - strike)).abs() < 1e-14,
+                        "normal parity violated at F={fwd}, K={strike}, vol={vol}, tau={tau}"
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn bachelier_call_converges_to_intrinsic_at_low_vol() -> Result<()> {
+        // ITM: price -> F - K; OTM: price -> 0.
+        assert!((bachelier_call(0.05, 0.03, 1e-10, 1.0)? - 0.02).abs() < 1e-12);
+        assert!(bachelier_call(0.03, 0.05, 1e-10, 1.0)? < 1e-15);
+        Ok(())
+    }
+
+    #[test]
+    fn black_and_bachelier_agree_atm_for_small_total_vol() -> Result<()> {
+        // At the money, sigma_N ~= sigma_B * F for small total variance:
+        // both reduce to sigma * sqrt(tau) / sqrt(2 pi) (times F for Black).
+        let (fwd, tau) = (0.04, 0.5);
+        let sigma_b = 0.05;
+        let sigma_n = sigma_b * fwd;
+        let black = black_call(fwd, fwd, sigma_b, tau)?;
+        let normal = bachelier_call(fwd, fwd, sigma_n, tau)?;
+        assert!(
+            (black - normal).abs() / black < 1e-3,
+            "ATM Black {black} and Bachelier {normal} should agree for small vol"
+        );
+        Ok(())
+    }
 }

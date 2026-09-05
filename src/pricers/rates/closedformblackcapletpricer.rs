@@ -923,4 +923,147 @@ mod tests {
 
         Ok(())
     }
+
+    // -----------------------------------------------------------------------
+    // Stress tests
+    // -----------------------------------------------------------------------
+
+    fn price_capletfloorlet(
+        kind: CapletFloorletType,
+        strike: f64,
+        flat_vol: f64,
+        anchor_strike: f64,
+    ) -> Result<f64> {
+        let trade_date = Date::new(2025, 1, 2);
+        let start_date = trade_date + Period::new(6, TimeUnit::Months);
+        let end_date = start_date + Period::new(3, TimeUnit::Months);
+        let market_index = MarketIndex::TermSOFR3m;
+        let notional = 1_000_000.0;
+
+        let (market_data, _curve, _surface) = setup_caplet_market_data(
+            trade_date,
+            start_date,
+            end_date,
+            &market_index,
+            0.04,
+            flat_vol,
+            anchor_strike,
+        )?;
+        let instrument = CapletFloorlet::new(
+            "STRESS".to_string(),
+            market_index,
+            Currency::USD,
+            start_date,
+            start_date,
+            end_date,
+            end_date,
+            kind,
+            Strike::Absolute(strike),
+        );
+        let trade = CapletFloorletTrade::new(instrument, trade_date, notional, Side::LongReceive);
+        let provider = SimpleMarketDataProvider {
+            evaluation_date: trade_date,
+            market_data,
+        };
+        ClosedFormBlackCapletPricer::new()
+            .evaluate(&trade, &[Request::Value], &provider)?
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("Missing price".to_string()))
+    }
+
+    /// Caplet - Floorlet must equal the discounted FRA value
+    /// `N * alpha * df_pay * (F - K)` for every strike and vol.
+    #[test]
+    fn caplet_floorlet_parity_matches_fra_value() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let start_date = trade_date + Period::new(6, TimeUnit::Months);
+        let end_date = start_date + Period::new(3, TimeUnit::Months);
+        let notional = 1_000_000.0;
+        let rate_def = RateDefinition::default();
+
+        let discount_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(0.04),
+            RateDefinition::default(),
+        );
+        let alpha = rate_def.day_counter().year_fraction(start_date, end_date);
+        let df_pay = discount_curve.discount_factor(end_date)?.value();
+        let fwd = discount_curve
+            .forward_rate(
+                start_date,
+                end_date,
+                Compounding::Simple,
+                rate_def.frequency(),
+            )?
+            .value();
+
+        for strike in [0.02, 0.04, 0.07] {
+            for vol in [0.05, 0.20, 0.80] {
+                let caplet = price_capletfloorlet(CapletFloorletType::Caplet, strike, vol, strike)?;
+                let floorlet =
+                    price_capletfloorlet(CapletFloorletType::Floorlet, strike, vol, strike)?;
+                let fra = notional * alpha * df_pay * (fwd - strike);
+                assert!(
+                    (caplet - floorlet - fra).abs() < 1e-6,
+                    "parity violated at K={strike}, vol={vol}: C={caplet}, F={floorlet}, FRA={fra}"
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// Low vol drives an ITM caplet to its intrinsic (discounted FRA) value
+    /// and an OTM caplet to zero; extreme vol keeps the price below the
+    /// no-arbitrage cap `N * alpha * df_pay * F`.
+    #[test]
+    fn caplet_boundary_conditions_at_extreme_vols() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let start_date = trade_date + Period::new(6, TimeUnit::Months);
+        let end_date = start_date + Period::new(3, TimeUnit::Months);
+        let notional = 1_000_000.0;
+        let rate_def = RateDefinition::default();
+
+        let discount_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(0.04),
+            RateDefinition::default(),
+        );
+        let alpha = rate_def.day_counter().year_fraction(start_date, end_date);
+        let df_pay = discount_curve.discount_factor(end_date)?.value();
+        let fwd = discount_curve
+            .forward_rate(
+                start_date,
+                end_date,
+                Compounding::Simple,
+                rate_def.frequency(),
+            )?
+            .value();
+
+        // ITM caplet at tiny vol converges to intrinsic.
+        let itm_strike = 0.02;
+        let itm = price_capletfloorlet(CapletFloorletType::Caplet, itm_strike, 1e-6, itm_strike)?;
+        let intrinsic = notional * alpha * df_pay * (fwd - itm_strike);
+        assert!(
+            (itm - intrinsic).abs() / intrinsic < 1e-8,
+            "low-vol ITM caplet {itm} should equal intrinsic {intrinsic}"
+        );
+
+        // OTM caplet at tiny vol is worthless.
+        let otm = price_capletfloorlet(CapletFloorletType::Caplet, 0.08, 1e-6, 0.08)?;
+        assert!(otm.abs() < 1e-8, "low-vol OTM caplet {otm} should be zero");
+
+        // Extreme vol: price approaches (but never exceeds) the forward leg value.
+        let cap_bound = notional * alpha * df_pay * fwd;
+        let extreme = price_capletfloorlet(CapletFloorletType::Caplet, 0.04, 5.0, 0.04)?;
+        assert!(extreme > 0.9 * cap_bound && extreme <= cap_bound + 1e-6);
+
+        // Monotone in vol.
+        let mut prev = 0.0;
+        for vol in [0.05, 0.1, 0.2, 0.4, 0.8] {
+            let price = price_capletfloorlet(CapletFloorletType::Caplet, 0.04, vol, 0.04)?;
+            assert!(price > prev, "caplet price must increase in vol");
+            prev = price;
+        }
+        Ok(())
+    }
 }
