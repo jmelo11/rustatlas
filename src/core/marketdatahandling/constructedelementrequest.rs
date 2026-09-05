@@ -12,6 +12,11 @@ pub enum ConstructedElementRequest {
         /// Requested market index.
         market_index: MarketIndex,
     },
+    /// Request for a credit (survival) curve of a market index.
+    CreditCurve {
+        /// Requested market index.
+        market_index: MarketIndex,
+    },
     /// Request for volatility surface of a market index.
     VolatilitySurface {
         /// Requested market index.

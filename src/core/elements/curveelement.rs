@@ -118,3 +118,55 @@ impl DividendCurveElement {
         self.curve.borrow_mut()
     }
 }
+
+/// Struct representing a credit (survival) curve element.
+///
+/// Survival probabilities are exposed through the standard term-structure
+/// interface: `discount_factor(d)` returns the survival probability `S(d)`.
+#[derive(Clone)]
+pub struct CreditCurveElement {
+    market_index: MarketIndex,
+    recovery: f64,
+    curve: SharedElement<dyn ADCurveElement>,
+}
+
+impl CreditCurveElement {
+    /// Creates a new [`CreditCurveElement`] with the specified market index,
+    /// recovery rate, and survival curve.
+    #[must_use]
+    pub const fn new(
+        market_index: MarketIndex,
+        recovery: f64,
+        curve: SharedElement<dyn ADCurveElement>,
+    ) -> Self {
+        Self {
+            market_index,
+            recovery,
+            curve,
+        }
+    }
+
+    /// Returns the market index associated with the credit curve element.
+    #[must_use]
+    pub const fn market_index(&self) -> &MarketIndex {
+        &self.market_index
+    }
+
+    /// Returns the recovery rate assumed when the curve was bootstrapped.
+    #[must_use]
+    pub const fn recovery(&self) -> f64 {
+        self.recovery
+    }
+
+    /// Returns a reference to the survival curve.
+    #[must_use]
+    pub fn curve(&self) -> Ref<'_, dyn ADCurveElement> {
+        self.curve.borrow()
+    }
+
+    /// Returns a mutable reference to the survival curve.
+    #[must_use]
+    pub fn curve_mut(&mut self) -> RefMut<'_, dyn ADCurveElement> {
+        self.curve.borrow_mut()
+    }
+}

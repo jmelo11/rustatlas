@@ -2,7 +2,7 @@ use crate::{
     ad::dual::DualFwd,
     core::{
         elements::{
-            curveelement::{DiscountCurveElement, DividendCurveElement},
+            curveelement::{CreditCurveElement, DiscountCurveElement, DividendCurveElement},
             montecarlosimulationelement::MonteCarloSimulationElement,
             volatilitycubelement::VolatilityCubeElement,
             volatilitysurfaceelement::VolatilitySurfaceElement,
@@ -71,6 +71,20 @@ pub trait PricerState {
             .dividend_curves()
             .get(index)
             .ok_or_else(|| QSError::NotFoundErr(format!("Dividend curve for index {index}")))
+    }
+
+    /// Retrieves the credit (survival) curve element associated with the given market index, if available.
+    ///
+    /// ## Errors
+    ///
+    /// Returns an error if the market data response is not available or if the credit curve for the specified index is not found.
+    fn get_credit_curve_element(&self, index: &MarketIndex) -> Result<&CreditCurveElement> {
+        self.get_market_data_reponse()
+            .ok_or_else(|| QSError::NotFoundErr("MarketDataResponse not available.".into()))?
+            .constructed_elements()
+            .credit_curves()
+            .get(index)
+            .ok_or_else(|| QSError::NotFoundErr(format!("Credit curve for index {index}")))
     }
 
     /// Retrieves the exchange rate between two currencies from the exchange-rate store.
@@ -213,6 +227,13 @@ pub trait PricerState {
             for curve in md_response
                 .constructed_elements_mut()
                 .dividend_curves_mut()
+                .values_mut()
+            {
+                curve.curve_mut().put_pillars_on_tape();
+            }
+            for curve in md_response
+                .constructed_elements_mut()
+                .credit_curves_mut()
                 .values_mut()
             {
                 curve.curve_mut().put_pillars_on_tape();

@@ -160,6 +160,8 @@ pub enum QuoteInstrument {
     EuropeanSwaption,
     /// Cap/Floor (requires stripping).
     CapFloor,
+    /// Credit default swap (par-spread quote).
+    Cds,
 }
 
 /// # `OptionStrategy`
@@ -645,6 +647,27 @@ impl QuoteDetails {
             .with_tenor(tenor))
     }
 
+    /// `{Instrument}_{Entity}_{CCY}_{Tenor}` — e.g. `Cds_ACME_USD_5Y`
+    ///
+    /// The quote level is the CDS par spread (decimal, e.g. `0.0125`).
+    ///
+    /// # Errors
+    /// Returns an error if the identifier is too short or fields cannot be parsed.
+    pub fn parse_cds(id: &str, parts: &[&str]) -> Result<Self> {
+        if parts.len() < 4 {
+            return Err(QSError::InvalidValueErr(format!(
+                "Cds identifier too short: {id}"
+            )));
+        }
+        let entity = parts[1].to_string();
+        let currency: Currency = parts[2].parse()?;
+        let tenor = Period::from_str(parts[3])?;
+        Ok(Self::new(id.to_string(), QuoteInstrument::Cds)
+            .with_market_index(MarketIndex::Credit(entity))
+            .with_currency(currency)
+            .with_tenor(tenor))
+    }
+
     /// `{Instrument}_CCY_{PayIndex}_{RecvIndex}_{Tenor}[_{PayFreq}_{RecvFreq}]`
     /// e.g. `BasisSwap_USD_SOFR_TermSOFR3m_1Y` or
     /// `BasisSwap_USD_SOFR_TermSOFR3m_1Y_Quarterly_Quarterly`
@@ -1093,10 +1116,10 @@ impl QuoteDetails {
                 "Identifier has fewer than 3 parts: {s}"
             )));
         }
-        // Previous accepted identifiers:
-        // "FxForwardOutright" | "ForwardOutright"
-        // Added "FxOutrightForward" to support existing test identifiers
-        // and maintain backward compatibility.
+	// Previous accepted identifiers:
+	// "FxForwardOutright" | "ForwardOutright"
+	// Added "FxOutrightForward" to support existing test identifiers
+	// and maintain backward compatibility.
 
         match parts[0] {
             "OIS" => Self::parse_ois(s, &parts),
@@ -1108,21 +1131,24 @@ impl QuoteDetails {
             "Future" => Self::parse_future(s, &parts),
             "ConvexityAdjustment" => Self::parse_convexity_adjustment(s, &parts),
             "Swaption" => Self::parse_swaption(s, &parts),
-            "FxForwardOutright" | "FxOutrightForward" | "ForwardOutright" => {
-                Self::parse_outright_forward(s, &parts)
-            }
+            "FxForwardOutright" | "FxOutrightForward" | "ForwardOutright" => Self::parse_outright_forward(s, &parts),
             "FloatFloatCrossCurrencySwap" => Self::parse_float_float_cross_currency_swap(s, &parts),
             "FxForwardPoints" => Self::parse_forward_points(s, &parts),
             "EquityCall" => Self::parse_equity_call(s, &parts),
             "EquityPut" => Self::parse_equity_put(s, &parts),
             "FxCall" => Self::parse_fx_call(s, &parts),
             "FxPut" => Self::parse_fx_put(s, &parts),
+            "Cds" => Self::parse_cds(s, &parts),
             other => Err(QSError::InvalidValueErr(format!(
                 "Unknown instrument type in identifier: {other}"
             ))),
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// FromStr – parse a quote identifier into a QuoteDetails
+// ---------------------------------------------------------------------------
 
 impl std::str::FromStr for QuoteDetails {
     type Err = QSError;
@@ -1328,6 +1354,11 @@ impl Quote {
                 "Cannot build instrument for {:?} — it is a vol / auxiliary quote type",
                 QuoteInstrument::ConvexityAdjustment
             ))),
+            QuoteInstrument::Cds => Err(QSError::NotImplementedErr(
+                "CDS quotes are consumed by the credit curve bootstrapper, not the \
+                 calibration-instrument builder"
+                    .into(),
+            )),
         }
     }
 

@@ -18,7 +18,8 @@ use crate::{
     time::date::Date,
     utils::errors::Result,
     xva::{
-        aggregator::PfeAggregatorFactory, contigentclaim::ContingentClaim,
+        aggregator::{AggregatorBundle, PfeAggregatorFactory},
+        contigentclaim::ContingentClaim,
         visitors::marketmodel::MarketModel,
     },
 };
@@ -84,12 +85,23 @@ impl NpvCube {
     }
 }
 
+/// A single XVA measure computed for one netting set.
+#[derive(Clone, Debug)]
+pub struct XvaValue {
+    /// Netting set (client) identifier.
+    pub netting_set: String,
+    /// Measure name (e.g. `"CVA"`, `"FVA"`).
+    pub measure: String,
+    /// Value of the measure.
+    pub value: f64,
+}
+
 /// Result of an exposure evaluation.
 pub struct ExposureResult {
     /// Per-trade NPV cubes.
     pub cubes: Vec<NpvCube>,
-    /// Optional XVA values (populated only by `evaluate_with_xva`).
-    pub xva_values: Option<Vec<(String, f64)>>,
+    /// Optional per-netting-set XVA values (populated only by `evaluate_with_xva`).
+    pub xva_values: Option<Vec<XvaValue>>,
     /// Optional sensitivities (populated only by `evaluate_with_xva`).
     pub sensitivities: Option<Vec<(String, f64)>>,
 }
@@ -220,7 +232,8 @@ pub trait XvaModelSetup: Send + Sync {
 /// Per-thread accumulation result for the parallel AAD loop.
 struct ChunkResult {
     cubes: HashMap<String, Vec<Vec<f64>>>,
-    xva_accums: Vec<f64>,
+    /// `xva_accums[ns][a]` — accumulated value of aggregator `a` for netting set `ns`.
+    xva_accums: Vec<Vec<f64>>,
     sensitivities: Vec<(String, f64)>,
 }
 
@@ -230,27 +243,46 @@ struct ChunkResult {
 /// 1. `rewind_to_init_fwd` then `start_recording_fwd`.
 /// 2. `model_setup.with_model()` creates per-thread model with pillar
 ///    leaves on tape (pre-mark).
-/// 3. Inside the callback: create aggregators (pre-mark), `set_mark_fwd`,
-///    then path loop: `rewind_to_mark` -> `generate_path` -> evaluate
-///    claims -> aggregate -> `backward_to_mark`.
+/// 3. Inside the callback: create per-netting-set aggregators (pre-mark),
+///    `set_mark_fwd`, then path loop: `rewind_to_mark` -> `generate_path`
+///    -> evaluate claims -> aggregate -> `backward_to_mark`.
 /// 4. `propagate_mark_to_start` then read pillar + aggregator leaf adjoints.
 ///
-/// Returns NPV cubes, per-aggregator XVA values, and total sensitivities
-/// summed across threads.
+/// `factories` maps each netting-set id to the aggregators to apply to it
+/// (reflecting the client's CSA/credit terms). Netting sets without an
+/// entry contribute exposure cubes but no XVA values.
+///
+/// Returns NPV cubes, per-netting-set XVA values, and total sensitivities
+/// summed across threads. Aggregator leaf sensitivities are prefixed with
+/// the netting-set id (e.g. `"clientA.CVA.credit_spread"`).
 ///
 /// # Errors
 /// Returns an error if model construction, claim evaluation, or adjoint
 /// propagation fails for any thread or path.
-pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
+#[allow(clippy::too_many_lines)]
+pub fn evaluate_with_xva<S, H1, H2>(
     dates: &[Date],
-    trades: &HashMap<String, &[ContingentClaim], H>,
-    factories: &[&dyn PfeAggregatorFactory],
+    trades: &HashMap<String, &[ContingentClaim], H1>,
+    factories: &HashMap<String, Vec<Box<dyn PfeAggregatorFactory>>, H2>,
     model_setup: &S,
-) -> Result<ExposureResult> {
+) -> Result<ExposureResult>
+where
+    S: XvaModelSetup,
+    H1: std::hash::BuildHasher + Sync,
+    H2: std::hash::BuildHasher + Sync,
+{
     let n_paths = model_setup.n_paths();
     let n_dates = dates.len();
-    let n_aggs = factories.len();
-    let trade_ids: Vec<String> = trades.keys().cloned().collect();
+    let mut ns_ids: Vec<String> = trades.keys().cloned().collect();
+    ns_ids.sort();
+    let ns_ids = &ns_ids;
+
+    // Per-netting-set factory slices, aligned with `ns_ids`.
+    let ns_factories: Vec<&[Box<dyn PfeAggregatorFactory>]> = ns_ids
+        .iter()
+        .map(|id| factories.get(id).map_or(&[][..], Vec::as_slice))
+        .collect();
+    let ns_factories = &ns_factories;
 
     // Build chunks (one per rayon thread)
     let n_threads = rayon::current_num_threads();
@@ -272,18 +304,22 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
             Tape::start_recording_fwd();
 
             model_setup.with_model(dates, &mut |model, model_leaves| {
-                let bundles: Vec<_> = factories
+                // Per-netting-set aggregator bundles (pre-mark leaves).
+                let bundles: Vec<Vec<AggregatorBundle>> = ns_factories
                     .iter()
-                    .map(|f| f.create_aggregator(dates[0], dates))
+                    .map(|fs| {
+                        fs.iter()
+                            .map(|f| f.create_aggregator(dates[0], dates))
+                            .collect()
+                    })
                     .collect();
 
                 Tape::set_mark_fwd();
 
-                let mut xva_accums = vec![0.0_f64; n_aggs];
-                let mut cubes: HashMap<String, Vec<Vec<f64>>> = trade_ids
-                    .iter()
-                    .map(|id| (id.clone(), Vec::new()))
-                    .collect();
+                let mut xva_accums: Vec<Vec<f64>> =
+                    bundles.iter().map(|b| vec![0.0_f64; b.len()]).collect();
+                let mut cubes: HashMap<String, Vec<Vec<f64>>> =
+                    ns_ids.iter().map(|id| (id.clone(), Vec::new())).collect();
 
                 for i in start..end {
                     Tape::rewind_to_mark_fwd();
@@ -291,7 +327,10 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
                     if let Some(scenario) = model.generate_path(i) {
                         let mut total = DualFwd::zero();
 
-                        for (ns_id, claims) in trades {
+                        for (ns, ns_id) in ns_ids.iter().enumerate() {
+                            let Some(claims) = trades.get(ns_id.as_str()) else {
+                                continue;
+                            };
                             let mut ns_npvs = vec![DualFwd::zero(); n_dates];
                             let mut ns_npvs_f64 = vec![0.0_f64; n_dates];
                             for (d, date_responses) in scenario.iter().enumerate() {
@@ -310,10 +349,10 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
                                 cube.push(ns_npvs_f64);
                             }
 
-                            // Per-netting-set aggregation.
-                            for (a, bundle) in bundles.iter().enumerate() {
+                            // Per-netting-set aggregation with the client's own terms.
+                            for (a, bundle) in bundles[ns].iter().enumerate() {
                                 let c_p = bundle.aggregator.aggregate_path(&ns_npvs, dates);
-                                xva_accums[a] += c_p.value();
+                                xva_accums[ns][a] += c_p.value();
                                 total = total.add_val(c_p);
                             }
                         }
@@ -332,10 +371,12 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
                         sensitivities.push((label.clone(), adj.value()));
                     }
                 }
-                for bundle in &bundles {
-                    for (label, leaf) in &bundle.leaves {
-                        if let Ok(adj) = leaf.adjoint() {
-                            sensitivities.push((label.clone(), adj.value()));
+                for (ns_id, ns_bundles) in ns_ids.iter().zip(&bundles) {
+                    for bundle in ns_bundles {
+                        for (label, leaf) in &bundle.leaves {
+                            if let Ok(adj) = leaf.adjoint() {
+                                sensitivities.push((format!("{ns_id}.{label}"), adj.value()));
+                            }
                         }
                     }
                 }
@@ -349,7 +390,7 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
         })
         .collect::<Result<Vec<_>>>()?;
 
-    let result = reduce_chunk_results(&chunk_results, factories, dates, &trade_ids, n_aggs);
+    let result = reduce_chunk_results(&chunk_results, ns_ids, ns_factories, dates);
 
     Ok(result)
 }
@@ -357,21 +398,25 @@ pub fn evaluate_with_xva<S: XvaModelSetup, H: std::hash::BuildHasher + Sync>(
 /// Merges per-thread chunk results into a single [`ExposureResult`].
 fn reduce_chunk_results(
     chunk_results: &[ChunkResult],
-    factories: &[&dyn PfeAggregatorFactory],
+    ns_ids: &[String],
+    ns_factories: &[&[Box<dyn PfeAggregatorFactory>]],
     dates: &[Date],
-    trade_ids: &[String],
-    n_aggs: usize,
 ) -> ExposureResult {
-    let mut total_xva = vec![0.0_f64; n_aggs];
+    let mut total_xva: Vec<Vec<f64>> = ns_factories
+        .iter()
+        .map(|fs| vec![0.0_f64; fs.len()])
+        .collect();
     let mut sens_map: HashMap<String, f64> = HashMap::new();
-    let mut merged_cubes: HashMap<String, Vec<Vec<f64>>> = trade_ids
+    let mut merged_cubes: HashMap<String, Vec<Vec<f64>>> = ns_ids
         .iter()
         .map(|id| (id.clone(), Vec::new()))
         .collect();
 
     for chunk in chunk_results {
-        for (a, &v) in chunk.xva_accums.iter().enumerate() {
-            total_xva[a] += v;
+        for (ns, accums) in chunk.xva_accums.iter().enumerate() {
+            for (a, &v) in accums.iter().enumerate() {
+                total_xva[ns][a] += v;
+            }
         }
         for (label, adj) in &chunk.sensitivities {
             *sens_map.entry(label.clone()).or_insert(0.0) += adj;
@@ -383,10 +428,20 @@ fn reduce_chunk_results(
         }
     }
 
-    let xva_values: Vec<(String, f64)> = factories
+    let xva_values: Vec<XvaValue> = ns_ids
         .iter()
         .enumerate()
-        .map(|(a, f)| (f.name().to_string(), total_xva[a]))
+        .flat_map(|(ns, ns_id)| {
+            ns_factories[ns]
+                .iter()
+                .enumerate()
+                .map(move |(a, f)| (ns, ns_id.clone(), a, f.name().to_string()))
+        })
+        .map(|(ns, netting_set, a, measure)| XvaValue {
+            netting_set,
+            measure,
+            value: total_xva[ns][a],
+        })
         .collect();
 
     let sensitivities: Vec<(String, f64)> = sens_map.into_iter().collect();
@@ -818,8 +873,10 @@ mod tests {
             credit_spread,
             recovery,
             n_paths,
+            system_dfs: None,
         };
-        let factories: Vec<&dyn PfeAggregatorFactory> = vec![&cva_factory];
+        let mut factories: HashMap<String, Vec<Box<dyn PfeAggregatorFactory>>> = HashMap::new();
+        factories.insert("USD_IRS_5Y".to_string(), vec![Box::new(cva_factory)]);
         let mut trades: HashMap<String, &[_]> = HashMap::new();
         trades.insert("USD_IRS_5Y".to_string(), td.claims.as_slice());
         evaluate_with_xva(&td.sim_dates, &trades, &factories, &model_setup).unwrap()
@@ -839,9 +896,9 @@ mod tests {
             .as_ref()
             .unwrap()
             .iter()
-            .find(|(n, _)| n == "CVA")
+            .find(|v| v.measure == "CVA")
             .unwrap()
-            .1;
+            .value;
         let aad_sens: HashMap<String, f64> = result
             .sensitivities
             .as_ref()
@@ -883,7 +940,7 @@ mod tests {
             &td.sim_dates,
         );
         let bump_cs = (cva_cs_up - cva_cs_dn) / (2.0 * h);
-        let aad_cs = *aad_sens.get("CVA.credit_spread").unwrap_or(&0.0);
+        let aad_cs = *aad_sens.get("USD_IRS_5Y.CVA.credit_spread").unwrap_or(&0.0);
 
         let cva_rec_up = compute_cva_from_cube(
             cube,
@@ -902,7 +959,7 @@ mod tests {
             &td.sim_dates,
         );
         let bump_rec = (cva_rec_up - cva_rec_dn) / (2.0 * h);
-        let aad_rec = *aad_sens.get("CVA.recovery").unwrap_or(&0.0);
+        let aad_rec = *aad_sens.get("USD_IRS_5Y.CVA.recovery").unwrap_or(&0.0);
 
         for (label, aad_val, bump_val) in [
             ("CVA.credit_spread", aad_cs, bump_cs),

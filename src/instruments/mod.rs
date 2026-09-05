@@ -5,6 +5,8 @@
 
 /// Cashflow module.
 pub mod cashflows;
+/// Credit instruments module.
+pub mod credit;
 /// Equity instruments module.
 pub mod equity;
 /// Fixed Rate Bond Module

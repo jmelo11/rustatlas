@@ -11,7 +11,10 @@ use crate::{
     models::modelconfiguration::SimulationConfiguration,
     quotes::{fixingstore::FixingStore, fxstore::FxStore, quote::Level, quotestore::QuoteStore},
     rates::bootstrapping::{
-        bootstrapdiscountpolicy::BootstrapDiscountPolicy, curveconfiguration::CurveConfiguration,
+        bootstrapdiscountpolicy::BootstrapDiscountPolicy,
+        creditcurvebootstrapper::CreditCurveBootstrapper,
+        creditcurveconfiguration::CreditCurveConfiguration,
+        curveconfiguration::CurveConfiguration,
         multicurvebootstrapper::MultiCurveBootstrapper,
     },
     simulations::simulationbuilder::SimulationBuilder,
@@ -37,6 +40,8 @@ pub struct PricingContext {
     fx_store: FxStore,
     /// Curve specifications for curve construction.    
     curve_configurations: Vec<CurveConfiguration>,
+    /// Credit (survival) curve specifications.
+    credit_curve_configurations: Vec<CreditCurveConfiguration>,
     /// Volatility surface specifications.
     volatility_surface_configurations: Vec<VolatilitySurfaceConfiguration>,
     /// Volatility cube specifications.
@@ -60,6 +65,7 @@ impl PricingContext {
             fixing_store: FixingStore::default(),
             fx_store: FxStore::default(),
             curve_configurations: Vec::new(),
+            credit_curve_configurations: Vec::new(),
             volatility_surface_configurations: Vec::new(),
             volatility_cube_configurations: Vec::new(),
             simulation_configurations: Vec::new(),
@@ -139,6 +145,16 @@ impl PricingContext {
         self
     }
 
+    /// Sets the credit curve configurations for bootstrapping.
+    #[must_use]
+    pub fn with_credit_curve_configurations(
+        mut self,
+        configs: Vec<CreditCurveConfiguration>,
+    ) -> Self {
+        self.credit_curve_configurations = configs;
+        self
+    }
+
     /// Sets the volatility surface configurations.
     #[must_use]
     pub fn with_volatility_surface_configurations(
@@ -167,6 +183,36 @@ impl PricingContext {
     ) -> Self {
         self.simulation_configurations = configs;
         self
+    }
+
+    /// Returns the curve configurations used for bootstrapping.
+    #[must_use]
+    pub const fn curve_configurations(&self) -> &Vec<CurveConfiguration> {
+        &self.curve_configurations
+    }
+
+    /// Returns the credit curve configurations used for bootstrapping.
+    #[must_use]
+    pub const fn credit_curve_configurations(&self) -> &Vec<CreditCurveConfiguration> {
+        &self.credit_curve_configurations
+    }
+
+    /// Returns the volatility surface configurations.
+    #[must_use]
+    pub const fn volatility_surface_configurations(&self) -> &Vec<VolatilitySurfaceConfiguration> {
+        &self.volatility_surface_configurations
+    }
+
+    /// Returns the volatility cube configurations.
+    #[must_use]
+    pub const fn volatility_cube_configurations(&self) -> &Vec<VolatilityCubeConfiguration> {
+        &self.volatility_cube_configurations
+    }
+
+    /// Returns the model-driven simulation configurations.
+    #[must_use]
+    pub const fn simulation_configurations(&self) -> &Vec<SimulationConfiguration> {
+        &self.simulation_configurations
     }
 
     /// Returns the current reference date.
@@ -212,6 +258,23 @@ impl PricingContext {
             self.constructed_elements
                 .discount_curves_mut()
                 .insert(index.clone(), curve);
+        }
+
+        // Bootstrap credit (survival) curves. Runs after the discount curves
+        // since CDS pillar instruments are discounted with them.
+        if !self.credit_curve_configurations.is_empty() {
+            let credit_bootstrapper =
+                CreditCurveBootstrapper::new(self.credit_curve_configurations.clone());
+            let credit_curves = credit_bootstrapper.bootstrap(
+                &self.quote_store,
+                Level::Mid,
+                self.constructed_elements.discount_curves(),
+            )?;
+            for (index, curve) in credit_curves {
+                self.constructed_elements
+                    .credit_curves_mut()
+                    .insert(index, curve);
+            }
         }
 
         // Build volatility surfaces.
@@ -266,6 +329,7 @@ impl MarketDataProvider for PricingContext {
     }
 
     // this needs to be refactored
+    #[allow(clippy::too_many_lines)]
     fn handle_request(&self, request: &MarketDataRequest) -> Result<MarketData> {
         // 1. Resolve constructed elements from the internal store.
         let mut constructed_elements = ConstructedElementStore::default();
@@ -296,6 +360,19 @@ impl MarketDataProvider for PricingContext {
                             })?;
                         constructed_elements
                             .dividend_curves_mut()
+                            .insert(market_index.clone(), curve.clone());
+                    }
+                    ConstructedElementRequest::CreditCurve { market_index } => {
+                        let curve = self
+                            .constructed_elements
+                            .credit_curve(market_index)
+                            .ok_or_else(|| {
+                                QSError::NotFoundErr(format!(
+                                    "Credit curve not found for index {market_index}"
+                                ))
+                            })?;
+                        constructed_elements
+                            .credit_curves_mut()
                             .insert(market_index.clone(), curve.clone());
                     }
                     ConstructedElementRequest::VolatilitySurface { market_index } => {

@@ -1,0 +1,275 @@
+//! Market data and configuration wrappers.
+//!
+//! Every class here wraps the corresponding `quantsupport` struct directly
+//! and is created by deserializing dicts (`from_dict`) or JSON files
+//! (`from_json`) through the library's own serde implementations — no
+//! parallel struct definitions.
+
+use pyo3::prelude::*;
+use quantsupport::prelude::{
+    CurveConfiguration as QsCurveConfiguration, DualFwd, FixingStore as QsFixingStore,
+    FxRateRecord, FxStore as QsFxStore, QuoteStore as QsQuoteStore, QuoteStoreRecords,
+    SimulationConfiguration as QsSimulationConfiguration,
+    VolatilityCubeConfiguration as QsVolatilityCubeConfiguration,
+    VolatilitySurfaceConfiguration as QsVolatilitySurfaceConfiguration,
+};
+use serde::de::DeserializeOwned;
+
+use crate::conv::{extract_currency, from_json_file, from_py, qs_err};
+use crate::QuantSupportError;
+
+/// Accepts a JSON value that is either a list of `T`, a single `T`, or an
+/// object wrapping a single list (e.g. `{"curve_specs": [...]}`).
+fn list_from_value<T: DeserializeOwned>(value: serde_json::Value, what: &str) -> PyResult<Vec<T>> {
+    let parse = |v: serde_json::Value| -> Result<Vec<T>, serde_json::Error> {
+        match v {
+            serde_json::Value::Array(_) => serde_json::from_value(v),
+            serde_json::Value::Object(ref map)
+                if map.len() == 1 && map.values().next().is_some_and(serde_json::Value::is_array) =>
+            {
+                let inner = v.as_object().unwrap().values().next().unwrap().clone();
+                serde_json::from_value(inner)
+            }
+            _ => serde_json::from_value::<T>(v).map(|one| vec![one]),
+        }
+    };
+    parse(value).map_err(|e| QuantSupportError::new_err(format!("invalid {what}: {e}")))
+}
+
+/// Defines a Python wrapper class around a serde-deserializable library
+/// configuration struct, with `from_dict` (single) and `from_json` (list)
+/// constructors.
+macro_rules! config_wrapper {
+    ($name:ident, $inner:ty, $pyname:literal, $what:literal) => {
+        #[doc = concat!("Wrapper around the library's `", stringify!($inner), "`.")]
+        #[pyclass(name = $pyname)]
+        #[derive(Clone)]
+        pub struct $name {
+            pub inner: $inner,
+        }
+
+        #[pymethods]
+        impl $name {
+            /// Builds a single configuration from a dict.
+            #[staticmethod]
+            fn from_dict(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+                Ok(Self {
+                    inner: from_py(obj, $what)?,
+                })
+            }
+
+            /// Loads configurations from a JSON file. Accepts a list, a
+            /// single object, or an object wrapping a single list (e.g.
+            /// `{"curve_specs": [...]}`). Always returns a list.
+            #[staticmethod]
+            fn from_json(path: &str) -> PyResult<Vec<Self>> {
+                let value: serde_json::Value = from_json_file(path, $what)?;
+                Ok(list_from_value::<$inner>(value, $what)?
+                    .into_iter()
+                    .map(|inner| Self { inner })
+                    .collect())
+            }
+
+            /// Returns the configuration as a dict.
+            fn to_dict<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+                pythonize::pythonize(py, &self.inner)
+                    .map_err(|e| QuantSupportError::new_err(format!("cannot serialize {}: {e}", $what)))
+            }
+
+            fn __repr__(&self) -> String {
+                format!(
+                    "{}({})",
+                    $pyname,
+                    serde_json::to_string(&self.inner).unwrap_or_default()
+                )
+            }
+        }
+    };
+}
+
+config_wrapper!(
+    CurveConfiguration,
+    QsCurveConfiguration,
+    "CurveConfiguration",
+    "curve configuration"
+);
+config_wrapper!(
+    VolatilitySurfaceConfiguration,
+    QsVolatilitySurfaceConfiguration,
+    "VolatilitySurfaceConfiguration",
+    "volatility surface configuration"
+);
+config_wrapper!(
+    VolatilityCubeConfiguration,
+    QsVolatilityCubeConfiguration,
+    "VolatilityCubeConfiguration",
+    "volatility cube configuration"
+);
+config_wrapper!(
+    SimulationConfiguration,
+    QsSimulationConfiguration,
+    "SimulationConfiguration",
+    "simulation configuration"
+);
+
+/// Market quotes with a reference date.
+///
+/// Created from `{"reference_date": "YYYY-MM-DD", "quotes": [{"identifier": ..., "mid": ...}]}`.
+#[pyclass(name = "QuoteStore")]
+#[derive(Clone)]
+pub struct QuoteStore {
+    pub inner: QsQuoteStore,
+}
+
+#[pymethods]
+impl QuoteStore {
+    /// Builds a quote store from a dict.
+    #[staticmethod]
+    fn from_dict(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let records: QuoteStoreRecords = from_py(obj, "quotes")?;
+        Ok(Self {
+            inner: QsQuoteStore::try_from(records).map_err(qs_err)?,
+        })
+    }
+
+    /// Loads a quote store from a JSON file.
+    #[staticmethod]
+    fn from_json(path: &str) -> PyResult<Self> {
+        let records: QuoteStoreRecords = from_json_file(path, "quotes")?;
+        Ok(Self {
+            inner: QsQuoteStore::try_from(records).map_err(qs_err)?,
+        })
+    }
+
+    /// Reference date.
+    #[getter]
+    fn reference_date(&self) -> crate::time::Date {
+        crate::time::Date {
+            inner: self.inner.reference_date(),
+        }
+    }
+
+    /// Sorted quote identifiers.
+    fn identifiers(&self) -> Vec<String> {
+        let mut ids: Vec<String> = self.inner.quotes().keys().cloned().collect();
+        ids.sort();
+        ids
+    }
+
+    /// All quotes as a DataFrame with columns `identifier`, `mid`, `bid`,
+    /// `ask`, sorted by identifier.
+    fn to_dataframe<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        type QuoteRow<'a> = (&'a String, Option<f64>, Option<f64>, Option<f64>);
+        let mut rows: Vec<QuoteRow<'_>> = self
+            .inner
+            .quotes()
+            .iter()
+            .map(|(id, q)| (id, q.levels().mid(), q.levels().bid(), q.levels().ask()))
+            .collect();
+        rows.sort_by(|a, b| a.0.cmp(b.0));
+        let ids: Vec<String> = rows.iter().map(|r| r.0.clone()).collect();
+        let mids: Vec<Option<f64>> = rows.iter().map(|r| r.1).collect();
+        let bids: Vec<Option<f64>> = rows.iter().map(|r| r.2).collect();
+        let asks: Vec<Option<f64>> = rows.iter().map(|r| r.3).collect();
+        crate::conv::dataframe(
+            py,
+            &[
+                ("identifier", ids.into_pyobject(py)?.into_any()),
+                ("mid", mids.into_pyobject(py)?.into_any()),
+                ("bid", bids.into_pyobject(py)?.into_any()),
+                ("ask", asks.into_pyobject(py)?.into_any()),
+            ],
+        )
+    }
+
+    fn __len__(&self) -> usize {
+        self.inner.quotes().len()
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "QuoteStore(reference_date='{}', quotes={})",
+            self.inner.reference_date(),
+            self.inner.quotes().len()
+        )
+    }
+}
+
+/// Historical index fixings.
+#[pyclass(name = "FixingStore")]
+#[derive(Clone)]
+pub struct FixingStore {
+    pub inner: QsFixingStore,
+}
+
+#[pymethods]
+impl FixingStore {
+    /// Builds a fixing store from a dict.
+    #[staticmethod]
+    fn from_dict(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+        Ok(Self {
+            inner: from_py(obj, "fixings")?,
+        })
+    }
+
+    /// Loads a fixing store from a JSON file.
+    #[staticmethod]
+    fn from_json(path: &str) -> PyResult<Self> {
+        Ok(Self {
+            inner: from_json_file(path, "fixings")?,
+        })
+    }
+
+    fn __repr__(&self) -> String {
+        "FixingStore(...)".to_string()
+    }
+}
+
+/// FX spot rates. Records are `{"base": "CLP", "quote": "USD", "rate": 0.00111}`,
+/// meaning 1 base = rate quote.
+#[pyclass(name = "FxStore")]
+#[derive(Clone, Default)]
+pub struct FxStore {
+    pub inner: QsFxStore,
+}
+
+#[pymethods]
+impl FxStore {
+    /// Creates an empty FX store.
+    #[new]
+    fn new() -> Self {
+        Self::default()
+    }
+
+    /// Builds an FX store from a list of rate records.
+    #[staticmethod]
+    fn from_dict(obj: &Bound<'_, PyAny>) -> PyResult<Self> {
+        let records: Vec<FxRateRecord> = from_py(obj, "fx rates")?;
+        Ok(Self {
+            inner: QsFxStore::from_records(records),
+        })
+    }
+
+    /// Loads FX rate records from a JSON file (a list of records).
+    #[staticmethod]
+    fn from_json(path: &str) -> PyResult<Self> {
+        let records: Vec<FxRateRecord> = from_json_file(path, "fx rates")?;
+        Ok(Self {
+            inner: QsFxStore::from_records(records),
+        })
+    }
+
+    /// Adds a spot rate: 1 `base` = `rate` `quote`.
+    fn add(&mut self, base: &Bound<'_, PyAny>, quote: &Bound<'_, PyAny>, rate: f64) -> PyResult<()> {
+        self.inner.add_fx_rate(
+            extract_currency(base)?,
+            extract_currency(quote)?,
+            DualFwd::from(rate),
+        );
+        Ok(())
+    }
+
+    fn __repr__(&self) -> String {
+        "FxStore(...)".to_string()
+    }
+}

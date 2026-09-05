@@ -5,16 +5,21 @@
 //! netting arrangement) and carries its own [`DiscountPolicy`] reflecting
 //! the CSA collateral terms.
 
-use crate::{core::collateral::DiscountPolicy, xva::contigentclaim::ContingentClaim};
+use crate::{
+    core::collateral::DiscountPolicy,
+    xva::{contigentclaim::ContingentClaim, csa::CsaTerms},
+};
 
 /// A group of contingent claims under a single netting agreement.
 ///
 /// Each netting set carries its own [`DiscountPolicy`] which determines
 /// the discount curve used for each claim based on the collateral terms
-/// of the CSA.
+/// of the CSA. When built from [`CsaTerms`], the netting set also carries
+/// the client's credit/funding parameters used by the XVA engine.
 pub struct NettingSet {
     claims: Vec<ContingentClaim>,
     discount_policy: Box<dyn DiscountPolicy>,
+    csa_terms: Option<CsaTerms>,
 }
 
 impl NettingSet {
@@ -24,7 +29,28 @@ impl NettingSet {
         Self {
             claims,
             discount_policy,
+            csa_terms: None,
         }
+    }
+
+    /// Creates a netting set from claims and the client's [`CsaTerms`].
+    ///
+    /// The discount policy is derived from the collateral terms, and the
+    /// credit/funding parameters are stored for use by the XVA engine.
+    #[must_use]
+    pub fn with_csa_terms(claims: Vec<ContingentClaim>, csa_terms: CsaTerms) -> Self {
+        let policy = csa_terms.discount_policy();
+        Self {
+            claims,
+            discount_policy: Box::new(policy),
+            csa_terms: Some(csa_terms),
+        }
+    }
+
+    /// Returns the client's CSA terms, if the set was built from them.
+    #[must_use]
+    pub const fn csa_terms(&self) -> Option<&CsaTerms> {
+        self.csa_terms.as_ref()
     }
 
     /// Returns the claims in this netting set.

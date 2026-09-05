@@ -15,7 +15,9 @@ pub use crate::{
             DiscountPolicy, Discountable, FixedIncomeDiscountPolicy, SingleCurveCSADiscountPolicy,
         },
         elements::{
-            curveelement::{ADCurveElement, DiscountCurveElement, DividendCurveElement},
+            curveelement::{
+                ADCurveElement, CreditCurveElement, DiscountCurveElement, DividendCurveElement,
+            },
             montecarlosimulationelement::{
                 ADMonteCarloSimulationElement, MonteCarloSimulationElement,
             },
@@ -58,6 +60,7 @@ pub use crate::{
             leg::Leg,
             makeleg::{MakeLeg, PaymentStructure, RateType},
         },
+        credit::creditdefaultswap::{CdsTrade, CreditDefaultSwap},
         equity::{
             equityeuropeanoption::{
                 EquityEuropeanOption, EquityEuropeanOptionTrade, EuroOptionType,
@@ -125,6 +128,7 @@ pub use crate::{
     },
     pricers::{
         cashflows::discountedcashflowpricer::DiscountedCashflowPricer,
+        credit::cdspricer::CdsPricer,
         equity::{
             blackeuropeanoptionpricer::BlackEuropeanOptionPricer,
             blackmceuropeanoptionpricer::BlackMCEuropeanOptionPricer,
@@ -138,14 +142,16 @@ pub use crate::{
     },
     quotes::{
         fixingstore::FixingStore,
-        fxstore::FxStore,
+        fxstore::{FxRateRecord, FxStore},
         quote::{Level, Quote, QuoteDetails, QuoteInstrument, QuoteLevels},
         quoteselector::QuoteSelector,
-        quotestore::QuoteStore,
+        quotestore::{QuoteRecord, QuoteStore, QuoteStoreRecords},
     },
     rates::{
         bootstrapping::{
             bootstrapdiscountpolicy::BootstrapDiscountPolicy,
+            creditcurvebootstrapper::CreditCurveBootstrapper,
+            creditcurveconfiguration::CreditCurveConfiguration,
             curveconfiguration::CurveConfiguration, multicurvebootstrapper::MultiCurveBootstrapper,
         },
         compounding::Compounding,
@@ -162,6 +168,7 @@ pub use crate::{
     },
     time::{
         calendar::Calendar,
+        calendars::traits::{ImplCalendar, IsCalendar},
         date::{Date, NaiveDateExt},
         daycounter::DayCounter,
         enums::{
@@ -192,14 +199,19 @@ pub use crate::{
         },
     },
     xva::{
+        aggregator::{
+            CreditCurveCvaFactory, CvaAggregator, CvaFactory, DvaAggregator, DvaFactory,
+            FvaAggregator, FvaFactory, PfeAggregator, PfeAggregatorFactory,
+        },
         contigentclaim::ContingentClaim,
+        csa::CsaTerms,
         engine::{XvaEngine, XvaEngineConfig},
         makecontigentclaim::IntoContingentClaims,
         nettingset::NettingSet,
         visitors::{
             claimcompressionpreprocessor::ClaimCompressionPreprocessor,
             claimpreprocessor::ClaimPreprocessor,
-            exposureevaluator::{ExposureEvaluator, ExposureResult, NpvCube},
+            exposureevaluator::{ExposureEvaluator, ExposureResult, NpvCube, XvaValue},
             fixingpreprocessor::FixingPreprocessor,
             marketmodel::MarketModel,
             preprocessorexecutor::PreprocessorExecutor,

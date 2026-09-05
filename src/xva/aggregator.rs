@@ -57,6 +57,9 @@ pub struct CvaAggregator<T: Scalar> {
     lgd: T,
     /// Survival probabilities at each simulation date: `S(t_d) = exp(−λ t_d)`.
     survival_probs: Vec<T>,
+    /// System-curve discount factors `DF(0, t_d)` at each simulation date.
+    /// When absent, exposures are aggregated undiscounted.
+    system_discounts: Option<Vec<f64>>,
     /// `1 / n_paths`.
     inv_n: f64,
 }
@@ -87,8 +90,28 @@ impl<T: Scalar> CvaAggregator<T> {
         Self {
             lgd,
             survival_probs,
+            system_discounts: None,
             inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
         }
+    }
+
+    /// Creates a CVA aggregator directly from survival probabilities at each
+    /// simulation date (e.g. interpolated from a bootstrapped credit curve).
+    pub fn from_survival_probs(recovery: T, survival_probs: Vec<T>, n_paths: usize) -> Self {
+        Self {
+            lgd: T::one().sub_val(recovery),
+            survival_probs,
+            system_discounts: None,
+            inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
+        }
+    }
+
+    /// Sets the system-curve discount factors `DF(0, t_d)` applied to the
+    /// exposures so that CVA is expressed in present-value terms.
+    #[must_use]
+    pub fn with_system_discounts(mut self, discounts: Vec<f64>) -> Self {
+        self.system_discounts = Some(discounts);
+        self
     }
 }
 
@@ -101,7 +124,10 @@ impl<T: Scalar> PfeAggregator<T> for CvaAggregator<T> {
         let mut c_p = T::zero();
         let n = dates.len().min(npvs.len());
         for (d, npv) in npvs.iter().enumerate().take(n).skip(1) {
-            let exposure = npv.max_val(T::zero());
+            let mut exposure = npv.max_val(T::zero());
+            if let Some(dfs) = &self.system_discounts {
+                exposure = exposure.mul_val(T::scalar(dfs[d]));
+            }
             let delta_pd = self.survival_probs[d - 1].sub_val(self.survival_probs[d]);
             c_p = c_p.add_val(exposure.mul_val(delta_pd));
         }
@@ -113,6 +139,7 @@ impl<T: Scalar> PfeAggregator<T> for CvaAggregator<T> {
 pub struct DvaAggregator<T: Scalar> {
     lgd: T,
     survival_probs: Vec<T>,
+    system_discounts: Option<Vec<f64>>,
     inv_n: f64,
 }
 
@@ -137,8 +164,17 @@ impl<T: Scalar> DvaAggregator<T> {
         Self {
             lgd,
             survival_probs,
+            system_discounts: None,
             inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
         }
+    }
+
+    /// Sets the system-curve discount factors `DF(0, t_d)` applied to the
+    /// exposures so that DVA is expressed in present-value terms.
+    #[must_use]
+    pub fn with_system_discounts(mut self, discounts: Vec<f64>) -> Self {
+        self.system_discounts = Some(discounts);
+        self
     }
 }
 
@@ -151,7 +187,10 @@ impl<T: Scalar> PfeAggregator<T> for DvaAggregator<T> {
         let mut d_p = T::zero();
         let n = dates.len().min(npvs.len());
         for (d, npv) in npvs.iter().enumerate().take(n).skip(1) {
-            let exposure = npv.neg_val().max_val(T::zero());
+            let mut exposure = npv.neg_val().max_val(T::zero());
+            if let Some(dfs) = &self.system_discounts {
+                exposure = exposure.mul_val(T::scalar(dfs[d]));
+            }
             let delta_pd = self.survival_probs[d - 1].sub_val(self.survival_probs[d]);
             d_p = d_p.add_val(exposure.mul_val(delta_pd));
         }
@@ -162,6 +201,7 @@ impl<T: Scalar> PfeAggregator<T> for DvaAggregator<T> {
 /// Funding valuation adjustment aggregator.
 pub struct FvaAggregator<T: Scalar> {
     funding_spread: T,
+    system_discounts: Option<Vec<f64>>,
     inv_n: f64,
 }
 
@@ -169,8 +209,17 @@ impl<T: Scalar> FvaAggregator<T> {
     pub fn new(funding_spread: T, n_paths: usize) -> Self {
         Self {
             funding_spread,
+            system_discounts: None,
             inv_n: 1.0 / f64::from(u32::try_from(n_paths).unwrap_or(u32::MAX)),
         }
+    }
+
+    /// Sets the system-curve discount factors `DF(0, t_d)` applied to the
+    /// funding cost so that FVA is expressed in present-value terms.
+    #[must_use]
+    pub fn with_system_discounts(mut self, discounts: Vec<f64>) -> Self {
+        self.system_discounts = Some(discounts);
+        self
     }
 }
 
@@ -184,7 +233,11 @@ impl<T: Scalar> PfeAggregator<T> for FvaAggregator<T> {
         let mut f_p = T::zero();
         for d in 1..dates.len().min(npvs.len()) {
             let dt = dc.year_fraction(dates[d - 1], dates[d]);
-            f_p = f_p.add_val(npvs[d].mul_val(self.funding_spread).mul_val(T::scalar(dt)));
+            let mut term = npvs[d].mul_val(self.funding_spread).mul_val(T::scalar(dt));
+            if let Some(dfs) = &self.system_discounts {
+                term = term.mul_val(T::scalar(dfs[d]));
+            }
+            f_p = f_p.add_val(term);
         }
         f_p.mul_val(T::scalar(self.inv_n))
     }
@@ -195,6 +248,8 @@ pub struct CvaFactory {
     pub credit_spread: f64,
     pub recovery: f64,
     pub n_paths: usize,
+    /// System-curve discount factors `DF(0, t_d)` at the simulation dates.
+    pub system_dfs: Option<Vec<f64>>,
 }
 
 impl PfeAggregatorFactory for CvaFactory {
@@ -205,13 +260,132 @@ impl PfeAggregatorFactory for CvaFactory {
     fn create_aggregator(&self, ref_date: Date, dates: &[Date]) -> AggregatorBundle {
         let cs = DualFwd::new(self.credit_spread);
         let rec = DualFwd::new(self.recovery);
-        let agg = CvaAggregator::new(cs, rec, self.n_paths, ref_date, dates);
+        let mut agg = CvaAggregator::new(cs, rec, self.n_paths, ref_date, dates);
+        if let Some(dfs) = &self.system_dfs {
+            agg = agg.with_system_discounts(dfs.clone());
+        }
         AggregatorBundle {
             aggregator: Box::new(agg),
             leaves: vec![
                 ("CVA.credit_spread".to_string(), cs),
                 ("CVA.recovery".to_string(), rec),
             ],
+        }
+    }
+}
+
+/// Factory for a CVA aggregator driven by a bootstrapped credit curve.
+///
+/// Survival probabilities at the simulation dates are log-linearly
+/// interpolated between the curve pillars (flat-hazard extrapolation beyond
+/// the last pillar). The pillar survivals become tracked tape leaves so that
+/// the backward pass yields CVA sensitivities to the original CDS quotes
+/// (labels are prefixed with `"CVA."`).
+pub struct CreditCurveCvaFactory {
+    /// Pillar dates of the credit curve (strictly after the reference date).
+    pub pillar_dates: Vec<Date>,
+    /// Survival probabilities at the pillar dates.
+    pub pillar_survivals: Vec<f64>,
+    /// Labels of the pillar quotes (e.g. CDS quote identifiers).
+    pub pillar_labels: Vec<String>,
+    /// Counterparty recovery rate.
+    pub recovery: f64,
+    /// Number of Monte Carlo paths.
+    pub n_paths: usize,
+    /// Day counter of the credit curve.
+    pub day_counter: DayCounter,
+    /// System-curve discount factors `DF(0, t_d)` at the simulation dates.
+    pub system_dfs: Option<Vec<f64>>,
+}
+
+impl CreditCurveCvaFactory {
+    /// Log-linear survival interpolation at time `t` (year fraction from the
+    /// reference date), with flat-hazard extrapolation beyond the last pillar.
+    fn survival_at(t: f64, pillar_times: &[f64], leaves: &[DualFwd]) -> DualFwd {
+        let n = pillar_times.len();
+        if t <= 0.0 || n == 0 {
+            return DualFwd::scalar(1.0);
+        }
+        // Before or at the first pillar: interpolate between (0, S=1) and t_1.
+        if t <= pillar_times[0] {
+            let w = t / pillar_times[0];
+            return leaves[0].ln().mul_val(DualFwd::scalar(w)).exp();
+        }
+        // Between pillars.
+        for k in 1..n {
+            if t <= pillar_times[k] {
+                let w = (t - pillar_times[k - 1]) / (pillar_times[k] - pillar_times[k - 1]);
+                let ln_s = leaves[k - 1].ln().add_val(
+                    leaves[k]
+                        .ln()
+                        .sub_val(leaves[k - 1].ln())
+                        .mul_val(DualFwd::scalar(w)),
+                );
+                return ln_s.exp();
+            }
+        }
+        // Beyond the last pillar: flat hazard from the last bucket.
+        let last = n - 1;
+        let (t_prev, ln_prev) = if n >= 2 {
+            (pillar_times[last - 1], leaves[last - 1].ln())
+        } else {
+            (0.0, DualFwd::scalar(0.0))
+        };
+        let dt_bucket = pillar_times[last] - t_prev;
+        let hazard = ln_prev
+            .sub_val(leaves[last].ln())
+            .div_val(DualFwd::scalar(dt_bucket));
+        leaves[last]
+            .ln()
+            .sub_val(hazard.mul_val(DualFwd::scalar(t - pillar_times[last])))
+            .exp()
+    }
+}
+
+impl PfeAggregatorFactory for CreditCurveCvaFactory {
+    fn name(&self) -> &'static str {
+        "CVA"
+    }
+
+    fn create_aggregator(&self, ref_date: Date, dates: &[Date]) -> AggregatorBundle {
+        // Tracked leaves: one per pillar survival + recovery.
+        let pillar_leaves: Vec<DualFwd> = self
+            .pillar_survivals
+            .iter()
+            .map(|s| DualFwd::new(*s))
+            .collect();
+        let rec = DualFwd::new(self.recovery);
+
+        let pillar_times: Vec<f64> = self
+            .pillar_dates
+            .iter()
+            .map(|d| self.day_counter.year_fraction(ref_date, *d))
+            .collect();
+
+        let survival_probs: Vec<DualFwd> = dates
+            .iter()
+            .map(|d| {
+                let t = self.day_counter.year_fraction(ref_date, *d);
+                Self::survival_at(t, &pillar_times, &pillar_leaves)
+            })
+            .collect();
+
+        let mut agg = CvaAggregator::from_survival_probs(rec, survival_probs, self.n_paths);
+        if let Some(dfs) = &self.system_dfs {
+            agg = agg.with_system_discounts(dfs.clone());
+        }
+
+        let mut leaves: Vec<(String, DualFwd)> = self
+            .pillar_labels
+            .iter()
+            .zip(&pillar_leaves)
+            .map(|(label, leaf)| (format!("CVA.{label}"), *leaf))
+            .collect();
+        leaves.push(("CVA.recovery".to_string(), rec));
+
+        AggregatorBundle {
+            aggregator: Box::new(agg),
+            leaves,
         }
     }
 }
@@ -246,6 +420,8 @@ impl PfeAggregatorFactory for DvaFactory {
 pub struct FvaFactory {
     pub funding_spread: f64,
     pub n_paths: usize,
+    /// System-curve discount factors `DF(0, t_d)` at the simulation dates.
+    pub system_dfs: Option<Vec<f64>>,
 }
 
 impl PfeAggregatorFactory for FvaFactory {
@@ -255,7 +431,10 @@ impl PfeAggregatorFactory for FvaFactory {
 
     fn create_aggregator(&self, _ref_date: Date, _dates: &[Date]) -> AggregatorBundle {
         let fs = DualFwd::new(self.funding_spread);
-        let agg = FvaAggregator::new(fs, self.n_paths);
+        let mut agg = FvaAggregator::new(fs, self.n_paths);
+        if let Some(dfs) = &self.system_dfs {
+            agg = agg.with_system_discounts(dfs.clone());
+        }
         AggregatorBundle {
             aggregator: Box::new(agg),
             leaves: vec![("FVA.funding_spread".to_string(), fs)],

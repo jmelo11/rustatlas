@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     core::elements::{
-        curveelement::{DiscountCurveElement, DividendCurveElement},
+        curveelement::{CreditCurveElement, DiscountCurveElement, DividendCurveElement},
         montecarlosimulationelement::MonteCarloSimulationElement,
         volatilitycubelement::VolatilityCubeElement,
         volatilitysurfaceelement::VolatilitySurfaceElement,
@@ -20,6 +20,7 @@ pub type SharedElement<T> = Rc<RefCell<T>>;
 pub struct ConstructedElementStore {
     discount_curves: HashMap<MarketIndex, DiscountCurveElement>,
     dividend_curves: HashMap<MarketIndex, DividendCurveElement>,
+    credit_curves: HashMap<MarketIndex, CreditCurveElement>,
     volatility_surfaces: HashMap<MarketIndex, VolatilitySurfaceElement>,
     volatility_cubes: HashMap<MarketIndex, VolatilityCubeElement>,
     simulations: HashMap<MarketIndex, MonteCarloSimulationElement>,
@@ -37,6 +38,7 @@ impl ConstructedElementStore {
     pub fn is_empty(&self) -> bool {
         self.discount_curves.is_empty()
             && self.dividend_curves.is_empty()
+            && self.credit_curves.is_empty()
             && self.volatility_surfaces.is_empty()
             && self.volatility_cubes.is_empty()
             && self.simulations.is_empty()
@@ -58,6 +60,24 @@ impl ConstructedElementStore {
     #[must_use]
     pub const fn dividend_curves_mut(&mut self) -> &mut HashMap<MarketIndex, DividendCurveElement> {
         &mut self.dividend_curves
+    }
+
+    /// Returns credit (survival) curves.
+    #[must_use]
+    pub const fn credit_curves(&self) -> &HashMap<MarketIndex, CreditCurveElement> {
+        &self.credit_curves
+    }
+
+    /// Returns mutable credit curves map.
+    #[must_use]
+    pub const fn credit_curves_mut(&mut self) -> &mut HashMap<MarketIndex, CreditCurveElement> {
+        &mut self.credit_curves
+    }
+
+    /// Gets one credit curve by index.
+    #[must_use]
+    pub fn credit_curve(&self, index: &MarketIndex) -> Option<&CreditCurveElement> {
+        self.credit_curves.get(index)
     }
 
     /// Returns volatility surfaces.

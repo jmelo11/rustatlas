@@ -262,9 +262,9 @@ mod tests {
         let h = 1e-5;
         for strike in [70.0_f64, 100.0, 140.0] {
             for vol in [0.05, 0.2, 0.8] {
-                // Beyond ~4 total-vol standard deviations the price is dominated
-                // by the norm_cdf tail (~1e-9 absolute accuracy), which makes
-                // finite differences meaningless at that scale.
+                // Deep ITM/OTM (>4 total-vol stdevs) the premium is dominated
+                // by intrinsic value: vega is ~1e-8 of the price scale, so a
+                // finite difference suffers catastrophic cancellation there.
                 let d1_approx = (fwd / strike).ln() / (vol * tau.sqrt());
                 if d1_approx.abs() > 4.0 {
                     continue;
@@ -273,11 +273,8 @@ mod tests {
                 let fd_delta = (Bm::closed_form_price(fwd + h, strike, vol, tau, true)?
                     - Bm::closed_form_price(fwd - h, strike, vol, tau, true)?)
                     / (2.0 * h);
-                // norm_cdf uses the Abramowitz-Stegun polynomial (~7.5e-8
-                // absolute error, non-smooth), which caps the achievable
-                // agreement between analytic and FD greeks at ~1e-5.
                 assert!(
-                    (delta - fd_delta).abs() < 1e-5,
+                    (delta - fd_delta).abs() < 1e-8,
                     "delta {delta} vs FD {fd_delta} at K={strike}, vol={vol}"
                 );
 

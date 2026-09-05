@@ -13,7 +13,10 @@ use crate::{
         lgmmarketmodel::LgmMarketModel,
     },
     quotes::fixingstore::FixingStore,
-    rates::yieldtermstructure::discounttermstructure::DiscountTermStructure,
+    rates::yieldtermstructure::{
+        discounttermstructure::DiscountTermStructure,
+        interestratestermstructure::InterestRatesTermStructure,
+    },
     time::{
         date::Date,
         daycounter::DayCounter,
@@ -22,7 +25,7 @@ use crate::{
     },
     utils::errors::{QSError, Result},
     xva::{
-        aggregator::{CvaFactory, FvaFactory, PfeAggregatorFactory},
+        aggregator::{CreditCurveCvaFactory, CvaFactory, FvaFactory, PfeAggregatorFactory},
         contigentclaim::ContingentClaim,
         nettingset::NettingSet,
         visitors::{
@@ -55,6 +58,10 @@ pub struct FxModelConfig {
 }
 
 /// Configuration for the XVA engine.
+///
+/// Contains only the simulation/model setup. Credit, funding and
+/// collateral (CSA) parameters are per client and belong to each
+/// [`NettingSet`]'s [`CsaTerms`](crate::xva::csa::CsaTerms).
 #[derive(Clone, Serialize, Deserialize)]
 pub struct XvaEngineConfig {
     /// LGM model parameters, one per rate curve.
@@ -68,13 +75,6 @@ pub struct XvaEngineConfig {
     pub seed: u64,
     /// Simulation frequency (e.g. Monthly, Quarterly).
     pub frequency: Frequency,
-    /// Credit spread for CVA calculation.
-    pub credit_spread: f64,
-    /// Recovery rate for CVA calculation.
-    pub recovery: f64,
-    /// Funding spread for FVA calculation.
-    #[serde(default)]
-    pub funding_spread: f64,
 }
 
 /// High-level XVA engine.
@@ -97,9 +97,10 @@ pub struct XvaEngineConfig {
 pub struct XvaEngine {
     setup: InternalModelSetup,
     frequency: Frequency,
-    credit_spread: f64,
-    recovery: f64,
-    funding_spread: f64,
+    /// Snapshots of the bootstrapped credit (survival) curves, keyed by
+    /// [`MarketIndex::Credit`]. Used to build per-counterparty CVA
+    /// aggregators when a netting set's CSA references a credit curve.
+    credit_curves: HashMap<MarketIndex, CreditCurveSnapshot>,
 }
 
 impl XvaEngine {
@@ -172,6 +173,34 @@ impl XvaEngine {
             fx_spots.insert(fx_cfg.foreign_currency, rate.value());
         }
 
+        // Snapshot bootstrapped credit (survival) curves for per-counterparty CVA.
+        let mut credit_curves = HashMap::new();
+        for (index, element) in store.credit_curves() {
+            let borrowed = element.curve();
+            let nodes = borrowed.nodes().ok_or_else(|| {
+                QSError::NotFoundErr(format!("Credit curve {index} has no nodes"))
+            })?;
+            // Node 0 is the reference date with S = 1; pillars follow.
+            let pillar_dates: Vec<Date> = nodes.iter().skip(1).map(|(d, _)| *d).collect();
+            let survivals: Vec<f64> = nodes.iter().skip(1).map(|(_, v)| v.value()).collect();
+            let mut labels = borrowed.pillar_labels().unwrap_or_default();
+            if labels.len() != pillar_dates.len() {
+                labels = (0..pillar_dates.len())
+                    .map(|i| format!("{index}.pillar_{i}"))
+                    .collect();
+            }
+            let dc = borrowed.day_counter().unwrap_or(DayCounter::Actual365);
+            credit_curves.insert(
+                index.clone(),
+                CreditCurveSnapshot {
+                    pillar_dates,
+                    survivals,
+                    labels,
+                    day_counter: dc,
+                },
+            );
+        }
+
         Ok(Self {
             setup: InternalModelSetup {
                 curves,
@@ -188,9 +217,7 @@ impl XvaEngine {
                 fixing_store: context.fixing_store().clone(),
             },
             frequency: config.frequency,
-            credit_spread: config.credit_spread,
-            recovery: config.recovery,
-            funding_spread: config.funding_spread,
+            credit_curves,
         })
     }
 
@@ -200,10 +227,13 @@ impl XvaEngine {
     /// runs it on all netting sets, then launches the Savine
     /// parallel AAD evaluation loop.
     ///
-    /// Each [`NettingSet`] carries its own discount policy (CSA terms).
+    /// Each [`NettingSet`] carries its own [`CsaTerms`](crate::xva::csa::CsaTerms)
+    /// (collateral discounting plus credit/funding parameters), from which the
+    /// per-client CVA and FVA aggregators are built.
     ///
     /// # Errors
-    /// Returns an error if simulation or evaluation fails.
+    /// Returns an error if any netting set lacks CSA terms, or if simulation
+    /// or evaluation fails.
     pub fn run(
         &mut self,
         netting_sets: &mut HashMap<String, NettingSet>,
@@ -221,6 +251,22 @@ impl XvaEngine {
         inspector.visit(netting_sets.values_mut());
         self.setup.requests = inspector.requests().to_vec();
 
+        // 2b. Validate that every resolved discount index has a simulated
+        // curve. The LGM model silently skips unknown curves, which would
+        // otherwise produce missing discounts downstream.
+        for req in &self.setup.requests {
+            if let Some(discount_request) = &req.discount_request {
+                let index = discount_request.market_index();
+                if !self.setup.curves.contains_key(&index) {
+                    return Err(QSError::NotFoundErr(format!(
+                        "Discount curve {index} resolved by a CSA discount policy is not \
+                         configured in the XVA engine; add an LgmModelConfig (and bootstrap \
+                         the curve) for it"
+                    )));
+                }
+            }
+        }
+
         // 3. Build simulation dates.
         let max_maturity = netting_sets
             .values()
@@ -234,17 +280,82 @@ impl XvaEngine {
             .build()?;
         let sim_dates = schedule.dates().clone();
 
-        // 4. Aggregator factories.
-        let cva_factory = CvaFactory {
-            credit_spread: self.credit_spread,
-            recovery: self.recovery,
-            n_paths: self.setup.n_paths,
-        };
-        let fva_factory = FvaFactory {
-            funding_spread: self.funding_spread,
-            n_paths: self.setup.n_paths,
-        };
-        let factories: Vec<&dyn PfeAggregatorFactory> = vec![&cva_factory, &fva_factory];
+        // 3b. System-curve discount factors DF(0, t_d) at the simulation
+        // dates, taken from the engine's base (domestic) curve. Exposures at
+        // future dates are values as of t_d; multiplying by these
+        // deterministic DFs expresses every XVA in present-value terms on the
+        // system curve. (Deterministic approximation: no rate sensitivity is
+        // propagated through this discounting term.)
+        let system_curve = self
+            .setup
+            .curves
+            .get(&self.setup.domestic_index)
+            .ok_or_else(|| {
+                QSError::NotFoundErr(format!(
+                    "System (base) discount curve {} not configured in the XVA engine",
+                    self.setup.domestic_index
+                ))
+            })?;
+        let system_ts = DiscountTermStructure::<f64>::new(
+            system_curve.dates.clone(),
+            system_curve.discount_factors.clone(),
+            system_curve.day_counter,
+            system_curve.interpolator,
+            true,
+        )?;
+        let system_dfs: Vec<f64> = sim_dates
+            .iter()
+            .map(|d| system_ts.discount_factor(*d))
+            .collect::<Result<Vec<f64>>>()?;
+
+        // 4. Per-netting-set aggregator factories from each client's CSA terms.
+        let mut factories: HashMap<String, Vec<Box<dyn PfeAggregatorFactory>>> = HashMap::new();
+        for (id, ns) in netting_sets.iter() {
+            let csa = ns.csa_terms().ok_or_else(|| {
+                QSError::InvalidValueErr(format!(
+                    "Netting set '{id}' has no CSA terms; build it with NettingSet::with_csa_terms"
+                ))
+            })?;
+
+            // CVA: bootstrapped credit curve when assigned, flat spread otherwise.
+            let cva_factory: Box<dyn PfeAggregatorFactory> =
+                if let Some(credit_index) = &csa.credit_index {
+                    let snapshot = self.credit_curves.get(credit_index).ok_or_else(|| {
+                        QSError::NotFoundErr(format!(
+                            "Netting set '{id}' references credit curve {credit_index}, but it \
+                             was not bootstrapped in the pricing context"
+                        ))
+                    })?;
+                    Box::new(CreditCurveCvaFactory {
+                        pillar_dates: snapshot.pillar_dates.clone(),
+                        pillar_survivals: snapshot.survivals.clone(),
+                        pillar_labels: snapshot.labels.clone(),
+                        recovery: csa.recovery,
+                        n_paths: self.setup.n_paths,
+                        day_counter: snapshot.day_counter,
+                        system_dfs: Some(system_dfs.clone()),
+                    })
+                } else {
+                    Box::new(CvaFactory {
+                        credit_spread: csa.credit_spread,
+                        recovery: csa.recovery,
+                        n_paths: self.setup.n_paths,
+                        system_dfs: Some(system_dfs.clone()),
+                    })
+                };
+
+            factories.insert(
+                id.clone(),
+                vec![
+                    cva_factory,
+                    Box::new(FvaFactory {
+                        funding_spread: csa.funding_spread,
+                        n_paths: self.setup.n_paths,
+                        system_dfs: Some(system_dfs.clone()),
+                    }),
+                ],
+            );
+        }
 
         // 5. Build netting-set slice map.
         let ns_slices: HashMap<String, &[_]> = netting_sets
@@ -267,6 +378,16 @@ struct CurveSnapshot {
     interpolator: Interpolator,
     pillar_labels: Vec<String>,
     pillar_values: Vec<f64>,
+}
+
+/// Snapshot of a bootstrapped credit (survival) curve. The reference-date
+/// node (`S = 1`) is excluded.
+#[derive(Clone)]
+struct CreditCurveSnapshot {
+    pillar_dates: Vec<Date>,
+    survivals: Vec<f64>,
+    labels: Vec<String>,
+    day_counter: DayCounter,
 }
 
 impl CurveSnapshot {

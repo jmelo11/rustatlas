@@ -1,14 +1,62 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    quotes::{quote::Quote, quoteselector::QuoteSelector},
+    quotes::{
+        quote::{Quote, QuoteDetails, QuoteLevels},
+        quoteselector::QuoteSelector,
+    },
     time::date::Date,
+    utils::errors::QSError,
 };
 
+/// Serde-friendly single quote record, e.g. `{"identifier": "OIS_USD_SOFR_1Y", "mid": 0.041}`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuoteRecord {
+    /// Quote identifier parseable into [`QuoteDetails`].
+    pub identifier: String,
+    /// Mid level.
+    #[serde(default)]
+    pub mid: Option<f64>,
+    /// Bid level.
+    #[serde(default)]
+    pub bid: Option<f64>,
+    /// Ask level.
+    #[serde(default)]
+    pub ask: Option<f64>,
+}
+
+/// Serde-friendly quote store input:
+/// `{"reference_date": "2025-11-11", "quotes": [{"identifier": ..., "mid": ...}, ...]}`.
+///
+/// Deserializable from JSON files or Python dicts, and convertible into a
+/// [`QuoteStore`] via [`TryFrom`].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuoteStoreRecords {
+    /// Reference date of the quotes.
+    pub reference_date: Date,
+    /// The quote records.
+    pub quotes: Vec<QuoteRecord>,
+}
+
+impl TryFrom<QuoteStoreRecords> for QuoteStore {
+    type Error = QSError;
+
+    fn try_from(records: QuoteStoreRecords) -> Result<Self, Self::Error> {
+        let mut store = Self::new(records.reference_date);
+        for rec in records.quotes {
+            let details = QuoteDetails::from_str(&rec.identifier)?;
+            let levels = QuoteLevels::new(rec.mid, rec.bid, rec.ask);
+            store.add_quote(Quote::new(details, levels));
+        }
+        Ok(store)
+    }
+}
+
 /// Provider of market data loaded from quotes.
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct QuoteStore {
     reference_date: Date,
     quotes: HashMap<String, Quote>,

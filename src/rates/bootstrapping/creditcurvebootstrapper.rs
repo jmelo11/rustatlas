@@ -1,0 +1,500 @@
+//! Credit curve bootstrapper.
+//!
+//! Strips piecewise-constant hazard rates from CDS par-spread quotes and
+//! exposes the result as a survival curve ([`DiscountTermStructure`] where the
+//! "discount factor" at a date is the survival probability). The bootstrapped
+//! curve carries the CDS spreads as pillar values together with a
+//! finite-difference IFT Jacobian so that downstream pricers obtain
+//! sensitivities to the original CDS quotes through the standard
+//! `put_pillars_on_tape` mechanism.
+
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+use crate::{
+    ad::dual::DualFwd,
+    ad::scalar::Scalar,
+    core::elements::curveelement::{CreditCurveElement, DiscountCurveElement},
+    indices::marketindex::MarketIndex,
+    math::solvers::{bisection::Bisection, solvertraits::ContFunc},
+    quotes::{quote::Level, quoteselector::QuoteSelector},
+    rates::{
+        bootstrapping::creditcurveconfiguration::CreditCurveConfiguration,
+        yieldtermstructure::{
+            discounttermstructure::DiscountTermStructure,
+            interestratestermstructure::InterestRatesTermStructure,
+        },
+    },
+    time::{date::Date, daycounter::DayCounter, enums::Frequency, schedule::MakeSchedule},
+    utils::errors::{QSError, Result},
+};
+
+const HAZARD_LOWER: f64 = 1e-12;
+const HAZARD_UPPER: f64 = 20.0;
+const MAX_ITERATIONS: i64 = 200;
+const SPREAD_BUMP: f64 = 1e-6;
+
+/// Bootstraps survival curves from CDS par-spread quotes.
+pub struct CreditCurveBootstrapper {
+    specs: Vec<CreditCurveConfiguration>,
+}
+
+impl CreditCurveBootstrapper {
+    /// Creates a new bootstrapper for the given curve configurations.
+    #[must_use]
+    pub const fn new(specs: Vec<CreditCurveConfiguration>) -> Self {
+        Self { specs }
+    }
+
+    /// Bootstraps all configured credit curves.
+    ///
+    /// `discount_curves` must contain the discount curve referenced by each
+    /// configuration's `discount_index` (typically the output of the
+    /// multi-curve bootstrapper).
+    ///
+    /// # Errors
+    /// Returns an error if quotes or discount curves are missing, or if the
+    /// hazard-rate strip fails for any pillar.
+    pub fn bootstrap(
+        &self,
+        selector: &impl QuoteSelector,
+        level: Level,
+        discount_curves: &HashMap<MarketIndex, DiscountCurveElement>,
+    ) -> Result<HashMap<MarketIndex, CreditCurveElement>> {
+        let mut curves = HashMap::new();
+        for spec in &self.specs {
+            let element = Self::bootstrap_single(spec, selector, level, discount_curves)?;
+            curves.insert(spec.market_index().clone(), element);
+        }
+        Ok(curves)
+    }
+
+    fn bootstrap_single(
+        spec: &CreditCurveConfiguration,
+        selector: &impl QuoteSelector,
+        level: Level,
+        discount_curves: &HashMap<MarketIndex, DiscountCurveElement>,
+    ) -> Result<CreditCurveElement> {
+        let ref_date = selector.reference_date();
+        let discount_element = discount_curves.get(spec.discount_index()).ok_or_else(|| {
+            QSError::NotFoundErr(format!(
+                "Discount curve {} required by credit curve {}",
+                spec.discount_index(),
+                spec.market_index()
+            ))
+        })?;
+        let discount = discount_element.to_f64_term_structure(spec.day_counter())?;
+
+        // Collect (maturity, spread, id) sorted by maturity.
+        let mut pillars: Vec<(Date, f64, String)> = Vec::with_capacity(spec.quotes().len());
+        for id in spec.quotes() {
+            let quote = selector
+                .select(id)
+                .ok_or_else(|| QSError::NotFoundErr(format!("CDS quote {id}")))?;
+            let tenor = quote.details().tenor().ok_or_else(|| {
+                QSError::InvalidValueErr(format!("CDS quote {id} has no tenor"))
+            })?;
+            let spread = quote.levels().value(level)?;
+            pillars.push((ref_date + tenor, spread, id.clone()));
+        }
+        pillars.sort_by_key(|p| p.0);
+        if pillars.is_empty() {
+            return Err(QSError::InvalidValueErr(format!(
+                "Credit curve {} has no quotes",
+                spec.market_index()
+            )));
+        }
+        if pillars.windows(2).any(|w| w[0].0 == w[1].0) {
+            return Err(QSError::InvalidValueErr(format!(
+                "Credit curve {} has duplicate pillar maturities",
+                spec.market_index()
+            )));
+        }
+
+        let pillar_dates: Vec<Date> = pillars.iter().map(|p| p.0).collect();
+        let spreads: Vec<f64> = pillars.iter().map(|p| p.1).collect();
+        let labels: Vec<String> = pillars.iter().map(|p| p.2.clone()).collect();
+
+        let strip_ctx = StripContext {
+            discount: &discount,
+            ref_date,
+            day_counter: spec.day_counter(),
+            frequency: spec.premium_frequency(),
+            recovery: spec.recovery(),
+            pillar_dates: &pillar_dates,
+        };
+
+        // Base strip and survival probabilities at pillar dates.
+        let base_hazards = strip_ctx.strip(&spreads)?;
+        let base_survivals = strip_ctx.survivals_at_pillars(&base_hazards);
+
+        // Finite-difference IFT Jacobian: rows = pillar survivals (nodes[1..]),
+        // columns = CDS spread quotes.
+        let n = pillars.len();
+        let mut jacobian = vec![vec![0.0; n]; n];
+        for j in 0..n {
+            let mut bumped_spreads = spreads.clone();
+            bumped_spreads[j] += SPREAD_BUMP;
+            let bumped_hazards = strip_ctx.strip(&bumped_spreads)?;
+            let bumped_survivals = strip_ctx.survivals_at_pillars(&bumped_hazards);
+            for i in 0..n {
+                jacobian[i][j] = (bumped_survivals[i] - base_survivals[i]) / SPREAD_BUMP;
+            }
+        }
+
+        // Survival curve: node 0 is the reference date with S = 1.
+        let mut dates = Vec::with_capacity(n + 1);
+        let mut survivals = Vec::with_capacity(n + 1);
+        dates.push(ref_date);
+        survivals.push(DualFwd::scalar(1.0));
+        for (d, s) in pillar_dates.iter().zip(&base_survivals) {
+            dates.push(*d);
+            survivals.push(DualFwd::scalar(*s));
+        }
+
+        let curve = DiscountTermStructure::<DualFwd>::new(
+            dates,
+            survivals,
+            spec.day_counter(),
+            spec.interpolator(),
+            spec.enable_extrapolation(),
+        )?
+        .with_pillar_values(spreads.iter().map(|s| DualFwd::scalar(*s)).collect())?
+        .with_pillar_labels(labels)?
+        .with_ift_sensitivities(jacobian);
+
+        Ok(CreditCurveElement::new(
+            spec.market_index().clone(),
+            spec.recovery(),
+            Rc::new(RefCell::new(curve)),
+        ))
+    }
+}
+
+/// Shared data for stripping the hazards of one credit curve.
+struct StripContext<'a> {
+    discount: &'a DiscountTermStructure<f64>,
+    ref_date: Date,
+    day_counter: DayCounter,
+    frequency: Frequency,
+    recovery: f64,
+    pillar_dates: &'a [Date],
+}
+
+impl StripContext<'_> {
+    /// Sequentially strips one piecewise-constant hazard per pillar.
+    fn strip(&self, spreads: &[f64]) -> Result<Vec<f64>> {
+        let mut hazards: Vec<f64> = Vec::with_capacity(spreads.len());
+        for (k, spread) in spreads.iter().enumerate() {
+            // Boundary case: a non-positive spread implies a (near) riskless
+            // entity for this bucket; the bisection bracket has no sign change
+            // there, so assign the minimal hazard directly.
+            if *spread <= 0.0 {
+                hazards.push(HAZARD_LOWER);
+                continue;
+            }
+            let schedule = MakeSchedule::new(self.ref_date, self.pillar_dates[k])
+                .with_frequency(self.frequency)
+                .build()?;
+            let objective = HazardObjective {
+                ctx: self,
+                known_hazards: &hazards,
+                schedule_dates: schedule.dates(),
+                spread: *spread,
+            };
+            let solution = Bisection::<HazardObjective<'_>>::new(
+                HAZARD_LOWER,
+                HAZARD_UPPER,
+                MAX_ITERATIONS,
+            )
+            .solve(&objective)
+            .map_err(|e| {
+                QSError::SolverErr(format!(
+                    "Credit strip failed at pillar {} ({}): {e}",
+                    k, self.pillar_dates[k]
+                ))
+            })?;
+            hazards.push(solution.x);
+        }
+        Ok(hazards)
+    }
+
+    /// Year fraction from the reference date.
+    fn time(&self, date: Date) -> f64 {
+        self.day_counter.year_fraction(self.ref_date, date)
+    }
+
+    /// Survival probability at time `t` for the given hazards, using the
+    /// candidate hazard `last` beyond the last known pillar.
+    fn survival(&self, t: f64, hazards: &[f64], last: f64) -> f64 {
+        let mut integral = 0.0;
+        let mut prev = 0.0;
+        for (j, hazard) in hazards.iter().enumerate() {
+            let boundary = self.time(self.pillar_dates[j]);
+            if t <= boundary {
+                integral += hazard * (t - prev).max(0.0);
+                return (-integral).exp();
+            }
+            integral += hazard * (boundary - prev);
+            prev = boundary;
+        }
+        integral += last * (t - prev).max(0.0);
+        (-integral).exp()
+    }
+
+    /// Survival probabilities at each pillar date using fully-stripped hazards.
+    fn survivals_at_pillars(&self, hazards: &[f64]) -> Vec<f64> {
+        self.pillar_dates
+            .iter()
+            .map(|d| self.survival(self.time(*d), hazards, *hazards.last().unwrap_or(&0.0)))
+            .collect()
+    }
+}
+
+/// Root function: premium leg minus protection leg of the pillar CDS as a
+/// function of the last-bucket hazard rate.
+struct HazardObjective<'a> {
+    ctx: &'a StripContext<'a>,
+    known_hazards: &'a [f64],
+    schedule_dates: &'a [Date],
+    spread: f64,
+}
+
+impl ContFunc<f64> for HazardObjective<'_> {
+    fn call(&self, x: &f64) -> Result<f64> {
+        let ctx = self.ctx;
+        let mut premium = 0.0;
+        let mut protection = 0.0;
+        let mut s_prev = 1.0;
+        for w in self.schedule_dates.windows(2) {
+            let (d0, d1) = (w[0], w[1]);
+            if d1 <= ctx.ref_date {
+                continue;
+            }
+            let delta = ctx.day_counter.year_fraction(d0, d1);
+            let df = ctx.discount.discount_factor(d1)?;
+            let s1 = ctx.survival(ctx.time(d1), self.known_hazards, *x);
+            let default_prob = s_prev - s1;
+            // Premium on survival plus accrual-on-default (half-period approx).
+            premium += self.spread * delta * df * 0.5f64.mul_add(default_prob, s1);
+            protection += (1.0 - ctx.recovery) * df * default_prob;
+            s_prev = s1;
+        }
+        Ok(premium - protection)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        core::{
+            marketdatahandling::{
+                constructedelementstore::ConstructedElementStore,
+                marketdata::{MarketData, MarketDataProvider, MarketDataRequest},
+            },
+            pricer::Pricer,
+            request::Request,
+            trade::Side,
+        },
+        currencies::currency::Currency,
+        instruments::credit::creditdefaultswap::{CdsTrade, CreditDefaultSwap},
+        math::interpolation::interpolator::Interpolator,
+        pricers::credit::cdspricer::CdsPricer,
+        quotes::quote::{Quote, QuoteDetails, QuoteLevels},
+        time::enums::TimeUnit,
+        utils::errors::QSError,
+    };
+    use std::collections::HashMap;
+
+    struct TestSelector {
+        ref_date: Date,
+        quotes: HashMap<String, Quote>,
+    }
+
+    impl QuoteSelector for TestSelector {
+        fn select(&self, identifier: &str) -> Option<Quote> {
+            self.quotes.get(identifier).cloned()
+        }
+
+        fn reference_date(&self) -> Date {
+            self.ref_date
+        }
+    }
+
+    struct SimpleMarketDataProvider {
+        evaluation_date: Date,
+        market_data: MarketData,
+    }
+
+    impl MarketDataProvider for SimpleMarketDataProvider {
+        fn handle_request(&self, _: &MarketDataRequest) -> Result<MarketData> {
+            Ok(MarketData::new(
+                self.market_data.fixings().clone(),
+                self.market_data.constructed_elements().clone(),
+            ))
+        }
+
+        fn evaluation_date(&self) -> Date {
+            self.evaluation_date
+        }
+    }
+
+    fn flat_discount_element(ref_date: Date, rate: f64) -> Result<DiscountCurveElement> {
+        let dc = DayCounter::Actual360;
+        let dates: Vec<Date> = (0..=10).map(|i| ref_date.advance(i, TimeUnit::Years)).collect();
+        let dfs: Vec<DualFwd> = dates
+            .iter()
+            .map(|d| DualFwd::scalar((-rate * dc.year_fraction(ref_date, *d)).exp()))
+            .collect();
+        let curve = DiscountTermStructure::<DualFwd>::new(
+            dates,
+            dfs,
+            dc,
+            Interpolator::LogLinear,
+            true,
+        )?;
+        Ok(DiscountCurveElement::new(
+            MarketIndex::SOFR,
+            std::rc::Rc::new(std::cell::RefCell::new(curve)),
+        ))
+    }
+
+    fn cds_quote(id: &str, spread: f64) -> Result<(String, Quote)> {
+        let details = QuoteDetails::parse(id, '_')?;
+        Ok((id.to_string(), Quote::new(details, QuoteLevels::with_mid(spread))))
+    }
+
+    fn bootstrap_test_curve(
+        ref_date: Date,
+    ) -> Result<(HashMap<MarketIndex, CreditCurveElement>, DiscountCurveElement)> {
+        let quote_ids = vec![
+            "Cds_ACME_USD_1Y".to_string(),
+            "Cds_ACME_USD_3Y".to_string(),
+            "Cds_ACME_USD_5Y".to_string(),
+        ];
+        let mut quotes = HashMap::new();
+        for (id, spread) in [
+            ("Cds_ACME_USD_1Y", 0.010),
+            ("Cds_ACME_USD_3Y", 0.015),
+            ("Cds_ACME_USD_5Y", 0.020),
+        ] {
+            let (key, quote) = cds_quote(id, spread)?;
+            quotes.insert(key, quote);
+        }
+        let selector = TestSelector { ref_date, quotes };
+
+        let discount_element = flat_discount_element(ref_date, 0.03)?;
+        let mut discount_curves = HashMap::new();
+        discount_curves.insert(MarketIndex::SOFR, discount_element.clone());
+
+        let spec = CreditCurveConfiguration::new(
+            MarketIndex::Credit("ACME".to_string()),
+            Currency::USD,
+            MarketIndex::SOFR,
+            0.4,
+            quote_ids,
+        );
+        let curves = CreditCurveBootstrapper::new(vec![spec]).bootstrap(
+            &selector,
+            Level::Mid,
+            &discount_curves,
+        )?;
+        Ok((curves, discount_element))
+    }
+
+    #[test]
+    fn bootstrap_produces_decreasing_survivals() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, _) = bootstrap_test_curve(ref_date)?;
+        let credit_index = MarketIndex::Credit("ACME".to_string());
+        let element = curves
+            .get(&credit_index)
+            .ok_or_else(|| QSError::NotFoundErr("credit curve".into()))?;
+        let nodes = element
+            .curve()
+            .nodes()
+            .ok_or_else(|| QSError::NotFoundErr("nodes".into()))?;
+        assert_eq!(nodes.len(), 4); // ref date + 3 pillars
+        assert!((nodes[0].1.value() - 1.0).abs() < 1e-12);
+        for w in nodes.windows(2) {
+            let (s_prev, s_next) = (w[0].1.value(), w[1].1.value());
+            assert!(s_next < s_prev, "survivals must be strictly decreasing");
+            assert!(s_next > 0.0 && s_next < 1.0);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn pillar_cds_reprices_at_par() -> Result<()> {
+        let ref_date = Date::new(2025, 1, 2);
+        let (curves, discount_element) = bootstrap_test_curve(ref_date)?;
+        let credit_index = MarketIndex::Credit("ACME".to_string());
+
+        let mut store = ConstructedElementStore::default();
+        store
+            .discount_curves_mut()
+            .insert(MarketIndex::SOFR, discount_element);
+        store.credit_curves_mut().insert(
+            credit_index.clone(),
+            curves
+                .get(&credit_index)
+                .ok_or_else(|| QSError::NotFoundErr("credit curve".into()))?
+                .clone(),
+        );
+        let provider = SimpleMarketDataProvider {
+            evaluation_date: ref_date,
+            market_data: MarketData::new(HashMap::new(), store),
+        };
+
+        let notional = 1_000_000.0;
+        let quoted_spread = 0.020;
+        let cds = CreditDefaultSwap::new(
+            "CDS_ACME_5Y".to_string(),
+            credit_index,
+            MarketIndex::SOFR,
+            Currency::USD,
+            ref_date,
+            ref_date.advance(5, TimeUnit::Years),
+            quoted_spread,
+            0.4,
+            Frequency::Quarterly,
+            DayCounter::Actual360,
+        )?;
+        let trade = CdsTrade::new(cds, ref_date, notional, Side::LongReceive);
+
+        let pricer = CdsPricer::new();
+        let results = pricer.evaluate(
+            &trade,
+            &[Request::Value, Request::FairRate, Request::Sensitivities],
+            &provider,
+        )?;
+
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("missing price".into()))?;
+        assert!(
+            price.abs() < 1e-3 * notional.sqrt(),
+            "pillar CDS should reprice at par, got {price}"
+        );
+
+        let fair = results
+            .fair_rate()
+            .ok_or_else(|| QSError::UnexpectedErr("missing fair rate".into()))?;
+        assert!(
+            (fair - quoted_spread).abs() < 1e-6,
+            "fair spread {fair} should match the quoted spread {quoted_spread}"
+        );
+
+        let sensitivities = results
+            .sensitivities()
+            .ok_or_else(|| QSError::UnexpectedErr("missing sensitivities".into()))?;
+        assert!(
+            sensitivities
+                .instrument_keys()
+                .iter()
+                .any(|k| k.contains("Cds_ACME_USD_5Y")),
+            "sensitivities should include the CDS quote pillars"
+        );
+        Ok(())
+    }
+}

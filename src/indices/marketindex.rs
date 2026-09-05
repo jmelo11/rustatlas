@@ -107,6 +107,13 @@ pub enum MarketIndex {
     /// For example `Collateral(CLP, USD)` represents the CLP discount curve
     /// under a USD-denominated CSA.
     Collateral(Currency, Currency),
+    /// Credit (survival/hazard) curve of a reference entity or counterparty.
+    ///
+    /// For example `Credit("ACME")` keys the survival curve bootstrapped from
+    /// ACME CDS quotes. Survival probabilities are exposed through the
+    /// standard term-structure interface (a survival probability plays the
+    /// same role as a discount factor).
+    Credit(String),
     /// Other indices. Could represent a particular issuer, a custom index, or any other index not covered by the above.
     Other(String),
 }
@@ -151,6 +158,7 @@ impl Display for MarketIndex {
             Self::Equity(name) => write!(f, "{name}"),
             Self::FxPair(pair) => write!(f, "FX:{pair}"),
             Self::Collateral(ccy, coll) => write!(f, "Collateral({ccy}/{coll})"),
+            Self::Credit(entity) => write!(f, "Credit({entity})"),
             Self::Other(s) => write!(f, "{s}"),
         }
     }
@@ -186,7 +194,13 @@ impl std::str::FromStr for MarketIndex {
             "VIX" => Self::VIX,
             other if other.starts_with("FX:") => {
                 let pair_str = &other["FX:".len()..];
-                pair_str.parse::<FxPair>().map_or_else(|_| Self::Other(other.to_string()), Self::FxPair)
+                pair_str
+                    .parse::<FxPair>()
+                    .map_or_else(|_| Self::Other(other.to_string()), Self::FxPair)
+            }
+            other if other.starts_with("Credit(") && other.ends_with(')') => {
+                let entity = &other["Credit(".len()..other.len() - 1];
+                Self::Credit(entity.trim().to_string())
             }
             other if other.starts_with("Collateral(") && other.ends_with(')') => {
                 let inner = &other["Collateral(".len()..other.len() - 1];
@@ -287,5 +301,4 @@ impl MarketIndex {
             _ => Err(QSError::InvalidValueErr("Index is not rate index".into())),
         }
     }
-
 }

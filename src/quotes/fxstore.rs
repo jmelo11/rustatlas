@@ -1,11 +1,25 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use serde::{Deserialize, Serialize};
+
 use crate::{
     ad::dual::DualFwd,
     core::pillars::Pillars,
     currencies::currency::Currency,
     utils::errors::{QSError, Result},
 };
+
+/// Serde-friendly FX spot record: 1 `base` = `rate` `quote`,
+/// e.g. `{"base": "CLP", "quote": "USD", "rate": 0.00111}`.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct FxRateRecord {
+    /// Base currency.
+    pub base: Currency,
+    /// Quote currency.
+    pub quote: Currency,
+    /// 1 unit of base = `rate` units of quote.
+    pub rate: f64,
+}
 
 /// Stores FX spot rates as [`DualFwd`] values so that sensitivities to exchange
 /// rates are captured automatically by the AD tape.
@@ -51,6 +65,16 @@ impl FxStore {
         Self {
             exchange_rate_map: HashMap::new(),
         }
+    }
+
+    /// Creates a store from serde-friendly [`FxRateRecord`]s.
+    #[must_use]
+    pub fn from_records(records: impl IntoIterator<Item = FxRateRecord>) -> Self {
+        let mut store = Self::new();
+        for r in records {
+            store.add_fx_rate(r.base, r.quote, DualFwd::from(r.rate));
+        }
+        store
     }
 
     /// Inserts a spot rate: 1 `base` = `rate` `quote`.

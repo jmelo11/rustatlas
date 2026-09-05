@@ -8,6 +8,10 @@ pub mod bootstrappedcurve;
 pub mod bootstrapstep;
 /// Utility functions and types for curve bootstrapping.
 pub mod bootstraputils;
+/// Credit (hazard-rate) curve bootstrapper.
+pub mod creditcurvebootstrapper;
+/// Credit curve configuration.
+pub mod creditcurveconfiguration;
 /// Curve specification types and quote-resolution helpers.
 pub mod curveconfiguration;
 /// Interest rate curve bootstrapper.

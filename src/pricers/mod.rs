@@ -5,6 +5,8 @@
 
 /// Cashflow discounting pricers.
 pub mod cashflows;
+/// Credit pricers.
+pub mod credit;
 /// Equity pricers
 pub mod equity;
 /// FX pricers.

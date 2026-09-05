@@ -1,0 +1,7 @@
+{
+    "collateral_index": "SOFR",
+    "collateral_currency": "USD",
+    "credit_spread": 0.01,
+    "recovery": 0.40,
+    "funding_spread": 0.005
+}

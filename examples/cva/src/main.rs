@@ -90,7 +90,10 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut engine = XvaEngine::new(&ctx, config)?;
 
     // Both trades share the same CSA → single netting set.
-    let discount_policy = SingleCurveCSADiscountPolicy::new(MarketIndex::SOFR, Currency::USD);
+    // The client's CSA terms carry the collateral treatment and the
+    // credit/funding parameters used for CVA/FVA.
+    let csa: CsaTerms =
+        serde_json::from_reader(std::fs::File::open(data_dir.join("csa_terms.json"))?)?;
     let n_claims = irs_claims.len() + xccy_claims.len();
     let mut all_claims = irs_claims;
     all_claims.extend(xccy_claims);
@@ -98,7 +101,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut netting_sets = HashMap::new();
     netting_sets.insert(
         "portfolio".to_string(),
-        NettingSet::new(all_claims, Box::new(discount_policy)),
+        NettingSet::with_csa_terms(all_claims, csa),
     );
 
     println!("Running XVA engine with {n_claims} claims...");
@@ -107,8 +110,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // ── 4. Display results ──────────────────────────────────────
     println!("\nXVA Values:");
     if let Some(ref xva_values) = result.xva_values {
-        for (name, value) in xva_values {
-            println!("  {name:<6} = {value:>12.2}");
+        for v in xva_values {
+            println!("  {:<12} {:<6} = {:>12.2}", v.netting_set, v.measure, v.value);
         }
     }
 
@@ -116,15 +119,16 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     if let Some(ref sensitivities) = result.sensitivities {
         let mut sens = sensitivities.clone();
         sens.sort_by(|a, b| a.0.cmp(&b.0));
+        let is_credit = |label: &str| label.contains(".CVA.") || label.contains(".FVA.");
         for (label, value) in &sens {
-            if !label.starts_with("CVA.") && !label.starts_with("FVA.") && value.abs() > 1e-10 {
+            if !is_credit(label) && value.abs() > 1e-10 {
                 println!("  {label:<30} = {value:>12.6}");
             }
         }
 
         println!("\nCredit & funding sensitivities:");
         for (label, value) in &sens {
-            if label.starts_with("CVA.") || label.starts_with("FVA.") {
+            if is_credit(label) {
                 println!("  {label:<30} = {value:>12.6}");
             }
         }

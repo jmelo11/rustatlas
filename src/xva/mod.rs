@@ -17,6 +17,8 @@
 pub mod aggregator;
 /// Evaluation strategies that define how a single contingent claim is valued.
 pub mod claimevaluationstrategy;
+/// Per-client CSA terms: collateral treatment and credit/funding parameters.
+pub mod csa;
 /// The atomic unit of exposure: a single contingent cashflow.
 pub mod contigentclaim;
 /// XVA engine .

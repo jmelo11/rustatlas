@@ -73,7 +73,7 @@ impl<T: Default> Default for Dual<T> {
 impl<T: TapeHolder + InnerScalar> Dual<T> {
     /// Creates a new value, registering a leaf on the active tape.
     #[inline]
-    #[must_use]
+    #[must_use] 
     pub fn new(val: f64) -> Self {
         let v = T::scalar(val);
         let node = T::with_tape(super::tape::Tape::new_leaf);
@@ -110,14 +110,14 @@ impl<T: TapeHolder + InnerScalar> Dual<T> {
 
     /// Zero constant (no tape).
     #[inline]
-    #[must_use]
+    #[must_use] 
     pub fn zero() -> Self {
         Self::constant(T::zero())
     }
 
     /// One constant (no tape).
     #[inline]
-    #[must_use]
+    #[must_use] 
     pub fn one() -> Self {
         Self::constant(T::one())
     }

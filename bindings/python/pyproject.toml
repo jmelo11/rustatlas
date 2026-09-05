@@ -1,0 +1,21 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "quantsupport"
+description = "Derivative pricing and risk analytics (Rust core with Python bindings)."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dynamic = ["version"]
+dependencies = ["pandas"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Office/Business :: Financial",
+]
+
+[tool.maturin]
+features = ["extension-module"]
+module-name = "quantsupport"
