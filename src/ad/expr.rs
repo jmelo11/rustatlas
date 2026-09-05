@@ -378,8 +378,7 @@ impl<T: TapeHolder + InnerScalar> Expr<T> for Dual<T> {
     }
     fn push_adj(&self, parent: &mut TapeNode<T>, deriv: T) {
         if let Some(p) = self.node_ptr() {
-            parent.childs.push(p);
-            parent.derivs.push(deriv);
+            parent.push_child(p, deriv);
         }
     }
 }

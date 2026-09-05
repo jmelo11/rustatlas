@@ -304,3 +304,357 @@ impl Pricer for FxForwardPricer {
         self.discount_policy.as_deref()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+    use super::FxForwardPricer;
+    use crate::{
+        ad::dual::DualFwd,
+        core::{
+            collateral::DiscountPolicy,
+            elements::curveelement::DiscountCurveElement,
+            evaluationresults::EvaluationResults,
+            marketdatahandling::{
+                constructedelementstore::ConstructedElementStore,
+                marketdata::{MarketData, MarketDataProvider, MarketDataRequest},
+            },
+            pricer::Pricer,
+            request::Request,
+            trade::Side,
+        },
+        currencies::currency::Currency,
+        indices::marketindex::MarketIndex,
+        instruments::fx::{fxforward::FxForwardTrade, makefxforward::MakeFxForward},
+        quotes::fxstore::FxStore,
+        rates::{
+            interestrate::RateDefinition,
+            yieldtermstructure::{
+                flatforwardtermstructure::FlatForwardTermStructure,
+                interestratestermstructure::InterestRatesTermStructure,
+            },
+        },
+        time::{date::Date, enums::TimeUnit, period::Period},
+        utils::errors::{QSError, Result},
+    };
+
+    const BASE_CCY: Currency = Currency::EUR;
+    const QUOTE_CCY: Currency = Currency::USD;
+
+    /// Maps each currency of the pair to its discount index.
+    struct FxDiscountPolicy {
+        base_index: MarketIndex,
+        quote_index: MarketIndex,
+    }
+
+    impl DiscountPolicy for FxDiscountPolicy {
+        fn accept(
+            &self,
+            target: &dyn crate::core::collateral::Discountable,
+        ) -> Result<MarketIndex> {
+            if target.currency() == BASE_CCY {
+                Ok(self.base_index.clone())
+            } else if target.currency() == QUOTE_CCY {
+                Ok(self.quote_index.clone())
+            } else {
+                Err(QSError::InvalidValueErr(format!(
+                    "Unsupported currency: {}",
+                    target.currency()
+                )))
+            }
+        }
+
+        fn discount_indices(&self) -> Vec<MarketIndex> {
+            vec![self.base_index.clone(), self.quote_index.clone()]
+        }
+    }
+
+    struct SimpleMarketDataProvider {
+        evaluation_date: Date,
+        market_data: MarketData,
+    }
+
+    impl MarketDataProvider for SimpleMarketDataProvider {
+        fn handle_request(&self, _: &MarketDataRequest) -> Result<MarketData> {
+            Ok(MarketData::new(
+                self.market_data.fixings().clone(),
+                self.market_data.constructed_elements().clone(),
+            )
+            .with_fx_store(self.market_data.fx_store().cloned().unwrap_or_default()))
+        }
+
+        fn evaluation_date(&self) -> Date {
+            self.evaluation_date
+        }
+    }
+
+    fn base_index() -> MarketIndex {
+        MarketIndex::Other("EUR_DISC".to_string())
+    }
+
+    fn quote_index() -> MarketIndex {
+        MarketIndex::Other("USD_DISC".to_string())
+    }
+
+    /// Builds flat discount curves for both currencies plus an FX spot store.
+    fn setup_fx_forward_market_data(
+        trade_date: Date,
+        spot: f64,
+        base_rate: f64,
+        quote_rate: f64,
+    ) -> Result<MarketData> {
+        let base_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(base_rate),
+            RateDefinition::default(),
+        )
+        .with_pillar_label("base_rate".to_string());
+        let quote_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(quote_rate),
+            RateDefinition::default(),
+        )
+        .with_pillar_label("quote_rate".to_string());
+
+        let mut constructed_elements = ConstructedElementStore::default();
+        constructed_elements.discount_curves_mut().insert(
+            base_index(),
+            DiscountCurveElement::new(base_index(), Rc::new(RefCell::new(base_curve))),
+        );
+        constructed_elements.discount_curves_mut().insert(
+            quote_index(),
+            DiscountCurveElement::new(quote_index(), Rc::new(RefCell::new(quote_curve))),
+        );
+
+        let mut fx_store = FxStore::new();
+        fx_store.add_fx_rate(BASE_CCY, QUOTE_CCY, DualFwd::new(spot));
+
+        Ok(MarketData::new(HashMap::new(), constructed_elements).with_fx_store(fx_store))
+    }
+
+    /// Evaluates an FX forward with the given strike/spot, returning results.
+    fn evaluate_fx_forward(
+        trade_date: Date,
+        delivery_date: Date,
+        spot: f64,
+        strike: f64,
+        notional: f64,
+        base_rate: f64,
+        quote_rate: f64,
+        requests: &[Request],
+    ) -> Result<EvaluationResults> {
+        let market_data = setup_fx_forward_market_data(trade_date, spot, base_rate, quote_rate)?;
+        let fx_fwd = MakeFxForward::default()
+            .with_identifier("EURUSD-FWD".to_string())
+            .with_delivery_date(delivery_date)
+            .with_forward_price(strike)
+            .with_base_currency(BASE_CCY)
+            .with_quote_currency(QUOTE_CCY)
+            .as_deliverable()
+            .build()?;
+        let trade = FxForwardTrade::new(fx_fwd, trade_date, notional, Side::LongReceive);
+
+        let provider = SimpleMarketDataProvider {
+            evaluation_date: trade_date,
+            market_data,
+        };
+
+        let mut pricer = FxForwardPricer::new();
+        pricer.set_discount_policy(Box::new(FxDiscountPolicy {
+            base_index: base_index(),
+            quote_index: quote_index(),
+        }));
+        pricer.evaluate(&trade, requests, &provider)
+    }
+
+    /// Computes the model discount factors used for closed-form comparisons.
+    fn discount_factors(
+        trade_date: Date,
+        delivery_date: Date,
+        base_rate: f64,
+        quote_rate: f64,
+    ) -> Result<(f64, f64)> {
+        let base_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(base_rate),
+            RateDefinition::default(),
+        );
+        let quote_curve = FlatForwardTermStructure::new(
+            trade_date,
+            DualFwd::from(quote_rate),
+            RateDefinition::default(),
+        );
+        Ok((
+            base_curve.discount_factor(delivery_date)?.value(),
+            quote_curve.discount_factor(delivery_date)?.value(),
+        ))
+    }
+
+    #[test]
+    fn fair_forward_matches_covered_interest_parity() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let delivery_date = trade_date + Period::new(6, TimeUnit::Months);
+        let (spot, base_rate, quote_rate) = (1.10, 0.03, 0.05);
+
+        let results = evaluate_fx_forward(
+            trade_date,
+            delivery_date,
+            spot,
+            1.10,
+            1_000_000.0,
+            base_rate,
+            quote_rate,
+            &[Request::FairRate],
+        )?;
+        let fair = results
+            .fair_rate()
+            .ok_or_else(|| QSError::UnexpectedErr("Missing fair rate".into()))?;
+
+        let (df_base, df_quote) =
+            discount_factors(trade_date, delivery_date, base_rate, quote_rate)?;
+        let expected = spot * df_quote / df_base;
+        assert!(
+            (fair - expected).abs() < 1e-12,
+            "Fair forward {fair} should match parity {expected}"
+        );
+        Ok(())
+    }
+
+    /// Boundary test: the NPV at the fair forward strike must be zero.
+    #[test]
+    fn npv_is_zero_at_fair_forward_strike() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let delivery_date = trade_date + Period::new(6, TimeUnit::Months);
+        let (spot, base_rate, quote_rate) = (1.10, 0.03, 0.05);
+        let notional = 1_000_000.0;
+
+        let (df_base, df_quote) =
+            discount_factors(trade_date, delivery_date, base_rate, quote_rate)?;
+        let fair = spot * df_quote / df_base;
+
+        let results = evaluate_fx_forward(
+            trade_date,
+            delivery_date,
+            spot,
+            fair,
+            notional,
+            base_rate,
+            quote_rate,
+            &[Request::Value],
+        )?;
+        let npv = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("Missing price".into()))?;
+        assert!(
+            npv.abs() < 1e-6,
+            "NPV at fair strike should be zero, got {npv}"
+        );
+        Ok(())
+    }
+
+    /// Ladder test: NPV must be linear in strike with slope `-N * df_quote`.
+    #[test]
+    fn npv_ladder_is_linear_in_strike() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let delivery_date = trade_date + Period::new(6, TimeUnit::Months);
+        let (spot, base_rate, quote_rate) = (1.10, 0.03, 0.05);
+        let notional = 1_000_000.0;
+
+        let (df_base, df_quote) =
+            discount_factors(trade_date, delivery_date, base_rate, quote_rate)?;
+        let fair = spot * df_quote / df_base;
+
+        let strikes = [1.00, 1.05, 1.10, 1.15, 1.20];
+        let mut npvs = Vec::new();
+        for strike in strikes {
+            let results = evaluate_fx_forward(
+                trade_date,
+                delivery_date,
+                spot,
+                strike,
+                notional,
+                base_rate,
+                quote_rate,
+                &[Request::Value],
+            )?;
+            let npv = results
+                .price()
+                .ok_or_else(|| QSError::UnexpectedErr("Missing price".into()))?;
+
+            let expected = notional * (fair - strike) * df_quote;
+            assert!(
+                (npv - expected).abs() < 1e-4,
+                "NPV {npv} should match closed form {expected} at strike {strike}"
+            );
+            npvs.push(npv);
+        }
+
+        // Consecutive ladder points must have constant slope -N * df_quote.
+        let expected_slope = -notional * df_quote;
+        for pair in npvs.windows(2) {
+            let slope = (pair[1] - pair[0]) / 0.05;
+            assert!(
+                (slope - expected_slope).abs() < 1e-2,
+                "Ladder slope {slope} should equal {expected_slope}"
+            );
+        }
+        Ok(())
+    }
+
+    /// Ladder test: the AD spot sensitivity must match a central
+    /// finite-difference bump-and-reprice of the FX spot across strikes.
+    #[test]
+    fn spot_sensitivity_matches_finite_difference_across_strikes() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let delivery_date = trade_date + Period::new(6, TimeUnit::Months);
+        let (spot, base_rate, quote_rate) = (1.10, 0.03, 0.05);
+        let notional = 1_000_000.0;
+        let bump = 1e-6;
+
+        for strike in [1.00, 1.10, 1.20] {
+            let results = evaluate_fx_forward(
+                trade_date,
+                delivery_date,
+                spot,
+                strike,
+                notional,
+                base_rate,
+                quote_rate,
+                &[Request::Value, Request::Sensitivities],
+            )?;
+            let sensitivities = results
+                .sensitivities()
+                .ok_or_else(|| QSError::UnexpectedErr("Missing sensitivities".into()))?;
+            let ad_spot_sens = sensitivities
+                .instrument_keys()
+                .iter()
+                .zip(sensitivities.exposure().iter().copied())
+                .find(|(key, _)| key.contains('/'))
+                .map(|(_, exposure)| exposure)
+                .ok_or_else(|| QSError::NotFoundErr("FX spot sensitivity not found".into()))?;
+
+            let npv_at = |s: f64| -> Result<f64> {
+                evaluate_fx_forward(
+                    trade_date,
+                    delivery_date,
+                    s,
+                    strike,
+                    notional,
+                    base_rate,
+                    quote_rate,
+                    &[Request::Value],
+                )?
+                .price()
+                .ok_or_else(|| QSError::UnexpectedErr("Missing price".into()))
+            };
+            let fd = (npv_at(spot + bump)? - npv_at(spot - bump)?) / (2.0 * bump);
+
+            assert!(
+                (ad_spot_sens - fd).abs() < 1e-2,
+                "AD spot sensitivity {ad_spot_sens} vs FD {fd} mismatch at strike {strike}"
+            );
+        }
+        Ok(())
+    }
+}

@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use crate::{
     ad::{dual::DualFwd, tape::Tape},
     core::{
@@ -11,9 +9,8 @@ use crate::{
             fixingrequest::FixingRequest,
             marketdata::{MarketData, MarketDataProvider, MarketDataRequest},
         },
-        pricer::{ErasedPricer, Pricer},
+        pricer::Pricer,
         pricerstate::PricerState,
-        pricingcontext::PricingContext,
         request::{HandleSensitivities, HandleValue, Request},
         trade::Trade,
     },
@@ -303,20 +300,6 @@ impl Pricer for BlackEuropeanOptionPricer {
 
     fn discount_policy(&self) -> Option<&Self::Policy> {
         self.discount_policy.as_deref()
-    }
-}
-
-impl ErasedPricer for BlackEuropeanOptionPricer {
-    fn evaluate_erased(
-        &self,
-        trade: &dyn Any,
-        requests: &[Request],
-        ctx: &PricingContext,
-    ) -> Result<EvaluationResults> {
-        let trade = trade
-            .downcast_ref::<EquityEuropeanOptionTrade>()
-            .ok_or_else(|| QSError::InvalidValueErr("Invalid trade type for pricer".into()))?;
-        self.evaluate(trade, requests, ctx)
     }
 }
 
@@ -684,6 +667,288 @@ mod tests {
             );
         }
 
+        Ok(())
+    }
+
+    /// Prices a unit-notional option, returning the price and, optionally, the AD delta.
+    fn price_unit_option(
+        trade_date: Date,
+        expiry_date: Date,
+        spot: f64,
+        strike: f64,
+        option_type: EuroOptionType,
+        risk_free_rate: f64,
+        dividend_rate: f64,
+        with_delta: bool,
+    ) -> Result<(f64, Option<f64>)> {
+        let market_index = MarketIndex::Equity("SPX".to_string());
+        let (market_data, _, _, _) = setup_markup_for_equity_option_test(
+            trade_date,
+            expiry_date,
+            &market_index,
+            spot,
+            risk_free_rate,
+            dividend_rate,
+        )?;
+
+        let option = EquityEuropeanOption::new(
+            market_index,
+            expiry_date,
+            Strike::Absolute(strike),
+            option_type,
+            format!("SPX_{strike}"),
+        );
+        let trade = EquityEuropeanOptionTrade::new(option, 1.0, trade_date, Side::LongReceive);
+        let provider = SimpleMarketDataProvider {
+            evaluation_date: trade_date,
+            market_data,
+        };
+
+        let requests: &[Request] = if with_delta {
+            &[Request::Value, Request::Sensitivities]
+        } else {
+            &[Request::Value]
+        };
+
+        let pricer = BlackEuropeanOptionPricer::new();
+        let results = pricer.evaluate(&trade, requests, &provider)?;
+        let price = results
+            .price()
+            .ok_or_else(|| QSError::UnexpectedErr("Missing price".into()))?;
+        let delta = if with_delta {
+            let sensitivities = results
+                .sensitivities()
+                .ok_or_else(|| QSError::UnexpectedErr("Missing sensitivities".into()))?;
+            exposure_for_key(
+                sensitivities.instrument_keys(),
+                sensitivities.exposure(),
+                "SPX",
+            )
+        } else {
+            None
+        };
+        Ok((price, delta))
+    }
+
+    /// Boundary test: for every strike on the ladder, the call price must
+    /// respect the no-arbitrage bounds
+    /// `max(0, df_q * S - df_r * K) <= C <= df_q * S`.
+    #[test]
+    fn call_price_respects_no_arbitrage_bounds_across_strike_ladder() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let expiry_date = trade_date + Period::new(6, TimeUnit::Months);
+        let market_index = MarketIndex::Equity("SPX".to_string());
+        let spot = 100.0;
+        let risk_free_rate = 0.03;
+        let dividend_rate = 0.01;
+
+        let (_, discount_curve, dividend_curve, _) = setup_markup_for_equity_option_test(
+            trade_date,
+            expiry_date,
+            &market_index,
+            spot,
+            risk_free_rate,
+            dividend_rate,
+        )?;
+        let df_r = discount_curve.discount_factor(expiry_date)?.value();
+        let df_q = dividend_curve.discount_factor(expiry_date)?.value();
+
+        for strike in [75.0, 85.0, 95.0, 105.0, 115.0, 125.0] {
+            let (price, _) = price_unit_option(
+                trade_date,
+                expiry_date,
+                spot,
+                strike,
+                EuroOptionType::Call,
+                risk_free_rate,
+                dividend_rate,
+                false,
+            )?;
+
+            let lower = (df_q * spot - df_r * strike).max(0.0);
+            let upper = df_q * spot;
+            assert!(
+                price >= lower - 1e-9,
+                "Call price {price} below intrinsic lower bound {lower} for strike {strike}"
+            );
+            assert!(
+                price <= upper + 1e-9,
+                "Call price {price} above upper bound {upper} for strike {strike}"
+            );
+        }
+        Ok(())
+    }
+
+    /// Boundary test: put-call parity `C - P = df_q * S - df_r * K` must hold
+    /// exactly (same vol is used for both legs) across the strike ladder.
+    #[test]
+    fn put_call_parity_holds_across_strike_ladder() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let expiry_date = trade_date + Period::new(6, TimeUnit::Months);
+        let market_index = MarketIndex::Equity("SPX".to_string());
+        let spot = 100.0;
+        let risk_free_rate = 0.03;
+        let dividend_rate = 0.01;
+
+        let (_, discount_curve, dividend_curve, _) = setup_markup_for_equity_option_test(
+            trade_date,
+            expiry_date,
+            &market_index,
+            spot,
+            risk_free_rate,
+            dividend_rate,
+        )?;
+        let df_r = discount_curve.discount_factor(expiry_date)?.value();
+        let df_q = dividend_curve.discount_factor(expiry_date)?.value();
+
+        for strike in [75.0, 85.0, 95.0, 105.0, 115.0, 125.0] {
+            let (call, _) = price_unit_option(
+                trade_date,
+                expiry_date,
+                spot,
+                strike,
+                EuroOptionType::Call,
+                risk_free_rate,
+                dividend_rate,
+                false,
+            )?;
+            let (put, _) = price_unit_option(
+                trade_date,
+                expiry_date,
+                spot,
+                strike,
+                EuroOptionType::Put,
+                risk_free_rate,
+                dividend_rate,
+                false,
+            )?;
+
+            let parity = df_q * spot - df_r * strike;
+            assert!(
+                (call - put - parity).abs() < 1e-8,
+                "Put-call parity violated at strike {strike}: C - P = {}, expected {parity}",
+                call - put
+            );
+        }
+        Ok(())
+    }
+
+    /// Boundary test: a one-day option must converge to its discounted
+    /// intrinsic value (deep ITM) and to zero (deep OTM).
+    #[test]
+    fn short_dated_option_converges_to_intrinsic_value() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let expiry_date = trade_date + Period::new(1, TimeUnit::Days);
+        let market_index = MarketIndex::Equity("SPX".to_string());
+        let spot = 100.0;
+        let risk_free_rate = 0.03;
+        let dividend_rate = 0.01;
+
+        let (_, discount_curve, dividend_curve, _) = setup_markup_for_equity_option_test(
+            trade_date,
+            expiry_date,
+            &market_index,
+            spot,
+            risk_free_rate,
+            dividend_rate,
+        )?;
+        let df_r = discount_curve.discount_factor(expiry_date)?.value();
+        let df_q = dividend_curve.discount_factor(expiry_date)?.value();
+
+        // Deep ITM call: price ~ discounted intrinsic.
+        let (itm_price, _) = price_unit_option(
+            trade_date,
+            expiry_date,
+            spot,
+            80.0,
+            EuroOptionType::Call,
+            risk_free_rate,
+            dividend_rate,
+            false,
+        )?;
+        let intrinsic = df_q * spot - df_r * 80.0;
+        assert!(
+            (itm_price - intrinsic).abs() < 1e-6,
+            "Short-dated ITM call {itm_price} should equal discounted intrinsic {intrinsic}"
+        );
+
+        // Deep OTM call: price ~ 0.
+        let (otm_price, _) = price_unit_option(
+            trade_date,
+            expiry_date,
+            spot,
+            120.0,
+            EuroOptionType::Call,
+            risk_free_rate,
+            dividend_rate,
+            false,
+        )?;
+        assert!(
+            otm_price.abs() < 1e-8,
+            "Short-dated OTM call should be worthless, got {otm_price}"
+        );
+        Ok(())
+    }
+
+    /// Ladder test: across the strike ladder, the AD spot delta must match a
+    /// central finite-difference bump-and-reprice of the spot fixing.
+    #[test]
+    fn delta_ladder_matches_finite_difference() -> Result<()> {
+        let trade_date = Date::new(2025, 1, 2);
+        let expiry_date = trade_date + Period::new(6, TimeUnit::Months);
+        let spot = 100.0;
+        let risk_free_rate = 0.03;
+        let dividend_rate = 0.01;
+        let bump = 1e-2;
+
+        for option_type in [EuroOptionType::Call, EuroOptionType::Put] {
+            let type_label = match option_type {
+                EuroOptionType::Call => "call",
+                EuroOptionType::Put => "put",
+            };
+            for strike in [80.0, 90.0, 100.0, 110.0, 120.0] {
+                let (_, ad_delta) = price_unit_option(
+                    trade_date,
+                    expiry_date,
+                    spot,
+                    strike,
+                    option_type.clone(),
+                    risk_free_rate,
+                    dividend_rate,
+                    true,
+                )?;
+                let ad_delta = ad_delta.ok_or_else(|| {
+                    QSError::NotFoundErr(format!("Spot delta missing for strike {strike}"))
+                })?;
+
+                let (price_up, _) = price_unit_option(
+                    trade_date,
+                    expiry_date,
+                    spot + bump,
+                    strike,
+                    option_type.clone(),
+                    risk_free_rate,
+                    dividend_rate,
+                    false,
+                )?;
+                let (price_down, _) = price_unit_option(
+                    trade_date,
+                    expiry_date,
+                    spot - bump,
+                    strike,
+                    option_type.clone(),
+                    risk_free_rate,
+                    dividend_rate,
+                    false,
+                )?;
+                let fd_delta = (price_up - price_down) / (2.0 * bump);
+
+                assert!(
+                    (ad_delta - fd_delta).abs() < 1e-6,
+                    "AD delta {ad_delta} vs FD delta {fd_delta} mismatch for {type_label} strike {strike}"
+                );
+            }
+        }
         Ok(())
     }
 }

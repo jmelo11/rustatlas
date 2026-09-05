@@ -58,6 +58,12 @@ impl CalibrationInstrument {
         self.quote_value
     }
 
+    /// Overrides the market input value (e.g. with a volatility interpolated
+    /// from a constructed surface or cube).
+    pub const fn set_quote_value(&mut self, value: f64) {
+        self.quote_value = value;
+    }
+
     /// Returns the pillar date.
     #[must_use]
     pub const fn pillar_date(&self) -> Date {

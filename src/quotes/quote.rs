@@ -217,7 +217,7 @@ impl std::str::FromStr for OptionStrategy {
 /// | Future | `Future` | CCY | Index | `IMMCode` | | | | | |
 /// | `ConvexityAdjustment` | `ConvexityAdjustment` | CCY | Index | `IMMCode` | | | | | |
 /// | Swaption | `Swaption` | CCY | Index | Expiry | `SwapTenor` | \[`PayFreq`\] | \[`RecvFreq`\] | Strike | \[`StrikeValue`\] `VolType` |
-/// | `FxForwardOutright` | `ForwardOutright` | CCYPAIR | Tenor | | | | | | |
+/// | `FxOutrightForward` | `FxOutrightForward` | CCYPAIR | Tenor | | | | | | |
 /// | `FxForwardPoints` | `FxForwardPoints` | CCYPAIR | Tenor | | | | | | |
 /// | `EquityCall` | `EquityCall` | CCY | Index | Tenor | Strike | | | | |
 /// | `EquityPut` | `EquityPut` | CCY | Index | Tenor | Strike | | | | |
@@ -1110,9 +1110,9 @@ impl QuoteDetails {
             "Swaption" => Self::parse_swaption(s, &parts),
             "FxForwardOutright" | "FxOutrightForward" | "ForwardOutright" => Self::parse_outright_forward(s, &parts),
             "FloatFloatCrossCurrencySwap" => Self::parse_float_float_cross_currency_swap(s, &parts),
-            "FxForwardPoints" | "ForwardPoints" => Self::parse_forward_points(s, &parts),
-            "EquityCall" | "Call" => Self::parse_equity_call(s, &parts),
-            "EquityPut" | "Put" => Self::parse_equity_put(s, &parts),
+            "FxForwardPoints" => Self::parse_forward_points(s, &parts),
+            "EquityCall" => Self::parse_equity_call(s, &parts),
+            "EquityPut" => Self::parse_equity_put(s, &parts),
             "FxCall" => Self::parse_fx_call(s, &parts),
             "FxPut" => Self::parse_fx_put(s, &parts),
             other => Err(QSError::InvalidValueErr(format!(
@@ -1132,8 +1132,8 @@ impl std::str::FromStr for QuoteDetails {
     /// Parses a quote identifier string (underscore-separated) into [`QuoteDetails`].
     ///
     /// The first `_`-delimited segment determines the instrument type and must
-    /// match the exact [`QuoteInstrument`] variant name (or the FX-specific
-    /// tags `OutrightForward`/`ForwardPoints`).
+    /// match the exact [`QuoteInstrument`] variant name (e.g.
+    /// `FxOutrightForward`/`FxForwardPoints`).
     ///
     /// # Errors
     /// Returns an error if the identifier cannot be parsed.

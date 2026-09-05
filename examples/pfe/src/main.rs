@@ -1,7 +1,10 @@
 mod utils;
 use quantsupport::prelude::*;
 use std::collections::HashMap;
-use utils::{bootstrap_curves, extract_f64_curve, load_curve_specs, load_fixings, load_quotes};
+use utils::{
+    bootstrap_curves, extract_f64_curve, load_curve_specs, load_fixings, load_model_config,
+    load_quotes,
+};
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let dc = DayCounter::Actual365;
@@ -32,6 +35,38 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // ── 1b. Load historical fixings ─────────────────────────────
     let fixing_store = load_fixings(&data_dir.join("fixings.json"))?;
     println!("Loaded SOFR fixings for fixing resolution.");
+
+    // ── 1c. Load LGM model parameters from JSON ─────────────────
+    let model_config = load_model_config(&data_dir.join("models.json"))?;
+    println!("Loaded LGM model configuration from models.json.");
+
+    // ── 1d. Build the SOFR caplet vol surface for model calibration
+    let caplet_quote_ids: Vec<String> = quote_store
+        .quotes()
+        .keys()
+        .filter(|id| id.starts_with("CapletFloorlet"))
+        .cloned()
+        .collect();
+    let surface_config = VolatilitySurfaceConfiguration::new(
+        MarketIndex::SOFR,
+        VolatilityType::Black,
+        SmileType::Strike,
+        caplet_quote_ids,
+    );
+    let surfaces =
+        VolatilitySurfaceBuilder::new(vec![surface_config]).build(&quote_store, Level::Mid)?;
+
+    // Constructed element store shared by model calibration.
+    let mut store = ConstructedElementStore::default();
+    for (index, element) in &curves {
+        store
+            .discount_curves_mut()
+            .insert(index.clone(), element.clone());
+    }
+    for (index, element) in surfaces {
+        store.volatility_surfaces_mut().insert(index, element);
+    }
+    println!("Built SOFR caplet vol surface for LGM calibration.");
 
     // ── 2. Build trades ─────────────────────────────────────────
 
@@ -165,21 +200,48 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let requests: Vec<_> = inspector.requests().to_vec();
 
     // ── 5. Build LGM market model (USD domestic + EUR foreign) ──
-    let n_paths: usize = 1000;
+    // The SOFR model's sigma schedule is calibrated to the caplet vol surface
+    // (Calibrated source in models.json); the ESTR model uses a constant vol.
+    let n_paths: usize = model_config.n_paths;
+    let sofr_model = model_config.rate_model(&MarketIndex::SOFR)?;
+    let estr_model = model_config.rate_model(&MarketIndex::ESTR)?;
+    let (eur_fx_vol, eur_fx_spot, eur_fx_rho) = model_config.fx_params(Currency::EUR)?;
+
+    let build_usd_rate = || {
+        LgmRateModel::from_configuration(sofr_model, &usd_curve, &store, &quote_store, Level::Mid)
+    };
+    let build_eur_rate = || {
+        LgmRateModel::from_configuration(estr_model, &eur_curve, &store, &quote_store, Level::Mid)
+    };
 
     // Rate model instances for FX model references (kept alive in scope)
-    let usd_rate_fx = LgmRateModel::new(0.05, 0.01, &usd_curve);
-    let eur_rate_fx = LgmRateModel::new(0.03, 0.008, &eur_curve);
-    let eur_fx = LgmFxModel::new(&usd_rate_fx, &eur_rate_fx, 0.08, 1.08, 0.15);
+    let usd_rate_fx = build_usd_rate()?;
+    let eur_rate_fx = build_eur_rate()?;
+    let eur_fx = LgmFxModel::new(
+        &usd_rate_fx,
+        &eur_rate_fx,
+        eur_fx_vol,
+        eur_fx_spot,
+        eur_fx_rho,
+    );
 
     // Separate instances for the curve models (moved into the market model)
-    let usd_rate = LgmRateModel::new(0.05, 0.01, &usd_curve);
-    let eur_rate = LgmRateModel::new(0.03, 0.008, &eur_curve);
-    let eur_rate_coll = LgmRateModel::new(0.03, 0.008, &eur_curve);
+    let usd_rate = build_usd_rate()?;
+    let eur_rate = build_eur_rate()?;
+    let eur_rate_coll = build_eur_rate()?;
+    println!(
+        "SOFR LGM sigma schedule ({} calibrated pillars): {:?}",
+        usd_rate.sigma_schedule().len(),
+        usd_rate
+            .sigma_schedule()
+            .iter()
+            .map(|(t, s)| (format!("{t:.2}y"), format!("{:.4}", s)))
+            .collect::<Vec<_>>()
+    );
 
     let mut model = LgmMarketModel::new(Currency::USD, MarketIndex::SOFR, ref_date, dc)
         .with_n_paths(n_paths)
-        .with_seed(42);
+        .with_seed(model_config.seed);
 
     model.add_curve_model(MarketIndex::SOFR, usd_rate);
     model.add_curve_model(MarketIndex::ESTR, eur_rate);

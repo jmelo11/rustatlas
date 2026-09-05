@@ -18,3 +18,7 @@ pprof = { version = "0.14", features = ["flamegraph", "criterion"] }
 [[bench]]
 name = "swap_pfe"
 harness = false
+
+[[bench]]
+name = "ad_core"
+harness = false

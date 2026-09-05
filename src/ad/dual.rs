@@ -73,7 +73,7 @@ impl<T: Default> Default for Dual<T> {
 impl<T: TapeHolder + InnerScalar> Dual<T> {
     /// Creates a new value, registering a leaf on the active tape.
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub fn new(val: f64) -> Self {
         let v = T::scalar(val);
         let node = T::with_tape(super::tape::Tape::new_leaf);
@@ -110,14 +110,14 @@ impl<T: TapeHolder + InnerScalar> Dual<T> {
 
     /// Zero constant (no tape).
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub fn zero() -> Self {
         Self::constant(T::zero())
     }
 
     /// One constant (no tape).
     #[inline]
-    #[must_use] 
+    #[must_use]
     pub fn one() -> Self {
         Self::constant(T::one())
     }
@@ -673,8 +673,8 @@ mod tests {
         let out: Dual<ADForward> = y.into();
         out.backward().unwrap();
         let adj = x.adjoint().unwrap();
-        assert!(approx(adj.val, 6.0));
-        assert!(approx(adj.dot, 2.0));
+        assert!(approx(adj.value(), 6.0));
+        assert!(approx(adj.first_derivative(), 2.0));
         Tape::stop_recording_fwd();
         Tape::rewind_to_init_fwd();
     }
@@ -688,9 +688,27 @@ mod tests {
         y.backward().unwrap();
         let adj = x.adjoint().unwrap();
         let e = 1.0_f64.exp();
-        assert!(approx(adj.val, e));
-        assert!(approx(adj.dot, e));
+        assert!(approx(adj.value(), e));
+        assert!(approx(adj.first_derivative(), e));
         Tape::stop_recording_fwd();
         Tape::rewind_to_init_fwd();
+    }
+
+    #[test]
+    fn mixed_third_order() {
+        use crate::ad::forward::Fwd3;
+        // f(x) = x^4 at x = 2: f' = 32, f'' = 48, f''' = 48, f'''' = 24.
+        Tape::<Fwd3>::start_recording_for();
+        let x = Dual::<Fwd3>::new_from_inner(Fwd3::var(2.0));
+        let x2: Dual<Fwd3> = (x * x).into();
+        let y: Dual<Fwd3> = (x2 * x2).into();
+        y.backward().unwrap();
+        let adj = x.adjoint().unwrap(); // df/dx carried as Fwd3 in the seed
+        assert!(approx(adj.value(), 32.0));
+        assert!(approx(adj.first_derivative(), 48.0));
+        assert!(approx(adj.second_derivative(), 48.0));
+        assert!(approx(adj.third_derivative(), 24.0));
+        Tape::<Fwd3>::stop_recording_for();
+        Tape::<Fwd3>::rewind_to_init_for();
     }
 }

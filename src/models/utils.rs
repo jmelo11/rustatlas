@@ -1,8 +1,12 @@
-//! Common Black-Scholes / Black-76 pricing functions shared across models.
+//! Common Black-Scholes / Black-76 / Bachelier pricing functions shared
+//! across models.
 
 use crate::{
     ad::{dual::DualFwd, expr::FloatExt},
-    math::probability::norm_cdf::{norm_cdf, NormCDF},
+    math::probability::{
+        norm_cdf::{norm_cdf, NormCDF},
+        norm_pdf::norm_pdf,
+    },
     rates::yieldtermstructure::interestratestermstructure::InterestRatesTermStructure,
     time::{date::Date, daycounter::DayCounter, enums::TimeUnit, period::Period},
     utils::errors::{QSError, Result},
@@ -52,6 +56,30 @@ pub fn black_call(fwd: f64, strike: f64, vol: f64, tau: f64) -> Result<f64> {
 pub fn black_put(fwd: f64, strike: f64, vol: f64, tau: f64) -> Result<f64> {
     let (d1, d2) = d1_d2(fwd, strike, vol, tau)?;
     Ok(strike.mul_add((-d2).norm_cdf(), -(fwd * (-d1).norm_cdf())))
+}
+
+/// Undiscounted Bachelier (normal-model) call price:
+/// `(F − K)·Φ(d) + σ·√τ·φ(d)` with `d = (F − K)/(σ·√τ)`.
+///
+/// Used to price instruments quoted with a Normal volatility. Unlike Black's
+/// formula, forwards and strikes may be zero or negative.
+///
+/// # Errors
+/// Returns an error if `tau` or `vol` are non-positive.
+pub fn bachelier_call(fwd: f64, strike: f64, vol: f64, tau: f64) -> Result<f64> {
+    if tau <= 0.0 {
+        return Err(QSError::InvalidValueErr(
+            "time to expiry must be positive".into(),
+        ));
+    }
+    if vol <= 0.0 {
+        return Err(QSError::InvalidValueErr(
+            "volatility must be positive".into(),
+        ));
+    }
+    let sigma_sqrt_tau = vol * tau.sqrt();
+    let d = (fwd - strike) / sigma_sqrt_tau;
+    Ok((fwd - strike).mul_add(norm_cdf(d), sigma_sqrt_tau * norm_pdf(d)))
 }
 
 // ---------------------------------------------------------------------------
@@ -135,4 +163,34 @@ pub fn swap_annuity_from_curve(
         date = next;
     }
     Ok(annuity)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bachelier_call_atm_matches_closed_form() -> Result<()> {
+        // ATM Bachelier price = sigma * sqrt(tau) / sqrt(2*pi).
+        let (fwd, vol, tau) = (0.03, 0.01, 2.0);
+        let price = bachelier_call(fwd, fwd, vol, tau)?;
+        let expected = vol * tau.sqrt() / (2.0 * std::f64::consts::PI).sqrt();
+        assert!((price - expected).abs() < 1e-15);
+        Ok(())
+    }
+
+    #[test]
+    fn bachelier_call_bounds_and_negative_rates() -> Result<()> {
+        // Price is bounded below by intrinsic and works for negative fwd/strike.
+        let (fwd, strike, vol, tau) = (-0.005, -0.01, 0.008, 1.5);
+        let price = bachelier_call(fwd, strike, vol, tau)?;
+        assert!(price > (fwd - strike).max(0.0));
+        // Monotone in vol.
+        let higher = bachelier_call(fwd, strike, 2.0 * vol, tau)?;
+        assert!(higher > price);
+        // Invalid inputs error.
+        assert!(bachelier_call(fwd, strike, 0.0, tau).is_err());
+        assert!(bachelier_call(fwd, strike, vol, 0.0).is_err());
+        Ok(())
+    }
 }

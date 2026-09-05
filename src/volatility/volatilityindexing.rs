@@ -53,7 +53,7 @@ impl std::str::FromStr for Strike {
 }
 
 /// Represents if the volatility is quoted as black (log-normal) or normal volatility.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum VolatilityType {
     /// Black (log-normal) volatility.
     Black,

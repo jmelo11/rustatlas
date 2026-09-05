@@ -92,6 +92,73 @@ fn parse_market_index(name: &str) -> std::result::Result<MarketIndex, Box<dyn st
 }
 
 // ---------------------------------------------------------------------------
+// Model configuration
+// ---------------------------------------------------------------------------
+
+/// A rate model entry in `models.json`.
+#[derive(serde::Deserialize)]
+pub struct RateModelSpec {
+    pub market_index: MarketIndex,
+    pub model: ModelConfiguration,
+}
+
+/// An FX model entry in `models.json`.
+#[derive(serde::Deserialize)]
+pub struct FxModelSpec {
+    pub currency: Currency,
+    pub volatility: VolatilitySourceConfiguration,
+    pub spot: f64,
+    pub rho: f64,
+}
+
+/// LGM market-model configuration loaded from `models.json`.
+#[derive(serde::Deserialize)]
+pub struct LgmMarketConfig {
+    pub n_paths: usize,
+    pub seed: u64,
+    pub rate_models: Vec<RateModelSpec>,
+    pub fx_models: Vec<FxModelSpec>,
+}
+
+impl LgmMarketConfig {
+    /// Returns the model configuration registered under `index`.
+    pub fn rate_model(
+        &self,
+        index: &MarketIndex,
+    ) -> std::result::Result<&ModelConfiguration, Box<dyn std::error::Error>> {
+        let spec = self
+            .rate_models
+            .iter()
+            .find(|s| s.market_index == *index)
+            .ok_or_else(|| format!("No rate model configured for {index}"))?;
+        Ok(&spec.model)
+    }
+
+    /// Returns (fx_vol, spot, rho) for the FX model of `currency`.
+    pub fn fx_params(
+        &self,
+        currency: Currency,
+    ) -> std::result::Result<(f64, f64, f64), Box<dyn std::error::Error>> {
+        let spec = self
+            .fx_models
+            .iter()
+            .find(|s| s.currency == currency)
+            .ok_or_else(|| format!("No FX model configured for {currency}"))?;
+        let store = ConstructedElementStore::default();
+        let vol = spec.volatility.resolve(&store)?.vol(0.0)?;
+        Ok((vol, spec.spot, spec.rho))
+    }
+}
+
+/// Loads the LGM market-model configuration from a JSON file.
+pub fn load_model_config(path: &PathBuf) -> Result<LgmMarketConfig> {
+    let file =
+        File::open(path).map_err(|e| QSError::NotFoundErr(format!("{}: {e}", path.display())))?;
+    let reader = BufReader::new(file);
+    serde_json::from_reader(reader).map_err(|e| QSError::InvalidValueErr(e.to_string()))
+}
+
+// ---------------------------------------------------------------------------
 // Bootstrapping
 // ---------------------------------------------------------------------------
 

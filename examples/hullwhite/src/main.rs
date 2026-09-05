@@ -1,16 +1,7 @@
 mod utils;
 
 use quantsupport::prelude::*;
-use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
 use std::path::PathBuf;
-
-/// Box-Muller standard normal sample.
-fn std_normal(rng: &mut impl Rng) -> f64 {
-    let u1: f64 = rng.gen_range(f64::EPSILON..1.0);
-    let u2: f64 = rng.gen_range(0.0..std::f64::consts::TAU);
-    (-2.0 * u1.ln()).sqrt() * u2.cos()
-}
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let data_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("data");
@@ -19,6 +10,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let quote_store = utils::load_quotes(&data_dir.join("quotes.json"))?;
     let curve_specs = utils::load_curve_specs(&data_dir.join("curve_specs.json"))?;
     let hw_config = utils::load_hw_calibration(&data_dir.join("hw_calibration.json"))?;
+    let sim_config = utils::load_simulation_config(&data_dir.join("simulation.json"))?;
     let ref_date = quote_store.reference_date();
     let dc = DayCounter::Actual365;
 
@@ -37,15 +29,41 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let curves = bootstrapper.bootstrap(&quote_store, Level::Mid)?;
 
     let sofr_element = curves.get(&MarketIndex::SOFR).expect("SOFR curve");
-    let curve = utils::extract_f64_curve(sofr_element, dc)?;
+    let curve = sofr_element.to_f64_term_structure(dc)?;
     println!("Bootstrapped SOFR curve ({} nodes)", curve.dates().len());
 
-    // 3. HW calibration from configuration
+    // 3. Build the SOFR caplet vol surface from the same quote store
+    let caplet_quote_ids: Vec<String> = quote_store
+        .quotes()
+        .keys()
+        .filter(|id| id.starts_with("CapletFloorlet"))
+        .cloned()
+        .collect();
+    let surface_config = VolatilitySurfaceConfiguration::new(
+        MarketIndex::SOFR,
+        VolatilityType::Black,
+        SmileType::Strike,
+        caplet_quote_ids,
+    );
+    let surfaces = VolatilitySurfaceBuilder::new(vec![surface_config])
+        .build(&quote_store, Level::Mid)?;
+    println!("Built {} volatility surface(s)", surfaces.len());
+
+    // Constructed element store shared by calibration and simulation.
+    let mut store = ConstructedElementStore::default();
+    for (index, element) in &curves {
+        store
+            .discount_curves_mut()
+            .insert(index.clone(), element.clone());
+    }
+    for (index, element) in surfaces {
+        store.volatility_surfaces_mut().insert(index, element);
+    }
+
+    // 4. Calibrate HW to caplet vols interpolated from the surface
     let alpha = hw_config.alpha();
     let mut hw = HullWhite::new(alpha, &curve);
-
-    // 4. Calibrate HW to market caplet vols
-    hw.calibrate(hw_config.quote_ids(), &quote_store, &curve, Level::Mid)
+    hw.calibrate_with_configuration(&hw_config, &store, &quote_store, &curve, Level::Mid)
         .expect("calibration should converge");
 
     let quality = hw
@@ -60,7 +78,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     );
     println!("{:-<82}", "");
     for rec in &quality.records {
-        let model_vol = hw.zcb_price_volatility(rec.calibrated_sigma, rec.t, rec.big_t);
+        let model_vol = utils::implied_black_vol(rec, &curve)?;
         let err = (rec.model_price - rec.market_price).abs();
         println!(
             "{:<8} {:>8.4} {:>10.6} {:>12.6} {:>14.8} {:>14.8} {:>10.2e}",
@@ -85,29 +103,29 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         );
     }
 
-    // 8. Simulate 100 paths
+    // 8. Build the Monte Carlo simulation from the JSON configuration
+    let builder = SimulationBuilder::new(vec![sim_config]);
+    let simulations = builder.build(&store, &quote_store, &FixingStore::default(), Level::Mid)?;
+    let simulation_element = simulations
+        .get(&MarketIndex::SOFR)
+        .expect("SOFR simulation");
+    let simulation = simulation_element.simulation().borrow();
 
-    let n_paths = 100_usize;
-    let t_end = 10.0;
-    let n_steps = 120;
-
-    let mut times = Vec::with_capacity(n_steps);
-    for i in 1..=n_steps {
-        times.push(t_end * i as f64 / n_steps as f64);
-    }
-
-    let mut rng = StdRng::seed_from_u64(42);
-    let mut all_paths: Vec<Vec<f64>> = Vec::with_capacity(n_paths);
-
-    for _ in 0..n_paths {
-        let mut draws = vec![0.0_f64; n_steps];
-        let mut scenario = vec![0.0_f64; n_steps];
-        for d in &mut draws {
-            *d = std_normal(&mut rng);
-        }
-        hw.generate(&times, &draws, &mut scenario).unwrap();
-        all_paths.push(scenario);
-    }
+    let times: Vec<f64> = simulation
+        .dates()
+        .iter()
+        .map(|d| dc.year_fraction(ref_date, *d))
+        .collect();
+    let all_paths: Vec<Vec<f64>> = simulation
+        .path()
+        .iter()
+        .map(|path| path.iter().map(|v| v.value()).collect())
+        .collect();
+    println!(
+        "\nSimulated {} paths over {} monthly steps from JSON config",
+        all_paths.len(),
+        times.len()
+    );
 
     // 9. Plot simulations
     let r0 = curve
@@ -122,7 +140,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     utils::plot_simulations(&times, &all_paths, r0)?;
 
     // 10. Plot calibration quality
-    utils::plot_calibration_quality(&quality, &hw, &curve, ref_date, dc)?;
+    utils::plot_calibration_quality(&quality, &curve, ref_date, dc)?;
 
     println!("\nPlots saved: hw_simulations.png, hw_calibration.png");
 

@@ -1,0 +1,79 @@
+{
+    "n_paths": 1000,
+    "seed": 42,
+    "rate_models": [
+        {
+            "market_index": "SOFR",
+            "model": {
+                "Lgm": {
+                    "lambda": 0.05,
+                    "volatility": {
+                        "Calibrated": {
+                            "source": {
+                                "Surface": {
+                                    "market_index": "SOFR"
+                                }
+                            },
+                            "quote_ids": [
+                                "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.055_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.035_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.045_Straddle_Black",
+                                "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.055_Straddle_Black"
+                            ],
+                            "alpha": 0.05,
+                            "strike": "Atm"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "market_index": "ESTR",
+            "model": {
+                "Lgm": {
+                    "lambda": 0.03,
+                    "volatility": {
+                        "Constant": {
+                            "value": 0.008
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "fx_models": [
+        {
+            "currency": "EUR",
+            "volatility": {
+                "Constant": {
+                    "value": 0.08
+                }
+            },
+            "spot": 1.08,
+            "rho": 0.15
+        }
+    ]
+}

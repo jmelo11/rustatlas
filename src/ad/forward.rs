@@ -1,4 +1,17 @@
-//! Forward-mode automatic differentiation: [`ADForward`].
+//! Forward-mode automatic differentiation: the generic, nestable [`Fwd`].
+//!
+//! `Fwd<T>` carries a value and a first-order derivative seed of type `T`.
+//! Nesting multiplies the derivative order:
+//!
+//! * [`Fwd1`] = `Fwd<f64>` — 1st order
+//! * [`Fwd2`] = `Fwd<Fwd<f64>>` — 2nd order (alias [`ADForward`])
+//! * [`Fwd3`] = `Fwd<Fwd<Fwd<f64>>>` — 3rd order
+//! * [`Fwd4`] — 4th order, and so on.
+//!
+//! Pure forward-mode works at any depth with no tape. To use a forward type
+//! as the inner scalar of a [`Dual`](crate::ad::dual::Dual) (mixed
+//! backward-over-forward), it needs a thread-local tape: `Fwd1`…`Fwd4` are
+//! provided out of the box.
 
 use core::fmt;
 use std::cell::RefCell;
@@ -9,232 +22,265 @@ use crate::ad::blocklist::BlockList;
 use crate::ad::scalar::{InnerScalar, Scalar};
 use crate::ad::tape::{Tape, TapeHolder};
 
-/// A forward-mode automatic differentiation number carrying a value and up to
-/// second-order derivative seeds.
-#[derive(Clone, Copy)]
-pub struct ADForward {
+/// A forward-mode AD number carrying a value and a derivative seed.
+///
+/// Generic over the inner scalar `T`, so it nests: `Fwd<Fwd<f64>>` computes
+/// second-order derivatives, `Fwd<Fwd<Fwd<f64>>>` third-order, and so on.
+#[derive(Clone, Copy, Default)]
+pub struct Fwd<T> {
     /// Function value.
-    pub val: f64,
+    pub val: T,
     /// First-order forward derivative.
-    pub dot: f64,
-    /// Second-order forward derivative.
-    pub dot2: f64,
+    pub dot: T,
 }
 
-impl ADForward {
+/// First-order forward AD.
+pub type Fwd1 = Fwd<f64>;
+/// Second-order forward AD.
+pub type Fwd2 = Fwd<Fwd1>;
+/// Third-order forward AD.
+pub type Fwd3 = Fwd<Fwd2>;
+/// Fourth-order forward AD.
+pub type Fwd4 = Fwd<Fwd3>;
+
+/// Backward-compatible alias: the 2nd-order forward type used by
+/// [`DualFwd`](crate::ad::dual::DualFwd).
+pub type ADForward = Fwd2;
+
+// ---------------------------------------------------------------------------
+// Seeding
+// ---------------------------------------------------------------------------
+
+/// Scalars that can be seeded as an independent variable at every nesting
+/// level (used by [`Fwd::var`]).
+pub trait FwdSeed: InnerScalar {
+    /// Seeds an independent variable with value `v`.
+    fn seed_var(v: f64) -> Self;
+}
+
+impl FwdSeed for f64 {
+    #[inline]
+    fn seed_var(v: f64) -> Self {
+        v
+    }
+}
+
+impl<T: FwdSeed> FwdSeed for Fwd<T> {
+    #[inline]
+    fn seed_var(v: f64) -> Self {
+        Self {
+            val: T::seed_var(v),
+            dot: T::one(),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Constructors & accessors
+// ---------------------------------------------------------------------------
+
+impl<T: InnerScalar> Fwd<T> {
     /// Constant (no derivative seeds).
     #[inline]
     #[must_use]
-    pub const fn constant(v: f64) -> Self {
+    pub fn constant(v: f64) -> Self {
         Self {
-            val: v,
-            dot: 0.0,
-            dot2: 0.0,
-        }
-    }
-
-    /// Independent variable seeded for first-derivative computation.
-    #[inline]
-    #[must_use]
-    pub const fn var(v: f64) -> Self {
-        Self {
-            val: v,
-            dot: 1.0,
-            dot2: 0.0,
+            val: T::scalar(v),
+            dot: T::zero(),
         }
     }
 
     /// Returns the function value.
     #[inline]
     #[must_use]
-    pub const fn value(&self) -> f64 {
-        self.val
+    pub fn value(&self) -> f64 {
+        self.val.value()
     }
 
     /// Returns the first forward derivative.
     #[inline]
     #[must_use]
-    pub const fn first_derivative(&self) -> f64 {
-        self.dot
+    pub fn first_derivative(&self) -> f64 {
+        self.dot.value()
     }
+}
 
-    /// Returns the second forward derivative.
+impl<T: FwdSeed> Fwd<T> {
+    /// Independent variable seeded for derivative computation at all levels.
     #[inline]
     #[must_use]
-    pub const fn second_derivative(&self) -> f64 {
-        self.dot2
+    pub fn var(v: f64) -> Self {
+        <Self as FwdSeed>::seed_var(v)
     }
 }
 
-impl Default for ADForward {
-    fn default() -> Self {
-        Self {
-            val: 0.0,
-            dot: 0.0,
-            dot2: 0.0,
-        }
+impl<U: InnerScalar> Fwd<Fwd<U>> {
+    /// Returns the second forward derivative (nesting depth ≥ 2).
+    #[inline]
+    #[must_use]
+    pub fn second_derivative(&self) -> f64 {
+        self.dot.dot.value()
     }
 }
-impl fmt::Debug for ADForward {
+
+impl<U: InnerScalar> Fwd<Fwd<Fwd<U>>> {
+    /// Returns the third forward derivative (nesting depth ≥ 3).
+    #[inline]
+    #[must_use]
+    pub fn third_derivative(&self) -> f64 {
+        self.dot.dot.dot.value()
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Comparisons, formatting, conversions
+// ---------------------------------------------------------------------------
+
+impl<T: fmt::Debug> fmt::Debug for Fwd<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Fwd({}, d:{}, d2:{})", self.val, self.dot, self.dot2)
+        write!(f, "Fwd({:?}, d:{:?})", self.val, self.dot)
     }
 }
-impl fmt::Display for ADForward {
+impl<T: InnerScalar> fmt::Display for Fwd<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.val)
+        write!(f, "{}", self.value())
     }
 }
-impl PartialEq for ADForward {
+impl<T: InnerScalar> PartialEq for Fwd<T> {
     fn eq(&self, o: &Self) -> bool {
-        self.val == o.val
+        self.value() == o.value()
     }
 }
-impl PartialOrd for ADForward {
+impl<T: InnerScalar> PartialOrd for Fwd<T> {
     fn partial_cmp(&self, o: &Self) -> Option<Ordering> {
-        self.val.partial_cmp(&o.val)
+        self.value().partial_cmp(&o.value())
     }
 }
-impl PartialEq<f64> for ADForward {
+impl<T: InnerScalar> PartialEq<f64> for Fwd<T> {
     fn eq(&self, rhs: &f64) -> bool {
-        self.val == *rhs
+        self.value() == *rhs
     }
 }
-impl PartialOrd<f64> for ADForward {
+impl<T: InnerScalar> PartialOrd<f64> for Fwd<T> {
     fn partial_cmp(&self, rhs: &f64) -> Option<Ordering> {
-        self.val.partial_cmp(rhs)
+        self.value().partial_cmp(rhs)
     }
 }
-impl From<f64> for ADForward {
+impl<T: InnerScalar> From<f64> for Fwd<T> {
     fn from(v: f64) -> Self {
         Self::constant(v)
     }
 }
 
-// -- ADForward arithmetic ---------------------------------------------------
+// -- Fwd<T> arithmetic --------------------------------------------------------
 
-impl Add for ADForward {
+impl<T: InnerScalar> Add for Fwd<T> {
     type Output = Self;
     #[inline]
     fn add(self, r: Self) -> Self {
         Self {
             val: self.val + r.val,
             dot: self.dot + r.dot,
-            dot2: self.dot2 + r.dot2,
         }
     }
 }
-impl Sub for ADForward {
+impl<T: InnerScalar> Sub for Fwd<T> {
     type Output = Self;
     #[inline]
     fn sub(self, r: Self) -> Self {
         Self {
             val: self.val - r.val,
             dot: self.dot - r.dot,
-            dot2: self.dot2 - r.dot2,
         }
     }
 }
-impl Mul for ADForward {
+impl<T: InnerScalar> Mul for Fwd<T> {
     type Output = Self;
     #[inline]
     fn mul(self, r: Self) -> Self {
         Self {
             val: self.val * r.val,
-            dot: self.dot.mul_add(r.val, self.val * r.dot),
-            dot2: self
-                .val
-                .mul_add(r.dot2, self.dot2.mul_add(r.val, 2.0 * self.dot * r.dot)),
+            dot: self.val * r.dot + self.dot * r.val,
         }
     }
 }
-impl Div for ADForward {
+impl<T: InnerScalar> Div for Fwd<T> {
     type Output = Self;
     #[inline]
     fn div(self, r: Self) -> Self {
-        let inv = 1.0 / r.val;
-        let inv2 = inv * inv;
+        let val = self.val / r.val;
         Self {
-            val: self.val * inv,
-            dot: self.dot.mul_add(r.val, -(self.val * r.dot)) * inv2,
-            dot2: self.dot2.mul_add(r.val, -(self.val * r.dot2)).mul_add(
-                r.val,
-                -(2.0 * self.dot.mul_add(r.val, -(self.val * r.dot)) * r.dot),
-            ) / (r.val * r.val * r.val),
+            val,
+            dot: (self.dot - val * r.dot) / r.val,
         }
     }
 }
-impl Neg for ADForward {
+impl<T: InnerScalar> Neg for Fwd<T> {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self {
         Self {
             val: -self.val,
             dot: -self.dot,
-            dot2: -self.dot2,
         }
     }
 }
 
-impl Add<f64> for ADForward {
+impl<T: InnerScalar> Add<f64> for Fwd<T> {
     type Output = Self;
     #[inline]
     fn add(self, c: f64) -> Self {
         Self {
             val: self.val + c,
             dot: self.dot,
-            dot2: self.dot2,
         }
     }
 }
-impl Add<ADForward> for f64 {
-    type Output = ADForward;
+impl<T: InnerScalar> Add<Fwd<T>> for f64 {
+    type Output = Fwd<T>;
     #[inline]
-    fn add(self, r: ADForward) -> ADForward {
+    fn add(self, r: Fwd<T>) -> Fwd<T> {
         r + self
     }
 }
-impl Sub<f64> for ADForward {
+impl<T: InnerScalar> Sub<f64> for Fwd<T> {
     type Output = Self;
     #[inline]
     fn sub(self, c: f64) -> Self {
         Self {
             val: self.val - c,
             dot: self.dot,
-            dot2: self.dot2,
         }
     }
 }
-impl Sub<ADForward> for f64 {
-    type Output = ADForward;
+impl<T: InnerScalar> Sub<Fwd<T>> for f64 {
+    type Output = Fwd<T>;
     #[inline]
-    fn sub(self, r: ADForward) -> ADForward {
-        ADForward {
-            val: self - r.val,
+    fn sub(self, r: Fwd<T>) -> Fwd<T> {
+        Fwd {
+            val: T::scalar(self) - r.val,
             dot: -r.dot,
-            dot2: -r.dot2,
         }
     }
 }
-impl Mul<f64> for ADForward {
+impl<T: InnerScalar> Mul<f64> for Fwd<T> {
     type Output = Self;
     #[inline]
     fn mul(self, c: f64) -> Self {
         Self {
             val: self.val * c,
             dot: self.dot * c,
-            dot2: self.dot2 * c,
         }
     }
 }
-impl Mul<ADForward> for f64 {
-    type Output = ADForward;
+impl<T: InnerScalar> Mul<Fwd<T>> for f64 {
+    type Output = Fwd<T>;
     #[inline]
-    fn mul(self, r: ADForward) -> ADForward {
+    fn mul(self, r: Fwd<T>) -> Fwd<T> {
         r * self
     }
 }
-impl Div<f64> for ADForward {
+impl<T: InnerScalar> Div<f64> for Fwd<T> {
     type Output = Self;
     #[inline]
     fn div(self, c: f64) -> Self {
@@ -242,81 +288,83 @@ impl Div<f64> for ADForward {
         Self {
             val: self.val * inv,
             dot: self.dot * inv,
-            dot2: self.dot2 * inv,
         }
     }
 }
-impl Div<ADForward> for f64 {
-    type Output = ADForward;
+impl<T: InnerScalar> Div<Fwd<T>> for f64 {
+    type Output = Fwd<T>;
     #[inline]
-    fn div(self, r: ADForward) -> ADForward {
-        ADForward::constant(self) / r
+    fn div(self, r: Fwd<T>) -> Fwd<T> {
+        Fwd::<T>::constant(self) / r
     }
 }
 
-impl AddAssign for ADForward {
+impl<T: InnerScalar> AddAssign for Fwd<T> {
     fn add_assign(&mut self, r: Self) {
         *self = *self + r;
     }
 }
-impl AddAssign<f64> for ADForward {
+impl<T: InnerScalar> AddAssign<f64> for Fwd<T> {
     fn add_assign(&mut self, r: f64) {
         *self = *self + r;
     }
 }
-impl SubAssign for ADForward {
+impl<T: InnerScalar> SubAssign for Fwd<T> {
     fn sub_assign(&mut self, r: Self) {
         *self = *self - r;
     }
 }
-impl SubAssign<f64> for ADForward {
+impl<T: InnerScalar> SubAssign<f64> for Fwd<T> {
     fn sub_assign(&mut self, r: f64) {
         *self = *self - r;
     }
 }
-impl MulAssign for ADForward {
+impl<T: InnerScalar> MulAssign for Fwd<T> {
     fn mul_assign(&mut self, r: Self) {
         *self = *self * r;
     }
 }
-impl MulAssign<f64> for ADForward {
+impl<T: InnerScalar> MulAssign<f64> for Fwd<T> {
     fn mul_assign(&mut self, r: f64) {
         *self = *self * r;
     }
 }
-impl DivAssign for ADForward {
+impl<T: InnerScalar> DivAssign for Fwd<T> {
     fn div_assign(&mut self, r: Self) {
         *self = *self / r;
     }
 }
-impl DivAssign<f64> for ADForward {
+impl<T: InnerScalar> DivAssign<f64> for Fwd<T> {
     fn div_assign(&mut self, r: f64) {
         *self = *self / r;
     }
 }
-impl Rem for ADForward {
+impl<T: InnerScalar> Rem for Fwd<T> {
     type Output = Self;
     fn rem(self, r: Self) -> Self {
-        Self::constant(self.val % r.val)
+        Self::constant(self.value() % r.value())
     }
 }
-impl Rem<f64> for ADForward {
+impl<T: InnerScalar> Rem<f64> for Fwd<T> {
     type Output = Self;
     fn rem(self, r: f64) -> Self {
-        Self::constant(self.val % r)
+        Self::constant(self.value() % r)
     }
 }
 
-// -- Scalar impl for ADForward -----------------------------------------------
+// -- Scalar impl for Fwd<T> ---------------------------------------------------
+//
+// Chain rules are written first-order in the inner scalar `T`; nesting the
+// type recursively yields exact higher-order derivatives.
 
-impl Scalar for ADForward {
+impl<T: InnerScalar> Scalar for Fwd<T> {
     #[inline]
     fn scalar(v: f64) -> Self {
         Self::constant(v)
     }
     #[inline]
     fn value(&self) -> f64 {
-        self.val
+        self.val.value()
     }
     #[inline]
     fn zero() -> Self {
@@ -327,91 +375,63 @@ impl Scalar for ADForward {
         Self::constant(1.0)
     }
     fn exp(self) -> Self {
-        let ev = self.val.exp();
+        let e = self.val.exp();
         Self {
-            val: ev,
-            dot: ev * self.dot,
-            dot2: ev * self.dot.mul_add(self.dot, self.dot2),
+            val: e,
+            dot: self.dot * e,
         }
     }
     fn ln(self) -> Self {
-        let inv = 1.0 / self.val;
         Self {
             val: self.val.ln(),
-            dot: self.dot * inv,
-            dot2: self.dot2.mul_add(inv, -(self.dot * self.dot * inv * inv)),
+            dot: self.dot / self.val,
         }
     }
     fn sqrt(self) -> Self {
-        let sv = self.val.sqrt();
-        let inv2s = 0.5 / sv;
+        let s = self.val.sqrt();
         Self {
-            val: sv,
-            dot: self.dot * inv2s,
-            dot2: self
-                .dot2
-                .mul_add(inv2s, -(self.dot * self.dot / (4.0 * self.val * sv))),
+            val: s,
+            dot: self.dot / (s * 2.0),
         }
     }
     fn sin(self) -> Self {
-        let (s, c) = self.val.sin_cos();
         Self {
-            val: s,
-            dot: c * self.dot,
-            dot2: c.mul_add(self.dot2, -(s * self.dot * self.dot)),
+            val: self.val.sin(),
+            dot: self.dot * self.val.cos(),
         }
     }
     fn cos(self) -> Self {
-        let (s, c) = self.val.sin_cos();
         Self {
-            val: c,
-            dot: -s * self.dot,
-            dot2: (-s).mul_add(self.dot2, -(c * self.dot * self.dot)),
+            val: self.val.cos(),
+            dot: -(self.dot * self.val.sin()),
         }
     }
     fn abs(self) -> Self {
-        let sgn = if self.val >= 0.0 { 1.0 } else { -1.0 };
-        Self {
-            val: self.val.abs(),
-            dot: sgn * self.dot,
-            dot2: sgn * self.dot2,
+        if self.value() >= 0.0 {
+            self
+        } else {
+            -self
         }
     }
     fn powf(self, p: f64) -> Self {
-        let vp1 = self.val.powf(p - 1.0);
-        let vp = vp1 * self.val;
         Self {
-            val: vp,
-            dot: p * vp1 * self.dot,
-            dot2: (p * (p - 1.0) * self.val.powf(p - 2.0) * self.dot)
-                .mul_add(self.dot, p * vp1 * self.dot2),
+            val: self.val.powf(p),
+            dot: self.dot * self.val.powf(p - 1.0) * p,
         }
     }
-    #[allow(clippy::suspicious_operation_groupings)]
     fn pows(self, b: Self) -> Self {
-        let lna = self.val.ln();
-        let y = self.val.powf(b.val);
-        let u = b.dot.mul_add(lna, b.val * self.dot / self.val);
-        let dot = y * u;
-        let up = b.val.mul_add(
-            self.dot2 / self.val - self.dot * self.dot / (self.val * self.val),
-            b.dot2.mul_add(lna, 2.0 * b.dot * self.dot / self.val),
-        );
-        Self {
-            val: y,
-            dot,
-            dot2: dot.mul_add(u, y * up),
-        }
+        // a^b = exp(b · ln a), valid for a > 0 (same domain as before).
+        Scalar::exp(b * Scalar::ln(self))
     }
     fn max_val(self, o: Self) -> Self {
-        if self.val >= o.val {
+        if self.value() >= o.value() {
             self
         } else {
             o
         }
     }
     fn min_val(self, o: Self) -> Self {
-        if self.val <= o.val {
+        if self.value() <= o.value() {
             self
         } else {
             o
@@ -439,22 +459,22 @@ impl Scalar for ADForward {
     }
 }
 
-impl InnerScalar for ADForward {}
+impl<T: InnerScalar> InnerScalar for Fwd<T> {}
 
-impl num_traits::Zero for ADForward {
+impl<T: InnerScalar> num_traits::Zero for Fwd<T> {
     fn zero() -> Self {
         Self::constant(0.0)
     }
     fn is_zero(&self) -> bool {
-        self.val == 0.0
+        self.value() == 0.0
     }
 }
-impl num_traits::One for ADForward {
+impl<T: InnerScalar> num_traits::One for Fwd<T> {
     fn one() -> Self {
         Self::constant(1.0)
     }
 }
-impl num_traits::Num for ADForward {
+impl<T: InnerScalar> num_traits::Num for Fwd<T> {
     type FromStrRadixErr = String;
     fn from_str_radix(s: &str, _: u32) -> std::result::Result<Self, String> {
         s.parse::<f64>()
@@ -463,23 +483,50 @@ impl num_traits::Num for ADForward {
     }
 }
 
-// -- TapeHolder for ADForward ------------------------------------------------
+// -- TapeHolder for forward types ----------------------------------------------
 
-thread_local! {
-    /// Thread-local tape for [`Dual<ADForward>`](super::dual::Dual).
-    pub static TAPE_FWD: RefCell<Tape<ADForward>> = RefCell::new(Tape {
-        storage: BlockList::with_default_cap(), book: Vec::new(), mark: 0, active: false,
-    });
+/// Implements [`TapeHolder`] for a concrete forward type with its own
+/// thread-local tape, enabling `Dual<$ty>` (backward-over-forward AD).
+macro_rules! impl_fwd_tape_holder {
+    ($ty:ty, $tls:ident, $doc:literal) => {
+        thread_local! {
+            #[doc = $doc]
+            pub static $tls: RefCell<Tape<$ty>> = RefCell::new(Tape {
+                storage: BlockList::with_default_cap(), book: Vec::new(), mark: 0, active: false,
+            });
+        }
+
+        impl TapeHolder for $ty {
+            fn with_tape<R>(f: impl FnOnce(&mut Tape<Self>) -> R) -> R {
+                $tls.with(|tc| {
+                    let mut t = tc.borrow_mut();
+                    f(&mut t)
+                })
+            }
+        }
+    };
 }
 
-impl TapeHolder for ADForward {
-    fn with_tape<R>(f: impl FnOnce(&mut Tape<Self>) -> R) -> R {
-        TAPE_FWD.with(|tc| {
-            let mut t = tc.borrow_mut();
-            f(&mut t)
-        })
-    }
-}
+impl_fwd_tape_holder!(
+    Fwd1,
+    TAPE_FWD1,
+    "Thread-local tape for `Dual<Fwd1>` (1st-order forward inner scalar)."
+);
+impl_fwd_tape_holder!(
+    Fwd2,
+    TAPE_FWD,
+    "Thread-local tape for `Dual<ADForward>`/`DualFwd` (2nd-order forward inner scalar)."
+);
+impl_fwd_tape_holder!(
+    Fwd3,
+    TAPE_FWD3,
+    "Thread-local tape for `Dual<Fwd3>` (3rd-order forward inner scalar)."
+);
+impl_fwd_tape_holder!(
+    Fwd4,
+    TAPE_FWD4,
+    "Thread-local tape for `Dual<Fwd4>` (4th-order forward inner scalar)."
+);
 
 /// Static convenience methods for the [`ADForward`] tape.
 impl Tape<ADForward> {
@@ -553,18 +600,18 @@ mod tests {
     fn forward_x_squared() {
         let x = ADForward::var(3.0);
         let y = x * x;
-        assert!(approx(y.val, 9.0));
-        assert!(approx(y.dot, 6.0));
-        assert!(approx(y.dot2, 2.0));
+        assert!(approx(y.value(), 9.0));
+        assert!(approx(y.first_derivative(), 6.0));
+        assert!(approx(y.second_derivative(), 2.0));
     }
 
     #[test]
     fn forward_x_cubed() {
         let x = ADForward::var(2.0);
         let y = x * x * x;
-        assert!(approx(y.val, 8.0));
-        assert!(approx(y.dot, 12.0));
-        assert!(approx(y.dot2, 12.0));
+        assert!(approx(y.value(), 8.0));
+        assert!(approx(y.first_derivative(), 12.0));
+        assert!(approx(y.second_derivative(), 12.0));
     }
 
     #[test]
@@ -572,27 +619,68 @@ mod tests {
         let x = ADForward::var(1.0);
         let y = x.exp();
         let e = 1.0_f64.exp();
-        assert!(approx(y.val, e));
-        assert!(approx(y.dot, e));
-        assert!(approx(y.dot2, e));
+        assert!(approx(y.value(), e));
+        assert!(approx(y.first_derivative(), e));
+        assert!(approx(y.second_derivative(), e));
     }
 
     #[test]
     fn forward_ln() {
         let x = ADForward::var(2.0);
         let y = x.ln();
-        assert!(approx(y.val, 2.0_f64.ln()));
-        assert!(approx(y.dot, 0.5));
-        assert!(approx(y.dot2, -0.25));
+        assert!(approx(y.value(), 2.0_f64.ln()));
+        assert!(approx(y.first_derivative(), 0.5));
+        assert!(approx(y.second_derivative(), -0.25));
     }
 
     #[test]
     fn forward_sin() {
         let x = ADForward::var(1.0);
         let y = x.sin();
-        assert!(approx(y.val, 1.0_f64.sin()));
-        assert!(approx(y.dot, 1.0_f64.cos()));
-        assert!(approx(y.dot2, -1.0_f64.sin()));
+        assert!(approx(y.value(), 1.0_f64.sin()));
+        assert!(approx(y.first_derivative(), 1.0_f64.cos()));
+        assert!(approx(y.second_derivative(), -1.0_f64.sin()));
+    }
+
+    #[test]
+    fn forward_div_second_order() {
+        // f(x) = 1/x: f'(x) = -1/x^2, f''(x) = 2/x^3
+        let x = ADForward::var(2.0);
+        let y = ADForward::constant(1.0) / x;
+        assert!(approx(y.value(), 0.5));
+        assert!(approx(y.first_derivative(), -0.25));
+        assert!(approx(y.second_derivative(), 0.25));
+    }
+
+    #[test]
+    fn forward_third_order() {
+        // f(x) = x^4: f'''(x) = 24x; at x=2 -> 48
+        let x = Fwd3::var(2.0);
+        let y = x * x * x * x;
+        assert!(approx(y.value(), 16.0));
+        assert!(approx(y.first_derivative(), 32.0));
+        assert!(approx(y.second_derivative(), 48.0));
+        assert!(approx(y.third_derivative(), 48.0));
+    }
+
+    #[test]
+    fn forward_third_order_exp() {
+        // All derivatives of e^x equal e^x.
+        let x = Fwd3::var(1.5);
+        let y = x.exp();
+        let e = 1.5_f64.exp();
+        assert!(approx(y.value(), e));
+        assert!(approx(y.first_derivative(), e));
+        assert!(approx(y.second_derivative(), e));
+        assert!(approx(y.third_derivative(), e));
+    }
+
+    #[test]
+    fn forward_fourth_order() {
+        // f(x) = x^4: f''''(x) = 24 everywhere.
+        let x = Fwd4::var(2.0);
+        let y = x * x * x * x;
+        assert!(approx(y.dot.dot.dot.dot.value(), 24.0));
     }
 
     #[test]
@@ -601,7 +689,7 @@ mod tests {
         let a = Complex::new(ADForward::constant(1.0), ADForward::constant(2.0));
         let b = Complex::new(ADForward::constant(3.0), ADForward::constant(-1.0));
         let c = a * b;
-        assert!(approx(c.re.val, 5.0));
-        assert!(approx(c.im.val, 5.0));
+        assert!(approx(c.re.value(), 5.0));
+        assert!(approx(c.im.value(), 5.0));
     }
 }

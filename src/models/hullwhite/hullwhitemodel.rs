@@ -59,6 +59,14 @@ impl<'a, T: Scalar> HullWhite<'a, T> {
 }
 
 impl HullWhite<'_, f64> {
+    /// Sets a flat, time-independent short-rate volatility. Useful for
+    /// debugging and for configurations that don't require calibration.
+    #[must_use]
+    pub fn with_constant_volatility(mut self, sigma: f64) -> Self {
+        self.vol_func = Some(HullWhiteTimeDependentVolatility::new(vec![(0.0, sigma)]));
+        self
+    }
+
     /// Computes `B(t,T) = (1 - exp(-alpha*(T-t))) / alpha`.
     #[allow(non_snake_case)]
     #[must_use]

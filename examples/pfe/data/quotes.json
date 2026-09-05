@@ -3,7 +3,7 @@
     "quotes": [
         {
             "identifier": "FixedRateDeposit_USD_SOFR_1D",
-            "mid": 0.04330
+            "mid": 0.0433
         },
         {
             "identifier": "OIS_USD_SOFR_3M",
@@ -11,99 +11,207 @@
         },
         {
             "identifier": "OIS_USD_SOFR_6M",
-            "mid": 0.04250
+            "mid": 0.0425
         },
         {
             "identifier": "OIS_USD_SOFR_1Y",
-            "mid": 0.04100
+            "mid": 0.041
         },
         {
             "identifier": "OIS_USD_SOFR_2Y",
-            "mid": 0.03920
+            "mid": 0.0392
         },
         {
             "identifier": "OIS_USD_SOFR_3Y",
-            "mid": 0.03840
+            "mid": 0.0384
         },
         {
             "identifier": "OIS_USD_SOFR_4Y",
-            "mid": 0.03800
+            "mid": 0.038
         },
         {
             "identifier": "OIS_USD_SOFR_5Y",
-            "mid": 0.03780
+            "mid": 0.0378
         },
         {
             "identifier": "OIS_USD_SOFR_7Y",
-            "mid": 0.03770
+            "mid": 0.0377
         },
         {
             "identifier": "OIS_USD_SOFR_10Y",
-            "mid": 0.03790
+            "mid": 0.0379
         },
         {
             "identifier": "OIS_USD_SOFR_15Y",
-            "mid": 0.03850
+            "mid": 0.0385
         },
         {
             "identifier": "OIS_USD_SOFR_20Y",
-            "mid": 0.03880
+            "mid": 0.0388
         },
         {
             "identifier": "OIS_USD_SOFR_30Y",
-            "mid": 0.03750
+            "mid": 0.0375
         },
         {
             "identifier": "FixedRateDeposit_EUR_ESTR_1D",
-            "mid": 0.02900
+            "mid": 0.029
         },
         {
             "identifier": "OIS_EUR_ESTR_3M",
-            "mid": 0.02880
+            "mid": 0.0288
         },
         {
             "identifier": "OIS_EUR_ESTR_6M",
-            "mid": 0.02800
+            "mid": 0.028
         },
         {
             "identifier": "OIS_EUR_ESTR_1Y",
-            "mid": 0.02650
+            "mid": 0.0265
         },
         {
             "identifier": "OIS_EUR_ESTR_2Y",
-            "mid": 0.02500
+            "mid": 0.025
         },
         {
             "identifier": "OIS_EUR_ESTR_3Y",
-            "mid": 0.02450
+            "mid": 0.0245
         },
         {
             "identifier": "OIS_EUR_ESTR_4Y",
-            "mid": 0.02430
+            "mid": 0.0243
         },
         {
             "identifier": "OIS_EUR_ESTR_5Y",
-            "mid": 0.02420
+            "mid": 0.0242
         },
         {
             "identifier": "OIS_EUR_ESTR_7Y",
-            "mid": 0.02450
+            "mid": 0.0245
         },
         {
             "identifier": "OIS_EUR_ESTR_10Y",
-            "mid": 0.02520
+            "mid": 0.0252
         },
         {
             "identifier": "OIS_EUR_ESTR_15Y",
-            "mid": 0.02580
+            "mid": 0.0258
         },
         {
             "identifier": "OIS_EUR_ESTR_20Y",
-            "mid": 0.02550
+            "mid": 0.0255
         },
         {
             "identifier": "OIS_EUR_ESTR_30Y",
-            "mid": 0.02400
+            "mid": 0.024
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.035_Straddle_Black",
+            "mid": 0.38
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.045_Straddle_Black",
+            "mid": 0.34
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3M_Absolute_0.055_Straddle_Black",
+            "mid": 0.38
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.035_Straddle_Black",
+            "mid": 0.36
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.045_Straddle_Black",
+            "mid": 0.32
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.055_Straddle_Black",
+            "mid": 0.36
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.33
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.29
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.33
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.28
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.25
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_2Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.28
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.25
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.22
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_3Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.25
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.23
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.2
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_5Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.23
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.21
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.19
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_7Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.21
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.2
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.18
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_10Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.2
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.035_Straddle_Black",
+            "mid": 0.19
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.045_Straddle_Black",
+            "mid": 0.17
+        },
+        {
+            "identifier": "CapletFloorlet_USD_SOFR_3M_12Y_Absolute_0.055_Straddle_Black",
+            "mid": 0.19
         }
     ]
 }

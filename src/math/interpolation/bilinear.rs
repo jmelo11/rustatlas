@@ -59,8 +59,16 @@ impl BilinearInterpolator {
             return None;
         }
 
-        let ix = xs.partition_point(|v| *v <= x);
-        let iy = ys.partition_point(|v| *v <= y);
+        // Queries landing exactly on the last pillar clamp to the last cell.
+        let clamp_upper = |grid: &[f64], v: f64, idx: usize| {
+            if idx == grid.len() && (v - grid[grid.len() - 1]) <= f64::EPSILON * v.abs().max(1.0) {
+                idx - 1
+            } else {
+                idx
+            }
+        };
+        let ix = clamp_upper(&xs, x, xs.partition_point(|v| *v <= x));
+        let iy = clamp_upper(&ys, y, ys.partition_point(|v| *v <= y));
         if ix == 0 || ix >= xs.len() || iy == 0 || iy >= ys.len() {
             return None;
         }

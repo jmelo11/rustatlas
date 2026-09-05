@@ -3,20 +3,24 @@ use crate::{
     calibration::{
         calibrationpricer::CalibrationInstrumentPricer, calibrationprocess::CalibrationProcess,
     },
+    core::marketdatahandling::constructedelementstore::ConstructedElementStore,
     math::solvers::{bisection::Bisection, solvertraits::ContFunc},
     models::{
         montecarloengine::TimeDependentVolatility,
-        utils::{black_call, swap_annuity_from_curve},
+        utils::{bachelier_call, black_call, swap_annuity_from_curve},
     },
     quotes::{
         calibrationinstrument::CalibrationInstrument,
-        quote::{CalibrationInstrumentType, Level},
+        quote::{CalibrationInstrumentType, Level, Quote},
         quoteselector::QuoteSelector,
     },
     rates::yieldtermstructure::interestratestermstructure::InterestRatesTermStructure,
     time::{date::Date, daycounter::DayCounter, enums::TimeUnit, period::Period},
     utils::errors::{QSError, Result},
-    volatility::volatilityindexing::Strike,
+    volatility::{
+        modelcalibration::{CalibrationSource, ModelCalibrationConfiguration},
+        volatilityindexing::{Strike, VolatilityType},
+    },
 };
 
 use super::{
@@ -107,10 +111,24 @@ struct HullWhiteCalibration<'a, 'b> {
 }
 
 impl HullWhiteCalibration<'_, '_> {
-    /// Computes the market price from a Black vol for the given calibration
-    /// instrument.  This is the target that the model price must match.
+    /// Computes the market price from a quoted vol for the given calibration
+    /// instrument, honouring the quote's volatility convention: Black
+    /// (lognormal) vols are priced with Black's formula, Normal vols with
+    /// Bachelier's. This is the target that the model price must match, so
+    /// the calibrated sigma is correct for either quoting convention.
     fn market_price(&self, instrument: &CalibrationInstrument, market_vol: f64) -> Result<f64> {
-        // CapFloor: flat-vol Black price = sum of individual caplet Black prices.
+        let vol_type = instrument
+            .quote()
+            .details()
+            .vol_type()
+            .cloned()
+            .unwrap_or(VolatilityType::Black);
+        let vanilla_call = |fwd: f64, strike: f64, vol: f64, tau: f64| match vol_type {
+            VolatilityType::Black => black_call(fwd, strike, vol, tau),
+            VolatilityType::Normal => bachelier_call(fwd, strike, vol, tau),
+        };
+
+        // CapFloor: flat-vol price = sum of individual caplet prices.
         if let CalibrationInstrumentType::CapFloor(cf) = instrument.built() {
             let strike = cf.strike();
             let mut total = 0.0;
@@ -128,7 +146,7 @@ impl HullWhiteCalibration<'_, '_> {
                 let df_start = self.curve.discount_factor_from_time(t)?;
                 let df_end = self.curve.discount_factor_from_time(big_t)?;
                 let fwd = (df_start / df_end - 1.0) / tau;
-                total += df_end * tau * black_call(fwd, strike.resolve(fwd), market_vol, t)?;
+                total += df_end * tau * vanilla_call(fwd, strike.resolve(fwd), market_vol, t)?;
             }
             return Ok(total);
         }
@@ -143,10 +161,10 @@ impl HullWhiteCalibration<'_, '_> {
             CalibrationInstrumentType::CapletFloorlet(_) => {
                 let tau = big_t - t;
                 let df_end = self.curve.discount_factor_from_time(big_t)?;
-                Ok(df_end * tau * black_call(fwd, strike, market_vol, t)?)
+                Ok(df_end * tau * vanilla_call(fwd, strike, market_vol, t)?)
             }
             CalibrationInstrumentType::EuropeanSwaption(_) => {
-                Ok(annuity * black_call(fwd, strike, market_vol, t)?)
+                Ok(annuity * vanilla_call(fwd, strike, market_vol, t)?)
             }
             _ => Err(QSError::InvalidValueErr(
                 "market_price: unsupported instrument type".into(),
@@ -157,8 +175,10 @@ impl HullWhiteCalibration<'_, '_> {
 
 impl CalibrationInstrumentPricer for HullWhiteCalibration<'_, '_> {
     /// Returns the HW model price for the given calibration instrument at the
-    /// current trial sigma.  Uses the HW-implied ZCB-price volatility
-    /// (`sigma_p`) in Black's formula.
+    /// current trial sigma, using the model's bond-option representation
+    /// (caplets) or Jamshidian decomposition (swaptions). This keeps the
+    /// calibrated sigma in genuine short-rate volatility units, consistent
+    /// with [`HullWhite`]'s path generation and the LGM Gaussian factor.
     fn price(&self, instrument: &CalibrationInstrument) -> Result<f64> {
         // CapFloor: HW model price = sum of individual caplet HW prices.
         if let CalibrationInstrumentType::CapFloor(cf) = instrument.built() {
@@ -178,28 +198,38 @@ impl CalibrationInstrumentPricer for HullWhiteCalibration<'_, '_> {
                 let df_start = self.curve.discount_factor_from_time(t)?;
                 let df_end = self.curve.discount_factor_from_time(big_t)?;
                 let fwd = (df_start / df_end - 1.0) / tau;
-                let sigma_p = self.hw.zcb_price_volatility(self.sigma, t, big_t);
-                total += df_end * tau * black_call(fwd, strike.resolve(fwd), sigma_p, t)?;
+                total +=
+                    self.hw
+                        .caplet_price(strike.resolve(fwd), t, big_t, self.sigma, self.curve)?;
             }
             return Ok(total);
         }
 
-        let (t, big_t, fwd, strike, annuity) = extract_calibration_params(
+        let (t, big_t, _fwd, strike, _annuity) = extract_calibration_params(
             instrument,
             self.reference_date,
             self.day_counter,
             self.curve,
         )?;
-        let sigma_p = self.hw.zcb_price_volatility(self.sigma, t, big_t);
 
         match instrument.built() {
-            CalibrationInstrumentType::CapletFloorlet(_) => {
-                let tau = big_t - t;
-                let df_end = self.curve.discount_factor_from_time(big_t)?;
-                Ok(df_end * tau * black_call(fwd, strike, sigma_p, t)?)
-            }
+            CalibrationInstrumentType::CapletFloorlet(_) => self
+                .hw
+                .caplet_price(strike, t, big_t, self.sigma, self.curve),
             CalibrationInstrumentType::EuropeanSwaption(_) => {
-                Ok(annuity * black_call(fwd, strike, sigma_p, t)?)
+                let details = instrument.quote().details();
+                let option_expiry = details.option_expiry().ok_or_else(|| {
+                    QSError::InvalidValueErr("EuropeanSwaption: missing option_expiry".into())
+                })?;
+                let swap_tenor = details.tenor().ok_or_else(|| {
+                    QSError::InvalidValueErr("EuropeanSwaption: missing swap tenor".into())
+                })?;
+                let exp_date = self.reference_date + option_expiry;
+                let swap_end = exp_date + swap_tenor;
+                let schedule =
+                    annual_swap_schedule(self.reference_date, exp_date, swap_end, self.day_counter);
+                self.hw
+                    .swaption_price(strike, t, &schedule, self.sigma, self.curve)
             }
             _ => Err(QSError::InvalidValueErr(format!(
                 "HW pricer: unsupported instrument type {:?}",
@@ -280,6 +310,27 @@ fn extract_calibration_params(
     }
 }
 
+/// Builds an annual `(payment_time, accrual_fraction)` swap schedule from
+/// `start` to `end`, consistent with [`swap_annuity_from_curve`].
+fn annual_swap_schedule(
+    reference_date: Date,
+    start: Date,
+    end: Date,
+    day_counter: DayCounter,
+) -> Vec<(f64, f64)> {
+    let mut schedule = Vec::new();
+    let mut date = start;
+    let one_year = Period::new(1, TimeUnit::Years);
+    while date < end {
+        let next = std::cmp::min(date + one_year, end);
+        let t = day_counter.year_fraction(reference_date, next);
+        let tau = day_counter.year_fraction(date, next);
+        schedule.push((t, tau));
+        date = next;
+    }
+    schedule
+}
+
 /// Objective for HW calibration: f(sigma) = `model_price(sigma_p)` - `market_price`.
 struct HwCalibrationObjective<'a, 'b> {
     hw: &'a HullWhite<'b, f64>,
@@ -305,6 +356,53 @@ impl ContFunc<f64> for HwCalibrationObjective<'_, '_> {
     }
 }
 
+/// Builds calibration instruments from quote identifiers, using the raw quote
+/// value (a market vol) as the calibration target.
+///
+/// When `strike_override` is provided, quotes are collapsed to one instrument
+/// per (option expiry, tenor) pillar and each instrument's strike is replaced
+/// by the override (resolved against the pillar forward downstream). This lets
+/// callers pass all available market quotes and select moneyness separately.
+/// Instruments are returned sorted by pillar date.
+fn build_calibration_instruments(
+    quote_ids: &[String],
+    selector: &dyn QuoteSelector,
+    level: Level,
+    reference_date: Date,
+    strike_override: Option<Strike>,
+) -> Result<Vec<CalibrationInstrument>> {
+    let mut seen_pillars: Vec<(Option<Period>, Option<Period>)> = Vec::new();
+    let mut cal_instruments = Vec::with_capacity(quote_ids.len());
+    for id in quote_ids {
+        let quote = selector
+            .select(id)
+            .ok_or_else(|| QSError::NotFoundErr(format!("Calibration quote not found: {id}")))?;
+        let quote = strike_override.map_or_else(
+            || quote.clone(),
+            |k| Quote::new(quote.details().clone().with_strike(k), *quote.levels()),
+        );
+        if strike_override.is_some() {
+            let pillar = (quote.details().option_expiry(), quote.details().tenor());
+            if seen_pillars.contains(&pillar) {
+                continue;
+            }
+            seen_pillars.push(pillar);
+        }
+        let mkt_vol = quote.levels().value(level)?;
+        let built = quote.build_instrument(reference_date, level, None)?;
+        let pillar_date = built.pillar_date()?;
+        cal_instruments.push(CalibrationInstrument::new(
+            quote,
+            level,
+            built,
+            mkt_vol,
+            pillar_date,
+        ));
+    }
+    cal_instruments.sort_by_key(CalibrationInstrument::pillar_date);
+    Ok(cal_instruments)
+}
+
 impl HullWhite<'_, f64> {
     /// Calibrates the short-rate volatility sigma(t) to market vol quotes,
     /// updating the internal volatility function and calibration quality.
@@ -319,27 +417,131 @@ impl HullWhite<'_, f64> {
         level: Level,
     ) -> Result<()> {
         let reference_date = selector.reference_date();
+        let cal_instruments =
+            build_calibration_instruments(quote_ids, selector, level, reference_date, None)?;
+        self.calibrate_to_instruments(&cal_instruments, reference_date, curve)
+    }
+
+    /// Calibrates the short-rate volatility sigma(t) to market vols read from
+    /// a constructed volatility surface or cube, as specified by the
+    /// configuration's [`CalibrationSource`].
+    ///
+    /// The quote identifiers in the configuration determine the calibration
+    /// instruments (caplets/floorlets or swaptions), but the market vols are
+    /// interpolated from the surface/cube instead of being read from the raw
+    /// quotes. This keeps the model consistent with the same market data
+    /// object used by the pricers.
+    ///
+    /// All available market quotes may be passed: when the configuration
+    /// carries a [`strike`](ModelCalibrationConfiguration::strike) override
+    /// (ATM, relative, or absolute), quotes are collapsed to one instrument
+    /// per (expiry, tenor) pillar and the strike is resolved against the
+    /// pillar forward from `curve` before sampling the surface/cube.
+    ///
+    /// # Errors
+    /// Returns an error if the surface/cube has not been constructed, if
+    /// calibration quotes are missing, or if curve data is invalid.
+    pub fn calibrate_with_configuration(
+        &mut self,
+        configuration: &ModelCalibrationConfiguration,
+        store: &ConstructedElementStore,
+        selector: &dyn QuoteSelector,
+        curve: &dyn InterestRatesTermStructure<f64>,
+        level: Level,
+    ) -> Result<()> {
+        let reference_date = selector.reference_date();
         let day_counter = curve
             .day_counter()
             .ok_or_else(|| QSError::InvalidValueErr("Curve has no day counter".to_string()))?;
-        let n = quote_ids.len();
+        let mut cal_instruments = build_calibration_instruments(
+            configuration.quote_ids(),
+            selector,
+            level,
+            reference_date,
+            configuration.strike(),
+        )?;
 
-        let mut cal_instruments = Vec::with_capacity(n);
-        for id in quote_ids {
-            let quote = selector.select(id).ok_or_else(|| {
-                QSError::NotFoundErr(format!("Calibration quote not found: {id}"))
+        // Override each instrument's market vol with the value interpolated
+        // from the configured surface/cube at the instrument's expiry (and
+        // tenor, for cubes) and effective strike. The surface/cube quoting
+        // convention (Black or Normal) must match the instrument's, since
+        // market_price prices the target according to that convention.
+        for ci in &mut cal_instruments {
+            let instrument_vol_type = ci
+                .quote()
+                .details()
+                .vol_type()
+                .cloned()
+                .unwrap_or(VolatilityType::Black);
+            let check_vol_type = |source_type: VolatilityType| {
+                if source_type == instrument_vol_type {
+                    Ok(())
+                } else {
+                    Err(QSError::InvalidValueErr(format!(
+                        "Volatility convention mismatch for {}: quote is {instrument_vol_type:?} \
+                         but the calibration source is {source_type:?}",
+                        ci.pillar_label()
+                    )))
+                }
+            };
+            let (_t, _big_t, _fwd, effective_strike, _annuity) =
+                extract_calibration_params(ci, reference_date, day_counter, curve)?;
+            let expiry = ci.quote().details().option_expiry().ok_or_else(|| {
+                QSError::InvalidValueErr(format!(
+                    "Calibration instrument {} has no option expiry",
+                    ci.pillar_label()
+                ))
             })?;
-            let mkt_vol = quote.levels().value(level)?;
-            let built = quote.build_instrument(reference_date, level, None)?;
-            let pillar_date = built.pillar_date()?;
-            cal_instruments.push(CalibrationInstrument::new(
-                quote.clone(),
-                level,
-                built,
-                mkt_vol,
-                pillar_date,
-            ));
+            let vol = match configuration.source() {
+                CalibrationSource::Surface { market_index } => {
+                    let element = store.volatility_surface(market_index).ok_or_else(|| {
+                        QSError::NotFoundErr(format!(
+                            "Volatility surface not found for index {market_index}"
+                        ))
+                    })?;
+                    let surface = element.surface();
+                    check_vol_type(surface.volatility_type())?;
+                    surface
+                        .volatility_from_period(expiry, effective_strike)?
+                        .value()
+                }
+                CalibrationSource::Cube { market_index } => {
+                    let tenor = ci.quote().details().tenor().ok_or_else(|| {
+                        QSError::InvalidValueErr(format!(
+                            "Calibration instrument {} has no tenor (required for cube lookup)",
+                            ci.pillar_label()
+                        ))
+                    })?;
+                    let element = store.volatility_cube(market_index).ok_or_else(|| {
+                        QSError::NotFoundErr(format!(
+                            "Volatility cube not found for index {market_index}"
+                        ))
+                    })?;
+                    let cube = element.cube();
+                    check_vol_type(cube.volatility_type())?;
+                    cube.volatility_from_period(expiry, tenor, effective_strike)?
+                        .value()
+                }
+            };
+            ci.set_quote_value(vol);
         }
+
+        self.calibrate_to_instruments(&cal_instruments, reference_date, curve)
+    }
+
+    /// Core calibration routine: bootstraps a piecewise-constant sigma(t)
+    /// schedule by solving, for each instrument, the sigma that reprices the
+    /// instrument's market vol.
+    fn calibrate_to_instruments(
+        &mut self,
+        cal_instruments: &[CalibrationInstrument],
+        reference_date: Date,
+        curve: &dyn InterestRatesTermStructure<f64>,
+    ) -> Result<()> {
+        let day_counter = curve
+            .day_counter()
+            .ok_or_else(|| QSError::InvalidValueErr("Curve has no day counter".to_string()))?;
+        let n = cal_instruments.len();
 
         let mut schedule = Vec::with_capacity(n);
         let mut labels = Vec::with_capacity(n);
@@ -347,7 +549,7 @@ impl HullWhite<'_, f64> {
         let mut market_vols = Vec::with_capacity(n);
         let mut records = Vec::with_capacity(n);
 
-        for ci in &cal_instruments {
+        for ci in cal_instruments {
             let mkt_vol = ci.quote_value();
             let id = ci.pillar_label();
 
@@ -427,6 +629,369 @@ impl HullWhite<'_, f64> {
         let quality = HullWhiteCalibrationQuality { records };
         self.vol_func = Some(result);
         self.calibration_quality = Some(quality);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, collections::BTreeMap, rc::Rc, str::FromStr};
+
+    use super::*;
+    use crate::{
+        ad::dual::DualFwd,
+        core::{
+            elements::volatilitysurfaceelement::VolatilitySurfaceElement,
+            marketdatahandling::constructedelementstore::ConstructedElementStore,
+        },
+        indices::marketindex::MarketIndex,
+        math::interpolation::interpolator::Interpolator,
+        models::hullwhite::hullwhitemodel::HullWhite,
+        quotes::{
+            quote::{Quote, QuoteDetails, QuoteLevels},
+            quotestore::QuoteStore,
+        },
+        rates::yieldtermstructure::discounttermstructure::DiscountTermStructure,
+        volatility::{
+            interpolatedvolatilitysurface::InterpolatedVolatilitySurface,
+            modelcalibration::CalibrationSource,
+            volatilityindexing::{F64Key, SmileType, VolatilityType},
+        },
+    };
+
+    const QUOTE_IDS: [&str; 2] = [
+        "CapletFloorlet_USD_SOFR_3M_6M_Absolute_0.045_Straddle_Black",
+        "CapletFloorlet_USD_SOFR_3M_1Y_Absolute_0.045_Straddle_Black",
+    ];
+    const MARKET_VOL: f64 = 0.20;
+
+    fn setup() -> Result<(
+        QuoteStore,
+        DiscountTermStructure<f64>,
+        ConstructedElementStore,
+    )> {
+        let reference_date = Date::new(2025, 1, 2);
+
+        let mut quote_store = QuoteStore::new(reference_date);
+        for id in QUOTE_IDS {
+            let details = QuoteDetails::from_str(id)?;
+            quote_store.add_quote(Quote::new(details, QuoteLevels::with_mid(MARKET_VOL)));
+        }
+
+        let rate = 0.045_f64;
+        let dc = DayCounter::Actual365;
+        let dates = vec![
+            reference_date,
+            reference_date + Period::new(1, TimeUnit::Years),
+            reference_date + Period::new(10, TimeUnit::Years),
+        ];
+        let dfs: Vec<f64> = dates
+            .iter()
+            .map(|d| (-rate * dc.year_fraction(reference_date, *d)).exp())
+            .collect();
+        let curve =
+            DiscountTermStructure::<f64>::new(dates, dfs, dc, Interpolator::LogLinear, true)?;
+
+        // Flat surface at MARKET_VOL spanning the calibration expiries/strikes.
+        let smile = BTreeMap::from([
+            (F64Key::new(0.0), DualFwd::from(MARKET_VOL)),
+            (F64Key::new(0.10), DualFwd::from(MARKET_VOL)),
+        ]);
+        let mut points = BTreeMap::new();
+        points.insert(Period::new(1, TimeUnit::Months), smile.clone());
+        points.insert(Period::new(2, TimeUnit::Years), smile);
+        let surface = InterpolatedVolatilitySurface::new(
+            reference_date,
+            MarketIndex::SOFR,
+            points,
+            VolatilityType::Black,
+            SmileType::Strike,
+        );
+        let mut store = ConstructedElementStore::default();
+        store.volatility_surfaces_mut().insert(
+            MarketIndex::SOFR,
+            VolatilitySurfaceElement::new(MarketIndex::SOFR, Rc::new(RefCell::new(surface))),
+        );
+
+        Ok((quote_store, curve, store))
+    }
+
+    #[test]
+    fn calibrate_with_flat_surface_matches_quote_calibration() -> Result<()> {
+        let (quote_store, curve, store) = setup()?;
+        let quote_ids: Vec<String> = QUOTE_IDS.iter().map(ToString::to_string).collect();
+
+        let mut hw_quotes = HullWhite::new(0.1, &curve);
+        hw_quotes.calibrate(&quote_ids, &quote_store, &curve, Level::Mid)?;
+        let schedule_quotes: Vec<(f64, f64)> = hw_quotes
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+
+        let configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            quote_ids,
+            0.1,
+        );
+        let mut hw_surface = HullWhite::new(0.1, &curve);
+        hw_surface.calibrate_with_configuration(
+            &configuration,
+            &store,
+            &quote_store,
+            &curve,
+            Level::Mid,
+        )?;
+        let schedule_surface: Vec<(f64, f64)> = hw_surface
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+
+        assert_eq!(schedule_quotes.len(), schedule_surface.len());
+        assert_eq!(schedule_quotes.len(), 2);
+        for ((t_q, s_q), (t_s, s_s)) in schedule_quotes.iter().zip(&schedule_surface) {
+            assert!((t_q - t_s).abs() < 1e-12);
+            assert!(
+                (s_q - s_s).abs() < 1e-10,
+                "sigma from surface {s_s} should match sigma from quotes {s_q}"
+            );
+            assert!(*s_q > 0.0);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn calibrate_with_configuration_errors_without_surface() -> Result<()> {
+        let (quote_store, curve, _) = setup()?;
+        let quote_ids: Vec<String> = QUOTE_IDS.iter().map(ToString::to_string).collect();
+        let configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            quote_ids,
+            0.1,
+        );
+        let empty_store = ConstructedElementStore::default();
+        let mut hw = HullWhite::new(0.1, &curve);
+        let result = hw.calibrate_with_configuration(
+            &configuration,
+            &empty_store,
+            &quote_store,
+            &curve,
+            Level::Mid,
+        );
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn strike_override_dedupes_pillars_and_resolves_moneyness() -> Result<()> {
+        let (mut quote_store, curve, store) = setup()?;
+
+        // Pass ALL available market quotes: 3 strikes per expiry, shuffled order.
+        let all_ids: Vec<String> = ["1Y", "6M"]
+            .iter()
+            .flat_map(|expiry| {
+                ["0.035", "0.045", "0.055"].iter().map(move |k| {
+                    format!("CapletFloorlet_USD_SOFR_3M_{expiry}_Absolute_{k}_Straddle_Black")
+                })
+            })
+            .collect();
+        for id in &all_ids {
+            let details = QuoteDetails::from_str(id)?;
+            quote_store.add_quote(Quote::new(details, QuoteLevels::with_mid(MARKET_VOL)));
+        }
+
+        // ATM moneyness: the system collapses to one pillar per expiry and
+        // resolves the strike from the curve forward.
+        let configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            all_ids.clone(),
+            0.1,
+        )
+        .with_strike(Strike::Atm);
+        let mut hw = HullWhite::new(0.1, &curve);
+        hw.calibrate_with_configuration(&configuration, &store, &quote_store, &curve, Level::Mid)?;
+
+        let schedule: Vec<(f64, f64)> = hw
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+        assert_eq!(schedule.len(), 2, "6 quotes should collapse to 2 pillars");
+        assert!(schedule[0].0 < schedule[1].0, "pillars must be ascending");
+        for (_, sigma) in &schedule {
+            assert!(*sigma > 0.0 && *sigma < 0.05, "sigma {sigma} not sane");
+        }
+
+        // ATM resolution: effective strike equals the pillar forward.
+        let quality = hw
+            .calibration_quality()
+            .ok_or_else(|| QSError::UnexpectedErr("no quality".into()))?;
+        for rec in &quality.records {
+            assert!(
+                (rec.effective_strike - rec.forward_rate).abs() < 1e-14,
+                "ATM strike should resolve to the forward"
+            );
+        }
+
+        // Absolute moneyness override matches an explicit per-quote calibration.
+        let abs_configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            all_ids,
+            0.1,
+        )
+        .with_strike(Strike::Absolute(0.045));
+        let mut hw_abs = HullWhite::new(0.1, &curve);
+        hw_abs.calibrate_with_configuration(
+            &abs_configuration,
+            &store,
+            &quote_store,
+            &curve,
+            Level::Mid,
+        )?;
+
+        let explicit_ids: Vec<String> = QUOTE_IDS.iter().map(ToString::to_string).collect();
+        let explicit_configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            explicit_ids,
+            0.1,
+        );
+        let mut hw_explicit = HullWhite::new(0.1, &curve);
+        hw_explicit.calibrate_with_configuration(
+            &explicit_configuration,
+            &store,
+            &quote_store,
+            &curve,
+            Level::Mid,
+        )?;
+
+        let sched_abs: Vec<(f64, f64)> = hw_abs
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+        let sched_explicit: Vec<(f64, f64)> = hw_explicit
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+        assert_eq!(sched_abs.len(), sched_explicit.len());
+        for ((t_a, s_a), (t_e, s_e)) in sched_abs.iter().zip(&sched_explicit) {
+            assert!((t_a - t_e).abs() < 1e-12);
+            assert!((s_a - s_e).abs() < 1e-12);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn normal_and_black_quotes_calibrate_to_same_sigma() -> Result<()> {
+        use crate::models::utils::bachelier_call;
+
+        let (mut quote_store, curve, _) = setup()?;
+        let black_ids: Vec<String> = QUOTE_IDS.iter().map(ToString::to_string).collect();
+
+        // Calibrate to the Black quotes.
+        let mut hw_black = HullWhite::new(0.1, &curve);
+        hw_black.calibrate(&black_ids, &quote_store, &curve, Level::Mid)?;
+        let quality = hw_black
+            .calibration_quality()
+            .ok_or_else(|| QSError::UnexpectedErr("no quality".into()))?
+            .clone();
+
+        // Build price-equivalent Normal quotes: invert Bachelier on each
+        // record's market price.
+        let mut normal_ids = Vec::new();
+        for rec in &quality.records {
+            let tau = rec.big_t - rec.t;
+            let df_end = curve.discount_factor_from_time(rec.big_t)?;
+            let target = rec.market_price / (df_end * tau);
+            let (mut lo, mut hi) = (1e-8_f64, 1.0_f64);
+            for _ in 0..200 {
+                let mid = 0.5 * (lo + hi);
+                if bachelier_call(rec.forward_rate, rec.effective_strike, mid, rec.t)? < target {
+                    lo = mid;
+                } else {
+                    hi = mid;
+                }
+            }
+            let normal_vol = 0.5 * (lo + hi);
+
+            let id = rec.identifier.replace("_Black", "_Normal");
+            let details = QuoteDetails::from_str(&id)?;
+            quote_store.add_quote(Quote::new(details, QuoteLevels::with_mid(normal_vol)));
+            normal_ids.push(id);
+        }
+
+        // Calibrating to the equivalent Normal quotes must give the same sigma.
+        let mut hw_normal = HullWhite::new(0.1, &curve);
+        hw_normal.calibrate(&normal_ids, &quote_store, &curve, Level::Mid)?;
+
+        let sched_black: Vec<(f64, f64)> = hw_black
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+        let sched_normal: Vec<(f64, f64)> = hw_normal
+            .vol_func()
+            .ok_or_else(|| QSError::UnexpectedErr("no vol func".into()))?
+            .iter()
+            .copied()
+            .collect();
+        assert_eq!(sched_black.len(), sched_normal.len());
+        for ((t_b, s_b), (t_n, s_n)) in sched_black.iter().zip(&sched_normal) {
+            assert!((t_b - t_n).abs() < 1e-12);
+            assert!(
+                (s_b - s_n).abs() < 1e-6,
+                "Normal-quote sigma {s_n} should match Black-quote sigma {s_b}"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn calibrate_with_configuration_rejects_vol_convention_mismatch() -> Result<()> {
+        // Black surface in the store, but Normal calibration quotes.
+        let (mut quote_store, curve, store) = setup()?;
+        let normal_ids: Vec<String> = QUOTE_IDS
+            .iter()
+            .map(|id| id.replace("_Black", "_Normal"))
+            .collect();
+        for id in &normal_ids {
+            let details = QuoteDetails::from_str(id)?;
+            quote_store.add_quote(Quote::new(details, QuoteLevels::with_mid(0.01)));
+        }
+        let configuration = ModelCalibrationConfiguration::new(
+            CalibrationSource::Surface {
+                market_index: MarketIndex::SOFR,
+            },
+            normal_ids,
+            0.1,
+        );
+        let mut hw = HullWhite::new(0.1, &curve);
+        let result = hw.calibrate_with_configuration(
+            &configuration,
+            &store,
+            &quote_store,
+            &curve,
+            Level::Mid,
+        );
+        assert!(result.is_err(), "Black surface + Normal quotes must error");
         Ok(())
     }
 }

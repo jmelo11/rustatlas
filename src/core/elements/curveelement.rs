@@ -4,7 +4,13 @@ use crate::{
     ad::dual::DualFwd,
     core::{marketdatahandling::constructedelementstore::SharedElement, pillars::Pillars},
     indices::marketindex::MarketIndex,
-    rates::yieldtermstructure::interestratestermstructure::InterestRatesTermStructure,
+    math::interpolation::interpolator::Interpolator,
+    rates::yieldtermstructure::{
+        discounttermstructure::DiscountTermStructure,
+        interestratestermstructure::InterestRatesTermStructure,
+    },
+    time::daycounter::DayCounter,
+    utils::errors::{QSError, Result},
 };
 
 /// Trait representing a curve element that can be used in automatic
@@ -47,6 +53,26 @@ impl DiscountCurveElement {
     #[must_use]
     pub fn curve(&self) -> Ref<'_, dyn ADCurveElement> {
         self.curve.borrow()
+    }
+
+    /// Extracts a plain `f64` discount term structure from the AD-enabled
+    /// curve nodes. Useful for feeding models and simulations that operate on
+    /// `f64` (e.g. Hull-White calibration and Monte Carlo path generation).
+    ///
+    /// # Errors
+    /// Returns an error if the curve exposes no nodes or if the term
+    /// structure cannot be constructed.
+    pub fn to_f64_term_structure(
+        &self,
+        day_counter: DayCounter,
+    ) -> Result<DiscountTermStructure<f64>> {
+        let curve = self.curve();
+        let nodes = curve
+            .nodes()
+            .ok_or_else(|| QSError::InvalidValueErr("Curve has no nodes".into()))?;
+        let (dates, dfs): (Vec<_>, Vec<f64>) =
+            nodes.into_iter().map(|(d, df)| (d, df.value())).unzip();
+        DiscountTermStructure::<f64>::new(dates, dfs, day_counter, Interpolator::LogLinear, true)
     }
 
     /// Returns a mutable reference to the curve associated with the discount curve element.

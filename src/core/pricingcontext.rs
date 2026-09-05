@@ -8,11 +8,13 @@ use crate::{
     },
     currencies::currency::Currency,
     indices::marketindex::MarketIndex,
+    models::modelconfiguration::SimulationConfiguration,
     quotes::{fixingstore::FixingStore, fxstore::FxStore, quote::Level, quotestore::QuoteStore},
     rates::bootstrapping::{
         bootstrapdiscountpolicy::BootstrapDiscountPolicy, curveconfiguration::CurveConfiguration,
         multicurvebootstrapper::MultiCurveBootstrapper,
     },
+    simulations::simulationbuilder::SimulationBuilder,
     time::date::Date,
     utils::errors::{QSError, Result},
     volatility::{
@@ -39,6 +41,8 @@ pub struct PricingContext {
     volatility_surface_configurations: Vec<VolatilitySurfaceConfiguration>,
     /// Volatility cube specifications.
     volatility_cube_configurations: Vec<VolatilityCubeConfiguration>,
+    /// Model-driven Monte Carlo simulation specifications.
+    simulation_configurations: Vec<SimulationConfiguration>,
     /// Constructed market data elements, such as discount curves, volatility surfaces, among others.
     constructed_elements: ConstructedElementStore,
     /// The base currency for pricing and reporting results.
@@ -58,6 +62,7 @@ impl PricingContext {
             curve_configurations: Vec::new(),
             volatility_surface_configurations: Vec::new(),
             volatility_cube_configurations: Vec::new(),
+            simulation_configurations: Vec::new(),
             constructed_elements: ConstructedElementStore::default(),
             base_currency: Currency::USD, // Default base currency
             base_index: MarketIndex::SOFR,
@@ -154,6 +159,16 @@ impl PricingContext {
         self
     }
 
+    /// Sets the model-driven simulation configurations.
+    #[must_use]
+    pub fn with_simulation_configurations(
+        mut self,
+        configs: Vec<SimulationConfiguration>,
+    ) -> Self {
+        self.simulation_configurations = configs;
+        self
+    }
+
     /// Returns the current reference date.
     #[must_use]
     pub const fn evaluation_date(&self) -> Date {
@@ -220,6 +235,24 @@ impl PricingContext {
                 self.constructed_elements
                     .volatility_cubes_mut()
                     .insert(index, cube);
+            }
+        }
+
+        // Build model-driven Monte Carlo simulations. Runs last so that
+        // models can consume the constructed curves, surfaces, and cubes.
+        if !self.simulation_configurations.is_empty() {
+            let simulation_builder =
+                SimulationBuilder::new(self.simulation_configurations.clone());
+            let simulations = simulation_builder.build(
+                &self.constructed_elements,
+                &self.quote_store,
+                &self.fixing_store,
+                Level::Mid,
+            )?;
+            for (index, simulation) in simulations {
+                self.constructed_elements
+                    .simulations_mut()
+                    .insert(index, simulation);
             }
         }
 

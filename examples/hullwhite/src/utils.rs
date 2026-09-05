@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use plotters::prelude::*;
+use quantsupport::models::utils::black_call;
 use quantsupport::prelude::*;
 use serde::Deserialize;
 
@@ -63,28 +64,41 @@ pub fn load_hw_calibration(path: &PathBuf) -> Result<ModelCalibrationConfigurati
     serde_json::from_reader(reader).map_err(|e| QSError::InvalidValueErr(e.to_string()))
 }
 
-// ---------------------------------------------------------------------------
-// Curve / surface construction helpers
-// ---------------------------------------------------------------------------
-
-/// Extracts an `f64` discount term structure from a bootstrapped
-/// `DiscountCurveElement` (which internally holds `DualFwd` values).
-pub fn extract_f64_curve(
-    element: &DiscountCurveElement,
-    day_counter: DayCounter,
-) -> Result<DiscountTermStructure<f64>> {
-    let curve = element.curve();
-    let nodes = curve
-        .nodes()
-        .ok_or_else(|| QSError::InvalidValueErr("Bootstrapped curve has no nodes".into()))?;
-    let (dates, dfs): (Vec<Date>, Vec<f64>) =
-        nodes.into_iter().map(|(d, df)| (d, f64::from(df))).unzip();
-    DiscountTermStructure::<f64>::new(dates, dfs, day_counter, Interpolator::LogLinear, true)
+/// Loads a Monte Carlo simulation configuration from a JSON file.
+pub fn load_simulation_config(path: &PathBuf) -> Result<SimulationConfiguration> {
+    let file =
+        File::open(path).map_err(|e| QSError::NotFoundErr(format!("{}: {e}", path.display())))?;
+    let reader = BufReader::new(file);
+    serde_json::from_reader(reader).map_err(|e| QSError::InvalidValueErr(e.to_string()))
 }
 
 // ---------------------------------------------------------------------------
 // Plotting
 // ---------------------------------------------------------------------------
+
+/// Backs out the Black implied vol from a caplet calibration record by
+/// inverting the undiscounted Black price of the model at the record's
+/// forward, strike and expiry. This expresses the calibrated model in the
+/// market's quoting units (the calibrated sigma itself is a short-rate vol).
+pub fn implied_black_vol(
+    rec: &HullWhiteCalibrationRecord,
+    curve: &DiscountTermStructure<f64>,
+) -> Result<f64> {
+    let tau = rec.big_t - rec.t;
+    let df_end = curve.discount_factor_from_time(rec.big_t)?;
+    let target = rec.model_price / (df_end * tau);
+    let (mut lo, mut hi) = (1e-6_f64, 5.0_f64);
+    for _ in 0..100 {
+        let mid = 0.5 * (lo + hi);
+        let price = black_call(rec.forward_rate, rec.effective_strike, mid, rec.t)?;
+        if price < target {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    Ok(0.5 * (lo + hi))
+}
 
 pub fn plot_simulations(
     times: &[f64],
@@ -151,7 +165,6 @@ pub fn plot_simulations(
 
 pub fn plot_calibration_quality(
     quality: &HullWhiteCalibrationQuality,
-    hw: &HullWhite<f64>,
     curve: &DiscountTermStructure<f64>,
     ref_date: Date,
     dc: DayCounter,
@@ -167,8 +180,8 @@ pub fn plot_calibration_quality(
         let model_vols: Vec<f64> = quality
             .records
             .iter()
-            .map(|r| hw.zcb_price_volatility(r.calibrated_sigma, r.t, r.big_t))
-            .collect();
+            .map(|r| implied_black_vol(r, curve))
+            .collect::<Result<Vec<f64>>>()?;
 
         let y_min = mkt_vols
             .iter()

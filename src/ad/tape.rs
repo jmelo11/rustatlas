@@ -65,7 +65,8 @@ impl<T: TapeHolder> Tape<T> {
 
     /// Allocates a node in the bump arena and records it in the tape book.
     #[inline]
-    fn push(&mut self, n: TapeNode<T>) -> NonNull<TapeNode<T>> {
+    fn push(&mut self, mut n: TapeNode<T>) -> NonNull<TapeNode<T>> {
+        n.idx = self.book.len();
         let ptr = self.storage.alloc(n);
         self.book.push(ptr);
         ptr
@@ -78,9 +79,13 @@ impl<T: TapeHolder> Tape<T> {
     }
 
     /// Returns the index of a node in the tape book, if it exists.
+    ///
+    /// O(1): reads the index stored in the node at record time and validates
+    /// it against the book (guards against pointers from a rewound tape).
     #[inline]
     fn index_of(&self, p: NonNull<TapeNode<T>>) -> Option<usize> {
-        self.book.iter().position(|&q| q == p)
+        let idx = unsafe { p.as_ref().idx };
+        (self.book.get(idx) == Some(&p)).then_some(idx)
     }
 
     /// Allocates and records a leaf node.
@@ -115,8 +120,10 @@ impl<T: TapeHolder> Tape<T> {
             .index_of(root)
             .ok_or(QSError::NodeNotIndexedInTapeErr)?;
         for i in (0..=start).rev() {
-            let node = unsafe { self.book[i].as_ref().clone() };
-            node.propagate_into();
+            // SAFETY: book pointers are valid live nodes; `propagate_into`
+            // only writes to *children*, which are always recorded earlier
+            // in the book and therefore never alias `self.book[i]`.
+            unsafe { self.book[i].as_ref() }.propagate_into();
         }
         Ok(())
     }
@@ -128,8 +135,8 @@ impl<T: TapeHolder> Tape<T> {
     pub fn propagate_mark_to_start(&mut self) -> Result<()> {
         let end = self.mark.saturating_sub(1);
         for i in (0..=end).rev() {
-            let node = unsafe { self.book[i].as_ref().clone() };
-            node.propagate_into();
+            // SAFETY: see `propagate_from` — children never alias the node.
+            unsafe { self.book[i].as_ref() }.propagate_into();
         }
         Ok(())
     }
@@ -145,8 +152,8 @@ impl<T: TapeHolder> Tape<T> {
             return Ok(());
         }
         for i in (start..=end).rev() {
-            let node = unsafe { self.book[i].as_ref().clone() };
-            node.propagate_into();
+            // SAFETY: see `propagate_from` — children never alias the node.
+            unsafe { self.book[i].as_ref() }.propagate_into();
         }
         Ok(())
     }
@@ -164,6 +171,33 @@ impl<T: TapeHolder> Tape<T> {
         self.book.clear();
         self.mark = 0;
         self.active = true;
+    }
+
+    // -- Generic static conveniences (work for any TapeHolder T) ------------
+
+    /// Clears the thread-local tape for `T` and begins recording.
+    pub fn start_recording_for() {
+        T::with_tape(Self::start_inner);
+    }
+
+    /// Stops recording on the thread-local tape for `T`.
+    pub fn stop_recording_for() {
+        T::with_tape(|t| t.active = false);
+    }
+
+    /// Resets all adjoints on the thread-local tape for `T` to zero.
+    pub fn reset_adjoints_for() {
+        T::with_tape(|t| t.reset_adjoints_inner());
+    }
+
+    /// Clears the thread-local tape for `T` and resets the mark without
+    /// changing the active state.
+    pub fn rewind_to_init_for() {
+        T::with_tape(|t| {
+            t.storage.reset();
+            t.book.clear();
+            t.mark = 0;
+        });
     }
 }
 

@@ -100,15 +100,17 @@ fn run_pfe(trades: &[SwapTrade<f64>], curve: &DiscountTermStructure<f64>, ref_da
 
     // 2. Inspector: assign indices & collect simulation requests
     let discount_policy = SingleCurveCSADiscountPolicy::new(MarketIndex::SOFR, Currency::USD);
-    let mut inspector = PreprocessorExecutor::with_discount_policy(Box::new(discount_policy));
-    inspector.visit(&mut all_claims);
+    let mut netting_set = NettingSet::new(all_claims, Box::new(discount_policy));
+
+    let mut inspector = PreprocessorExecutor::new();
+    inspector.visit(std::iter::once(&mut netting_set));
     let requests: Vec<_> = inspector.requests().to_vec();
 
     // 3. Build LGM market model (single-currency USD)
-    let usd_rate = LgmRateModel::new(0.05, 0.01, curve);
+    let usd_rate = LgmRateModel::new(0.05, 0.005, curve);
 
     let mut model = LgmMarketModel::new(Currency::USD, MarketIndex::SOFR, ref_date, dc)
-        .with_n_paths(500)
+        .with_n_paths(1000)
         .with_seed(42);
 
     model.add_curve_model(MarketIndex::SOFR, usd_rate);
@@ -128,8 +130,9 @@ fn run_pfe(trades: &[SwapTrade<f64>], curve: &DiscountTermStructure<f64>, ref_da
     let evaluator = ExposureEvaluator::<f64>::new(dates, &model);
 
     let mut trades_map: HashMap<String, &[_]> = HashMap::new();
+    let claims = netting_set.claims();
     for (id, start, end) in &trade_ranges {
-        trades_map.insert(id.clone(), &all_claims[*start..*end]);
+        trades_map.insert(id.clone(), &claims[*start..*end]);
     }
 
     let results = evaluator.evaluate(&trades_map);

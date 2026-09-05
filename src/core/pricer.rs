@@ -7,7 +7,7 @@ use crate::{
         pricingcontext::PricingContext,
         request::Request,
     },
-    utils::errors::Result,
+    utils::errors::{QSError, Result},
 };
 
 /// The [`Pricer`] trait should be implemented by any instrument pricing methodology. Implementers
@@ -77,4 +77,33 @@ pub trait ErasedPricer: Send + Sync {
         requests: &[Request],
         ctx: &PricingContext,
     ) -> Result<EvaluationResults>;
+}
+
+/// Blanket implementation: every [`Pricer`] automatically supports type-erased
+/// evaluation.
+///
+/// The incoming `&dyn Any` trade is downcast to the pricer's associated
+/// [`Pricer::Item`] and dispatched to [`Pricer::evaluate`]. This means any new
+/// pricer only needs to implement [`Pricer`] to be registrable with the
+/// [`Evaluator`](crate::core::evaluator::Evaluator).
+impl<P> ErasedPricer for P
+where
+    P: Pricer,
+    P::Item: Any,
+{
+    fn evaluate_erased(
+        &self,
+        trade: &dyn Any,
+        requests: &[Request],
+        ctx: &PricingContext,
+    ) -> Result<EvaluationResults> {
+        let typed_trade = trade.downcast_ref::<P::Item>().ok_or_else(|| {
+            QSError::InvalidValueErr(format!(
+                "Pricer expected a trade of type `{}`, but received a value with type id {:?}",
+                std::any::type_name::<P::Item>(),
+                trade.type_id()
+            ))
+        })?;
+        self.evaluate(typed_trade, requests, ctx)
+    }
 }

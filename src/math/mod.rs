@@ -10,6 +10,8 @@ pub mod ifft;
 pub mod interpolation;
 /// Probability module.
 pub mod probability;
+/// Random sampling utilities.
+pub mod random;
 /// Linear algebra utilities.
 pub mod linalg;
 /// Solvers module.

@@ -25,3 +25,5 @@ pub mod volatilitysurfacebuilder;
 pub mod volatilitycubebuilder;
 /// Model calibration configuration.
 pub mod modelcalibration;
+/// Generic volatility sources for models and simulations.
+pub mod volatilitysource;

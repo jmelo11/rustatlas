@@ -1,8 +1,11 @@
 //! Automatic differentiation (AD) support.
 //!
-//! Provides [`DualFwd`](crate::ad::dual::DualFwd) for forward-mode AD, a shared
-//! [`Tape`](crate::ad::tape::Tape) for recording operations, and graph
-//! [`TapeNode`](crate::ad::node::TapeNode)s for backward-mode adjoint propagation.
+//! Provides the generic nestable [`Fwd`](crate::ad::forward::Fwd) for
+//! forward-mode AD of arbitrary order (`Fwd<f64>` = 1st, `Fwd<Fwd<f64>>` =
+//! 2nd, …), a shared [`Tape`](crate::ad::tape::Tape) for recording
+//! operations, and graph [`TapeNode`](crate::ad::node::TapeNode)s for
+//! backward-mode adjoint propagation. Mixed mode is available as
+//! `Dual<FwdN>` (e.g. [`DualFwd`](crate::ad::dual::DualFwd)).
 
 /// Block-based slab allocator for tape nodes.
 pub mod blocklist;
@@ -12,7 +15,7 @@ pub mod constant;
 pub mod dual;
 /// Expression-template system (Expr, operators, BinExpr, UnExpr, FloatExt, free fns).
 pub mod expr;
-/// Forward-mode AD type (ADForward).
+/// Forward-mode AD type (Fwd<T>, nestable to arbitrary order).
 pub mod forward;
 /// Node module.
 pub mod node;

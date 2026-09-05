@@ -4,7 +4,12 @@
 //! `use quantsupport::prelude::*;` brings everything into scope.
 
 pub use crate::{
-    ad::{dual::DualFwd, scalar::Scalar, tape::Tape},
+    ad::{
+        dual::{Dual, DualFwd},
+        forward::{ADForward, Fwd, Fwd1, Fwd2, Fwd3, Fwd4},
+        scalar::Scalar,
+        tape::Tape,
+    },
     core::{
         collateral::{
             DiscountPolicy, Discountable, FixedIncomeDiscountPolicy, SingleCurveCSADiscountPolicy,
@@ -115,11 +120,15 @@ pub use crate::{
             lgmcomponents::{LgmFxModel, LgmRateModel},
             lgmmarketmodel::LgmMarketModel,
         },
+        modelconfiguration::{ModelConfiguration, SimulationConfiguration},
         montecarloengine::{PathGenerator, TimeDependentVolatility},
     },
     pricers::{
         cashflows::discountedcashflowpricer::DiscountedCashflowPricer,
-        equity::blackeuropeanoptionpricer::BlackEuropeanOptionPricer,
+        equity::{
+            blackeuropeanoptionpricer::BlackEuropeanOptionPricer,
+            blackmceuropeanoptionpricer::BlackMCEuropeanOptionPricer,
+        },
         fx::{fxforwardpricer::FxForwardPricer, fxoptionpricer::FxOptionPricer},
         rates::{
             closedformblackcapletpricer::ClosedFormBlackCapletPricer,
@@ -147,7 +156,10 @@ pub use crate::{
             interestratestermstructure::InterestRatesTermStructure,
         },
     },
-    simulations::simulation::MonteCarloSimulation,
+    simulations::{
+        generatedsimulation::GeneratedMonteCarloSimulation, simulation::MonteCarloSimulation,
+        simulationbuilder::SimulationBuilder,
+    },
     time::{
         calendar::Calendar,
         date::{Date, NaiveDateExt},
@@ -174,6 +186,10 @@ pub use crate::{
         volatilitysurface::VolatilitySurface,
         volatilitysurfacebuilder::VolatilitySurfaceBuilder,
         volatilitysurfaceconfiguration::VolatilitySurfaceConfiguration,
+        volatilitysource::{
+            bootstrap_black_term_volatility, ConstantVolatility, CubeTermVolatility,
+            PiecewiseConstantVolatility, SurfaceTermVolatility, VolatilitySourceConfiguration,
+        },
     },
     xva::{
         contigentclaim::ContingentClaim,
